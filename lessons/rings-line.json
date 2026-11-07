@@ -1,0 +1,88 @@
+{
+  "assists": {
+    "altitude": "hold",
+    "autoArm": true,
+    "control": "velocity",
+    "maxClimbMps": 1.5,
+    "maxSpeedMps": 3,
+    "maxYawDps": 90,
+    "onTouch": "bump"
+  },
+  "attemptLimitS": 120,
+  "checkpoints": [],
+  "fastPath": false,
+  "format": "shramko-sonic-lesson/1",
+  "goals": [
+    {
+      "gateIds": "all",
+      "inOrder": true,
+      "kind": "pass-gates"
+    }
+  ],
+  "id": "rings-line",
+  "intro": [
+    {
+      "key": "lesson.rings-line.intro.1"
+    },
+    {
+      "key": "lesson.rings-line.intro.2"
+    },
+    {
+      "key": "lesson.rings-line.goal.1"
+    }
+  ],
+  "layers": {
+    "hazardVoices": 2,
+    "heightBandM": null,
+    "on": [
+      "safety",
+      "target",
+      "voice"
+    ]
+  },
+  "module": 5,
+  "order": 14,
+  "pass": {
+    "attempts": 5,
+    "blocking": true,
+    "blocks": 1,
+    "maxTouches": null,
+    "required": 4
+  },
+  "speech": {
+    "hints": [
+      {
+        "key": "lesson.rings-line.hint.1"
+      }
+    ],
+    "pass": {
+      "key": "lesson.rings-line.pass"
+    },
+    "retry": {
+      "key": "lesson.rings-line.retry"
+    }
+  },
+  "start": {
+    "pos": [0, 3, 72],
+    "yawDeg": 0
+  },
+  "title": {
+    "key": "lesson.rings-line.title"
+  },
+  "version": 1,
+  "world": {
+    "kind": "analytic",
+    "spec": {
+      "generator": "rings",
+      "params": {
+        "aheadM": 12,
+        "count": 3,
+        "layout": "line",
+        "sizeM": 3,
+        "spacingM": 14
+      },
+      "seed": 0,
+      "version": 1
+    }
+  }
+}

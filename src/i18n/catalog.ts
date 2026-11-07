@@ -121,6 +121,9 @@ export const FREE_KEYS = [
     'quiz.right',
     'quiz.wrong',
     'quiz.score',
+    'quiz.option',
+    'quiz.where-options',
+    'quiz.skip',
     // narration before a sound is previewed
     'narrate.coming',
     // spoken menus

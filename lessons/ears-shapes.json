@@ -1,0 +1,79 @@
+{
+  "assists": {
+    "altitude": "hold",
+    "autoArm": false,
+    "control": "velocity",
+    "maxClimbMps": 0,
+    "maxSpeedMps": 0,
+    "maxYawDps": 0,
+    "onTouch": "bump"
+  },
+  "attemptLimitS": null,
+  "checkpoints": [],
+  "fastPath": false,
+  "format": "shramko-sonic-lesson/1",
+  "goals": [
+    {
+      "cues": [
+        "shape.ring",
+        "shape.square",
+        "shape.pillar"
+      ],
+      "kind": "name-cues",
+      "trials": 0
+    }
+  ],
+  "id": "ears-shapes",
+  "intro": [
+    {
+      "key": "lesson.ears-shapes.intro.1"
+    },
+    {
+      "key": "lesson.ears-shapes.intro.2"
+    },
+    {
+      "key": "lesson.ears-shapes.goal.1"
+    }
+  ],
+  "layers": {
+    "hazardVoices": 0,
+    "heightBandM": null,
+    "on": [
+      "shape",
+      "voice"
+    ]
+  },
+  "module": 0,
+  "order": 3,
+  "pass": {
+    "attempts": 1,
+    "blocking": false,
+    "blocks": 1,
+    "maxTouches": null,
+    "required": 1
+  },
+  "speech": {
+    "hints": [
+      {
+        "key": "lesson.ears-shapes.hint.1"
+      }
+    ],
+    "pass": {
+      "key": "lesson.ears-shapes.pass"
+    },
+    "retry": {
+      "key": "lesson.ears-shapes.retry"
+    }
+  },
+  "start": {
+    "pos": [0, 1.5, 0],
+    "yawDeg": 0
+  },
+  "title": {
+    "key": "lesson.ears-shapes.title"
+  },
+  "version": 1,
+  "world": {
+    "kind": "none"
+  }
+}

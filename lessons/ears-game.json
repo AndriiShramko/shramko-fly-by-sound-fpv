@@ -1,0 +1,89 @@
+{
+  "assists": {
+    "altitude": "hold",
+    "autoArm": false,
+    "control": "velocity",
+    "maxClimbMps": 0,
+    "maxSpeedMps": 0,
+    "maxYawDps": 0,
+    "onTouch": "bump"
+  },
+  "attemptLimitS": null,
+  "checkpoints": [],
+  "fastPath": false,
+  "format": "shramko-sonic-lesson/1",
+  "goals": [
+    {
+      "cues": [
+        "safety.wall",
+        "target.hum",
+        "shape.ring",
+        "shape.pillar"
+      ],
+      "kind": "name-cues",
+      "trials": 8
+    },
+    {
+      "kind": "locate",
+      "trials": 8
+    }
+  ],
+  "id": "ears-game",
+  "intro": [
+    {
+      "key": "lesson.ears-game.intro.1"
+    },
+    {
+      "key": "lesson.ears-game.intro.2"
+    },
+    {
+      "key": "lesson.ears-game.intro.3"
+    },
+    {
+      "key": "lesson.ears-game.goal.1"
+    }
+  ],
+  "layers": {
+    "hazardVoices": 1,
+    "heightBandM": null,
+    "on": [
+      "safety",
+      "target",
+      "shape",
+      "voice"
+    ]
+  },
+  "module": 0,
+  "order": 4,
+  "pass": {
+    "attempts": 1,
+    "blocking": false,
+    "blocks": 2,
+    "maxTouches": null,
+    "required": 1
+  },
+  "speech": {
+    "hints": [
+      {
+        "key": "lesson.ears-game.hint.1"
+      }
+    ],
+    "pass": {
+      "key": "lesson.ears-game.pass"
+    },
+    "retry": {
+      "key": "lesson.ears-game.retry"
+    }
+  },
+  "start": {
+    "pos": [0, 1.5, 0],
+    "yawDeg": 0
+  },
+  "title": {
+    "key": "lesson.ears-game.title"
+  },
+  "version": 1,
+  "world": {
+    "kind": "none"
+  }
+}

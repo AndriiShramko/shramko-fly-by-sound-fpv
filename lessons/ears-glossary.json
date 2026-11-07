@@ -1,0 +1,101 @@
+{
+  "assists": {
+    "altitude": "hold",
+    "autoArm": false,
+    "control": "velocity",
+    "maxClimbMps": 0,
+    "maxSpeedMps": 0,
+    "maxYawDps": 0,
+    "onTouch": "bump"
+  },
+  "attemptLimitS": null,
+  "checkpoints": [],
+  "fastPath": false,
+  "format": "shramko-sonic-lesson/1",
+  "goals": [
+    {
+      "cues": [
+        "safety.wall",
+        "safety.floor",
+        "safety.ceiling",
+        "safety.obstacle",
+        "safety.touch",
+        "safety.reset",
+        "height.tone",
+        "height.rough",
+        "speed.tick",
+        "target.hum",
+        "target.off",
+        "target.note",
+        "target.lap",
+        "target.checkpoint",
+        "target.fanfare",
+        "shape.ring",
+        "shape.square",
+        "shape.cube",
+        "shape.pillar",
+        "room.bed"
+      ],
+      "kind": "name-cues",
+      "trials": 0
+    }
+  ],
+  "id": "ears-glossary",
+  "intro": [
+    {
+      "key": "lesson.ears-glossary.intro.1"
+    },
+    {
+      "key": "lesson.ears-glossary.intro.2"
+    },
+    {
+      "key": "lesson.ears-glossary.goal.1"
+    }
+  ],
+  "layers": {
+    "hazardVoices": 1,
+    "heightBandM": null,
+    "on": [
+      "safety",
+      "height",
+      "speed",
+      "target",
+      "shape",
+      "room",
+      "voice"
+    ]
+  },
+  "module": 0,
+  "order": 1,
+  "pass": {
+    "attempts": 1,
+    "blocking": false,
+    "blocks": 1,
+    "maxTouches": null,
+    "required": 1
+  },
+  "speech": {
+    "hints": [
+      {
+        "key": "lesson.ears-glossary.hint.1"
+      }
+    ],
+    "pass": {
+      "key": "lesson.ears-glossary.pass"
+    },
+    "retry": {
+      "key": "lesson.ears-glossary.retry"
+    }
+  },
+  "start": {
+    "pos": [0, 1.5, 0],
+    "yawDeg": 0
+  },
+  "title": {
+    "key": "lesson.ears-glossary.title"
+  },
+  "version": 1,
+  "world": {
+    "kind": "none"
+  }
+}

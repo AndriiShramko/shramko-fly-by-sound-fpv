@@ -11,7 +11,9 @@
 //   - distance is measured from the craft's hull (bodyRadiusM inside the centre)
 //   - time to collision is the time to reach the SURFACE that was hit: the hull's distance to it along
 //     its normal over the speed toward it, so a craft flying along a wall has no time to collision
-//     with it, whichever ray saw it (when the world gives no normal, the line of sight stands in)
+//     with it, whichever ray saw it (when the world gives no normal, the line of sight stands in);
+//     a ray that sees the surface at a slant stretches that time by 1 / cos^2(slant), so the sector
+//     facing the surface voices it, not a neighbour whose side ray grazes it
 //   - risk of a sector = max(enterDist / distance, enterTtc / ttc): 1 at the threshold, growing as
 //     the craft gets closer or closes faster. A distance alone is enough (a hovering craft under a
 //     ceiling), so is a closing speed alone (a far wall approached fast)
@@ -157,6 +159,9 @@ export interface SceneSampler {
     reset(): void;
 }
 
+/** A ray meeting a surface flatter than this (cosine to its normal) gives it no time to collision. */
+const SLANT_MIN = 0.05;
+
 /** Below this the distance or the time is treated as this, so the risk stays finite. */
 const FLOOR = 0.05;
 
@@ -211,7 +216,12 @@ export function createSceneSampler(options: SamplerOptions = {}): SceneSampler {
                         closing = Math.max(0, dot(flight.vel, worldDir));
                         reach = distance;
                     }
-                    const ttc = closing >= config.minClosingMps ? reach / closing : null;
+                    // a surface seen at a slant belongs less to this sector: its time to collision is stretched by
+                    // 1 / cos^2 of the angle between the ray and the surface normal (squared, so the stretch beats the
+                    // weight a neighbour sector ahead has), and a wall on the left is voiced by the left sector, not
+                    // by the front-left one whose side ray sees it 25 degrees off its normal
+                    const facing = hit.normal === null ? 1 : Math.max(0, -dot(worldRay, hit.normal));
+                    const ttc = closing >= config.minClosingMps && facing > SLANT_MIN ? reach / closing / (facing * facing) : null;
                     const risk = riskOf(distance, ttc, config.enterDistM[id], config.enterTtcS);
                     if (distance < minDistance) minDistance = distance;
                     if (ttc !== null && (minTtc === null || ttc < minTtc)) minTtc = ttc;

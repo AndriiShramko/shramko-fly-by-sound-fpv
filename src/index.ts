@@ -5,6 +5,7 @@
 export * from './contract';
 export * from './cues';
 export * from './i18n';
+export * from './lesson';
 export * from './prefs';
 export * from './sense';
 export * from './survey';

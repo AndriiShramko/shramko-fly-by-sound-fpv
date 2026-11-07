@@ -1,0 +1,85 @@
+{
+  "assists": {
+    "altitude": "hold",
+    "autoArm": true,
+    "control": "velocity",
+    "maxClimbMps": 1,
+    "maxSpeedMps": 3,
+    "maxYawDps": 90,
+    "onTouch": "bump"
+  },
+  "attemptLimitS": 90,
+  "checkpoints": [],
+  "fastPath": false,
+  "format": "shramko-sonic-lesson/1",
+  "goals": [
+    {
+      "kind": "fly-distance",
+      "metres": 22
+    }
+  ],
+  "id": "walls-row",
+  "intro": [
+    {
+      "key": "lesson.walls-row.intro.1"
+    },
+    {
+      "key": "lesson.walls-row.intro.2"
+    },
+    {
+      "key": "lesson.walls-row.goal.1"
+    }
+  ],
+  "layers": {
+    "hazardVoices": 3,
+    "heightBandM": null,
+    "on": [
+      "safety",
+      "voice"
+    ]
+  },
+  "module": 3,
+  "order": 11,
+  "pass": {
+    "attempts": 5,
+    "blocking": true,
+    "blocks": 1,
+    "maxTouches": 0,
+    "required": 4
+  },
+  "speech": {
+    "hints": [
+      {
+        "key": "lesson.walls-row.hint.1"
+      }
+    ],
+    "pass": {
+      "key": "lesson.walls-row.pass"
+    },
+    "retry": {
+      "key": "lesson.walls-row.retry"
+    }
+  },
+  "start": {
+    "pos": [0, 1.5, 22],
+    "yawDeg": 0
+  },
+  "title": {
+    "key": "lesson.walls-row.title"
+  },
+  "version": 1,
+  "world": {
+    "kind": "analytic",
+    "spec": {
+      "generator": "pillars",
+      "params": {
+        "aheadM": 15,
+        "count": 5,
+        "gapM": 6,
+        "layout": "row"
+      },
+      "seed": 0,
+      "version": 1
+    }
+  }
+}

@@ -1,0 +1,74 @@
+{
+  "assists": {
+    "altitude": "hold",
+    "autoArm": false,
+    "control": "velocity",
+    "maxClimbMps": 0,
+    "maxSpeedMps": 0,
+    "maxYawDps": 0,
+    "onTouch": "bump"
+  },
+  "attemptLimitS": null,
+  "checkpoints": [],
+  "fastPath": true,
+  "format": "shramko-sonic-lesson/1",
+  "goals": [
+    {
+      "kind": "locate",
+      "trials": 3
+    }
+  ],
+  "id": "ears-headphones",
+  "intro": [
+    {
+      "key": "lesson.ears-headphones.intro.1"
+    },
+    {
+      "key": "lesson.ears-headphones.intro.2"
+    },
+    {
+      "key": "lesson.ears-headphones.goal.1"
+    }
+  ],
+  "layers": {
+    "hazardVoices": 0,
+    "heightBandM": null,
+    "on": [
+      "target",
+      "voice"
+    ]
+  },
+  "module": 0,
+  "order": 0,
+  "pass": {
+    "attempts": 1,
+    "blocking": true,
+    "blocks": 1,
+    "maxTouches": null,
+    "required": 1
+  },
+  "speech": {
+    "hints": [
+      {
+        "key": "lesson.ears-headphones.hint.1"
+      }
+    ],
+    "pass": {
+      "key": "lesson.ears-headphones.pass"
+    },
+    "retry": {
+      "key": "lesson.ears-headphones.retry"
+    }
+  },
+  "start": {
+    "pos": [0, 1.5, 0],
+    "yawDeg": 0
+  },
+  "title": {
+    "key": "lesson.ears-headphones.title"
+  },
+  "version": 1,
+  "world": {
+    "kind": "none"
+  }
+}

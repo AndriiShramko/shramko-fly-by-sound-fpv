@@ -300,11 +300,24 @@ describe('closing speed and time to collision', () => {
         }
         close(by.front!.closingMps, 45, 1e-6);
         close(by.front!.ttcS!, (32.5 - 0.12) / 45, 1e-3);
-        // drifting left at 1 m/s while flying on: every sector that sees the left wall gives the same time
+        // drifting left at 1 m/s while flying on: the left sector, which faces the wall, has the surface time;
+        // the front-left sector sees it at a slant (its best ray is 25 degrees off the wall's normal), so its
+        // time is stretched by 1 / cos^2 25 and the wall is voiced from the left, not from ahead
         const drift = sampler().sample(flight({ pos: [0, 2, -70], vel: [-1, 0, -45] }), corridor);
         const d = Object.fromEntries(drift.sectors.map((x) => [x.sector, x]));
         close(d.left!.ttcS!, 2.38, 1e-3);
-        close(d['front-left']!.ttcS!, 2.38, 1e-3);
+        close(d['front-left']!.ttcS!, 2.38 / Math.cos((25 * Math.PI) / 180) ** 2, 1e-3);
+    });
+
+    it('a wall approached sideways is voiced from its side, not by the front sector that grazes it', () => {
+        const hall = createAnalyticWorld(makeSpec('hall', {}, 1)); // the left wall at x = -20
+        const s = createSceneSampler({ bodyRadiusM: 0.12, maxVoices: 1 }).sample(flight({ pos: [-14, 3, 0], vel: [-3, 0, 0] }), hall);
+        expect(s.hazards[0]!.sector).toBe('left');
+        expect(s.hazards[0]!.dir[0]).toBeLessThan(-0.99);
+        // negative control: the front sector's side ray does see the same wall, at a slant
+        const front = s.sectors.find((x) => x.sector === 'front')!;
+        expect(front.hit).toBe(true);
+        expect(front.ttcS === null || front.ttcS > s.sectors.find((x) => x.sector === 'left')!.ttcS! * 2).toBe(true);
     });
 
     it('a sector that sees nothing has no time and zero closing', () => {

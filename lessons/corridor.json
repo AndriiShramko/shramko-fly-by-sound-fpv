@@ -1,0 +1,139 @@
+{
+  "assists": {
+    "altitude": "hold",
+    "autoArm": true,
+    "control": "velocity",
+    "maxClimbMps": 1.5,
+    "maxSpeedMps": 3,
+    "maxYawDps": 90,
+    "onTouch": "bump-recentre"
+  },
+  "attemptLimitS": 900,
+  "checkpoints": [
+    {
+      "at": [0, 2, 0],
+      "id": "cp-1",
+      "pose": {
+        "pos": [0, 2, 0],
+        "yawDeg": 0
+      },
+      "radiusM": 2.5
+    },
+    {
+      "at": [0, 2, -50],
+      "id": "cp-2",
+      "pose": {
+        "pos": [0, 2, -50],
+        "yawDeg": 0
+      },
+      "radiusM": 2.5
+    },
+    {
+      "at": [0, 2, -80],
+      "id": "cp-3",
+      "pose": {
+        "pos": [0, 2, -80],
+        "yawDeg": 0
+      },
+      "radiusM": 2.5
+    },
+    {
+      "at": [45, 2, -125],
+      "id": "cp-4",
+      "pose": {
+        "pos": [45, 2, -125],
+        "yawDeg": 0
+      },
+      "radiusM": 2.5
+    },
+    {
+      "at": [45, 2, -200],
+      "id": "cp-5",
+      "pose": {
+        "pos": [45, 2, -200],
+        "yawDeg": 0
+      },
+      "radiusM": 2.5
+    }
+  ],
+  "fastPath": true,
+  "format": "shramko-sonic-lesson/1",
+  "goals": [
+    {
+      "kind": "fly-distance",
+      "metres": 50
+    },
+    {
+      "kind": "fly-distance",
+      "metres": 240
+    }
+  ],
+  "id": "corridor",
+  "intro": [
+    {
+      "key": "lesson.corridor.intro.1"
+    },
+    {
+      "key": "lesson.corridor.intro.2"
+    },
+    {
+      "key": "lesson.corridor.intro.3"
+    },
+    {
+      "key": "lesson.corridor.goal.1"
+    },
+    {
+      "key": "lesson.corridor.goal.2"
+    }
+  ],
+  "layers": {
+    "hazardVoices": 3,
+    "heightBandM": null,
+    "on": [
+      "safety",
+      "voice"
+    ]
+  },
+  "module": 4,
+  "order": 12,
+  "pass": {
+    "attempts": 4,
+    "blocking": true,
+    "blocks": 1,
+    "maxTouches": 2,
+    "required": 3
+  },
+  "speech": {
+    "hints": [
+      {
+        "key": "lesson.corridor.hint.1"
+      }
+    ],
+    "pass": {
+      "key": "lesson.corridor.pass"
+    },
+    "retry": {
+      "key": "lesson.corridor.retry"
+    }
+  },
+  "start": {
+    "pos": [0, 2, 0],
+    "yawDeg": 0
+  },
+  "title": {
+    "key": "lesson.corridor.title"
+  },
+  "version": 1,
+  "world": {
+    "kind": "analytic",
+    "spec": {
+      "generator": "corridor",
+      "params": {
+        "layout": "full",
+        "straightM": 50
+      },
+      "seed": 0,
+      "version": 1
+    }
+  }
+}

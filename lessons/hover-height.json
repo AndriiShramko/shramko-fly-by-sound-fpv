@@ -1,0 +1,87 @@
+{
+  "assists": {
+    "altitude": "hold",
+    "autoArm": true,
+    "control": "velocity",
+    "maxClimbMps": 1,
+    "maxSpeedMps": 0.5,
+    "maxYawDps": 60,
+    "onTouch": "bump"
+  },
+  "attemptLimitS": 60,
+  "checkpoints": [],
+  "fastPath": true,
+  "format": "shramko-sonic-lesson/1",
+  "goals": [
+    {
+      "bandM": [2, 3],
+      "kind": "hold-height",
+      "seconds": 20,
+      "shareMin": 0.8
+    }
+  ],
+  "id": "hover-height",
+  "intro": [
+    {
+      "key": "lesson.hover-height.intro.1"
+    },
+    {
+      "key": "lesson.hover-height.intro.2"
+    },
+    {
+      "key": "lesson.hover-height.goal.1",
+      "params": {
+        "seconds": 20
+      }
+    }
+  ],
+  "layers": {
+    "hazardVoices": 0,
+    "heightBandM": [2, 3],
+    "on": [
+      "height",
+      "voice"
+    ]
+  },
+  "module": 1,
+  "order": 5,
+  "pass": {
+    "attempts": 5,
+    "blocking": true,
+    "blocks": 1,
+    "maxTouches": null,
+    "required": 4
+  },
+  "speech": {
+    "hints": [
+      {
+        "key": "lesson.hover-height.hint.1"
+      }
+    ],
+    "pass": {
+      "key": "lesson.hover-height.pass"
+    },
+    "retry": {
+      "key": "lesson.hover-height.retry"
+    }
+  },
+  "start": {
+    "pos": [0, 1, 0],
+    "yawDeg": 0
+  },
+  "title": {
+    "key": "lesson.hover-height.title"
+  },
+  "version": 1,
+  "world": {
+    "kind": "analytic",
+    "spec": {
+      "generator": "open",
+      "params": {
+        "startHeightM": 1
+      },
+      "seed": 0,
+      "version": 1
+    }
+  }
+}

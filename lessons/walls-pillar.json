@@ -1,0 +1,84 @@
+{
+  "assists": {
+    "altitude": "hold",
+    "autoArm": true,
+    "control": "velocity",
+    "maxClimbMps": 1,
+    "maxSpeedMps": 3,
+    "maxYawDps": 90,
+    "onTouch": "bump"
+  },
+  "attemptLimitS": 120,
+  "checkpoints": [],
+  "fastPath": false,
+  "format": "shramko-sonic-lesson/1",
+  "goals": [
+    {
+      "kind": "around",
+      "objectId": "pillar-1"
+    }
+  ],
+  "id": "walls-pillar",
+  "intro": [
+    {
+      "key": "lesson.walls-pillar.intro.1"
+    },
+    {
+      "key": "lesson.walls-pillar.intro.2"
+    },
+    {
+      "key": "lesson.walls-pillar.goal.1"
+    }
+  ],
+  "layers": {
+    "hazardVoices": 2,
+    "heightBandM": null,
+    "on": [
+      "safety",
+      "shape",
+      "voice"
+    ]
+  },
+  "module": 3,
+  "order": 10,
+  "pass": {
+    "attempts": 5,
+    "blocking": true,
+    "blocks": 1,
+    "maxTouches": 1,
+    "required": 4
+  },
+  "speech": {
+    "hints": [
+      {
+        "key": "lesson.walls-pillar.hint.1"
+      }
+    ],
+    "pass": {
+      "key": "lesson.walls-pillar.pass"
+    },
+    "retry": {
+      "key": "lesson.walls-pillar.retry"
+    }
+  },
+  "start": {
+    "pos": [0, 1.5, 22],
+    "yawDeg": 0
+  },
+  "title": {
+    "key": "lesson.walls-pillar.title"
+  },
+  "version": 1,
+  "world": {
+    "kind": "analytic",
+    "spec": {
+      "generator": "pillars",
+      "params": {
+        "aheadM": 15,
+        "layout": "single"
+      },
+      "seed": 0,
+      "version": 1
+    }
+  }
+}

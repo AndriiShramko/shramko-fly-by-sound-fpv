@@ -14,6 +14,7 @@ const ARGUMENTS: Readonly<Record<string, readonly string[]>> = {
     'lesson.move-stop.intro.1': ['metres'],
     'glossary.again': ['key'],
     'quiz.score': ['right', 'total'],
+    'quiz.option': ['label', 'n'],
     'narrate.coming': ['name'],
     'menu.item': ['label', 'n', 'total'],
     'menu.setting.volume': ['layer'],

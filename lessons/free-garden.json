@@ -1,0 +1,86 @@
+{
+  "assists": {
+    "altitude": "hold",
+    "autoArm": true,
+    "control": "velocity",
+    "maxClimbMps": 2,
+    "maxSpeedMps": 5,
+    "maxYawDps": 120,
+    "onTouch": "bump"
+  },
+  "attemptLimitS": 900,
+  "checkpoints": [],
+  "fastPath": true,
+  "format": "shramko-sonic-lesson/1",
+  "goals": [
+    {
+      "kind": "timed-course",
+      "laps": 1
+    }
+  ],
+  "id": "free-garden",
+  "intro": [
+    {
+      "key": "lesson.free-garden.intro.1"
+    },
+    {
+      "key": "lesson.free-garden.intro.2"
+    },
+    {
+      "key": "lesson.free-garden.intro.3"
+    },
+    {
+      "key": "lesson.free-garden.goal.1"
+    }
+  ],
+  "layers": {
+    "hazardVoices": 3,
+    "heightBandM": null,
+    "on": [
+      "safety",
+      "target",
+      "room",
+      "voice"
+    ]
+  },
+  "module": 7,
+  "order": 20,
+  "pass": {
+    "attempts": 3,
+    "blocking": false,
+    "blocks": 1,
+    "maxTouches": null,
+    "required": 1
+  },
+  "speech": {
+    "hints": [
+      {
+        "key": "lesson.free-garden.hint.1"
+      }
+    ],
+    "pass": {
+      "key": "lesson.free-garden.pass"
+    },
+    "retry": {
+      "key": "lesson.free-garden.retry"
+    }
+  },
+  "start": {
+    "pos": [0, 1.5, 0],
+    "yawDeg": 0
+  },
+  "title": {
+    "key": "lesson.free-garden.title"
+  },
+  "version": 1,
+  "world": {
+    "kind": "scan",
+    "sceneId": "7a475d38",
+    "sceneVersion": null,
+    "track": {
+      "id": "7a475d38-rings",
+      "version": 1
+    },
+    "transform": [5, 0, 0, 0]
+  }
+}

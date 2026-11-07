@@ -1,0 +1,86 @@
+{
+  "assists": {
+    "altitude": "hold",
+    "autoArm": true,
+    "control": "velocity",
+    "maxClimbMps": 0.5,
+    "maxSpeedMps": 0.5,
+    "maxYawDps": 90,
+    "onTouch": "bump"
+  },
+  "attemptLimitS": 30,
+  "checkpoints": [],
+  "fastPath": false,
+  "format": "shramko-sonic-lesson/1",
+  "goals": [
+    {
+      "kind": "turn-to",
+      "objectId": "ring-1",
+      "toleranceDeg": 12
+    }
+  ],
+  "id": "hover-turn",
+  "intro": [
+    {
+      "key": "lesson.hover-turn.intro.1"
+    },
+    {
+      "key": "lesson.hover-turn.intro.2"
+    },
+    {
+      "key": "lesson.hover-turn.goal.1"
+    }
+  ],
+  "layers": {
+    "hazardVoices": 0,
+    "heightBandM": null,
+    "on": [
+      "target",
+      "voice"
+    ]
+  },
+  "module": 1,
+  "order": 6,
+  "pass": {
+    "attempts": 5,
+    "blocking": true,
+    "blocks": 1,
+    "maxTouches": null,
+    "required": 4
+  },
+  "speech": {
+    "hints": [
+      {
+        "key": "lesson.hover-turn.hint.1"
+      }
+    ],
+    "pass": {
+      "key": "lesson.hover-turn.pass"
+    },
+    "retry": {
+      "key": "lesson.hover-turn.retry"
+    }
+  },
+  "start": {
+    "pos": [0, 3, 72],
+    "yawDeg": 0
+  },
+  "title": {
+    "key": "lesson.hover-turn.title"
+  },
+  "version": 1,
+  "world": {
+    "kind": "analytic",
+    "spec": {
+      "generator": "rings",
+      "params": {
+        "aheadM": 3,
+        "layout": "single",
+        "offsetXM": -25,
+        "sizeM": 3
+      },
+      "seed": 0,
+      "version": 1
+    }
+  }
+}

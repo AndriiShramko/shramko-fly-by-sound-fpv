@@ -1,0 +1,79 @@
+{
+  "assists": {
+    "altitude": "hold",
+    "autoArm": false,
+    "control": "velocity",
+    "maxClimbMps": 0,
+    "maxSpeedMps": 0,
+    "maxYawDps": 0,
+    "onTouch": "bump"
+  },
+  "attemptLimitS": null,
+  "checkpoints": [],
+  "fastPath": false,
+  "format": "shramko-sonic-lesson/1",
+  "goals": [
+    {
+      "cues": [
+        "safety.wall",
+        "safety.ceiling",
+        "safety.floor"
+      ],
+      "kind": "name-cues",
+      "trials": 0
+    }
+  ],
+  "id": "ears-walls",
+  "intro": [
+    {
+      "key": "lesson.ears-walls.intro.1"
+    },
+    {
+      "key": "lesson.ears-walls.intro.2"
+    },
+    {
+      "key": "lesson.ears-walls.goal.1"
+    }
+  ],
+  "layers": {
+    "hazardVoices": 1,
+    "heightBandM": null,
+    "on": [
+      "safety",
+      "voice"
+    ]
+  },
+  "module": 0,
+  "order": 2,
+  "pass": {
+    "attempts": 1,
+    "blocking": false,
+    "blocks": 1,
+    "maxTouches": null,
+    "required": 1
+  },
+  "speech": {
+    "hints": [
+      {
+        "key": "lesson.ears-walls.hint.1"
+      }
+    ],
+    "pass": {
+      "key": "lesson.ears-walls.pass"
+    },
+    "retry": {
+      "key": "lesson.ears-walls.retry"
+    }
+  },
+  "start": {
+    "pos": [0, 1.5, 0],
+    "yawDeg": 0
+  },
+  "title": {
+    "key": "lesson.ears-walls.title"
+  },
+  "version": 1,
+  "world": {
+    "kind": "none"
+  }
+}

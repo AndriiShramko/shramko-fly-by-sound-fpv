@@ -1,0 +1,96 @@
+{
+  "assists": {
+    "altitude": "hold",
+    "autoArm": true,
+    "control": "velocity",
+    "maxClimbMps": 1.5,
+    "maxSpeedMps": 3,
+    "maxYawDps": 90,
+    "onTouch": "bump"
+  },
+  "attemptLimitS": 90,
+  "checkpoints": [],
+  "fastPath": false,
+  "format": "shramko-sonic-lesson/1",
+  "goals": [
+    {
+      "gateIds": [
+        "cube-1"
+      ],
+      "inOrder": true,
+      "kind": "pass-gates"
+    },
+    {
+      "kind": "name-shape",
+      "objectId": "cube-1"
+    }
+  ],
+  "id": "shapes-cube",
+  "intro": [
+    {
+      "key": "lesson.shapes-cube.intro.1"
+    },
+    {
+      "key": "lesson.shapes-cube.intro.2"
+    },
+    {
+      "key": "lesson.shapes-cube.intro.3"
+    },
+    {
+      "key": "lesson.shapes-cube.goal.1"
+    }
+  ],
+  "layers": {
+    "hazardVoices": 2,
+    "heightBandM": null,
+    "on": [
+      "safety",
+      "target",
+      "shape",
+      "voice"
+    ]
+  },
+  "module": 6,
+  "order": 19,
+  "pass": {
+    "attempts": 3,
+    "blocking": false,
+    "blocks": 1,
+    "maxTouches": null,
+    "required": 2
+  },
+  "speech": {
+    "hints": [
+      {
+        "key": "lesson.shapes-cube.hint.1"
+      }
+    ],
+    "pass": {
+      "key": "lesson.shapes-cube.pass"
+    },
+    "retry": {
+      "key": "lesson.shapes-cube.retry"
+    }
+  },
+  "start": {
+    "pos": [0, 3, 72],
+    "yawDeg": 0
+  },
+  "title": {
+    "key": "lesson.shapes-cube.title"
+  },
+  "version": 1,
+  "world": {
+    "kind": "analytic",
+    "spec": {
+      "generator": "cube-frames",
+      "params": {
+        "aheadM": 12,
+        "layout": "single",
+        "sizeM": 3
+      },
+      "seed": 0,
+      "version": 1
+    }
+  }
+}

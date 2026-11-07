@@ -1,0 +1,35 @@
+{
+  "fast": [
+    "ears-headphones",
+    "hover-height",
+    "walls-hall",
+    "corridor",
+    "rings-first",
+    "rings-course",
+    "free-garden"
+  ],
+  "format": "shramko-sonic-paths/1",
+  "full": [
+    "ears-headphones",
+    "ears-glossary",
+    "ears-walls",
+    "ears-shapes",
+    "ears-game",
+    "hover-height",
+    "hover-turn",
+    "move-speed",
+    "move-stop",
+    "walls-hall",
+    "walls-pillar",
+    "walls-row",
+    "corridor",
+    "rings-first",
+    "rings-line",
+    "rings-small",
+    "rings-course",
+    "shapes-square",
+    "shapes-series",
+    "shapes-cube",
+    "free-garden"
+  ]
+}
