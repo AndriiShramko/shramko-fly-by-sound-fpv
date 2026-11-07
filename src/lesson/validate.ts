@@ -143,6 +143,13 @@ function assists(c: Collector, v: unknown, path: string): LessonAssists | undefi
     return { control, altitude, maxSpeedMps, maxClimbMps, maxYawDps, autoArm, onTouch };
 }
 
+/** A lesson's assists as data (also stored in a session manifest): the value or every reason it is wrong, paths relative to the object. */
+export function validateAssists(input: unknown): Validation<LessonAssists> {
+    const c = new Collector();
+    const value = assists(c, input, '');
+    return value !== undefined && c.ok ? { ok: true, value } : { ok: false, issues: c.issues };
+}
+
 function layers(c: Collector, v: unknown, path: string): LessonLayers | undefined {
     const r = c.record(v, path);
     if (r === null) return undefined;

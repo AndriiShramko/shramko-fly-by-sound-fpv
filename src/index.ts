@@ -8,6 +8,7 @@ export * from './i18n';
 export * from './lesson';
 export * from './prefs';
 export * from './sense';
+export * from './session';
 export * from './survey';
 export * from './theme';
 export * from './track';
