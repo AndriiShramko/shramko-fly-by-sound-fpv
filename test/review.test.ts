@@ -1,14 +1,16 @@
 // Tests written by the independent review of stage1-rc1 (docs/dev/review-stage-1.md): each one
 // fails on the code as reviewed and holds the fix of one confirmed defect.
 import { describe, expect, it } from 'vitest';
-import type { FlightSample, Goal, LayerId, LessonLayers, Pose, SessionEvent, SonicObject, ThemeDef } from '../src/contract';
+import type { Consent, FlightSample, Goal, LayerId, LessonLayers, Pose, SessionEvent, SonicObject, ThemeDef } from '../src/contract';
 import { DemoHost, type EngineLike } from '../demo/host';
 import { createLessonRunner, getLesson, SHIPPED_LESSON_IDS, type LessonSession, type RunnerAction } from '../src/lesson';
 import { applyCalm, getBuiltinTheme, validateTheme } from '../src/theme';
 import { quatRotate, yawQuat } from '../src/util/vec';
+import { buildManifest, MemorySink, SessionWriter, validateManifest } from '../src/session';
 import { createAnalyticWorld } from '../src/world';
 import { buildReport, type Report } from '../tools/report';
 import { RecordingHost } from './helpers/record';
+import { manifestInput } from './helpers/session-input';
 
 type SayAction = Extract<RunnerAction, { kind: 'say' }>;
 const says = (actions: readonly RunnerAction[]): SayAction[] => actions.filter((a): a is SayAction => a.kind === 'say');
@@ -308,5 +310,29 @@ describe('review D6: the calm preset keeps a valid theme valid', () => {
             expect(calm.layers.target.params['rateNearHz']).toBeLessThan(t.layers.target.params['rateNearHz'] as number);
             expect(calm.layers.speed.params['tempoMaxHz']).toBeLessThan(t.layers.speed.params['tempoMaxHz'] as number);
         }
+    });
+});
+
+describe('review D8: a minor\'s package cannot claim consent to send without a confirmed guardian', () => {
+    const issues = (consent: Partial<Consent>): string[] => {
+        const r = validateManifest({ ...buildManifest(manifestInput()), consent: { ...manifestInput().consent, ...consent } });
+        return r.ok ? [] : r.issues.map((i) => i.path);
+    };
+
+    it('refuses sending and speech recognition (a child\'s audio leaves the device) for a minor whose guardian is not confirmed', () => {
+        expect(issues({ minor: true, guardianConfirmed: false, send: true }), 'send').toEqual(['consent.guardianConfirmed']);
+        expect(issues({ minor: true, guardianConfirmed: false, speechRecognition: true }), 'speech recognition').toEqual(['consent.guardianConfirmed']);
+    });
+
+    it('lets a minor with a confirmed guardian send, an adult send, and a minor record locally (negative controls)', () => {
+        expect(issues({ minor: true, guardianConfirmed: true, send: true, speechRecognition: true })).toEqual([]);
+        expect(issues({ minor: false, guardianConfirmed: null, send: true, speechRecognition: true })).toEqual([]);
+        // spec section 10: "local recording stays local"
+        expect(issues({ minor: true, guardianConfirmed: false, send: false, speechRecognition: false })).toEqual([]);
+    });
+
+    it('the writer will not start a session that claims it', async () => {
+        const consent: Consent = { ...manifestInput().consent, minor: true, guardianConfirmed: false, send: true };
+        await expect(SessionWriter.start({ sink: new MemorySink(), manifest: manifestInput({ consent }) })).rejects.toThrow(/guardianConfirmed/);
     });
 });

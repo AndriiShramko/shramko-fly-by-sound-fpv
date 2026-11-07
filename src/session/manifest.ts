@@ -212,14 +212,17 @@ export function validateManifest(input: unknown): Validation<SessionManifest> {
         c.keys(rawConsent, 'consent', ['recording', 'voice', 'send', 'speechRecognition', 'minor', 'guardianConfirmed', 'at']);
         const recording = c.boolean(rawConsent['recording'], 'consent.recording');
         const voice = c.boolean(rawConsent['voice'], 'consent.voice');
-        c.boolean(rawConsent['send'], 'consent.send');
-        c.boolean(rawConsent['speechRecognition'], 'consent.speechRecognition');
+        const send = c.boolean(rawConsent['send'], 'consent.send');
+        const speechRecognition = c.boolean(rawConsent['speechRecognition'], 'consent.speechRecognition');
         const minor = c.boolean(rawConsent['minor'], 'consent.minor');
         const guardian = rawConsent['guardianConfirmed'] === null ? null : c.boolean(rawConsent['guardianConfirmed'], 'consent.guardianConfirmed');
         iso(c, rawConsent['at'], 'consent.at');
         if (voice === true && recording === false) c.add('consent.voice', 'voice cannot be consented to without consent to record');
         if (minor === true && guardian === null) c.add('consent.guardianConfirmed', 'for a minor this must say whether a guardian\'s signed consent was confirmed (true or false)');
         if (minor === false && guardian !== null && guardian !== undefined) c.add('consent.guardianConfirmed', 'must be null for an adult');
+        // spec section 10 and docs/testing: for anyone under 18 a parent's signed consent, confirmed by the helper, comes first.
+        // Local recording stays local, but what leaves the device (the package, or audio for the browser's speech recognition) needs it
+        if (minor === true && guardian === false && (send === true || speechRecognition === true)) c.add('consent.guardianConfirmed', 'for a minor, consent to send the package or to use speech recognition (the audio goes to the browser vendor) needs a guardian\'s signed consent confirmed by the helper (true)');
         consent = rawConsent;
     }
 
