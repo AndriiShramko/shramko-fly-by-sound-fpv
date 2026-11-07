@@ -11,7 +11,7 @@ Plan: ShramkoGSFPV `docs/wip/v12-plan.md`, section 4.1 (steps 1 to 13). Spec: `d
 - [x] 5 Tracks, themes, prefs, commit 530c5bb: validators, canonical writers, never-in-place versions, scan-to-flown mapping, themes soft/clear/race, pentatonic helper, calm preset, SonicPrefs defaults and validator (380 tests in all)
 - [x] 6 Engine `src/audio/` with its pure planner `src/cues/`, commit f26ff95: HRTF voices (8 moving + 24 static, stolen by priority), lookahead rhythm on the audio clock, redundant distance code, roughness and beating, shape traces, ducking, limiter at the ceiling, fade-in on start, resume and device change, speech with captions; 27 Node tests of the schedulers and the planner
 - [x] 7 Audio proofs `test-audio/`, commit 262c3b8: direction, pulse rate, ceiling, fade-in, voice budget, each with a broken-engine control that fails; evidence in `evidence/audio-proofs.json` (`pnpm proof:audio`, about 11 s)
-- [x] 8 Lessons and runner: 21 lessons of modules 0-7 in `lessons/` with `paths.json` (full 21, fast 7), strict loader, pure `LessonRunner` with a host interface (`src/lesson/`); for every goal kind a scripted pass and a near miss (441 Node tests in all)
+- [x] 8 Lessons and runner, commit 09cbc75: 21 lessons of modules 0-7 in `lessons/` with `paths.json` (full 21, fast 7), strict loader, pure `LessonRunner` with a host interface (`src/lesson/`); for every goal kind a scripted pass and a near miss (441 Node tests in all)
 - [ ] 9 Session format `src/session/`
 - [ ] 10 Replay core `src/replay/`
 - [ ] 11 Report tool `tools/report.ts`
