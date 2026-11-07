@@ -134,7 +134,23 @@ Early-blind versus late-blind hearing, which decides what to encode:
 
 ## 8. Measuring progress
 
-(pending)
+Objective measures that earlier studies used, and what to add for flight:
+
+| Measure | Used in | Note |
+|---|---|---|
+| Proportion correct, and the distance or difficulty reached | echolocation training: level raised after two sessions above 90% [37] | gives a pass rule |
+| Collisions (major 1.0, minor 0.5), obstacles correctly reported before passing | Sound of Vision [6] | the authors call completion time not meaningful alone, because it must be read in context |
+| Average time to collect a target, collisions per scene | Bucharest game [45] | trajectories were logged and plotted |
+| Rotation error, rotation time, over-walking distance | turn guidance [20] | error shrinks with the pairing of tick and ping |
+| Aiming error and aiming time | VR aiming [24] | accuracy and speed trade off |
+| For flight (INFERRED) | gate pass rate, cross-track error from the path centre line, altitude error, collisions per minute, recovery time after a push, and the assist level at which success was reached | add transfer: success on a course never practised |
+
+- Questionnaires. NASA-TLX has six scales (mental, physical and temporal demand, own performance, effort, frustration), weighted by 15 pairwise comparisons in the official procedure [65]; Apavou's audio study found 52 against 42 between the heavy and light display [24]. SUS is 10 items on a 5-point scale, item scores mean nothing alone, and the mean of 500 studies is 68 [66, 67]; Hoffmann used the 10 SUS items plus one leisure item with visually impaired users [6]. The UEQ has 26 items on a 7-point scale in six scales, takes 3-5 min, exists in 21 languages, and has an 8-item short form (UEQ-S) [68].
+- Children: the Fun Toolkit (Smileyometer faces, Again-Again table with yes, maybe, no, Fun Sorter) was built for ages 5-10 [69]; the Smileyometer is best shown before and after the activity, and young children often give the top score to everything (more than 40% of younger children against under 10% of older ones in one study) [70] (REPORTED). I found no validated version for blind children; the faces are visual (INFERRED).
+- Voice delivery (INFERRED design, with two measured hints): in a study with blind and low-vision participants a sighted assistant read the consent form and helped with the computer [19]; self-administered audio questionnaires (audio-CASI) raised reports of sensitive behaviour by factors of 3 or more over paper forms in 1,690 adolescent males, so the voice can replace an interviewer [71] (MEASURED, other topic). Build the questionnaire into the app: the voice reads each item with its number and verbal label, the answer is a key press or gamepad button, items repeat on request, and the whole set is at most 10 items. For the six TLX scales use a 0-10 scale and skip the weights (not validated; I did not open a validation).
+- First-time testers: what each sound meant (a glossary quiz), which direction they expected "up" to be, annoyance and ear fatigue, fear of crashing, Smileyometer before and after, "would you play again?". Regular testers: workload (TLX), SUS and UEQ-S, which cues they switch off, whether they came back unprompted (the best measurable proxy for abandonment), and a yes-or-no follow-up on independence and wellbeing as in the echolocation study [37] (INFERRED from the sources above).
+- Sample sizes: the median in accessibility papers with disabled participants is 13 [72] (MEASURED, literature survey). Report each person's learning curve and not only means; one of six Sound of Vision users progressed slowly and another found the system intuitive [6].
+- Not found: a validated child-friendly questionnaire for blind children (a visuotactile satisfaction scale for children with visual impairment is listed in a 2024 journal but I could not open it); a published validation of voice-delivered TLX; the original paper on positive response bias in accessibility studies (Trewin et al., ASSETS 2015) could not be opened, so I do not rely on it.
 
 ## 9. Ethics and law for testing with minors in Poland and the EU
 
@@ -214,3 +230,11 @@ Early-blind versus late-blind hearing, which decides what to encode:
 62. Connors EC, Chrastil ER, Sánchez J, Merabet LB (2014). Action video game play and transfer of navigation and spatial cognition skills in adolescents who are blind. Front Hum Neurosci 8:133. https://pmc.ncbi.nlm.nih.gov/articles/PMC3949101/ <!-- connors2014 -->
 63. Lumbreras M, Sánchez J (1998). 3D aural interactive hyperstories for blind children (AudioDoom). ICDVRAT proceedings archive. https://oneswitch.org.uk/OS-REPOSITORY/MUSEUM/VARIOUS/VR/ICDArchive2021/1998/P/1998_16.pdf <!-- audiodoom1998 -->
 64. Paths to Literacy (Perkins School for the Blind and TSBVI). LEAP games using binaural sound. https://www.pathstoliteracy.org/resource/leap-games-using-binaural-sound <!-- leap -->
+65. NASA Ames Human Performance Research Group (1986-88). NASA Task Load Index (TLX), version 1.0, computerized version. https://ntrs.nasa.gov/citations/20000021487 <!-- tlx_ntrs -->
+66. Brooke J (1996). SUS: a quick and dirty usability scale. https://hell.meiert.org/core/pdf/sus.pdf <!-- brooke1996 -->
+67. Sauro J. Measuring usability with the System Usability Scale (SUS). MeasuringU. https://measuringu.com/sus/ <!-- sauro_sus -->
+68. Schrepp M (2023). User Experience Questionnaire handbook, version 11. https://www.ueq-online.org/Material/Handbook.pdf <!-- ueq_handbook -->
+69. Aalto Experience Platform. Fun Toolkit (after Read JC, MacFarlane S, IDC 2006). https://experience.aalto.fi/fun-toolkit/ <!-- funtoolkit -->
+70. Read JC, Horton M (2025). Using the Smileyometer to measure UX with children. Interact Comput. https://doi.org/10.1093/iwc/iwaf016 <!-- readhorton2025 -->
+71. Turner CF, Ku L, Rogers SM, et al. (1998). Adolescent sexual behavior, drug use, and violence: increased reporting with computer survey technology. Science 280:867-873 (abstract). https://pubmed.ncbi.nlm.nih.gov/9572724/ <!-- turner1998 -->
+72. Mack K, McDonnell E, Jain D, Wang LL, Froehlich JE, Findlater L (2021). What do we mean by "accessibility research"? A literature survey of accessibility papers in CHI and ASSETS from 1994 to 2019. Proc CHI '21. https://par.nsf.gov/servlets/purl/10353930 <!-- mack2021 -->
