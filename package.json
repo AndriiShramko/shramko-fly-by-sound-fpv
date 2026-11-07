@@ -1,0 +1,32 @@
+{
+  "name": "@shramko/sonic-fpv",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Fly by Sound: spatial audio cues, lessons and session format for flying an FPV drone by ear in the ShramkoGSFPV browser simulator",
+  "license": "MIT",
+  "author": "Andrii Shramko",
+  "homepage": "https://github.com/AndriiShramko/ShramkoSonicFPV",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AndriiShramko/ShramkoSonicFPV.git"
+  },
+  "type": "module",
+  "packageManager": "pnpm@11.5.0",
+  "engines": {
+    "node": ">=22.12"
+  },
+  "main": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./contract": "./src/contract.ts"
+  },
+  "sideEffects": false,
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.core.json",
+    "test": "vitest run --passWithNoTests"
+  },
+  "devDependencies": {
+    "typescript": "~6.0.3",
+    "vitest": "^5.0.1"
+  }
+}
