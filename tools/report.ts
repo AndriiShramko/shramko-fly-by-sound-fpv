@@ -358,8 +358,15 @@ export function buildReport(pkg: SessionPackage, options: ReportOptions = {}): R
     });
     const gates = attemptsOpen.flatMap((a) => a.gates);
 
-    // outcome
-    const passed = events.find((e) => e.kind === 'lesson' && e.what === 'passed');
+    // outcome: a lesson that is not blocking is ended by the runner after its blocks whatever the score, so a
+    // `passed` event only counts as a pass when the block just before it was passed (a `block-pass` event)
+    let passed: SessionEvent | undefined;
+    let previousLessonEvent = '';
+    for (const e of events) {
+        if (e.kind !== 'lesson') continue;
+        if (e.what === 'passed' && previousLessonEvent === 'block-pass' && passed === undefined) passed = e;
+        previousLessonEvent = e.what;
+    }
     const noLesson = m.lesson === null;
     const status: Report['outcome']['status'] = noLesson ? 'no-lesson' : passed !== undefined ? 'passed' : !m.complete ? 'incomplete' : 'not-passed';
     const answerEvents = events.filter((e): e is Extract<SessionEvent, { kind: 'answer' }> => e.kind === 'answer');

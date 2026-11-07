@@ -1,10 +1,12 @@
 // Tests written by the independent review of stage1-rc1 (docs/dev/review-stage-1.md): each one
 // fails on the code as reviewed and holds the fix of one confirmed defect.
 import { describe, expect, it } from 'vitest';
-import type { FlightSample, LessonLayers, SessionEvent } from '../src/contract';
+import type { FlightSample, LessonLayers, SessionEvent, SonicObject } from '../src/contract';
 import { DemoHost, type EngineLike } from '../demo/host';
 import { createLessonRunner, getLesson, type LessonSession, type RunnerAction } from '../src/lesson';
-import { yawQuat } from '../src/util/vec';
+import { quatRotate, yawQuat } from '../src/util/vec';
+import { buildReport, type Report } from '../tools/report';
+import { RecordingHost } from './helpers/record';
 
 type SayAction = Extract<RunnerAction, { kind: 'say' }>;
 const says = (actions: readonly RunnerAction[]): SayAction[] => actions.filter((a): a is SayAction => a.kind === 'say');
@@ -175,4 +177,42 @@ describe('review D3: the headphone check is about left and right, not about fron
         expect(answers.map((a) => a.item.split(':').slice(-1)[0])).toEqual(['side', 'side', 'front-back']);
         expect(answers[2]?.value).toBe(1);
     });
+});
+
+describe('review D4: the report does not call an optional lesson passed when no attempt was', () => {
+    // shapes-square is not blocking: after its block of 3 attempts the runner ends it ("passed") whatever the score
+    const run = async (fly: boolean): Promise<Report> => {
+        const host = new RecordingHost(getLesson('shapes-square'));
+        host.begin();
+        host.until(() => host.runner.phase === 'flying', 120);
+        if (fly) {
+            const gate = (host.world?.objects() ?? []).find((o) => o.order !== null) as SonicObject;
+            const f = quatRotate(gate.quat, [0, 0, -1]);
+            for (let k = 0; k < 2; k++) {
+                host.flyTo([gate.pos[0] - f[0] * 5, gate.pos[1] - f[1] * 5, gate.pos[2] - f[2] * 5], 5);
+                host.flyTo([gate.pos[0] + f[0] * 5, gate.pos[1] + f[1] * 5, gate.pos[2] + f[2] * 5], 5);
+                host.until(() => host.runner.phase === 'flying' || host.runner.phase === 'passed', 30);
+            }
+        }
+        host.until(() => host.runner.phase === 'passed', 900);
+        expect(host.runner.phase).toBe('passed'); // the runner ends the optional lesson either way
+        const { pkg } = await host.toPackage();
+        return buildReport(pkg, { replay: false });
+    };
+
+    it('a block in which every attempt failed is not a pass', async () => {
+        const r = await run(false);
+        expect(r.attempts.map((a) => a.result)).toEqual(['fail', 'fail']); // 2 of 3 needed: the block ends once it is out of reach
+        expect(r.outcome.success).toBe(false);
+        expect(r.outcome.status).toBe('not-passed');
+        expect(r.outcome.passedAtMs).toBeNull();
+    }, 60000);
+
+    it('a block that was passed still is one (negative control: the fix does not turn every optional lesson into a failure)', async () => {
+        const r = await run(true);
+        expect(r.attempts.filter((a) => a.result === 'pass').length).toBeGreaterThanOrEqual(2);
+        expect(r.outcome.success).toBe(true);
+        expect(r.outcome.status).toBe('passed');
+        expect(r.outcome.passedAtMs).not.toBeNull();
+    }, 60000);
 });
