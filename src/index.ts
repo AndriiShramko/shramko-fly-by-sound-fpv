@@ -7,6 +7,7 @@ export * from './cues';
 export * from './i18n';
 export * from './lesson';
 export * from './prefs';
+export * from './replay';
 export * from './sense';
 export * from './session';
 export * from './survey';
