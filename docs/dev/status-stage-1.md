@@ -4,8 +4,8 @@ Plan: ShramkoGSFPV `docs/wip/v12-plan.md`, section 4.1 (steps 1 to 13). Spec: `d
 
 ## Status
 
-- [x] 1 Tooling and layout (devDependencies at the simulator versions, tsconfig.core/node, layout rules in tools/check-layout.ts with test/layout.test.ts)
-- [ ] 2 Locales en, es, pl, ru, parity test
+- [x] 1 Tooling and layout, commit e65cc89 (devDependencies at the simulator versions, tsconfig.core/node, layout rules in tools/check-layout.ts with test/layout.test.ts)
+- [x] 2 Locales en, es, pl, ru, parity test (404 keys per language; formatter, translator, key catalogue, survey definitions, speech lint)
 - [ ] 3 Analytic worlds (`src/world/`)
 - [ ] 4 Scene sampler (`src/sense/`)
 - [ ] 5 Tracks, themes, prefs
@@ -24,7 +24,13 @@ None yet.
 
 ## Decisions and notes
 
-(filled in as the steps are done)
+Step 2, locales
+- Every locale file is flat: a SpeechLine key maps to a template. The formatter (`src/i18n/format.ts`) speaks one ICU subset: `{name}` and `{n, plural, one {# second} other {# seconds}}` (CLDR categories per language, `=0` exact branches, `#` is the number). No escaping, so a text never holds a literal brace. Spanish needs only one and other; Polish and Russian need one, few, many, other.
+- `src/i18n/catalog.ts` is the one list of keys (`requiredKeys()`): 20 cue ids, 21 lesson ids in ladder order with their line counts, the free keys, and the survey keys derived from `src/survey/defs.ts`. test/locales.test.ts holds all four files to that list, in that order, and to the documented arguments (the `ARGUMENTS` table there is the interface the lesson, menu and delivery code must fill).
+- Lesson ids for step 8 (module): ears-headphones, ears-glossary, ears-walls, ears-shapes, ears-game (0); hover-height, hover-turn (1); move-speed, move-stop (2); walls-hall, walls-pillar, walls-row (3); corridor (4); rings-first, rings-line, rings-small, rings-course (5); shapes-square, shapes-series, shapes-cube (6); free-garden (7). Each lesson has `title`, `intro.n`, `goal.n`, `pass`, `retry`, `hint.1`. A lesson file must use these ids and keys, and pass the parameters the text names (hover-height.goal.1 takes seconds, move-stop.intro.1 takes metres). The fast path flags are the lesson files' business.
+- Key letters are never written into lesson texts: the help, recording, sending and survey lines take `{key}` (and `{skip}`) from the host, so rebinding works. Directions `dir.<sector>` are stand-alone phrases ("On your left.") spoken before a preview.
+- Surveys are TypeScript data in `src/survey/defs.ts` (first flight 9 items, returning pilot 10, child 6). The workload scales are 0 to 9, not 0 to 10, so that one key press answers; convert with value * 100 / 9.
+- The speech lint (`tools/locale-lint.ts`) refuses empty or padded texts, more than 240 characters, characters a synthesiser reads badly, emoji, Latin words in Russian texts outside a short name list, Cyrillic in other languages, a plural block without its language's categories, and a text copied from English. Each rule has a negative control in the test.
 
 ## Risks for the next agent
 
