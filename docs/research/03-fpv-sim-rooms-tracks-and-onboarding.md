@@ -1,6 +1,6 @@
-# FPV simulator rooms, tracks and onboarding: what established products do and what ShramkoSonicFPV should build once
+# FPV simulator rooms, tracks and onboarding: what established products do and what Shramko Fly by Sound should build once
 
-Research note 03 for ShramkoSonicFPV, an open-source browser FPV simulator (WebGPU, Web Audio, PlayCanvas, TypeScript) that blind and low-vision pilots can fly by sound alone and sighted pilots can fly with headphones. Written 2026-11-07. Evidence tags: **MEASURED** (a study, a specification, a dataset or my own benchmark gives the number), **REPORTED** (a primary source such as a manual or patch notes states it, nothing was measured), **INFERRED** (my reasoning, not a fact). Numbers in brackets, such as [3], point to the Sources list.
+Research note 03 for Shramko Fly by Sound, an open-source browser FPV simulator (WebGPU, Web Audio, PlayCanvas, TypeScript) that blind and low-vision pilots can fly by sound alone and sighted pilots can fly with headphones. Written 2026-11-07. Evidence tags: **MEASURED** (a study, a specification, a dataset or my own benchmark gives the number), **REPORTED** (a primary source such as a manual or patch notes states it, nothing was measured), **INFERRED** (my reasoning, not a fact). Numbers in brackets, such as [3], point to the Sources list.
 
 ## Summary
 

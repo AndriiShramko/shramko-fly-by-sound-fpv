@@ -1,8 +1,23 @@
-# ShramkoSonicFPV
+# Shramko Fly by Sound
 
-**Fly by Sound**: an open-source sound engine, lessons and session format that let blind and low-vision pilots fly an FPV drone **by ear** in the [ShramkoGSFPV](https://github.com/AndriiShramko/ShramkoGSFPV) browser simulator (live at [gsfpv.flyreelstudio.eu](https://gsfpv.flyreelstudio.eu)), and let sighted pilots train their ears too. It is a game people choose to play. Nothing here claims therapy or medical benefit.
+**Fly an FPV drone by ear.** An open-source spatial-audio engine, step-by-step lessons and a flight-and-voice recorder that let **blind and low-vision pilots** learn to fly a drone in the free browser FPV simulator [ShramkoGSFPV](https://github.com/AndriiShramko/ShramkoGSFPV), and let sighted pilots train their ears. Walls, obstacles, gates and the way ahead become 3D sound on ordinary stereo headphones (HRTF), with music instead of noise and a voice that names things.
 
-Dependency-free TypeScript under the MIT licence. All sound is synthesised in the browser with Web Audio, with no sample files. No network at runtime, no keys, no personal data.
+**Simulator:** [gsfpv.flyreelstudio.eu](https://gsfpv.flyreelstudio.eu), free, in the browser. The sound mode reaches the live simulator with its next release; today you can run the [stand-alone demo](#try-it) on your computer.
+
+It is a game people choose to play. Nothing here claims therapy or medical benefit, and it is not a mobility aid. Dependency-free TypeScript under the MIT licence; all sound is synthesised in the browser with Web Audio, with no sample files. No network at runtime, no keys, no personal data.
+
+## Questions this answers
+
+- Can a blind person learn to fly an FPV drone, and what would it sound like?
+- How do I turn walls, obstacles and the next gate into 3D sound on two headphone speakers?
+- Is object-based HRTF or Ambisonics better on headphones, and which Ambisonics order is enough?
+- How do I code distance, height and speed in sound without overloading a beginner?
+- How do I keep many warning sounds musical instead of a cacophony?
+- How can blind children and students learn to move through 3D space by ear as a game?
+- How do I record a test flight with the tester's spoken comments and replay both in sync?
+- What headphone loudness is safe for children in a school test?
+
+The answers, with sources, are in [docs/research](docs/research) and [docs/design/stage-1-spec.md](docs/design/stage-1-spec.md).
 
 ## Who it is for
 
@@ -45,7 +60,7 @@ pnpm demo
 - **The flight demo**: the first lessons (hearing the sounds, hover, move and stop) flown with the keyboard (W S A D, arrows, N next, R reset, digits to answer, P pause) in a simple point-mass world. Press **Start the sound** first, with the volume low.
 - **The Sound Lab**: a slider for every layer's gain and pitch, every number of the theme, a preview of each of the 20 cues, and an export of the theme as a JSON file that goes into [themes/](themes) or to the author.
 
-Everything works with the keyboard alone, and a headless check proves it (`pnpm proof:audio`). `pnpm demo:build` writes the page to `demo/dist/`, a folder of three files that opens by double click or from any web server.
+Everything works with the keyboard alone, and a headless check proves it (`pnpm proof:audio`). `pnpm demo:build` writes the page to `demo/dist/`, a folder of three files that opens by double click or from any web server. Use wired headphones: Bluetooth adds 180-250 ms of delay.
 
 ## How it fits with the simulator
 
@@ -73,7 +88,7 @@ The report says whether the lesson was passed, the time, the touches, the time o
 
 ## Testing with people
 
-An agent cannot judge how a sound feels, so everything that can be measured is measured and the rest is for ears. [docs/testing](docs/testing) holds the **test protocol** for first-time and returning testers with the metrics, a **consent template** for parents and schools in Polish and English (marked as not legal advice), and a **school loudness sheet** (75 dBA for children, 80 dBA for adults).
+An agent cannot judge how a sound feels, so everything that can be measured is measured and the rest is for ears. [docs/testing](docs/testing) holds the **test protocol** for first-time and returning testers with the metrics, a **consent template** for parents and schools in Polish and English (marked as not legal advice), and a **school loudness sheet** (75 dBA for children, 80 dBA for adults). What can go wrong is listed in [docs/warnings.md](docs/warnings.md).
 
 ## Layout
 
@@ -98,12 +113,34 @@ pnpm test
 pnpm proof:audio
 ```
 
-`pnpm test` runs Node tests only. `pnpm proof:audio` renders the engine offline in headless Chrome and measures it (direction, pulse rate, ceiling, fade-in, voice budget), each check also run on an engine broken on purpose that must fail, and then drives the demo with the keyboard alone; the numbers go to `evidence/`. The progress of the work is in [docs/dev/status-stage-1.md](docs/dev/status-stage-1.md).
+`pnpm test` runs Node tests only. `pnpm proof:audio` renders the engine offline in headless Chrome and measures it (direction, pulse rate, ceiling, fade-in, voice budget), each check also run on an engine broken on purpose that must fail, and then drives the demo with the keyboard alone; the numbers go to `evidence/`. The progress of the work is in [docs/dev/status-stage-1.md](docs/dev/status-stage-1.md), the independent review in [docs/dev/review-stage-1.md](docs/dev/review-stage-1.md), the changes in [CHANGELOG.md](CHANGELOG.md).
+
+## For AI agents
+
+- [AGENT_SETUP.md](AGENT_SETUP.md): protocol for a user's AI agent (run the demo, read a recorded session, use the engine, update, remove).
+- [AGENTS.md](AGENTS.md): map and rules for coding agents.
+- [llms.txt](llms.txt): short facts for language models.
+- [SECURITY.md](SECURITY.md) and [docs/warnings.md](docs/warnings.md): privacy, hearing safety and what can go wrong.
+
+## Collaboration
+
+Spatial-audio researcher **Bartłomiej Mróz** (Gdańsk University of Technology) will help Andrii Shramko with the sound design. Schools, researchers, sound designers and pilots who want to test or improve Fly by Sound are welcome: write to the author below.
+
+## Author & working together
+
+<img src="docs/assets/andrii-shramko.webp" alt="Andrii Shramko" width="120" height="120" align="left">
+
+**Andrii Shramko** — I fly drones and scan cities and buildings as 3D Gaussian splats with drones and 360° cameras; ShramkoGSFPV lets anyone fly through those scans in a browser. I have wanted blind and low-vision people to fly drones since 2021, and a simulator is the safe place to start: by sound first, real drones later.
+
+**Open to interesting people and ready to help teams build ambitious projects** — accessible games, spatial audio, simulators, 3D scanning, VR, partnerships, licensing or funding. Get in touch:
+
+- 📅 Book a call: <https://calendar.app.google/Ff729HqGk4RpzPNDA>
+- 💼 LinkedIn: <https://www.linkedin.com/in/andrii-shramko/>
+- ✉️ Email: zmei116@gmail.com
+- 🐙 GitHub: <https://github.com/AndriiShramko>
+
+<br clear="left">
 
 ## Licence
 
-The code is under the **MIT licence**, see [LICENSE](LICENSE). The research and every other document under `docs/` are under **CC BY 4.0**, see [docs/LICENSE.md](docs/LICENSE.md).
-
-## Credits
-
-The sound design is developed by Andrii Shramko together with the spatial-audio researcher Bartłomiej Mróz (Gdansk University of Technology).
+The code is under the **MIT licence**, see [LICENSE](LICENSE). The research and every other document under `docs/` are under **CC BY 4.0**, see [docs/LICENSE.md](docs/LICENSE.md). Notices are in [NOTICE](NOTICE); to cite this work, use [CITATION.cff](CITATION.cff).

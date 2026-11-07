@@ -1,0 +1,15 @@
+Shramko Fly by Sound
+Copyright (c) 2026 Andrii Shramko — https://github.com/AndriiShramko — MIT License (see LICENSE).
+Documents under docs/ are licensed under CC BY 4.0 (see docs/LICENSE.md).
+
+Runtime: no third-party code. All sound is synthesised with the browser's Web Audio API; there are no
+sample files and no HRTF data sets in this repository. The panner uses the HRTF built into the browser.
+
+Development tools only (not shipped): TypeScript, Vite, Vitest, Playwright and @types/node, each under its
+own licence (see pnpm-lock.yaml).
+
+The research notes in docs/research cite and briefly quote published works; those works keep their own
+authors and licences. Measured HRTF sets named as a planned upgrade (SADIE II: Apache-2.0; HUTUBS:
+CC BY 4.0) are not included.
+
+Part of the ShramkoGSFPV browser FPV simulator: https://github.com/AndriiShramko/ShramkoGSFPV

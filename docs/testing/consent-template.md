@@ -27,7 +27,7 @@
 
 ## A1. Information for parents and guardians
 
-**Project:** Fly by Sound (ShramkoSonicFPV), an open-source sound engine and lessons that let people fly a simulated FPV drone by ear. It is a game that people choose to play. It is **not** a therapy, a medical device or a treatment, and nobody can promise it will help with anything beyond the game.
+**Project:** Shramko Fly by Sound, an open-source sound engine and lessons that let people fly a simulated FPV drone by ear. It is a game that people choose to play. It is **not** a therapy, a medical device or a treatment, and nobody can promise it will help with anything beyond the game.
 
 **What the test is:** your child sits at a computer with wired headphones and plays the first lessons of the game with a keyboard or a game controller. A helper (an adult from [the school or organisation]) sits beside the child. The child hears the instructions by voice and flies a small simulated drone through a room and through rings, guided only by sound. No real drone is flown. A session lasts at most [30] minutes and has breaks. Taking part is **voluntary**, has **no effect on marks** or on anything else at school, and your child can stop at any moment without giving a reason.
 
@@ -100,7 +100,7 @@ Head teacher: [name in print] Date: [ ] Signature and stamp: [ ]
 
 ## B1. Informacja dla rodziców i opiekunów prawnych
 
-**Projekt:** Fly by Sound (ShramkoSonicFPV), otwarty silnik dźwiękowy i lekcje, dzięki którym można pilotować symulowanego drona FPV „na słuch”. To gra, w którą ludzie grają z własnego wyboru. To **nie** jest terapia, wyrób medyczny ani leczenie i nikt nie może obiecać, że pomoże w czymkolwiek poza samą grą.
+**Projekt:** Shramko Fly by Sound, otwarty silnik dźwiękowy i lekcje, dzięki którym można pilotować symulowanego drona FPV „na słuch”. To gra, w którą ludzie grają z własnego wyboru. To **nie** jest terapia, wyrób medyczny ani leczenie i nikt nie może obiecać, że pomoże w czymkolwiek poza samą grą.
 
 **Na czym polega test:** Państwa dziecko siedzi przy komputerze w przewodowych słuchawkach i gra w pierwsze lekcje, używając klawiatury lub kontrolera do gier. Obok siedzi pomocnik (dorosła osoba z [szkoły lub organizacji]). Dziecko słyszy polecenia głosem i steruje małym symulowanym dronem w pomieszczeniu i przez obręcze, kierując się wyłącznie dźwiękiem. Żaden prawdziwy dron nie lata. Jedna sesja trwa najwyżej [30] minut i zawiera przerwy. Udział jest **dobrowolny**, **nie wpływa na oceny** ani na nic innego w szkole, a dziecko może przerwać w każdej chwili bez podawania powodu.
 

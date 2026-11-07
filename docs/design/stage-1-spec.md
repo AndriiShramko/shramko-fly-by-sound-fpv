@@ -100,7 +100,7 @@ Spoken and answered by number keys or by voice into the same recording. Two sets
 
 ## 11. Repositories
 
-- `ShramkoSonicFPV` (this repository, public): engine, themes, lessons, worlds, session format, report tool, a stand-alone demo page, research, docs. Dependency-free TypeScript. No keys, no personal data.
+- `shramko-fly-by-sound-fpv`, Shramko Fly by Sound (this repository, public): engine, themes, lessons, worlds, session format, report tool, a stand-alone demo page, research, docs. Dependency-free TypeScript. No keys, no personal data.
 - `ShramkoGSFPV` (the simulator): adapters to its flight loop, walls and UI, the API routes, the admin. It links this repository so that the link is visible on GitHub, and the README of each names the other.
 
 ## 12. Verification

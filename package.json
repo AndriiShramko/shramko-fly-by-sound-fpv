@@ -5,10 +5,10 @@
   "description": "Fly by Sound: spatial audio cues, lessons and session format for flying an FPV drone by ear in the ShramkoGSFPV browser simulator",
   "license": "MIT",
   "author": "Andrii Shramko",
-  "homepage": "https://github.com/AndriiShramko/ShramkoSonicFPV",
+  "homepage": "https://github.com/AndriiShramko/shramko-fly-by-sound-fpv",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/AndriiShramko/ShramkoSonicFPV.git"
+    "url": "git+https://github.com/AndriiShramko/shramko-fly-by-sound-fpv.git"
   },
   "type": "module",
   "packageManager": "pnpm@11.5.0",

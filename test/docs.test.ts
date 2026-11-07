@@ -42,7 +42,7 @@ describe('the README', () => {
             'docs/testing',
             'MIT licence',
             'CC BY 4.0',
-            'Andrii Shramko together with the spatial-audio researcher Bart\u0142omiej Mr\u00f3z (Gdansk University of Technology)'
+            'Spatial-audio researcher **Bart\u0142omiej Mr\u00f3z** (Gda\u0144sk University of Technology) will help Andrii Shramko with the sound design'
         ]) {
             expect(readme, text).toContain(text);
         }

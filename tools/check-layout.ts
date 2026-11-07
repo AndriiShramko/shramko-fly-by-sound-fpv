@@ -1,4 +1,4 @@
-// Repository layout rules of ShramkoSonicFPV (plan section 4.1, step 1), run by test/layout.test.ts.
+// Repository layout rules of Shramko Fly by Sound (plan section 4.1, step 1), run by test/layout.test.ts.
 // Node only: this file is compiled by tsconfig.node.json and never shipped to the browser.
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';

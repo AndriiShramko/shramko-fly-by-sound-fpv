@@ -1,0 +1,35 @@
+# Shramko Fly by Sound
+
+> Open-source (MIT) spatial-audio engine, lessons and flight recorder by Andrii Shramko that let blind and low-vision pilots learn to fly an FPV drone by ear in the free browser simulator ShramkoGSFPV (https://gsfpv.flyreelstudio.eu). Walls, obstacles, gates and the way ahead become object-based HRTF sound on stereo headphones, with consonant pentatonic cues and a voice that names things. Repository: https://github.com/AndriiShramko/shramko-fly-by-sound-fpv
+
+## Key facts
+
+- Principle: voice says what it is, music says where it is; a beginner hears one continuous stream and one event stream; never more than three hazard voices; danger first; no fail state.
+- Spatial audio: each important sound is its own object with its own HRTF panner (8 moving and 24 static voices in the browser's built-in HRTF). Ambisonics only for the ambience bed (order 3, at most 4 on one 32-channel bus); 5.1, 7.1 and Atmos beds add no resolution on headphones.
+- Layers: safety pulses with a period from time to collision, own height as pitch, speed as tempo, the next gate as a hum with a melody note, object shapes traced by a moving point, room ambience, speech with captions.
+- Output safety: limiter at -6 dBFS, one-second fade-in; wired headphones recommended (Bluetooth adds 180-250 ms).
+- Curriculum: 21 lessons in modules 0 to 7 (ears before arming, hover, move and stop, walls, corridor, rings, shapes, free flight) and a fast path of 7.
+- Session package: one zip with manifest, 30 Hz flight track, events, optional voice (Opus) and survey; replay re-derives events and cues; a report tool turns it into a timeline and metrics.
+- Languages: English, Spanish, Polish, Russian. Keyboard and screen-reader friendly.
+- It is a game, not a therapy, not a medical device and not a mobility aid.
+
+## Docs
+
+- [README](https://github.com/AndriiShramko/shramko-fly-by-sound-fpv#readme): overview, demo, how it fits with the simulator
+- [Stage 1 specification](https://github.com/AndriiShramko/shramko-fly-by-sound-fpv/blob/main/docs/design/stage-1-spec.md): the sound language, curriculum, session format and delivery
+- [Research: spatial audio on headphones](https://github.com/AndriiShramko/shramko-fly-by-sound-fpv/blob/main/docs/research/01-spatial-audio-on-headphones.md): HRTF versus Ambisonics orders, elevation, distance, latency, loudness
+- [Research: sensory substitution and training](https://github.com/AndriiShramko/shramko-fly-by-sound-fpv/blob/main/docs/research/02-sensory-substitution-and-training.md): how people learn to hear space, lessons, surveys, children
+- [Research: FPV simulator rooms, tracks and onboarding](https://github.com/AndriiShramko/shramko-fly-by-sound-fpv/blob/main/docs/research/03-fpv-sim-rooms-tracks-and-onboarding.md): multiplayer rooms, track generation and ratings
+- [Testing with people](https://github.com/AndriiShramko/shramko-fly-by-sound-fpv/tree/main/docs/testing): test protocol, consent template, school loudness sheet
+- [Warnings](https://github.com/AndriiShramko/shramko-fly-by-sound-fpv/blob/main/docs/warnings.md): hearing safety and limits
+
+## For agents
+
+- [AGENT_SETUP.md](https://github.com/AndriiShramko/shramko-fly-by-sound-fpv/blob/main/AGENT_SETUP.md): run the demo, analyse a recorded flight, use the engine
+- [AGENTS.md](https://github.com/AndriiShramko/shramko-fly-by-sound-fpv/blob/main/AGENTS.md): code map and rules
+- [ShramkoGSFPV simulator](https://github.com/AndriiShramko/ShramkoGSFPV): the browser FPV simulator in 3D Gaussian splat scenes that hosts Fly by Sound
+
+## Author
+
+- [Andrii Shramko on LinkedIn](https://www.linkedin.com/in/andrii-shramko/): drone 3D Gaussian splat scans of cities and buildings; open to collaboration, partnerships, licensing and funding
+- [Book a call](https://calendar.app.google/Ff729HqGk4RpzPNDA)
