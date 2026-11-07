@@ -625,6 +625,10 @@ class Runner implements LessonSession {
                 question: { id: `${this.lesson.id}:${this.attemptNo}:${i + 1}:${lateral ? 'side' : 'front-back'}`, lines: [{ key: lateral ? 'headphones.q-side' : 'headphones.q-front-back' }], options: 3, skippable: true },
                 onAnswer: (value) => {
                     this.earsScore.answers.push(value);
+                    // only left and right are graded: the check is that the headphones are the right way round, and telling
+                    // front from behind with a generic HRTF is unreliable (research 01: 10 to 50 % reversals), so that answer is
+                    // asked and recorded for the report but never fails the check
+                    if (!lateral) return;
                     this.earsScore.whereAsked++;
                     if (value === correct) this.earsScore.where++;
                 }
@@ -696,7 +700,8 @@ class Runner implements LessonSession {
         this.lesson.goals.forEach((g, index) => {
             if (g.kind === 'name-cues') results.push({ index, met: g.trials === 0 ? true : sc.whatAsked > 0 && sc.what / g.trials >= NAME_SHARE });
             else if (g.kind === 'locate') {
-                const asked = names !== null && names.trials > 0 ? 2 * g.trials : g.trials;
+                // the headphone check grades the left and right trials it asked (not the front and behind one)
+                const asked = names !== null && names.trials > 0 ? 2 * g.trials : Math.max(1, sc.whereAsked);
                 const right = names !== null && names.trials > 0 ? sc.where + sc.moving : sc.where;
                 results.push({ index, met: right / asked >= LOCATE_SHARE });
             }

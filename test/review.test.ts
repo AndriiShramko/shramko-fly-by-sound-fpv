@@ -119,3 +119,60 @@ describe('review D1: leaving a lesson makes the engine quiet', () => {
         expect(layers.at(-1)?.on).toContain('target');
     });
 });
+
+/** Plays the headphone check with a scripted pilot who answers by question id; speaks every line at once. */
+function playHeadphoneCheck(answer: (questionId: string) => number, seconds = 120): { readonly said: string[]; readonly events: SessionEvent[]; readonly run: LessonSession } {
+    const run = createLessonRunner(getLesson('ears-headphones'));
+    const said: string[] = [];
+    const events: SessionEvent[] = [];
+    let t = 0;
+    const take = (): void => {
+        for (let guard = 0; guard < 50; guard++) {
+            const actions = run.takeActions();
+            if (actions.length === 0) return;
+            for (const a of actions) if (a.kind === 'say') said.push(a.line.key);
+            if (actions.some((a) => a.kind === 'say')) events.push(...run.spoken(t));
+            for (const a of actions) if (a.kind === 'ask') events.push(...run.answer(answer(a.question.id), 'key', t));
+        }
+    };
+    events.push(...run.begin(t));
+    take();
+    for (; t < seconds * 1000 && run.phase !== 'passed' && !events.some((e) => e.kind === 'lesson' && e.what === 'attempt-fail'); t += 50) {
+        events.push(...run.step(sampleAt(t), null));
+        take();
+    }
+    return { said, events, run };
+}
+
+// the check puts a sound on the left, on the right and behind; its question ids end in :side or :front-back
+const lateralRight = (id: string): number => (id.split(':')[2] === '1' ? 1 : 2);
+
+describe('review D3: the headphone check is about left and right, not about front and back', () => {
+    it('a pilot who tells left from right passes whatever they say about front and behind', () => {
+        for (const frontBack of [1, 3]) {
+            // 1: heard the sound behind as in front (a front/back reversal), 3: "not sure"
+            const r = playHeadphoneCheck((id) => (id.endsWith(':side') ? lateralRight(id) : frontBack));
+            expect(r.run.phase, `front/back answer ${frontBack}`).toBe('passed');
+            expect(r.said).toContain('headphones.good');
+            expect(r.said).not.toContain('headphones.unclear');
+        }
+    });
+
+    it('stays strict where it must: swapped or unsure left and right still fail, with their own message', () => {
+        const swapped = playHeadphoneCheck((id) => (id.endsWith(':side') ? 3 - lateralRight(id) : 2));
+        expect(swapped.run.phase).not.toBe('passed');
+        expect(swapped.said).toContain('headphones.swapped');
+        const unsure = playHeadphoneCheck((id) => (id.endsWith(':side') ? 3 : 2));
+        expect(unsure.run.phase).not.toBe('passed');
+        expect(unsure.said).toContain('headphones.unclear');
+        const oneWrong = playHeadphoneCheck((id) => (id.endsWith(':side') ? (id.split(':')[2] === '1' ? 1 : 1) : 2));
+        expect(oneWrong.run.phase).not.toBe('passed');
+    });
+
+    it('still asks the front and behind question and records the answer for the report', () => {
+        const r = playHeadphoneCheck((id) => (id.endsWith(':side') ? lateralRight(id) : 1));
+        const answers = r.events.filter((e): e is Extract<SessionEvent, { kind: 'answer' }> => e.kind === 'answer');
+        expect(answers.map((a) => a.item.split(':').slice(-1)[0])).toEqual(['side', 'side', 'front-back']);
+        expect(answers[2]?.value).toBe(1);
+    });
+});
