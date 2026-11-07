@@ -3,7 +3,7 @@
 // pulses, less roughness, duller far sounds. It is data, so the Sound Lab can show what it does.
 import type { LayerId, ThemeDef } from '../contract';
 import { LAYER_IDS } from '../contract';
-import { LAYER_PARAMS } from './schema';
+import { LAYER_PARAMS, PARAM_ORDER } from './schema';
 
 export interface PresetRule {
     readonly layer: LayerId;
@@ -56,6 +56,16 @@ export function applyPreset(theme: ThemeDef, preset: ThemePreset): ThemeDef {
             const raw = rule.op === 'mul' ? current * rule.by : current + rule.by;
             const clamped = Math.min(Math.max(raw, spec.min), spec.max);
             params[rule.param] = spec.integer ? Math.round(clamped) : Math.round(clamped * 1e6) / 1e6;
+        }
+        // a pair that the rules would turn the wrong way round (a theme whose two numbers sit close together, each
+        // changed by its own factor) stays as the theme has it: a preset must not make a valid theme invalid
+        for (const order of PARAM_ORDER) {
+            if (order.layer !== id) continue;
+            const low = params[order.low];
+            const high = params[order.high];
+            if (low === undefined || high === undefined || low < high) continue;
+            params[order.low] = layer.params[order.low] as number;
+            params[order.high] = layer.params[order.high] as number;
         }
         const gainDb = Math.min(Math.max(layer.gainDb + (preset.gainOffsetDb[id] ?? 0), -40), 12);
         layers[id] = { gainDb, timbre: layer.timbre, params };

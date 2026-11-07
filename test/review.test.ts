@@ -1,9 +1,10 @@
 // Tests written by the independent review of stage1-rc1 (docs/dev/review-stage-1.md): each one
 // fails on the code as reviewed and holds the fix of one confirmed defect.
 import { describe, expect, it } from 'vitest';
-import type { FlightSample, Goal, LessonLayers, Pose, SessionEvent, SonicObject } from '../src/contract';
+import type { FlightSample, Goal, LayerId, LessonLayers, Pose, SessionEvent, SonicObject, ThemeDef } from '../src/contract';
 import { DemoHost, type EngineLike } from '../demo/host';
 import { createLessonRunner, getLesson, SHIPPED_LESSON_IDS, type LessonSession, type RunnerAction } from '../src/lesson';
+import { applyCalm, getBuiltinTheme, validateTheme } from '../src/theme';
 import { quatRotate, yawQuat } from '../src/util/vec';
 import { createAnalyticWorld } from '../src/world';
 import { buildReport, type Report } from '../tools/report';
@@ -275,6 +276,37 @@ describe('review D5: no attempt of a flying lesson can be passed without a singl
             const bearing = (Math.atan2(ring.pos[0] - p.pos[0], -(ring.pos[2] - p.pos[2])) * 180) / Math.PI;
             const off = Math.abs(((((bearing - p.yawDeg) % 360) + 540) % 360) - 180);
             expect(off, `start ${i + 1} (yaw ${p.yawDeg}): the sound is ${off.toFixed(1)} degrees off the nose`).toBeGreaterThanOrEqual(45);
+        }
+    });
+});
+
+describe('review D6: the calm preset keeps a valid theme valid', () => {
+    const soft = getBuiltinTheme('soft');
+    const themeWith = (layer: LayerId, params: Record<string, number>): ThemeDef => ({ ...soft, id: 'tight', layers: { ...soft.layers, [layer]: { ...soft.layers[layer], params: { ...soft.layers[layer].params, ...params } } } });
+    // a pair of parameters that sit close together inside their ranges: a flat pulse, a flat tick, a narrow hum rate
+    const TIGHT: readonly [string, ThemeDef][] = [
+        ['pulse periods 299 and 300 ms', themeWith('safety', { periodNearMs: 299, periodFarMs: 300 })],
+        ['low-pass 15999 and 16000 Hz', themeWith('safety', { lowpassFarHz: 15999, lowpassNearHz: 16000 })],
+        ['tick rates 5 and 6 Hz', themeWith('speed', { tempoMinHz: 5, tempoMaxHz: 6 })],
+        ['hum rates 3.9 and 4 Hz', themeWith('target', { rateFarHz: 3.9, rateNearHz: 4 })],
+        ['reverb 0.44 and 0.45', themeWith('room', { reverbMin: 0.44, reverbMax: 0.45 })]
+    ];
+
+    it('every ordering rule of the schema still holds after the preset, also for themes whose pairs sit close together', () => {
+        for (const [name, theme] of TIGHT) {
+            expect(validateTheme(theme).ok, `${name}: the theme is valid to begin with`).toBe(true);
+            const calm = validateTheme(applyCalm(theme));
+            expect(calm.ok ? [] : calm.issues.map((i) => `${i.path}: ${i.message}`), `${name}: the calm version`).toEqual([]);
+        }
+    });
+
+    it('still makes the shipped themes calm (negative control: the repair does not switch the preset off)', () => {
+        for (const id of ['soft', 'clear', 'race'] as const) {
+            const t = getBuiltinTheme(id);
+            const calm = applyCalm(t);
+            expect(calm.layers.safety.params['periodNearMs']).toBeGreaterThan(t.layers.safety.params['periodNearMs'] as number);
+            expect(calm.layers.target.params['rateNearHz']).toBeLessThan(t.layers.target.params['rateNearHz'] as number);
+            expect(calm.layers.speed.params['tempoMaxHz']).toBeLessThan(t.layers.speed.params['tempoMaxHz'] as number);
         }
     });
 });
