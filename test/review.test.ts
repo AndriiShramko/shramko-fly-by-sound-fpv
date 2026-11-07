@@ -1,7 +1,8 @@
 // Tests written by the independent review of stage1-rc1 (docs/dev/review-stage-1.md): each one
 // fails on the code as reviewed and holds the fix of one confirmed defect.
 import { describe, expect, it } from 'vitest';
-import type { FlightSample, SessionEvent } from '../src/contract';
+import type { FlightSample, LessonLayers, SessionEvent } from '../src/contract';
+import { DemoHost, type EngineLike } from '../demo/host';
 import { createLessonRunner, getLesson, type LessonSession, type RunnerAction } from '../src/lesson';
 import { yawQuat } from '../src/util/vec';
 
@@ -101,5 +102,20 @@ describe('review D2: a key the pilot presses cuts the speech in progress', () =>
         const cp = says(run.takeActions());
         expect(cp[0]?.line.key).toBe('fly.reset-checkpoint');
         expect(cp[0]?.interrupt).toBe(true);
+    });
+});
+
+describe('review D1: leaving a lesson makes the engine quiet', () => {
+    it('the engine is told that no layer sounds once the lesson is left, and hears the next lesson\'s layers again', () => {
+        const layers: LessonLayers[] = [];
+        const engine: EngineLike = { update: () => undefined, cue: () => undefined, say: () => Promise.resolve(), setLayers: (l) => void layers.push(l) };
+        const host = new DemoHost({ engine, locale: 'en' });
+        host.open('hover-height', 0);
+        expect(layers.at(-1)?.on).toContain('height');
+        host.leave();
+        // the engine re-plans the last frame for as long as no new one comes: only an empty layer set silences it
+        expect(layers.at(-1)?.on, 'the height tone of the lesson left must not go on sounding').toEqual([]);
+        host.open('hover-turn', 100);
+        expect(layers.at(-1)?.on).toContain('target');
     });
 });

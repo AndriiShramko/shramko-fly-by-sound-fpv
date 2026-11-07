@@ -104,14 +104,16 @@ export class DemoHost {
         this.handle(runner, runner.takeActions());
     }
 
-    /** Leaves the lesson: nothing is flown, the engine keeps no hazards. */
+    /** Leaves the lesson: nothing is flown, and the engine keeps no layer (it would go on sounding the last frame it was given). */
     leave(): void {
+        const wasOpen = this.lessonValue !== null;
         this.lessonValue = null;
         this.runner = null;
         this.world = null;
         this.craft = null;
         this.sceneOn = false;
         this.speaking = 0;
+        if (wasOpen) this.engine.setLayers({ on: [], heightBandM: null, hazardVoices: 3 });
         if (this.questionValue !== null) {
             this.questionValue = null;
             this.ui?.ask(null);
