@@ -69,8 +69,9 @@ function start(): void {
 
     const now = (): number => performance.now() - t0;
 
-    function caption(text: string): void {
-        const p = el('p', {}, text);
+    /** `lang`: the language of the text (the page's own messages are English, a spoken line is in the pilot's language), so a screen reader picks its voice */
+    function caption(text: string, lang: string = 'en'): void {
+        const p = el('p', { lang }, text);
         captions.append(p);
         captionCount++;
         while (captions.childElementCount > MAX_CAPTIONS) captions.firstElementChild?.remove();
@@ -84,7 +85,7 @@ function start(): void {
         for (const module of [0, 1, 2]) {
             const ul = el('ul', { class: 'lessons' });
             for (const spec of DEMO_LESSONS.filter((l) => l.module === module)) {
-                const b = el('button', { type: 'button', 'data-lesson': spec.id }, tr.text({ key: `lesson.${spec.id}.title` }));
+                const b = el('button', { type: 'button', 'data-lesson': spec.id, lang: locale }, tr.text({ key: `lesson.${spec.id}.title` }));
                 b.addEventListener('click', () => openLesson(spec.id));
                 ul.append(el('li', {}, b));
             }
@@ -115,6 +116,7 @@ function start(): void {
         flight.hidden = false;
         const tr = createTranslator(locale, DICTS);
         byId('lesson-title').textContent = tr.text({ key: `lesson.${id}.title` });
+        byId('lesson-title').setAttribute('lang', locale);
         byId('flight-h').focus();
     }
 
@@ -134,7 +136,7 @@ function start(): void {
         byId<HTMLButtonElement>('pause').setAttribute('aria-pressed', String(on));
         if (on) void engine.suspend();
         else void engine.resume();
-        caption(createTranslator(locale, DICTS).text({ key: on ? 'fly.paused' : 'fly.resumed' } as SpeechLine));
+        caption(createTranslator(locale, DICTS).text({ key: on ? 'fly.paused' : 'fly.resumed' } as SpeechLine), locale);
     }
 
     // ---------------------------------------------------------------- keys
@@ -249,7 +251,7 @@ function start(): void {
             theme: getBuiltinTheme('soft'),
             prefs: { ...defaultPrefs(), selfVoice: !reader },
             locale,
-            caption,
+            caption: (text) => caption(text, locale),
             ...(reader ? { speech: null } : {})
         });
         e.start(context).then(
