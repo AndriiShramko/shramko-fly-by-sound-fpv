@@ -29,7 +29,30 @@ Research note 02 for ShramkoSonicFPV, an open-source browser FPV drone simulator
 
 ## 2. Sound design for non-speech displays
 
-(pending)
+Cue types and what the evidence says:
+
+| Type | Result | Strength |
+|---|---|---|
+| Earcons (abstract musical motifs), auditory icons (real-world sounds), spearcons (speech sped up until it stops sounding like speech) | In five menu experiments spearcons beat earcons, auditory icons and hybrids on speed, accuracy and learning rate, and were about as learnable as plain speech [13] | MEASURED |
+| Several earcons at once | Identification falls as their number rises; a different timbre per earcon and a 300 ms onset-to-onset stagger raise it significantly [14] | MEASURED |
+| Parameter-mapping sonification (data value to a sound parameter, which is what a flight display is) | Review of 179 papers: pitch is the most used parameter, horizontal quantities are mostly rendered by spatial position and vertical ones by pitch; only 30 of 495 mappings (6.1%) were tested objectively, and polarity was not examined [15] | REPORTED (review of design practice) |
+
+Mapping polarity, the direction in which a quantity maps to a sound:
+
+| Mapping | Evidence | Strength |
+|---|---|---|
+| Height to pitch | In sighted adults pitch maps spontaneously to vertical position, size and spatial frequency [16]; the pairing depends on language (Dutch "high/low" versus Farsi "thin/thick") [17]. In 24 early, late and congenitally blind adults, pitch change showed no congruency with the direction of a touch movement, while sighted adults did; the authors warn that vOICe-type designs assumed this link without testing it with blind users [18] | MEASURED |
+| Speed to tempo | Faster tempo means faster speed for almost all sighted and blind listeners [19] | MEASURED |
+| Size to pitch | Split about evenly in both groups, so avoid it; blind and sighted polarities agree overall (r = 0.82) but differ on some pairs, and early-blind listeners flipped one pair [19] | MEASURED |
+| Closeness to pulse rate | Rate inversely proportional to distance, 1-15 Hz, exponential, plus a final "ping": 9 severely impaired walkers made smaller turn and path errors than with a single ping; some found the ticking annoying and masking [20] | MEASURED, n = 9 |
+| Time to collision | Looming warnings that signal the true time to collision gave 80-160 ms faster braking than other non-looming warnings; braking time grew steadily as the signalled time to collision went from early to true to late (20 drivers) [21]; looming sounds are heard as faster than receding ones [22] | MEASURED |
+
+- Pulses or a continuous tone: car parking aids pulse faster as the obstacle nears and switch to a continuous tone under 30 cm [23] (REPORTED, one manual). A continuous exponential tick was more accurate than discrete scale notes on long straight approaches; the authors attribute this to notes arriving too far apart to make the walker slow down [20] (MEASURED result, REPORTED explanation). I found no controlled study of pulse versus continuous tone for parking aids.
+- Complexity costs time: in VR aiming at invisible targets (24 sighted people) pitch alone, pitch plus tempo and binary pitch plus tempo gave equal accuracy; a three-parameter display (Shepard tone, beats, roughness) was slower (median 15.8 s against 10.9-13.3 s), rated more demanding (NASA-TLX 52 against 42) and less usable (SUS 49 against 77). Audio-only aiming was more accurate than vision but 7 to 10 times slower (median 1.5 s with vision) [24] (MEASURED, sighted only).
+- Cacophony: timbre and spatial position are the simple tools for keeping streams apart; dynamic pitch is a poor separator because it already carries data [25] (REPORTED), and an assistive display must convey only vital information to avoid overload [3] (REPORTED). I found no measured limit on how many non-speech streams can be tracked during a motor task.
+- Musical structure: EyeMusic used a pentatonic scale on natural instruments to be pleasant [5]; a rising C-major scale of eight steps plus a final ping guided turns better than a lone ping, but one blind walker disliked music-like cues and another said he had to focus on the sound [20] (MEASURED). Roughness (amplitude modulation at 30-150 Hz) is the acoustic mark of screams and artificial alarms, and rougher sounds were rated more alarming [26] (MEASURED). Liking for consonance is learned, not universal: Tsimane' listeners rated consonant and dissonant chords equally pleasant yet reacted to roughness as Westerners do [27] (MEASURED).
+- Harmony as guidance: the Bremen group reports that roughness and beating give an "innate" calm-to-urgent cue and that novices reach 4 mm invisible targets with it [28] (REPORTED by the authors), yet the three-parameter display above was the slowest for novices [24]. No study I opened compares dissonance with simple pitch or tempo as an off-course signal for blind users.
+- Design consequences (INFERRED): use pitch for height only after teaching it and offer an inverted setting; map tempo to speed; drive hazard pulses from time to collision, not distance; keep one continuous stream plus one event stream, each with its own timbre and stereo position, and stagger events by at least 300 ms; carry "off course" with roughness added to a consonant tone, not with wrong notes.
 
 ## 3. Conveying shape by sound
 
@@ -81,3 +104,19 @@ Research note 02 for ShramkoSonicFPV, an open-source browser FPV drone simulator
 10. Maidenbaum S, Arbel R, Buchs G, Shapira S, Amedi A (2014). Vision through other senses: practical use of sensory substitution devices as assistive technology for visual rehabilitation (conference paper). https://www.runi.ac.il/media/yn0liz2u/46b504_ed97f61490af4fb78110d0b64c7b41a0.pdf <!-- maidenbaum2014 -->
 11. Novich SD, Eagleman DM (2015). Using space and time to encode vibrotactile information: toward an estimate of the skin's achievable throughput. Exp Brain Res 233:2777-2788 (abstract). https://pubmed.ncbi.nlm.nih.gov/26080756/ <!-- novich2015 -->
 12. Elli GV, Benetti S, Collignon O (2014). Is there a future for sensory substitution outside academic laboratories? Multisens Res 27:271-291. https://research.dial.uclouvain.be/handle/2078.5/176349 <!-- elli2014 -->
+13. Walker BN, Lindsay J, Nance A, et al. (2013). Spearcons (speech-based earcons) improve navigation performance in advanced auditory menus. Hum Factors 55(1):157-182 (abstract). https://pubmed.ncbi.nlm.nih.gov/23516800/ <!-- walker2013 -->
+14. McGookin DK, Brewster SA (2004). Understanding concurrent earcons: applying auditory scene analysis principles to concurrent earcon recognition. ACM Trans Appl Percept 1(2):130-155 (abstract). https://eprints.gla.ac.uk/3281/ <!-- mcgookin2004 -->
+15. Dubus G, Bresin R (2013). A systematic review of mapping strategies for the sonification of physical quantities. PLoS ONE 8(12):e82491. https://pmc.ncbi.nlm.nih.gov/articles/PMC3866150/ <!-- dubus2013 -->
+16. Evans KK, Treisman A (2010). Natural cross-modal mappings between visual and auditory features. J Vis 10(1):6. https://pmc.ncbi.nlm.nih.gov/articles/PMC2920420/ <!-- evans2010 -->
+17. Dolscheid S, Shayan S, Majid A, Casasanto D (2013). The thickness of musical pitch: psychophysical evidence for linguistic relativity. Psychol Sci 24(5):613-621 (abstract). https://pubmed.ncbi.nlm.nih.gov/23538914/ <!-- dolscheid2013 -->
+18. Deroy O, et al. (2016). Differentiated audio-tactile correspondences in sighted and blind individuals. J Exp Psychol Hum Percept Perform 42(8):1204-1214. https://sas-space.sas.ac.uk/6569/1/OD-ET-AL-JEP-16.pdf <!-- deroy2016 -->
+19. Walker BN, Mauney LM (2010). Universal design of auditory graphs: a comparison of sonification mappings for visually impaired and sighted listeners. ACM Trans Access Comput 2(3):12. https://wirelessrerc.gatech.edu/sites/default/files/publications/walker_et_al_-_a_comparison_of_sonification_mappings.pdf <!-- walker2010 -->
+20. Ahmetovic D, et al. (2023). Sonification of navigation instructions for people with visual impairment. Int J Hum-Comput Stud 177:103057. https://ludovico.lim.di.unimi.it/download/papers/IJHCS2023.pdf <!-- ahmetovic2023 -->
+21. Gray R (2011). Looming auditory collision warnings for driving. Hum Factors 53(1):63-74 (abstract). https://pubmed.ncbi.nlm.nih.gov/21469534/ <!-- gray2011 -->
+22. Neuhoff JG (2016). Looming sounds are perceived as faster than receding sounds. Cogn Res Princ Implic 1:15. https://pmc.ncbi.nlm.nih.gov/articles/PMC5256440/ <!-- neuhoff2016 -->
+23. BMW 3 series (E46) owner's manual, parking distance control sound signals (web transcription). https://www.bmwman.ru/en/3er/E46/main/manual/signalizaciya-avariynogo-sblizheniya-pri-parkovke-pdc <!-- bmw_pdc -->
+24. Apavou F, Bouchara T, Bourdot P (2024). Accessibility of shooting task for blind and visually impaired: a sonification method comparison. Proc ICAD 2024. https://icad2024.icad.org/wp-content/uploads/2024/06/ICAD_2024_paper_12.pdf <!-- apavou2024 -->
+25. Walker BN, Nees MA (2011). Theory of sonification. In: Hermann T, Hunt A, Neuhoff JG (eds), The Sonification Handbook, ch. 2. https://sonification.de/handbook/download/TheSonificationHandbook-chapter2.pdf <!-- sonhb2 -->
+26. Arnal LH, Flinker A, Kleinschmidt A, Giraud AL, Poeppel D (2015). Human screams occupy a privileged niche in the communication soundscape. Curr Biol 25(15):2051-2056. https://pmc.ncbi.nlm.nih.gov/articles/PMC4562283/ <!-- arnal2015 -->
+27. McDermott JH, Schultz AF, Undurraga EA, Godoy RA (2016). Indifference to dissonance in native Amazonians reveals cultural variation in music perception. Nature 535:547-550 (abstract). https://pubmed.ncbi.nlm.nih.gov/27409816/ <!-- mcdermott2016 -->
+28. Ziemer T, Nuchprayoon N, Schultheis H (2019). Psychoacoustic sonification as user interface for human-machine interaction. arXiv:1912.08609. https://arxiv.org/abs/1912.08609 <!-- ziemer2019 -->
