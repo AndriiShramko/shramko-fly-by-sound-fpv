@@ -1,0 +1,276 @@
+{
+  "what": "Fly by Sound audio proofs: the real engine rendered offline in headless Chromium, each check also run on an engine broken on purpose (control), which must fail",
+  "run": "pnpm proof:audio",
+  "date": "2026-11-07T11:16:12.890Z",
+  "browser": "156.0.8078.80",
+  "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36",
+  "sampleRate": 48000,
+  "proofs": [
+    {
+      "name": "direction",
+      "claim": "a wall on the left is heard on the left and one on the right on the right: louder in the near ear over the whole band (2 dB or more) and above 2 kHz (8 dB or more), and earlier in the near ear below 800 Hz (0.25 ms or more)",
+      "shipped": {
+        "ok": true,
+        "measured": {
+          "leftWall": {
+            "LminusRdb": 3.1,
+            "LminusRdbAbove2kHz": 17.96,
+            "leftLeadsMsBelow800Hz": 0.813
+          },
+          "rightWall": {
+            "LminusRdb": -3.25,
+            "LminusRdbAbove2kHz": -17.42,
+            "leftLeadsMsBelow800Hz": -0.812
+          },
+          "thresholds": {
+            "broadDb": 2,
+            "above2kHzDb": 8,
+            "leadMs": 0.25
+          }
+        }
+      },
+      "control": {
+        "ok": false,
+        "measured": {
+          "leftWall": {
+            "LminusRdb": -0.05,
+            "LminusRdbAbove2kHz": 0.36,
+            "leftLeadsMsBelow800Hz": 0
+          },
+          "rightWall": {
+            "LminusRdb": -0.05,
+            "LminusRdbAbove2kHz": 0.36,
+            "leftLeadsMsBelow800Hz": 0
+          },
+          "thresholds": {
+            "broadDb": 2,
+            "above2kHzDb": 8,
+            "leadMs": 0.25
+          }
+        },
+        "broken": "HRTF panner bypassed: both ears get the same signal"
+      },
+      "pass": true
+    },
+    {
+      "name": "pulse-rate",
+      "claim": "the safety pulse period matches the time-to-collision rule within 5 % for times to collision of 0.6, 1.2, 2 and 3 s",
+      "shipped": {
+        "ok": true,
+        "measured": {
+          "cases": [
+            {
+              "ttcS": 0.6,
+              "expectedS": 0.1611,
+              "measuredS": 0.161,
+              "relError": 0.0006,
+              "pulses": 15
+            },
+            {
+              "ttcS": 1.2,
+              "expectedS": 0.2359,
+              "measuredS": 0.236,
+              "relError": 0.0002,
+              "pulses": 11
+            },
+            {
+              "ttcS": 2,
+              "expectedS": 0.3924,
+              "measuredS": 0.392,
+              "relError": 0.0011,
+              "pulses": 8
+            },
+            {
+              "ttcS": 3,
+              "expectedS": 0.7412,
+              "measuredS": 0.741,
+              "relError": 0.0003,
+              "pulses": 7
+            }
+          ],
+          "tolerance": 0.05
+        }
+      },
+      "control": {
+        "ok": false,
+        "measured": {
+          "cases": [
+            {
+              "ttcS": 0.6,
+              "expectedS": 0.1611,
+              "measuredS": 0.186,
+              "relError": 0.1545,
+              "pulses": 14
+            },
+            {
+              "ttcS": 1.2,
+              "expectedS": 0.2359,
+              "measuredS": 0.272,
+              "relError": 0.1528,
+              "pulses": 9
+            },
+            {
+              "ttcS": 2,
+              "expectedS": 0.3924,
+              "measuredS": 0.452,
+              "relError": 0.1518,
+              "pulses": 7
+            },
+            {
+              "ttcS": 3,
+              "expectedS": 0.7412,
+              "measuredS": 0.852,
+              "relError": 0.1495,
+              "pulses": 6
+            }
+          ],
+          "tolerance": 0.05
+        },
+        "broken": "every pulse period stretched by 15 %"
+      },
+      "pass": true
+    },
+    {
+      "name": "ceiling",
+      "claim": "with every layer at its maximum gain and everything sounding at once, no sample passes -6 dBFS",
+      "shipped": {
+        "ok": true,
+        "measured": {
+          "peak": 0.50084,
+          "peakDbfs": -6.01,
+          "ceilingDbfs": -6
+        }
+      },
+      "control": {
+        "ok": false,
+        "measured": {
+          "peak": 3.82001,
+          "peakDbfs": 11.64,
+          "ceilingDbfs": -6
+        },
+        "broken": "compressor and soft clipper removed"
+      },
+      "pass": true
+    },
+    {
+      "name": "fade-in",
+      "claim": "the output comes in over the theme fade (1 s) on start and again on a re-fade (resume, device change): under 0.1 of full in the first 50 ms, 0.4 to 0.6 at the middle, 0.97 or more after it, never falling",
+      "shipped": {
+        "ok": true,
+        "measured": {
+          "method": "rms of the render over rms of the same render without the fade, 25 ms windows",
+          "start": {
+            "first50ms": 0.007,
+            "middle": 0.511,
+            "afterFade": 1,
+            "monotonic": true,
+            "every100ms": [
+              0.003,
+              0.036,
+              0.117,
+              0.233,
+              0.378,
+              0.532,
+              0.685,
+              0.819,
+              0.922,
+              0.983,
+              1
+            ]
+          },
+          "refade": {
+            "first50ms": 0.004,
+            "middle": 0.51,
+            "afterFade": 1,
+            "monotonic": true,
+            "every100ms": [
+              0.002,
+              0.036,
+              0.115,
+              0.231,
+              0.375,
+              0.529,
+              0.684,
+              0.816,
+              0.921,
+              0.983,
+              1,
+              1
+            ]
+          }
+        }
+      },
+      "control": {
+        "ok": false,
+        "measured": {
+          "method": "rms of the render over rms of the same render without the fade, 25 ms windows",
+          "start": {
+            "first50ms": 1,
+            "middle": 1,
+            "afterFade": 1,
+            "monotonic": true,
+            "every100ms": [
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1
+            ]
+          },
+          "refade": {
+            "first50ms": 1,
+            "middle": 1,
+            "afterFade": 1,
+            "monotonic": true,
+            "every100ms": [
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1
+            ]
+          }
+        },
+        "broken": "no fade: full level at once"
+      },
+      "pass": true
+    },
+    {
+      "name": "voice-budget",
+      "claim": "at most 8 moving voices sound at once when 15 ask for one, the hazards keep theirs, and the engine makes no more than 8 + 24 panners",
+      "shipped": {
+        "ok": true,
+        "measured": {
+          "movingPeak": 8,
+          "budget": 8,
+          "pannersMade": 32,
+          "hazardsKeptTheirVoices": true
+        }
+      },
+      "control": {
+        "ok": false,
+        "measured": {
+          "movingPeak": 15,
+          "budget": 8,
+          "pannersMade": 40,
+          "hazardsKeptTheirVoices": true
+        },
+        "broken": "the budget raised to 16 moving voices"
+      },
+      "pass": true
+    }
+  ]
+}

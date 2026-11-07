@@ -48,9 +48,10 @@ Node 22 and pnpm 11.
 pnpm install
 pnpm typecheck
 pnpm test
+pnpm proof:audio
 ```
 
-`pnpm test` runs Node tests only. Directories above that do not exist yet are added by later steps; the progress is in [docs/dev/status-stage-1.md](docs/dev/status-stage-1.md).
+`pnpm test` runs Node tests only. `pnpm proof:audio` renders the engine offline in headless Chrome and measures it (direction, pulse rate, ceiling, fade-in, voice budget), each check also run on an engine broken on purpose that must fail; the numbers go to `evidence/audio-proofs.json`. Directories above that do not exist yet are added by later steps; the progress is in [docs/dev/status-stage-1.md](docs/dev/status-stage-1.md).
 
 ## Licence
 

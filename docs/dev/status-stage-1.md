@@ -9,8 +9,8 @@ Plan: ShramkoGSFPV `docs/wip/v12-plan.md`, section 4.1 (steps 1 to 13). Spec: `d
 - [x] 3 Analytic worlds, commit c973756 (`src/world/`, `src/util/`): SDF primitives, seven generators, AnalyticWorld, canonical JSON, own SHA-256, seeded RNG, 85 world tests with goldens
 - [x] 4 Scene sampler, commit d6eea6a (`src/sense/`): ten sectors x 3 rays, hysteresis, surface-based time to collision, at most 3 hazard voices, 52 tests
 - [x] 5 Tracks, themes, prefs, commit 530c5bb: validators, canonical writers, never-in-place versions, scan-to-flown mapping, themes soft/clear/race, pentatonic helper, calm preset, SonicPrefs defaults and validator (380 tests in all)
-- [x] 6 Engine `src/audio/` with its pure planner `src/cues/`: HRTF voices (8 moving + 24 static, stolen by priority), lookahead rhythm on the audio clock, redundant distance code, roughness and beating, shape traces, ducking, limiter at the ceiling, fade-in on start, resume and device change, speech with captions; 27 Node tests of the schedulers and the planner
-- [ ] 7 Audio proofs `test-audio/`
+- [x] 6 Engine `src/audio/` with its pure planner `src/cues/`, commit f26ff95: HRTF voices (8 moving + 24 static, stolen by priority), lookahead rhythm on the audio clock, redundant distance code, roughness and beating, shape traces, ducking, limiter at the ceiling, fade-in on start, resume and device change, speech with captions; 27 Node tests of the schedulers and the planner
+- [x] 7 Audio proofs `test-audio/`: direction, pulse rate, ceiling, fade-in, voice budget, each with a broken-engine control that fails; evidence in `evidence/audio-proofs.json` (`pnpm proof:audio`, about 11 s)
 - [ ] 8 Lessons and runner
 - [ ] 9 Session format `src/session/`
 - [ ] 10 Replay core `src/replay/`
@@ -61,6 +61,11 @@ Step 6, engine
 - Sound design measured, not only chosen: every spatial note has a sub-octave (low-frequency energy) and a quiet contact transient or air band at 2-6 kHz, because the first version had almost nothing above 2 kHz and the HRTF had no level or pinna cues to work with (3 dB between the ears at 90 degrees); now 18 dB above 2 kHz and 0.81 ms arrival difference below 800 Hz. Held pad tones swirl 0.3 Hz instead of a 5-cent chorus, whose 1 Hz beating could pass for the off-course cue.
 - Fixed in step 4 code: a wall seen by all three rays of a sector took a side ray 20 degrees off (equal risks differed by the tracer's rounding); ties within 1e-4 now go to the nearest ray.
 - The room bed renders order 0 (stereo), as decided in step 5; `room.bedOrder` is read by nobody yet.
+
+Step 7, audio proofs
+- `pnpm proof:audio` = `vitest run --config vitest.proof.config.ts`: `test-audio/audio.proof.ts` (Node) bundles `test-audio/page/proofs.ts` with Vite in memory, runs it as an inline script in headless system Chrome through Playwright (as the simulator's harness does; Playwright 1.63 wants Chromium 1243, which is not installed, so its bundled browser is only the fallback), and writes `evidence/audio-proofs.json`. Audio only: no GPU lock. `PROOFS=name,name` runs some; `LISTEN=1` also renders a 12 s ring flight per theme to `.cache/listen/<theme>.wav` (not committed).
+- Each proof renders the real engine into an OfflineAudioContext (48 kHz), frames at 60 Hz through suspend/resume, and measures samples. Control = the same check on an engine broken by a test hook; the proof passes only when the control fails. Results on Chrome 156: direction 3.1 dB louder near ear overall, 18 dB above 2 kHz, the near ear 0.81 ms earlier below 800 Hz (control 0, 0.4, 0); pulse period error 0.02-0.1 % at time to collision 0.6, 1.2, 2, 3 s (control +15 %); peak -6.01 dBFS with master and every layer at maximum in a narrow corridor with everything sounding (control +11.8 dBFS); fade measured as the ratio to the same deterministic render without the fade: 0.007 in the first 50 ms, 0.51 at the middle, 1.0 after, on start and on a re-fade (control 1 throughout); at most 8 moving voices when 15 ask, hazards keep theirs, 32 panners in all (control 15 voices).
+- `probe(what)` in the proof page is a diagnostic, not a proof: per-ear levels and the planned voices of one scene.
 
 ## Risks for the next agent
 
