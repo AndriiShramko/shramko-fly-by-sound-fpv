@@ -56,7 +56,18 @@ Mapping polarity, the direction in which a quantity maps to a sound:
 
 ## 3. Conveying shape by sound
 
-(pending)
+| Method | Evidence | Strength |
+|---|---|---|
+| Scan an image left to right (vOICe, EyeMusic) | Naive blindfolded sighted users resolved letter orientation well above chance on a first test and improved on a second [29]. People given only the conversion rule and a few example sounds matched sounds to raised shapes above the 20% chance level, and improved over 5 days [30]. After about 1 h online plus 20 min on site, sighted users named and placed EyeMusic shapes far above chance and generalised to shapes they had not been trained on [31]. Learning to extract shape, unlike memorising sound-object pairs, engaged the shape area of visual cortex in blind and sighted users [32] | MEASURED, small n |
+| One moving source tracing the outline around the head | 13 expert listeners at the centre of a loudspeaker ring named circle, triangle or square (3 choices): circles and triangles were better perceived than squares, and a 4-speaker ring caused confusions, mostly at slow speed [33]. Drawn shapes were recovered from friction sounds whose timbre follows a drawing hand's speed profile; similar shapes were confused [34] | REPORTED (author poster); MEASURED |
+| Own movement coupled to sound | 22 blindfolded adults identified four shapes played over a vertical loudspeaker array; they improved only after active audio-motor training (reproducing the movement with the arm while a sound source on the wrist followed it), not after passive listening (11 per group) [35] | MEASURED |
+| Pitch or loudness contour as the outline | Listeners read contours as straight or curved lines, and the scaling decides: pitch on an ERB-rate scale and linear amplitude sounded straight, other scalings sounded exponential or logarithmic; tempo contours were not reliably told apart [36] | MEASURED |
+
+- Teach the rule first: knowing the conversion rule was enough to be above chance before any practice [29, 30], and musical training correlated with acuity [29] (MEASURED). So the first lesson states each mapping in words and demonstrates it; drills come after (INFERRED).
+- Practice must use the learner's own movement: only active training improved shape recognition [35] and active practice helped localisation [4]. In a drone simulator the equivalent is flying the outline of a ring or gate rather than listening to a recording of it (INFERRED).
+- A single moving source around the head is a coarse shape channel. Experts needed a dense speaker ring for reliable circle, triangle and square judgements [33]; headphones with a generic head model are coarser (INFERRED, not measured). Do not teach "circle versus square" as a listening quiz; teach it as the path the pilot flies and the sound sequence of gates on that path (INFERRED).
+- Perceptually scaled ramps matter: build any pitch or loudness "line" on an ERB or similar perceptual scale so that a steady approach sounds steady [36] (MEASURED); do not use tempo to draw a contour.
+- Not found: any study of circle versus square versus cube identification with a single moving source over headphones; any study of tapping points on an object to learn its shape by sound (the closest is the audio-motor training above); success rates for three-dimensional solids by sound.
 
 ## 4. Echolocation training
 
@@ -120,3 +131,11 @@ Mapping polarity, the direction in which a quantity maps to a sound:
 26. Arnal LH, Flinker A, Kleinschmidt A, Giraud AL, Poeppel D (2015). Human screams occupy a privileged niche in the communication soundscape. Curr Biol 25(15):2051-2056. https://pmc.ncbi.nlm.nih.gov/articles/PMC4562283/ <!-- arnal2015 -->
 27. McDermott JH, Schultz AF, Undurraga EA, Godoy RA (2016). Indifference to dissonance in native Amazonians reveals cultural variation in music perception. Nature 535:547-550 (abstract). https://pubmed.ncbi.nlm.nih.gov/27409816/ <!-- mcdermott2016 -->
 28. Ziemer T, Nuchprayoon N, Schultheis H (2019). Psychoacoustic sonification as user interface for human-machine interaction. arXiv:1912.08609. https://arxiv.org/abs/1912.08609 <!-- ziemer2019 -->
+29. Haigh A, Brown DJ, Meijer P, Proulx MJ (2013). How well do you see what you hear? The acuity of visual-to-auditory sensory substitution. Front Psychol 4:330. https://pmc.ncbi.nlm.nih.gov/articles/PMC3684791/ <!-- haigh2013 -->
+30. Kim JK, Zatorre RJ (2011). Tactile-auditory shape learning engages the lateral occipital complex. J Neurosci 31(21):7848-7856. https://pmc.ncbi.nlm.nih.gov/articles/PMC6633131/ <!-- kimzatorre2011 -->
+31. Shvadron S, et al. (2023). Shape detection beyond the visual field using a visual-to-auditory sensory augmentation device. Front Hum Neurosci 17:1058617. https://www.frontiersin.org/journals/human-neuroscience/articles/10.3389/fnhum.2023.1058617/full <!-- shvadron2023 -->
+32. Amedi A, et al. (2007). Shape conveyed by visual-to-auditory sensory substitution activates the lateral occipital complex. Nat Neurosci 10(6):687-689 (abstract). https://pubmed.ncbi.nlm.nih.gov/17515898/ <!-- amedi2007 -->
+33. Camier C, Féron FX, Boissinot J, Guastavino C (2015). Tracking moving sounds: perception of spatial figures. Proc ICAD 2015, 308-310 (authors' poster). https://www.slideshare.net/CdricCamier/postericad4 <!-- camier2015 -->
+34. Thoret E, Aramaki M, Kronland-Martinet R, Velay JL, Ystad S (2014). From sound to shape: auditory perception of drawing movements. J Exp Psychol Hum Percept Perform 40(3):983-994 (abstract). https://pubmed.ncbi.nlm.nih.gov/24446717/ <!-- thoret2014 -->
+35. Martolini C, Cappagli G, Campus C, Gori M (2020). Shape recognition with sounds: improvement in sighted individuals after audio-motor training. Multisens Res 33(4-5):417-431 (abstract). https://pubmed.ncbi.nlm.nih.gov/31751938/ <!-- martolini2020 -->
+36. Lembke SA (2023). Distinguishing between straight and curved sounds: auditory shape in pitch, loudness, and tempo gestures. Atten Percept Psychophys 85(8):2751-2773. https://pmc.ncbi.nlm.nih.gov/articles/PMC10600048/ <!-- lembke2023 -->
