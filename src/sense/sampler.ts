@@ -216,7 +216,10 @@ export function createSceneSampler(options: SamplerOptions = {}): SceneSampler {
                     if (distance < minDistance) minDistance = distance;
                     if (ttc !== null && (minTtc === null || ttc < minTtc)) minTtc = ttc;
                     if (closing > maxClosing) maxClosing = closing;
-                    if (primary === null || risk > primary.risk || (risk === primary.risk && distance < primary.distance)) primary = { hit, dir: worldDir, risk, distance };
+                    // equal risks (a wall seen by all three rays) differ only by the tracer's hit tolerance
+                    // (0.2 mm, about 1e-7 of the risk here): within 1e-4 the nearest ray wins
+                    const tie = primary !== null && Math.abs(risk - primary.risk) <= 1e-4 * Math.max(risk, primary.risk);
+                    if (primary === null || (!tie && risk > primary.risk) || (tie && distance < primary.distance)) primary = { hit, dir: worldDir, risk, distance };
                 }
             }
             if (primary === null) {

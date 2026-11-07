@@ -3,6 +3,7 @@
 // imported on its own (it is the only code that touches the browser).
 // Plan: ShramkoGSFPV docs/wip/v12-plan.md section 4.1; status: docs/dev/status-stage-1.md.
 export * from './contract';
+export * from './cues';
 export * from './i18n';
 export * from './prefs';
 export * from './sense';
