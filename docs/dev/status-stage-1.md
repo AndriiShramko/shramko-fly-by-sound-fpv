@@ -5,8 +5,8 @@ Plan: ShramkoGSFPV `docs/wip/v12-plan.md`, section 4.1 (steps 1 to 13). Spec: `d
 ## Status
 
 - [x] 1 Tooling and layout, commit e65cc89 (devDependencies at the simulator versions, tsconfig.core/node, layout rules in tools/check-layout.ts with test/layout.test.ts)
-- [x] 2 Locales en, es, pl, ru, parity test (404 keys per language; formatter, translator, key catalogue, survey definitions, speech lint)
-- [ ] 3 Analytic worlds (`src/world/`)
+- [x] 2 Locales en, es, pl, ru, parity test, commit 0679bec (404 keys per language; formatter, translator, key catalogue, survey definitions, speech lint)
+- [x] 3 Analytic worlds (`src/world/`, `src/util/`): SDF primitives, seven generators, AnalyticWorld, canonical JSON, own SHA-256, seeded RNG, 85 world tests with goldens
 - [ ] 4 Scene sampler (`src/sense/`)
 - [ ] 5 Tracks, themes, prefs
 - [ ] 6 Engine `src/audio/`
@@ -31,6 +31,14 @@ Step 2, locales
 - Key letters are never written into lesson texts: the help, recording, sending and survey lines take `{key}` (and `{skip}`) from the host, so rebinding works. Directions `dir.<sector>` are stand-alone phrases ("On your left.") spoken before a preview.
 - Surveys are TypeScript data in `src/survey/defs.ts` (first flight 9 items, returning pilot 10, child 6). The workload scales are 0 to 9, not 0 to 10, so that one key press answers; convert with value * 100 / 9.
 - The speech lint (`tools/locale-lint.ts`) refuses empty or padded texts, more than 240 characters, characters a synthesiser reads badly, emoji, Latin words in Russian texts outside a short name list, Cyrillic in other languages, a plural block without its language's categories, and a text copied from English. Each rule has a negative control in the test.
+
+Step 3, analytic worlds
+- `createAnalyticWorld(spec)` (`src/world/analytic-world.ts`) returns `AnalyticWorldInfo`: the contract's AnalyticWorld plus `resolved` (every parameter, defaults filled), `start` (Pose), `floorY` (0) and `landmarks` (named points, so lessons place checkpoints and zones without computing coordinates). `makeSpec(generator, params, seed)` gives a complete spec at the current version. A spec with an unknown generator, parameter, value out of range, wrong version or a layout that does not fit throws `WorldSpecError` with the reason.
+- Digest = SHA-256 of the canonical JSON (sorted keys, no spaces, `src/util/canonical.ts`) of the resolved spec `{generator, params, seed, version}`; omitted and explicit defaults are one spec. The id is `<generator>-<8 hex>`, never bare hex. The digest covers the spec only, so test/world.test.ts also pins a hash of each world's objects and of its distance field at 600 fixed points: change a generator, a default or a draw order and those fail until GENERATOR_VERSION is bumped and the goldens regenerated.
+- Shapes (src/world/parts.ts header): ring `diameter` is the CLEAR opening and `tube` the tube RADIUS; square and cube-frame `side` is the clear opening and `bar` the bar thickness (outer side = side + 2 bar); pillar `height` is centred on `pos`. A gate faces local -Z for a 'forward' pass; `yawQuat(yaw)` makes the quaternion. Zones are not solid and carry material 'floor' and order 0.
+- Generators and their landmarks: open (floor, optional ceiling, optional stop zone: start); hall (wall-front/back/left/right at start height); pillars (single, row, scatter; hall 40 x 60 x 12); corridor (5 x 4 m; layouts straight, obstacle, bends, jogs, full = 100 m straight, pillar, 6 left-right bends, 4 up-down jogs, 6 bends with pillars; landmarks section-straight, -obstacle, -bends, -jogs, -mixed and end); rings, squares, cube-frames (hall 60 x 160 x 20; layouts single with offsets, line, turn, course; `sizes` gives a size per gate; ids ring-N, square-N, cube-N; order 0..). Hall-based worlds start near the +Z end and look along -Z. Everything is seeded by `createRng` (mulberry32); the order of draws is part of the version.
+- Rays: sphere tracing (64 exact steps, then at least 5 cm steps with bisection, so a ray skimming a wall still finds its true first hit); 30 000 rays cost 20 to 360 ms here. A ray from inside a solid hits at distance 0. Material: objects are 'obstacle'; the room's surfaces are floor, ceiling or wall by normal. `voxelM` is 0.1 by default (a `voxelM` parameter).
+- Mutation check done by hand: stepping the tracer by 2 d fails 20 tests.
 
 ## Risks for the next agent
 
