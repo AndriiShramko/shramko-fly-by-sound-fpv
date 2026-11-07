@@ -49,11 +49,38 @@ On headphones the last stage is always two channels, so every format is judged b
 
 ## 3. Distance perception
 
-(draft pending)
+| Cue | Over headphones | Accuracy / numbers | Tag | Src |
+|---|---|---|---|---|
+| Level | yes, the dominant cue; free field loses 6 dB per doubling of distance | judged distance follows a compressive power law r' = k·r^a with a < 1: near sources overestimated, far ones underestimated | MEASURED (review) | [@kolarik] |
+| Distance discrimination | virtual sources, level and reverberation | thresholds about 0.8 m at 2 m and 1.5 m at 5 m for blind listeners, larger for sighted; blind listeners are better at relative, worse at absolute judgements | MEASURED (review) | [@kolarik] |
+| Direct-to-reverberant ratio (DRR) | yes, needs a simulated room | noise-burst DRR JND 2-3 dB at 0 and +10 dB, 6-8 dB at -10 and +20 dB; blind listeners used level and DRR cues more effectively than sighted | MEASURED (review) | [@kolarik] |
+| High-frequency loss | weak at track distances | "spectral cues do not provide distance information" for 1-15 m; computed air loss at 20 °C, 50 % RH, at 10 / 30 / 100 m: 4 kHz 0.3 / 0.9 / 3.0 dB, 8 kHz 1.1 / 3.2 / 10.5 dB | REPORTED / INFERRED | [@kolarik] |
+| Near-field ILD | only inside about 1 m; beyond 1 m ILD no longer depends on distance | | MEASURED (review) | [@kolarik] |
+| Motion parallax, acoustic tau | help beyond 2 m only; ambiguous without known speed | | MEASURED (review) | [@kolarik] |
+| Tempo (repetition rate) | no accuracy figure for tempo as a distance code found; across sonification studies distance is mapped to loudness in 12 uses and to pitch in 8 [@dubus]; in VR aiming guidance, 24 sighted participants preferred pitch and tempo combined [@apavou] | | REPORTED | [@dubus] [@apavou] |
+
+- **Looming (MEASURED, abstract only).** Rising level changes loudness more than the same fall; approaching sounds were judged to start and stop closer than equidistant receding ones, more for tones than for noise [@neuhoff]. Time to arrival was generally underestimated, least for bands centred on 120-250 Hz and most for 2-7.5 kHz (Gordon et al., as reported in [@kolarik]); another author warns that end level, not change, may drive such judgements [@kolarik]. Design (INFERRED): the bias errs on the safe side (hazards seem nearer); keep arrival-timing beacons rich in low frequencies and avoid stacking contradictory cues.
+- **Doppler (INFERRED).** At 20 m/s relative speed the shift is +6.2 % (+1.04 semitone) approaching and -5.5 % (-0.98 semitone) receding: easy to hear and a natural "gate passed" cue. The Web Audio spec text has no Doppler [@waspec]; implement it with resampling or a variable delay line.
+- **Implication (INFERRED).** Raw 1/r level over a 5-200 m course spans 32 dB, while judged distance is compressive and discrimination is coarse. Code distance redundantly and exaggerate it: a level slope gentler than 6 dB per doubling, DRR that falls with distance, a low-pass that starts earlier than physics (air loss is under 1 dB at 4 kHz up to 30 m), a repetition rate that rises as a gate nears, and an ILD boost inside 1-2 m. Calibrate each code with pointing or ranking tests with blind pilots; I found no published figures for this combination.
 
 ## 4. Elevation over headphones
 
-(draft pending)
+**Why it is weak.**
+- Elevation rests on pinna spectral cues between 4 and 16 kHz: a one-octave notch whose lower edge rises with elevation (frontal sources), a peak at 7-9 kHz ("above") and a small peak at 10-12 kHz ("behind") [@hebrank] (abstract only). They are personal. With another person's HRTF, features lying lower in frequency make low frontal targets sound low and behind, and high rear targets high and in front; features lying higher bias elevation upward [@midd] (abstract only).
+- Even with the listener's own HRTF the polar error is about 30° [@majdak14], against a vertical MAA of 3.65° and a horizontal one of 0.97° for real sources [@perrott].
+- Over bone conduction, elevated sources were compressed into a window of about ±15° around the horizontal plane (preliminary) [@barde] (abstract only).
+- In the browser (INFERRED from source [@chrelev]): the built-in HRTF panner does not interpolate elevation; it takes the 15° slice at or below the requested angle (error up to 15°, mean 7.5° low) and clamps below -45°.
+
+| Remedy | Evidence | Size of effect | Cost |
+|---|---|---|---|
+| Own HRTF | quadrant errors 8-9 % vs 10-50 % with generic [@majdak14] [@jenny]; head-tracked own-HRTF display close to free field [@romigh2] | largest | measurement or 3D scan (sections 6-7) |
+| Frequency scaling of a foreign HRTF | penalty more than halved in most cases [@midd] | large | needs a per-listener scale estimate |
+| Best-of-N selection | section 7 | medium | about 5 min |
+| Training with feedback | elevation error down 10° after three 12-minute sessions [@parseihian]; 15° more improvement than procedural learning over 10 sessions, but only 3 of 8 listeners reached own-HRTF level [@stitt]; two 30-minute sessions cut reversals for 4 of 5 listeners, lasting at least 4 months [@zahorik06] | 10-15° | 36 min to 10 sessions; game-like |
+| Pitch-height mapping (Pratt effect) | higher-pitched tones are heard higher, also by congenitally blind people and young children [@roffler]; shown for complex tones, while a square wave follows true position [@cabrera]; mirrors natural scene statistics and ear filtering [@parise] | a free redundant cue that also biases perceived elevation | mapping tuned to the course |
+| Yaw (azimuth) rotation | elevation error falls with azimuth rotation [@mcanally] | up to a few degrees | free with stick yaw |
+
+Design (INFERRED): treat elevation as a coarse cue (below / level / above, then bands), always pair it with a pitch or timbre code, and ship a short ear-training game.
 
 ## 5. Web Audio in Chrome and Edge (2026)
 
