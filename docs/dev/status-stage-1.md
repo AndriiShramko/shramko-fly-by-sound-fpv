@@ -6,8 +6,8 @@ Plan: ShramkoGSFPV `docs/wip/v12-plan.md`, section 4.1 (steps 1 to 13). Spec: `d
 
 - [x] 1 Tooling and layout, commit e65cc89 (devDependencies at the simulator versions, tsconfig.core/node, layout rules in tools/check-layout.ts with test/layout.test.ts)
 - [x] 2 Locales en, es, pl, ru, parity test, commit 0679bec (404 keys per language; formatter, translator, key catalogue, survey definitions, speech lint)
-- [x] 3 Analytic worlds (`src/world/`, `src/util/`): SDF primitives, seven generators, AnalyticWorld, canonical JSON, own SHA-256, seeded RNG, 85 world tests with goldens
-- [ ] 4 Scene sampler (`src/sense/`)
+- [x] 3 Analytic worlds, commit c973756 (`src/world/`, `src/util/`): SDF primitives, seven generators, AnalyticWorld, canonical JSON, own SHA-256, seeded RNG, 85 world tests with goldens
+- [x] 4 Scene sampler (`src/sense/`): ten sectors x 3 rays, hysteresis, surface-based time to collision, at most 3 hazard voices, 52 tests
 - [ ] 5 Tracks, themes, prefs
 - [ ] 6 Engine `src/audio/`
 - [ ] 7 Audio proofs `test-audio/`
@@ -39,6 +39,12 @@ Step 3, analytic worlds
 - Generators and their landmarks: open (floor, optional ceiling, optional stop zone: start); hall (wall-front/back/left/right at start height); pillars (single, row, scatter; hall 40 x 60 x 12); corridor (5 x 4 m; layouts straight, obstacle, bends, jogs, full = 100 m straight, pillar, 6 left-right bends, 4 up-down jogs, 6 bends with pillars; landmarks section-straight, -obstacle, -bends, -jogs, -mixed and end); rings, squares, cube-frames (hall 60 x 160 x 20; layouts single with offsets, line, turn, course; `sizes` gives a size per gate; ids ring-N, square-N, cube-N; order 0..). Hall-based worlds start near the +Z end and look along -Z. Everything is seeded by `createRng` (mulberry32); the order of draws is part of the version.
 - Rays: sphere tracing (64 exact steps, then at least 5 cm steps with bisection, so a ray skimming a wall still finds its true first hit); 30 000 rays cost 20 to 360 ms here. A ray from inside a solid hits at distance 0. Material: objects are 'obstacle'; the room's surfaces are floor, ceiling or wall by normal. `voxelM` is 0.1 by default (a `voxelM` parameter).
 - Mutation check done by hand: stepping the tracer by 2 d fails 20 tests.
+
+Step 4, scene sampler
+- `createSceneSampler(options).sample(flightSample, world | null, frame = 'heading')` returns a `SceneSample`: ten `SectorReading`s in SECTORS order (30 rays: the axis and two rays 20 degrees to either side), the voiced `hazards` (at most `maxVoices`, 0 to 3, most urgent first, each with sector, rank, urgency, distance, ttcS, dir, material, objectId) and `meanFreeDistanceM` for the room layer. Directions are in the listener frame (heading: yaw only; body: full attitude). One sampler per craft; hysteresis and stickiness remember the previous call; `reset()` on a new lesson or a seek (a clock that runs backwards is also handled).
+- A sector's distance is the minimum over its rays (to the hull, `bodyRadiusM` 0.12), its time to collision the soonest over its rays, and its direction, material and object those of its most threatening ray. Time to collision is to the SURFACE: hull distance along the hit normal over the speed toward it, so flying along a wall has none whichever ray sees it (without a normal the line of sight stands in). A line-of-sight time was tried first and failed the corridor test: at 45 m/s the oblique rays at the side walls outranked the end wall.
+- Risk = max(enterDist / distance, enterTtc / ttc): 1 at the threshold. On at risk >= 1 at once; off when risk < releaseRatio (0.8) and holdMs (300) have passed since it last reached 1. Ranking = risk x sector weight (ahead over behind) x stickiness (1.25) for a voice already sounding. All defaults are in `DEFAULT_SAMPLER_CONFIG` and are starting values for pilot tests: enter distances front 6 m, diagonals 5, front-up 3, front-down 1.8, left and right 4, back 3, up and down 1.5; enter time 3 s. A low hover (under 1.6 m) makes the floor voice sound.
+- Data for the engine (step 6): hazard `ttcS` null means use `distance` for the pulse period; `material` picks the safety timbre (obstacle for pillars and gates); `sector` is a stable voice key.
 
 ## Risks for the next agent
 
