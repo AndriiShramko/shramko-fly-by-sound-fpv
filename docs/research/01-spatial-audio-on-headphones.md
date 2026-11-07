@@ -4,7 +4,17 @@ Research note 01 for ShramkoSonicFPV, an open-source FPV drone simulator that bl
 
 ## Summary
 
-(written last)
+- **Encoding:** render each important sound as its own object through a per-source HRTF. On headphones the output is two channels, so 5.1 / 7.1 / 7.1.4 beds add panning error and no resolution; Atmos, DTS:X and Windows Sonic objects are native-only and unreachable from a web page [@mssaudio] (section 1).
+- **Ambisonics** only as a fixed-cost ambience bus: order 1 is too coarse, order 3 the minimum, order 4-5 reaches the limit set by the HRTF [@romigh]; a Chrome bus carries 32 channels (order 4), and decoders cost 4.7-21.7 % of a core at orders 3-7 (measured here).
+- **Human limits:** azimuth is good (MAA about 1° [@perrott], lateral error 11-18° [@stitt]); elevation and front/back are weak even with own HRTFs (polar error about 30°, 8-9 % quadrant errors) and worse with generic ones (10-50 %) [@majdak14] [@jenny].
+- **Yaw by stick:** a listener-moved source removed front/back confusions with the head still [@wk99]; 32° of head rotation nearly eliminates them [@mcanally]; vestibular input may matter. Likely useful, unproven for a stick: test first.
+- **Distance:** level and DRR work but are compressive and coarse (blind listeners: 0.8 m at 2 m, 1.5 m at 5 m) [@kolarik]; air absorption is negligible at track distances (computed); code distance redundantly and exaggerate it.
+- **Elevation:** the HRTF alone is not enough: add a pitch-height code (works for blind people [@roffler]), coarse bands and short ear training (10-15° gain [@parseihian] [@stitt]).
+- **Web Audio:** the built-in HRTF panner is one IRCAM composite, azimuth 1.9° steps, elevation 15° steps rounded down, +5.3 ms, 0.18 % (static) to 1.3 % (moving) of a core per source, and cannot load another HRTF [@chrpanner] [@waissue2417]. MVP: 8 moving + 24 static sources (about 15 % of a core here); later: own ConvolverNode/AudioWorklet engine with SADIE II or HUTUBS data.
+- **Latency:** about 70 ms stick-to-ear on Windows (measured parts, summed); Bluetooth SBC adds 180-250 ms [@sss]: wired headphones only.
+- **Licences:** SADIE II (Apache-2.0) [@sadie], HUTUBS (CC BY 4.0) [@hutubs] and MIT KEMAR (free, cite) [@kemar] can ship in an MIT or Apache app; CIPIC, ARI and LISTEN terms are unverified.
+- **Safety and headphones:** children's reference is 75 dBA for 40 h/week (WHO/ITU) [@hearrev]; a page cannot know SPL, so calibrate school devices once, cap at 75/80 dBA, limiter at the chain end; closed-back wired headphones with matched channels, OS spatial sound off.
+- **Test with people** (section 9): stick yaw vs static, built-in vs best-of-7 HRTF, elevation and distance codes, latency, double spatialisation, loudness.
 
 ## 1. Which encoding loses least on headphones
 
@@ -23,8 +33,7 @@ On headphones the last stage is always two channels, so every format is judged b
 | Direct HRTF per source | one HRTF pair per source, direction interpolated | no encoding loss; error = HRTF mismatch (section 2); grid: built-in 1.9° az / 15° el, SADIE II 1° (dummy heads), 5° or 10° [@sadie] | built-in 0.18 % static, 1.3 % moving, per source; ConvolverNode 0.32 % | **recommended** |
 
 - **More speaker channels on headphones: no (INFERRED, supported by [@mssaudio]).** Windows Sonic, DTS Headphone:X and Atmos "implement speaker mapping and virtualization to headphones", and Doppler, distance filtering, occlusion and reverb stay with the app's own engine [@mssaudio]. A bed only fixes where the virtual loudspeakers sit; between them the result is panning, and the ears get two channels in every case. A scan of Chromium's 30 Windows audio files (`media/audio/win`) finds no use of `ISpatialAudioClient`, Atmos or Sonic APIs (MEASURED, [@chrlat]), and the Web Audio spec has no such interface [@waspec]. Risk to test: with Windows Sonic or Atmos switched on, the OS may spatialise our already binaural stereo a second time.
-- **Order vs perception.** Loudspeaker-ring tests with order 1-4 microphones: localisation improved with order [@bertet] (abstract only). An HRTF represented at order 4 or higher kept accurate localisation, and even order 1 keeps several physical cues [@romigh] (abstract only). Models predict accuracy rising with order (tested 1-44), methods differ mostly at low orders, and the magnitude-least-squares family is recommended [@engel] (abstract only). Low order lowers ILD [@mckenzie] and rolls off high frequencies [@benhur]. Caution: in a 16-listener test with microphone recordings and a generic decoder, third order gave larger elevation errors than first order [@pietrzak] (REPORTED; microphone and decoder confounded). Order does not repair a mismatched HRTF.
-- **Why order matters at high frequency (INFERRED).** Order N represents the head response only up to about f = N·c / (2π·0.0875 m): 0.6 kHz (N=1), 1.9 kHz (N=3), 3.1 kHz (N=5), 4.4 kHz (N=7). Pinna cues sit at 4-16 kHz [@hebrank], so every practical order needs high-frequency magnitude correction [@zaun] [@engel].
+- **Order vs perception.** Loudspeaker-ring tests with order 1-4 microphones: localisation improved with order [@bertet] (abstract only). An HRTF represented at order 4 or higher kept accurate localisation, and even order 1 keeps several physical cues [@romigh] (abstract only). Models predict accuracy rising with order (tested 1-44), methods differ mostly at low orders, and the magnitude-least-squares family is recommended [@engel] (abstract only). Low order lowers ILD [@mckenzie] and rolls off high frequencies [@benhur]. INFERRED: order N represents the head response only up to about f = N·c / (2π·0.0875 m), that is 0.6 kHz (N=1), 1.9 kHz (N=3), 3.1 kHz (N=5), 4.4 kHz (N=7), while pinna cues sit at 4-16 kHz [@hebrank], so every practical order needs high-frequency magnitude correction [@zaun] [@engel]. Order does not repair a mismatched HRTF (section 2).
 - **Direct rendering is the reference.** A head-tracked headphone display with each listener's own HRTFs matched free-field localisation [@romigh2] (abstract only). Any loss in our product is HRTF mismatch, latency or cue design, not encoding.
 - **Cost crossover (MEASURED, INFERRED).** A decoder costs the same for any number of sources; a moving built-in HRTF source costs 1.3 %. Order-3 decoding equals 3.6 moving sources, order 5 equals 9, order 7 equals 17. Below about 16 sources direct rendering is cheaper than order 5 or 7.
 
@@ -40,7 +49,6 @@ On headphones the last stage is always two channels, so every format is judged b
 | Polar error (elevation and front/back) | 34° ± 5° own HRTF, 18 listeners; 29° own HRTF, 14 listeners (Middlebrooks, as quoted) | sources within ±30° lateral | MEASURED / REPORTED | [@majdak14] |
 | Quadrant errors (front/back, up/down) | 9.3 % ± 6.0 own HRTF; 7.7 % (Middlebrooks, as quoted); model-predicted 10-30 % for a well-matched generic HRTF, 30-50 % for a poorly matched one | same | MEASURED / model | [@majdak14] [@jenny] |
 | Front/back reversals rated in VR | 0 % own HRTF; 27 % (21 of 78) generic KEMAR HRTF; 6 % and 24 % for best and worst model-selected generic HRTF | 39 listeners rating audiovisual scenes, not pointing | MEASURED | [@jenny] |
-| Generic HRTF, first test | accurate for 12 of 16 listeners; 4 had poor elevation; many front/back and up/down confusions, more than free field | abstract only | MEASURED | [@wenzel] |
 | Foreign HRTF, frequency-scaled | scaling more than halved the penalty of another person's HRTF in most cases | abstract only | MEASURED | [@midd] |
 
 - **Head rotation helps (MEASURED).** Front/back confusions made with the head restricted nearly disappeared when head movement was encouraged [@wk99] (abstract only). With hard-to-localise noise, a 4° rotation window already reduced them significantly and about 32° nearly eliminated them; elevation error fell with rotation (about 14° at a 2° window, 16° of rotation needed for a significant gain); lateral error did not change; 8 listeners [@mcanally]. An earlier study quoted there saw a marked drop at 2.6° and elimination near 20°.
@@ -91,7 +99,7 @@ Edge is Chromium, so Chrome facts apply to it. Source files read on 2026-11-07 f
 
 | Item | Value |
 |---|---|
-| Dataset | composite `IRC_Composite_C_R0195`: "a set of composite impulse responses generated from several individuals" [@rogers]; "derived from IRCAM Listen Project measurements", "Listen project data is public domain" (REPORTED, bug comments) [@mozbug]. Same data in Gecko [@gecko] and WebKit [@webkit]; the spec names no dataset [@waspec] |
+| Dataset | composite `IRC_Composite_C_R0195`: "a set of composite impulse responses generated from several individuals" [@rogers]; "derived from IRCAM Listen Project measurements", "Listen project data is public domain" (REPORTED, bug comments) [@mozbug]. Same data in Gecko and WebKit [@gecko]; the spec names no dataset [@waspec] |
 | Grid | 24 azimuths (15° steps) x 10 elevations (-45 to +90, 15° steps) = 240 responses, 256 frames each at 44.1 kHz (5.8 ms), resampled to the context rate [@chrelev] |
 | Azimuth | interpolated x8 to 192 positions (1.875°) in the frequency domain; each ear's average group delay is removed from the response and re-applied by a fractional delay line, interpolated continuously [@chrelev] |
 | Elevation | not interpolated: slice = floor((elevation + 45) / 15), clamped to -45...+90 [@chrelev] |
@@ -192,12 +200,92 @@ Licence, last push and archive flag read from the GitHub API on 2026-11-07 [@gh]
 
 ## 9. Recommended architecture
 
-(draft pending)
+**MVP: built-in HRTF panner, thin own audio layer.**
+
+| Decision | Choice | Basis |
+|---|---|---|
+| Sources at once | at most 8 moving + 24 static spatialised voices; steal by priority (next gates, hazards, ground, ambience) | about 15 % of one core here (5.2) |
+| Panner | built-in `PannerNode`, `panningModel = 'HRTF'`, listener-relative positions, own distance gain; add 7.5° to elevation to centre the 15° rounding (INFERRED) | no dependency; fixed set, +5.3 ms |
+| HRTF | the built-in composite; record that fact; no personalisation yet | the API cannot load another (5.1) |
+| Azimuth, front/back | low-frequency energy in every beacon; scene yaws at once and in proportion to stick yaw; test an exaggerated marker (rear: +3-6 dB at 10-12 kHz; front: notch plus lift above 13 kHz [@hebrank]) | [@wk99] [@brimijoin] |
+| Elevation | HRTF + pitch-height code + coarse bands; 10-minute ear-training game | sections 2, 4 |
+| Distance | gentle level slope, reverb send, early low-pass, rising repetition rate, ILD boost under 2 m, own Doppler | section 3 |
+| Output | brick-wall limiter, 1 s fade-in, OS spatial sound off, wired closed-back headphones | 5.3, 8 |
+
+**Later, high-quality version.**
+- Own renderer: per-source direct HRTF from SOFA sets (SADIE II 5° or 10° human sets, HUTUBS); two crossfaded ConvolverNodes per source first, then an AudioWorklet with WASM SIMD partitioned convolution, ITD alignment and barycentric direction interpolation (INFERRED); 16+ direct objects.
+- Ambience bus: Ambisonics order 3 (at most order 4 on one bus) for wind, ground and room tail, with a magnitude-least-squares-type decoder; 16 objects plus order 3 is about 25 % of a core here (INFERRED sum).
+- Personalisation: 7-set shortlist, 8-minute pick, ear training, optional frequency-scale estimate; Mesh2HRTF only as research. VR: head pose added to stick yaw, audio update under 50 ms (INFERRED target).
+
+**Must be tested with people (baselines in sections 2-8).** (1) Front/back with static scene, stick yaw and experimenter-driven rotation, same HRTF, blind/low-vision and sighted groups apart, outcome = quadrant errors. (2) Built-in set vs best of 7 SADIE II/HUTUBS sets: pointing errors and gate-pass rate. (3) Elevation codes: HRTF only, plus pitch, plus 3 x 12 min training. (4) Distance codes: ranking and gate-arrival timing, level-only vs redundant. (5) Stick-to-ear loopback latency, with 0/50/100/200 ms added. (6) Headphones: closed vs open, wired models, L/R balance, child comfort. (7) Double spatialisation with Windows Sonic or Atmos on and off. (8) SPL per device and volume at school, limiter behaviour. (9) School laptops: 8 moving + 24 static for 30 minutes, count underruns. (10) Sessions to criterion and retention after one week.
 
 ## 10. Searched for and not found
 
-(draft pending)
+- No study of rate-commanded rotation (a stick) and front/back or elevation judgements in a flight-like task; closest is the listener-moved source of [@wk99]. No measured accuracy of tempo as a distance code, no distance-exponent values (only a < 1), no looming time-to-contact study with binaural HRTF rendering.
+- No comparison of open-back and closed-back headphones for localisation, and no study quantifying the gain of headphone EQ (a headphone-compensation paper appeared only as a search snippet, not opened). I did not open EN 50332 or the EU toy standard; the only EU limit I read is the occupational Directive 2003/10/EC.
+- Could not open: Engel 2022 full text (403), Thresh et al. 2017 on Ambisonics order (AES, 403: dropped), the Zotter and Frank Ambisonics book (Springer cookie redirect), PubMed Central pages (CAPTCHA, not bypassed), HAL (bot check), AES library, MDPI and web.archive.org (blocked). Where I read only an abstract, the claim stops at the abstract.
+- Licence text not verified: CIPIC (410), ARI (403/404), IRCAM LISTEN (unreachable). LE Audio latency: no primary or independent figure found. ISO 9613-1: not opened, I computed air absorption from its published formula and checked it against table values quoted in a secondary source.
+- No maintained 2025-2026 browser object-based SOFA renderer, no Steam Audio browser build, no public PannerNode HRTF performance numbers besides mine. Mine are one machine, one Chrome build, offline rendering, single runs: an order of magnitude, not a benchmark.
+- Not searched: anthropometry- or photo-based HRTF personalisation, head-tracker latency thresholds, per-device LE Audio tests.
 
 ## Sources
 
-(draft pending)
+Opened on 2026-11-07. "Abstract only" = I read the abstract through the DOI or an open metadata record, not the full text.
+
+- [@mssaudio] Microsoft, Spatial Sound for app developers (beds, dynamic object limits). https://learn.microsoft.com/en-us/windows/win32/coreaudio/spatial-sound
+- [@romigh] Romigh, Brungart, Stern, Simpson 2015, Efficient real spherical harmonic representation of HRTFs, IEEE JSTSP (abstract only). https://doi.org/10.1109/jstsp.2015.2421876
+- [@perrott] Perrott, Saberi 1990, Minimum audible angle thresholds for sources varying in both elevation and azimuth, JASA 87 (abstract only). https://doi.org/10.1121/1.399421
+- [@stitt] Stitt, Picinali, Katz 2019, Auditory accommodation to poorly matched non-individual spectral localization cues through active learning, Sci. Rep. 9. https://doi.org/10.1038/s41598-018-37873-0
+- [@majdak14] Majdak, Baumgartner, Laback 2014, Acoustic and non-acoustic factors in modeling listener-specific performance of sagittal-plane sound localization, Front. Psychol. 5:319. https://doi.org/10.3389/fpsyg.2014.00319
+- [@jenny] Jenny, Reuter 2020, Usability of individualized HRTFs in virtual reality, JMIR Serious Games 8(3):e17576. https://doi.org/10.2196/17576
+- [@wk99] Wightman, Kistler 1999, Resolution of front-back ambiguity in spatial hearing by listener and source movement, JASA 105 (abstract only). https://doi.org/10.1121/1.426899
+- [@mcanally] McAnally, Martin 2014, Sound localization with head movement: implications for 3-d audio displays, Front. Neurosci. 8:210. https://doi.org/10.3389/fnins.2014.00210
+- [@kolarik] Kolarik, Moore, Zahorik, Cirstea, Pardhan 2016, Auditory distance perception in humans: a review of cues, development, neuronal bases, and effects of sensory loss, Atten. Percept. Psychophys. 78. https://doi.org/10.3758/s13414-015-1015-1
+- [@roffler] Roffler, Butler 1968, Localization of tonal stimuli in the vertical plane, JASA 43 (abstract only). https://doi.org/10.1121/1.1910977
+- [@parseihian] Parseihian, Katz 2012, Rapid head-related transfer function adaptation using a virtual auditory environment, JASA 131 (abstract only). https://doi.org/10.1121/1.3687448
+- [@chrpanner] Chromium, hrtf_panner.cc. https://raw.githubusercontent.com/chromium/chromium/main/third_party/blink/renderer/platform/audio/hrtf_panner.cc
+- [@waissue2417] W3C Web Audio issue 2417, loadHRTFDatabase for SpatialPanner. https://github.com/WebAudio/web-audio-api/issues/2417
+- [@sss] SoundStage Solo, Latency: a new concern for audiophiles (Bluetooth impulse-response measurements). https://www.soundstagesolo.com/index.php/features/185-latency-a-new-concern-for-audiophiles
+- [@sadie] SADIE II database, University of York. https://www.york.ac.uk/sadie-project/database.html
+- [@hutubs] HUTUBS HRTF database, TU Berlin, DataCite record (CC BY 4.0). https://doi.org/10.14279/depositonce-8487 (record read at https://depositonce.tu-berlin.de/signposting/describedby/dc2a3076-a291-417e-97f0-7697e332c960)
+- [@kemar] MIT Media Lab, KEMAR HRTF measurements (Gardner, Martin 1994). https://sound.media.mit.edu/resources/KEMAR.html
+- [@hearrev] Hearing Review 2020, Standards for safe listening: past, present and future (H.870, H.871, Directive 2003/10/EC, IEC 62368-1). https://hearingreview.com/hearing-loss/hearing-loss-prevention/risk-factors/standards-for-safe-listening-past-present-and-future
+- [@chrlat] Chromium Windows audio: 30 files scanned in https://github.com/chromium/chromium/tree/main/media/audio/win ; https://raw.githubusercontent.com/chromium/chromium/main/media/audio/win/audio_low_latency_output_win.cc ; https://raw.githubusercontent.com/chromium/chromium/main/media/base/audio_latency.cc
+- [@waspec] W3C Web Audio API editor's draft (source). https://raw.githubusercontent.com/WebAudio/web-audio-api/main/index.bs
+- [@mckenzie] McKenzie, Murphy, Kearney 2019, Interaural level difference optimization of binaural Ambisonic rendering, Appl. Sci. 9(6):1226 (abstract only). https://doi.org/10.3390/app9061226
+- [@zaun] Zaunschirm, Schörkhuber, Höldrich 2018, Binaural rendering of Ambisonic signals by HRIR time alignment and a diffuseness constraint, JASA 143 (abstract only). https://doi.org/10.1121/1.5040489
+- [@bertet] Bertet, Daniel, Parizet, Warusfel 2013, Investigation on localisation accuracy for first and higher order Ambisonics reproduced sound sources, Acta Acust. 99 (abstract only). https://pure.qub.ac.uk/en/publications/investigation-on-localisation-accuracy-for-first-and-higher-order/
+- [@engel] Engel, Goodman, Picinali 2022, Assessing HRTF preprocessing methods for Ambisonics rendering through perceptual models, Acta Acust. 6:4 (abstract only). https://doi.org/10.1051/aacus/2021055
+- [@benhur] Ben-Hur, Brinkmann, Sheaffer, Weinzierl, Rafaely 2017, Spectral equalization in binaural signals represented by order-truncated spherical harmonics, JASA 141 (abstract only). https://doi.org/10.1121/1.4983652
+- [@hebrank] Hebrank, Wright 1974, Spectral cues used in the localization of sound sources on the median plane, JASA 56 (abstract only). https://doi.org/10.1121/1.1903520
+- [@romigh2] Romigh, Brungart, Simpson 2015, Free-field localization performance with a head-tracked virtual auditory display, IEEE JSTSP (abstract only). https://doi.org/10.1109/jstsp.2015.2421874
+- [@selftrans] Self-translation induced minimum audible angle, JASA 144, 2018 (abstract only). https://doi.org/10.1121/1.5064957
+- [@mills] Mills 1958, On the minimum audible angle, JASA 30 (abstract only). https://doi.org/10.1121/1.1909553
+- [@midd] Middlebrooks 1999, Virtual localization improved by scaling nonindividualized external-ear transfer functions in frequency, JASA 106 (abstract only). https://doi.org/10.1121/1.427147
+- [@brimijoin] Brimijoin, Akeroyd 2012, The role of head movements and signal spectrum in an auditory front/back illusion, i-Perception 3 (abstract only). https://doi.org/10.1068/i7173sas
+- [@dubus] Dubus, Bresin 2013, A systematic review of mapping strategies for the sonification of physical quantities, PLOS ONE 8(12):e82491. https://doi.org/10.1371/journal.pone.0082491
+- [@apavou] Apavou, Bouchara, Bourdot 2024, Accessibility of shooting task for blind and visually impaired: a sonification method comparison, ICAD (abstract only). https://doi.org/10.21785/icad2024.012
+- [@neuhoff] Neuhoff 2001, An adaptive bias in the perception of looming auditory motion, Ecol. Psychol. 13 (abstract only). https://doi.org/10.1207/s15326969eco1302_2
+- [@barde] Barde, Lee, Helton, Billinghurst 2016, Binaural spatialisation over a bone conduction headset: elevation perception, ICAD (abstract only). https://doi.org/10.21785/icad2016.013
+- [@chrelev] Chromium, hrtf_elevation.cc (also hrtf_database.cc, hrtf_kernel.cc and resources/README in the same directory). https://raw.githubusercontent.com/chromium/chromium/main/third_party/blink/renderer/platform/audio/hrtf_elevation.cc
+- [@zahorik06] Zahorik, Bangayan, Sundareswaran, Wang, Tam 2006, Perceptual recalibration in human sound localization: learning to remediate front-back reversals, JASA 120 (abstract only). https://doi.org/10.1121/1.2208429
+- [@cabrera] Cabrera, Morimoto 2007, Influence of fundamental frequency and source elevation on the vertical localization of complex tones and complex tone pairs, JASA 122 (abstract only). https://doi.org/10.1121/1.2736782
+- [@parise] Parise, Knorre, Ernst 2014, Natural auditory scene statistics shapes human spatial hearing, PNAS 111 (abstract only). https://doi.org/10.1073/pnas.1322705111
+- [@rogers] Chris Rogers, W3C public-audio mail on the WebKit composite HRTF set, 2012. https://lists.w3.org/Archives/Public/public-audio/2012OctDec/0338.html
+- [@mozbug] Mozilla bug 865241, import of Blink HRTF data (comments 3, 17-20). https://bugzilla.mozilla.org/show_bug.cgi?id=865241
+- [@gecko] Gecko HRTFElevation.cpp with IRC_Composite_C_R0195-incl.cpp, and the WebKit resources directory with IRC_Composite_C_R0195_*.wav. https://github.com/mozilla/gecko-dev/tree/master/dom/media/webaudio/blink ; https://github.com/WebKit/WebKit/tree/main/Source/WebCore/platform/audio/resources
+- [@waissue17] W3C web-audio-api-v2 issue 17, Permit loading of custom HRTFs (including SOFA). https://github.com/WebAudio/web-audio-api-v2/issues/17
+- [@ircamforum] IRCAM Forum, Using SOFA files in the browser, Nov 2023. https://discussion.forum.ircam.fr/t/using-sofa-files-in-the-browser/62341
+- [@pcsound] PlayCanvas engine (MIT), src/platform/sound/instance3d.js. https://github.com/playcanvas/engine/blob/main/src/platform/sound/instance3d.js
+- [@libmysofa] libmysofa, LICENSE. https://github.com/hoene/libmysofa/blob/main/LICENSE
+- [@mslowlat] Microsoft, Low Latency Audio (Windows 10 audio stack). https://learn.microsoft.com/en-us/windows-hardware/drivers/audio/low-latency-audio
+- [@gh] GitHub API metadata (licence, archived flag, last push), read 2026-11-07: https://github.com/GoogleChrome/omnitone ; https://github.com/resonance-audio/resonance-audio-web-sdk ; https://github.com/polarch/JSAmbisonics ; https://github.com/Ircam-RnD/binauralFIR ; https://github.com/Tonejs/Tone.js ; https://github.com/hoene/libmysofa ; https://github.com/Any2HRTF/Mesh2HRTF ; https://github.com/ValveSoftware/steam-audio ; https://github.com/jaakkopasanen/AutoEq
+- [@omnitone] Omnitone README. https://github.com/GoogleChrome/omnitone/blob/master/README.md
+- [@jsamb] JSAmbisonics README. https://github.com/polarch/JSAmbisonics/blob/master/README.md
+- [@iem] IEM Plugin Suite. https://plugins.iem.at/
+- [@katz12] Katz, Parseihian 2012, Perceptually based head-related transfer function database optimization, JASA 131 (abstract only). https://doi.org/10.1121/1.3672641
+- [@pqk21] Poirier-Quinot, Katz 2021, On the improvement of accommodation to non-individual HRTFs via VR active learning and inclusion of a 3D room response, Acta Acust. 5 (abstract only). https://doi.org/10.1051/aacus/2021019
+- [@zagala] Zagala, Noisternig, Katz 2020, Comparison of direct and indirect perceptual head-related transfer function selection methods, JASA 147 (abstract only). https://doi.org/10.1121/10.0001183
+- [@gutierrez] Gutierrez-Parera, López 2016, Influence of the quality of consumer headphones in the perception of spatial audio, Appl. Sci. 6(4):117 (abstract only). https://doi.org/10.3390/app6040117
+- [@wersenyi] Wersényi 2023, Evaluation of bone conduction and active-noise-cancellation headsets based on listening tests in a virtual environment, Infocommun. J. 15(3) (abstract only). https://doi.org/10.36244/icj.2023.3.6
+- [@aiha] AIHA 2025, New standard sets sound level guidelines for video game consoles (ITU-T H.872). https://www.aiha.org/news/250313-new-standard-sets-sound-level-guidelines-for-video-game-consoles
