@@ -108,8 +108,12 @@ export const PREVIEW_WAIT_S = 3.3;
 export const NAME_SHARE = 0.9;
 /** Share of right answers that meets 'locate'. */
 export const LOCATE_SHARE = 0.8;
-/** turn-to lessons start each attempt turned by these, degrees, so the sound comes from another side. */
-export const TURN_OFFSETS = [0, 180, 90, -90] as const;
+/**
+ * turn-to lessons start each attempt turned by these, degrees, so the sound comes from another side.
+ * None of them may leave the craft facing the sound at the start, or that attempt is passed without a
+ * touch: hover-turn has its ring 83 degrees to the left, so -90 faced it (6.8 degrees off) and -135 does not.
+ */
+export const TURN_OFFSETS = [0, 180, 90, -135] as const;
 
 const SIDES: readonly { readonly dir: Vec3; readonly sector: 'left' | 'right' | 'front' | 'back' }[] = [
     { dir: [-1, 0, 0], sector: 'left' },

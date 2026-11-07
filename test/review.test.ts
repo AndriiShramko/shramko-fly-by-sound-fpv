@@ -1,10 +1,11 @@
 // Tests written by the independent review of stage1-rc1 (docs/dev/review-stage-1.md): each one
 // fails on the code as reviewed and holds the fix of one confirmed defect.
 import { describe, expect, it } from 'vitest';
-import type { FlightSample, LessonLayers, SessionEvent, SonicObject } from '../src/contract';
+import type { FlightSample, Goal, LessonLayers, Pose, SessionEvent, SonicObject } from '../src/contract';
 import { DemoHost, type EngineLike } from '../demo/host';
-import { createLessonRunner, getLesson, type LessonSession, type RunnerAction } from '../src/lesson';
+import { createLessonRunner, getLesson, SHIPPED_LESSON_IDS, type LessonSession, type RunnerAction } from '../src/lesson';
 import { quatRotate, yawQuat } from '../src/util/vec';
+import { createAnalyticWorld } from '../src/world';
 import { buildReport, type Report } from '../tools/report';
 import { RecordingHost } from './helpers/record';
 
@@ -215,4 +216,65 @@ describe('review D4: the report does not call an optional lesson passed when no 
         expect(r.outcome.status).toBe('passed');
         expect(r.outcome.passedAtMs).not.toBeNull();
     }, 60000);
+});
+
+/** A pilot who never touches a control: the craft stays where the runner puts it, every line is spoken at once. */
+function idlePilot(lessonId: string, seconds: number): { readonly events: SessionEvent[]; readonly places: Pose[] } {
+    const lesson = getLesson(lessonId);
+    const world = lesson.world.kind === 'analytic' ? createAnalyticWorld(lesson.world.spec) : null;
+    const run = createLessonRunner(lesson);
+    const events: SessionEvent[] = [];
+    const places: Pose[] = [];
+    let pos = lesson.start.pos;
+    let yaw = lesson.start.yawDeg;
+    let t = 0;
+    const take = (): void => {
+        for (let guard = 0; guard < 50; guard++) {
+            const actions = run.takeActions();
+            if (actions.length === 0) return;
+            for (const a of actions) {
+                if (a.kind === 'place') {
+                    pos = a.pose.pos;
+                    yaw = a.pose.yawDeg;
+                    places.push(a.pose);
+                }
+            }
+            if (actions.some((a) => a.kind === 'say')) events.push(...run.spoken(t));
+        }
+    };
+    events.push(...run.begin(t));
+    take();
+    for (; t < seconds * 1000; t += 20) {
+        const s: FlightSample = { t, tick: t, pos, vel: [0, 0, 0], quat: yawQuat(yaw), rate: [0, 0, 0], yawDeg: yaw, pitchDeg: 0, rollDeg: 0, sticks: [0, 0, 0, 0], armed: true, touched: false, paused: false };
+        events.push(...run.step(s, world));
+        take();
+    }
+    return { events, places };
+}
+
+describe('review D5: no attempt of a flying lesson can be passed without a single input', () => {
+    const flying = SHIPPED_LESSON_IDS.filter((id) => getLesson(id).world.kind === 'analytic');
+
+    it('a pilot who touches nothing passes no attempt of any lesson, in 20 minutes', () => {
+        const passes: string[] = [];
+        for (const id of flying) {
+            const r = idlePilot(id, 1200);
+            for (const e of r.events) if (e.kind === 'lesson' && e.what === 'attempt-pass') passes.push(`${id} attempt ${e.attempt}`);
+        }
+        expect(passes).toEqual([]);
+    });
+
+    it('in a turn lesson the sound starts at least 45 degrees off the nose in every attempt, so there is something to turn to', () => {
+        const lesson = getLesson('hover-turn');
+        const goal = lesson.goals.find((g) => g.kind === 'turn-to') as Extract<Goal, { kind: 'turn-to' }>;
+        if (lesson.world.kind !== 'analytic') throw new Error('hover-turn has a lesson world');
+        const ring = createAnalyticWorld(lesson.world.spec).objects().find((o) => o.id === goal.objectId) as SonicObject;
+        const r = idlePilot('hover-turn', 600);
+        expect(r.places.length).toBeGreaterThanOrEqual(8); // at least two turns of the four starting directions
+        for (const [i, p] of r.places.entries()) {
+            const bearing = (Math.atan2(ring.pos[0] - p.pos[0], -(ring.pos[2] - p.pos[2])) * 180) / Math.PI;
+            const off = Math.abs(((((bearing - p.yawDeg) % 360) + 540) % 360) - 180);
+            expect(off, `start ${i + 1} (yaw ${p.yawDeg}): the sound is ${off.toFixed(1)} degrees off the nose`).toBeGreaterThanOrEqual(45);
+        }
+    });
 });
