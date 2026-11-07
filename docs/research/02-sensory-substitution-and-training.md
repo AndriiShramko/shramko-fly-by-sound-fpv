@@ -71,7 +71,11 @@ Mapping polarity, the direction in which a quantity maps to a sound:
 
 ## 4. Echolocation training
 
-(pending)
+- The best controlled study: 14 sighted and 12 blind adults aged 21-79 trained for 20 sessions of 2-3 h on separate days over 10 weeks (about 40-60 h): echo size discrimination, orientation of a surface, virtual maze navigation from binaural echo recordings, and 20-30 min of walking indoors and outdoors. Both groups improved on every measure, sometimes to the level of expert echolocators; neither age nor blindness limited the rate of learning or transfer to untrained tasks; a no-click control task showed the gain came from click use. At the 3-month follow-up all blind participants reported better mobility and 83% better independence and wellbeing (self-report) [37] (MEASURED, small groups).
+- Sighted learners sometimes beat blind learners, which the authors attribute to age or binaural hearing, not to vision [37] (REPORTED explanation). So a sighted pilot is a fair stand-in for a first test of the training design, but not for the end state.
+- What to borrow (INFERRED): many sessions on separate days rather than one long block; a virtual task that provably transfers to a real one; a difficulty rule tied to success (in the study the target distance grew after two consecutive sessions above 90% correct [37], which is a ready-made pass criterion); a control task and an untrained-task test to separate learning from habituation; an independence questionnaire at follow-up.
+- Scale of effort: near-expert echo skill took about 40-60 h of structured practice, against 2-8 h for narrow substitution tasks in section 1. Flying is closer to the narrow case, so the course should target hours, not months (INFERRED).
+- Not found: independent outcome data for Daniel Kish's World Access for the Blind courses (I found only the organisation's own descriptions, which I did not cite); a controlled study of a game that trains echolocation in blind children.
 
 ## 5. Audio-only and blind-accessible games
 
@@ -139,3 +143,4 @@ Mapping polarity, the direction in which a quantity maps to a sound:
 34. Thoret E, Aramaki M, Kronland-Martinet R, Velay JL, Ystad S (2014). From sound to shape: auditory perception of drawing movements. J Exp Psychol Hum Percept Perform 40(3):983-994 (abstract). https://pubmed.ncbi.nlm.nih.gov/24446717/ <!-- thoret2014 -->
 35. Martolini C, Cappagli G, Campus C, Gori M (2020). Shape recognition with sounds: improvement in sighted individuals after audio-motor training. Multisens Res 33(4-5):417-431 (abstract). https://pubmed.ncbi.nlm.nih.gov/31751938/ <!-- martolini2020 -->
 36. Lembke SA (2023). Distinguishing between straight and curved sounds: auditory shape in pitch, loudness, and tempo gestures. Atten Percept Psychophys 85(8):2751-2773. https://pmc.ncbi.nlm.nih.gov/articles/PMC10600048/ <!-- lembke2023 -->
+37. Norman LJ, Dodsworth C, Foresteire D, Thaler L (2021). Human click-based echolocation: effects of blindness and age, and real-life implications in a 10-week training program. PLoS ONE 16(6):e0252330. https://pmc.ncbi.nlm.nih.gov/articles/PMC8171922/ <!-- norman2021 -->
