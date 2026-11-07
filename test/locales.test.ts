@@ -41,6 +41,7 @@ const ARGUMENTS: Readonly<Record<string, readonly string[]>> = {
     'time.minutes': ['n'],
     'time.seconds': ['n'],
     'survey.howto': ['skip'],
+    'survey.howto-voice': ['skip'],
     'survey.question-of': ['n', 'total'],
     'survey.repeat-hint': ['key'],
     'survey.open-howto': ['key']

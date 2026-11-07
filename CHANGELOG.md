@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Spoken lines asked for by the simulator's recorder: `survey.howto` no longer tells the pilot to say the number (that works only with speech recognition on, now `survey.howto-voice`); new `survey.mic-on` (the microphone stays on during the questions), `send.none` (nothing to send) and `send.cancelled` (not sent, the flight stays on the device). English, Spanish, Polish and Russian.
+
 ## 0.1.0-rc1 — 2026-11-07 (tag `stage1-rc1`)
 
 First release candidate of stage 1, not yet built into the live simulator.
