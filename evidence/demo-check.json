@@ -1,0 +1,42 @@
+{
+  "what": "Keyboard-only headless check of the stand-alone demo and the Sound Lab (page.keyboard only; the mouse and the touch screen throw)",
+  "run": "pnpm proof:audio",
+  "date": "2026-11-07T12:29:30.574Z",
+  "browser": "156.0.8078.80",
+  "landmarks": {
+    "banner": 1,
+    "main": 1,
+    "complementary": 1,
+    "contentinfo": 1,
+    "h1": 1
+  },
+  "tabStopsBeforeStart": 6,
+  "audioContext": "running",
+  "tabStopsAfterStart": 14,
+  "tabStopsInFlight": 20,
+  "flight": {
+    "climbedM": 1.25,
+    "forwardM": 0.63,
+    "turnedDeg": 60
+  },
+  "tabStopsInTheLab": 70,
+  "tabStopsWithNumbersOpen": 85,
+  "previewsHeard": 20,
+  "exportedTheme": {
+    "id": "my-soft",
+    "characters": 2337,
+    "valid": true
+  },
+  "requests": [
+    "/index.html",
+    "/demo.css",
+    "/demo.js"
+  ],
+  "controlNotReachable": [
+    "taken out of the tab order: start-btn"
+  ],
+  "controlNoName": [
+    "no accessible name: start-btn",
+    "positive tabindex: lang"
+  ]
+}

@@ -1,0 +1,207 @@
+/* The demo page: plain, high contrast, large targets, a visible focus, light and dark. */
+:root {
+    color-scheme: light dark;
+    --bg: #ffffff;
+    --fg: #101418;
+    --muted: #4a5560;
+    --line: #8a96a3;
+    --accent: #0b57d0;
+    --accent-fg: #ffffff;
+    --focus: #b35c00;
+    --panel: #f2f5f8;
+}
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg: #0e1116;
+        --fg: #eef2f6;
+        --muted: #aab4be;
+        --line: #5a6672;
+        --accent: #8ab4ff;
+        --accent-fg: #0e1116;
+        --focus: #ffb454;
+        --panel: #171c23;
+    }
+}
+* {
+    box-sizing: border-box;
+}
+html {
+    font-size: 112.5%;
+}
+body {
+    margin: 0 auto;
+    padding: 0 1rem 6rem;
+    max-width: 60rem;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    line-height: 1.5;
+}
+h1,
+h2,
+h3 {
+    line-height: 1.25;
+}
+a {
+    color: var(--accent);
+}
+.skip {
+    position: absolute;
+    left: -999px;
+    top: 0;
+    background: var(--bg);
+    padding: 0.5rem 1rem;
+    z-index: 10;
+}
+.skip:focus {
+    left: 0;
+}
+:focus-visible {
+    outline: 3px solid var(--focus);
+    outline-offset: 2px;
+}
+button,
+select,
+input,
+textarea,
+summary {
+    font: inherit;
+    color: inherit;
+}
+button {
+    min-height: 2.75rem;
+    padding: 0.4rem 1rem;
+    border: 2px solid var(--accent);
+    border-radius: 0.4rem;
+    background: var(--panel);
+    cursor: pointer;
+}
+button:hover {
+    background: var(--accent);
+    color: var(--accent-fg);
+}
+button[aria-pressed='true'],
+button[aria-current='true'] {
+    background: var(--accent);
+    color: var(--accent-fg);
+}
+button:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+nav ul,
+ul.lessons {
+    list-style: none;
+    margin: 0 0 1rem;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+.buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin: 0.75rem 0;
+}
+.row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 1rem;
+    margin: 0.5rem 0;
+}
+.row label {
+    min-width: 12rem;
+}
+.row small {
+    flex-basis: 100%;
+    color: var(--muted);
+}
+input[type='range'] {
+    flex: 1 1 14rem;
+    min-height: 2.25rem;
+}
+input[type='number'],
+input[type='text'],
+select {
+    min-height: 2.5rem;
+    padding: 0.2rem 0.5rem;
+    border: 2px solid var(--line);
+    border-radius: 0.3rem;
+    background: var(--bg);
+}
+textarea {
+    width: 100%;
+    padding: 0.5rem;
+    border: 2px solid var(--line);
+    border-radius: 0.3rem;
+    background: var(--bg);
+    font-family: ui-monospace, Consolas, monospace;
+    font-size: 0.85rem;
+}
+fieldset {
+    margin: 1rem 0;
+    padding: 0.5rem 1rem 1rem;
+    border: 2px solid var(--line);
+    border-radius: 0.4rem;
+}
+legend {
+    padding: 0 0.5rem;
+    font-weight: 600;
+}
+dl.readout {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 0.25rem 1rem;
+    padding: 0.75rem 1rem;
+    background: var(--panel);
+    border-radius: 0.4rem;
+}
+dl.readout dt {
+    color: var(--muted);
+}
+dl.readout dd {
+    margin: 0;
+    font-variant-numeric: tabular-nums;
+}
+aside {
+    position: sticky;
+    bottom: 0;
+    margin-top: 2rem;
+    padding: 0.5rem 1rem;
+    background: var(--panel);
+    border-top: 2px solid var(--line);
+    max-height: 30vh;
+    overflow-y: auto;
+}
+aside h2 {
+    margin: 0 0 0.25rem;
+    font-size: 1rem;
+}
+#captions p {
+    margin: 0.15rem 0;
+}
+footer {
+    margin-top: 2rem;
+    color: var(--muted);
+    font-size: 0.9rem;
+}
+#lab-issues {
+    color: var(--fg);
+    border-left: 6px solid var(--focus);
+    padding-left: 0.75rem;
+}
+#lab-issues:empty {
+    display: none;
+}
+[hidden] {
+    display: none !important;
+}
+@media (prefers-reduced-motion: reduce) {
+    * {
+        scroll-behavior: auto !important;
+        transition: none !important;
+        animation: none !important;
+    }
+}

@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fly by Sound: demo and Sound Lab</title>
+<meta name="description" content="Fly by Sound is an open-source sound engine that lets blind and low-vision pilots fly an FPV drone by ear. This page is a stand-alone demo of the first lessons and a Sound Lab for tuning the sound.">
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="demo.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to the main content</a>
+
+<header>
+  <h1>Fly by Sound</h1>
+  <p>A stand-alone demo of the first lessons, and the Sound Lab. Everything works with the keyboard alone. Wired headphones are best, and the volume should start low.</p>
+</header>
+
+<nav id="nav" aria-label="Sections" hidden>
+  <ul>
+    <li><button type="button" id="nav-demo" aria-controls="demo" aria-current="true">Flight demo</button></li>
+    <li><button type="button" id="nav-lab" aria-controls="lab" aria-current="false">Sound Lab</button></li>
+  </ul>
+</nav>
+
+<main id="main" tabindex="-1">
+  <section id="start" aria-labelledby="start-h">
+    <h2 id="start-h">Start the sound</h2>
+    <p>A browser plays sound only after you ask for it. When you press the button the sound fades in over one second, and it never goes above a fixed ceiling. Turn the volume of your device down first, then up until the speech is comfortable. Loud sound can harm hearing.</p>
+    <div class="row">
+      <label for="lang">Language of the lessons</label>
+      <select id="lang">
+        <option value="en" selected>English</option>
+        <option value="pl">Polish</option>
+        <option value="ru">Russian</option>
+        <option value="es">Spanish</option>
+      </select>
+    </div>
+    <div class="row">
+      <input type="checkbox" id="screenreader">
+      <label for="screenreader">My screen reader speaks: the page does not use its own voice, and every spoken line appears as text</label>
+    </div>
+    <p><button type="button" id="start-btn">Start the sound</button></p>
+    <p id="start-status" role="status"></p>
+  </section>
+
+  <section id="demo" aria-labelledby="demo-h" hidden>
+    <h2 id="demo-h" tabindex="-1">Flight demo</h2>
+    <p>Pick a lesson. It speaks its instructions; press N to skip to the flying at once. A sighted helper can follow the readout and the captions.</p>
+    <div id="lessons"></div>
+
+    <div id="flight" hidden>
+      <h3 id="flight-h" tabindex="-1">Lesson: <span id="lesson-title"></span></h3>
+      <p id="question" role="status"></p>
+      <dl class="readout">
+        <dt>Phase</dt><dd id="t-phase">none</dd>
+        <dt>Attempt</dt><dd id="t-attempt">0</dd>
+        <dt>Touches</dt><dd id="t-touches">0</dd>
+        <dt>Height</dt><dd id="t-height">0.0 m</dd>
+        <dt>Speed</dt><dd id="t-speed">0.0 m/s</dd>
+        <dt>Heading</dt><dd id="t-heading">0 degrees</dd>
+      </dl>
+      <div class="buttons" role="group" aria-label="Lesson controls">
+        <button type="button" id="btn-next">Next step (N)</button>
+        <button type="button" id="btn-checkpoint">Back to the checkpoint (R)</button>
+        <button type="button" id="btn-restart">Back to the start (Shift+R)</button>
+        <button type="button" id="pause" aria-pressed="false">Pause (P)</button>
+        <button type="button" id="btn-leave">Leave the lesson</button>
+      </div>
+      <details>
+        <summary>Keys</summary>
+        <ul>
+          <li>W and S: forward and back. A and D: left and right.</li>
+          <li>Up and down arrows: climb and descend. Left and right arrows: turn.</li>
+          <li>N: next step, which skips the speech. R: back to the last checkpoint. Shift and R: back to the start of the lesson.</li>
+          <li>1 to 9: answer a question. 0 skips it.</li>
+          <li>P: pause and go on.</li>
+        </ul>
+      </details>
+    </div>
+  </section>
+
+  <section id="lab" aria-labelledby="lab-h" hidden>
+    <div id="lab-content"></div>
+  </section>
+</main>
+
+<aside aria-labelledby="cap-h">
+  <h2 id="cap-h">What is said</h2>
+  <div id="captions" role="log" aria-live="polite" aria-relevant="additions"></div>
+</aside>
+
+<footer>
+  <p>Fly by Sound is part of ShramkoSonicFPV, open source under the MIT licence: <a href="https://github.com/AndriiShramko/ShramkoSonicFPV">github.com/AndriiShramko/ShramkoSonicFPV</a>. It belongs to the ShramkoGSFPV FPV simulator: <a href="https://gsfpv.flyreelstudio.eu">gsfpv.flyreelstudio.eu</a>. This page sends nothing anywhere.</p>
+</footer>
+
+<script src="demo.js" defer></script>
+</body>
+</html>

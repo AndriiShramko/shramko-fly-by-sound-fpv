@@ -29,7 +29,9 @@
     "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.core.json && tsc -p tsconfig.node.json",
     "test": "vitest run --passWithNoTests",
     "proof:audio": "vitest run --config vitest.proof.config.ts",
-    "report": "node tools/run-tool.mjs report"
+    "report": "node tools/run-tool.mjs report",
+    "demo": "node demo/build.mjs --serve",
+    "demo:build": "node demo/build.mjs"
   },
   "devDependencies": {
     "@types/node": "^22.19.0",

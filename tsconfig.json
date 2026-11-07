@@ -3,7 +3,11 @@
     "target": "ES2022",
     "module": "ESNext",
     "moduleResolution": "Bundler",
-    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "lib": [
+      "ES2022",
+      "DOM",
+      "DOM.Iterable"
+    ],
     "types": [],
     "strict": true,
     "noImplicitOverride": true,
@@ -16,5 +20,9 @@
     "declaration": false,
     "noEmit": true
   },
-  "include": ["src/**/*.ts", "test-audio/page/**/*.ts"]
+  "include": [
+    "src/**/*.ts",
+    "test-audio/page/**/*.ts",
+    "demo/**/*.ts"
+  ]
 }
