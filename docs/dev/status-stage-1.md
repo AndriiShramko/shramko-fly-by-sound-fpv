@@ -8,7 +8,7 @@ Plan: ShramkoGSFPV `docs/wip/v12-plan.md`, section 4.1 (steps 1 to 13). Spec: `d
 - [x] 2 Locales en, es, pl, ru, parity test, commit 0679bec (404 keys per language; formatter, translator, key catalogue, survey definitions, speech lint)
 - [x] 3 Analytic worlds, commit c973756 (`src/world/`, `src/util/`): SDF primitives, seven generators, AnalyticWorld, canonical JSON, own SHA-256, seeded RNG, 85 world tests with goldens
 - [x] 4 Scene sampler, commit d6eea6a (`src/sense/`): ten sectors x 3 rays, hysteresis, surface-based time to collision, at most 3 hazard voices, 52 tests
-- [x] 5 Tracks, themes, prefs: validators, canonical writers, never-in-place versions, scan-to-flown mapping, themes soft/clear/race, pentatonic helper, calm preset, SonicPrefs defaults and validator (380 tests in all)
+- [x] 5 Tracks, themes, prefs, commit 530c5bb: validators, canonical writers, never-in-place versions, scan-to-flown mapping, themes soft/clear/race, pentatonic helper, calm preset, SonicPrefs defaults and validator (380 tests in all)
 - [ ] 6 Engine `src/audio/`
 - [ ] 7 Audio proofs `test-audio/`
 - [ ] 8 Lessons and runner
@@ -20,7 +20,7 @@ Plan: ShramkoGSFPV `docs/wip/v12-plan.md`, section 4.1 (steps 1 to 13). Spec: `d
 
 ## Contract changes
 
-None yet.
+None in steps 1 to 5: `src/contract.ts` is as the lead left it (checked against af9cf53).
 
 ## Decisions and notes
 
@@ -58,5 +58,7 @@ Step 5, tracks, themes, prefs
 - The engine (step 6) reads theme numbers by the names in `LAYER_PARAMS`; hazard `ttcS` null means pulse by `distance`; a hazard's `material` picks the timbre through `theme.materials`. Lesson texts need the parameters named in test/locales.test.ts (`ARGUMENTS`).
 - `tools/*.ts` cannot run under plain Node (extensionless imports, JSON imports): run them through vitest or a bundler; `tsx` is not a devDependency. Decide at step 11.
 - This repository's tests (`test/`, Node only, about 1.5 s) are also globbed by the simulator's vitest when this is its submodule; they use only paths relative to the test file.
+- The lesson texts make promises the lesson files must keep: corridor says a touch sends the craft back to the last checkpoint (assist `onTouch: 'bump-recentre'`), walls-hall says a touch is only a soft bump (`'bump'`), the ears lessons have no world (`{ kind: 'none' }`), hover-height.goal.1 needs `seconds` and move-stop.intro.1 needs `metres`.
+- The formatter relies on `Intl.PluralRules` and `Intl.NumberFormat` (CLDR data): fine in every browser and in Node with full ICU (Node 22 has it).
 - All thresholds in `DEFAULT_SAMPLER_CONFIG`, the theme numbers and the calm multipliers are starting values for tests with people, not findings.
 - The lesson set (21 lessons, ids in `src/i18n/catalog.ts`) is my reading of spec section 3; step 8 may add or drop a lesson only together with its keys in all four locale files.
