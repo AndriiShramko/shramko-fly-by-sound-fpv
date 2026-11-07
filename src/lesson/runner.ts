@@ -177,6 +177,8 @@ class Runner implements LessonSession {
     private lastCheckpoint: Checkpoint | null = null;
     private reached = new Set<string>();
     private shapeOutcome: Outcome = null;
+    /** set while the pilot's own key (N, an answer) is being handled: the first line said after it interrupts the speech in progress */
+    private interruptNext = false;
     private earsScore = { what: 0, whatAsked: 0, where: 0, whereAsked: 0, moving: 0, movingAsked: 0, answers: [] as (number | null)[] };
     // progress
     private attemptsDone: number;
@@ -291,7 +293,9 @@ class Runner implements LessonSession {
     private startStep(step: Step, t: number): void {
         switch (step.kind) {
             case 'say':
-                for (const line of step.lines) this.actions.push({ kind: 'say', line, interrupt: step.interrupt ?? false });
+                // a key the pilot just pressed cuts the speech still going with the first line of what follows
+                step.lines.forEach((line, i) => this.actions.push({ kind: 'say', line, interrupt: i === 0 && (step.interrupt ?? this.interruptNext) }));
+                this.interruptNext = false;
                 break;
             case 'cue':
                 this.actions.push({ kind: 'cue', event: step.event });
@@ -301,7 +305,8 @@ class Runner implements LessonSession {
                 this.actions.push({ kind: 'scene', scene: step.scene });
                 break;
             case 'ask':
-                for (const line of step.question.lines) this.actions.push({ kind: 'say', line, interrupt: false });
+                step.question.lines.forEach((line, i) => this.actions.push({ kind: 'say', line, interrupt: i === 0 && this.interruptNext }));
+                this.interruptNext = false;
                 this.actions.push({ kind: 'ask', question: step.question });
                 break;
             case 'wait':
@@ -738,14 +743,28 @@ class Runner implements LessonSession {
         c.answered = true;
         this.emit({ t, kind: 'answer', item: q.id, value: skip ? null : value, via: skip ? 'skip' : via });
         this.current = null;
-        c.step.onAnswer(skip ? null : value, t);
-        this.advance(t);
-        if (!this.ears && this.prev !== null && this.phaseValue === 'flying') this.evaluateGoals(this.prev, this.prev, t);
-        this.afterScript(t);
+        this.interruptNext = true;
+        try {
+            c.step.onAnswer(skip ? null : value, t);
+            this.advance(t);
+            if (!this.ears && this.prev !== null && this.phaseValue === 'flying') this.evaluateGoals(this.prev, this.prev, t);
+            this.afterScript(t);
+        } finally {
+            this.interruptNext = false;
+        }
         return this.drain();
     }
 
     next(t: number): readonly SessionEvent[] {
+        this.interruptNext = true;
+        try {
+            return this.skipAhead(t);
+        } finally {
+            this.interruptNext = false;
+        }
+    }
+
+    private skipAhead(t: number): readonly SessionEvent[] {
         this.t = Math.max(this.t, t);
         const c = this.current;
         if (c !== null && c.step.kind === 'ask') return this.answer(0, 'key', t);
@@ -793,9 +812,9 @@ class Runner implements LessonSession {
                 this.earsScore = { what: 0, whatAsked: 0, where: 0, whereAsked: 0, moving: 0, movingAsked: 0, answers: [] };
                 this.pushEarsAttempt();
             } else this.startGoal(t);
-            this.push({ kind: 'say', lines: [{ key: 'fly.reset-start' }] });
+            this.push({ kind: 'say', lines: [{ key: 'fly.reset-start' }], interrupt: !this.ears });
             this.advance(t);
-        } else if (to === 'checkpoint') this.push({ kind: 'say', lines: [{ key: 'fly.reset-checkpoint' }] });
+        } else if (to === 'checkpoint') this.push({ kind: 'say', lines: [{ key: 'fly.reset-checkpoint' }], interrupt: !this.ears });
         return { pose, events: this.drain() };
     }
 
