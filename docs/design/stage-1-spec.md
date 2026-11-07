@@ -106,3 +106,17 @@ Spoken and answered by number keys or by voice into the same recording. Two sets
 ## 12. Verification
 
 An agent cannot judge how a sound feels. Everything that can be measured is measured: offline rendering with `OfflineAudioContext` proves direction (left is louder on the left), pulse rates, limiter ceiling, voice count; unit tests cover lessons, pass rules and the session format; replay of a recorded flight must reproduce the events. The owner's ears, and later blind testers, decide the rest. Tests that find nothing stay until the end: a branch runs only what its change touches, the full gates run once before release, and long logs go to files.
+
+## 13. Amendments after the code study (2026-11-07)
+
+The simulator's plan (`docs/wip/v12-plan.md` in ShramkoGSFPV, section 6) found nine places where the code differs; these override the sections above.
+
+1. Section 2: the listener uses the heading frame (yaw only, tilt ignored) by default; the body frame is a pilot option.
+2. Section 6: this repository's `locales/` holds lesson, cue, survey and spoken strings; the simulator's own menus, key labels, GPU hint, admin and site texts live in the simulator's dictionaries.
+3. Section 7: the package may carry an optional `sim-log.json` (the simulator's input log) for exact re-simulation; replay itself plays the 30 Hz track.
+4. Section 8: mail attachments up to 15 MB; bigger packages go as an admin link.
+5. Section 5: resets use the respawn-to-checkpoint path, not the time-based rewind.
+6. Section 4: scans carry no material; scan surfaces are floor, ceiling or wall by surface direction; 'obstacle' is for track objects and lesson worlds.
+7. Section 6: there are two start pages: the site's static `/{lang}/sound/` and the simulator's start screen.
+8. Done means: Winter Garden's walls are 3.2 cm voxels, 16 cm at x5; a refined grid is shipped if possible.
+9. Section 8: for mail, "confirmed" means Gmail's SMTP server accepted the message.
