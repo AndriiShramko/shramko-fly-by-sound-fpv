@@ -4,7 +4,10 @@
 // Plan: ShramkoGSFPV docs/wip/v12-plan.md section 4.1; status: docs/dev/status-stage-1.md.
 export * from './contract';
 export * from './i18n';
+export * from './prefs';
 export * from './sense';
 export * from './survey';
+export * from './theme';
+export * from './track';
 export * from './util';
 export * from './world';

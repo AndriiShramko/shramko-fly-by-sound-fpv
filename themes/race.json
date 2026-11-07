@@ -1,0 +1,118 @@
+{
+  "duckDb": 12,
+  "format": "shramko-sonic-theme/1",
+  "id": "race",
+  "layers": {
+    "height": {
+      "gainDb": -11,
+      "params": {
+        "bandSoftM": 0.3,
+        "baseStep": 4,
+        "glideMs": 20,
+        "maxStep": 17,
+        "metresPerStep": 0.4,
+        "roughDepth": 0.8,
+        "roughHz": 50
+      },
+      "timbre": "sine"
+    },
+    "room": {
+      "gainDb": -26,
+      "params": {
+        "bedLowpassHz": 900,
+        "bedOrder": 0,
+        "bedStep": 0,
+        "opennessFullM": 25,
+        "reverbMax": 0.3,
+        "reverbMin": 0.1
+      },
+      "timbre": "noise"
+    },
+    "safety": {
+      "gainDb": -4,
+      "params": {
+        "distFarM": 10,
+        "ildBoostDb": 8,
+        "lowpassFarHz": 5000,
+        "lowpassNearHz": 16000,
+        "periodFarMs": 900,
+        "periodNearMs": 70,
+        "pingMs": 80,
+        "pingStep": 10,
+        "pitchCeilingStep": 12,
+        "pitchFloorStep": 0,
+        "pitchObstacleStep": 9,
+        "pitchWallStep": 7,
+        "pulseMs": 30,
+        "reverbSendFar": 0.35,
+        "ttcFarS": 3
+      },
+      "timbre": "click"
+    },
+    "shape": {
+      "gainDb": -9,
+      "params": {
+        "cornerMs": 30,
+        "faceHz": 3.5,
+        "orbitHz": 1.4,
+        "shapeStep": 9,
+        "sizeBoostDb": 4,
+        "sweepHz": 0.9
+      },
+      "timbre": "metal"
+    },
+    "speed": {
+      "gainDb": -16,
+      "params": {
+        "noiseMix": 0.3,
+        "speedMaxMps": 15,
+        "tempoMaxHz": 14,
+        "tempoMinHz": 1,
+        "tickMs": 8,
+        "tickStep": 5
+      },
+      "timbre": "click"
+    },
+    "target": {
+      "gainDb": -8,
+      "params": {
+        "farM": 40,
+        "humStep": 2,
+        "lapChimeMs": 700,
+        "missFullM": 3,
+        "nearM": 2,
+        "noteMs": 200,
+        "rateFarHz": 1.8,
+        "rateNearHz": 12,
+        "roughMax": 0.8
+      },
+      "timbre": "pluck"
+    },
+    "voice": {
+      "gainDb": -3,
+      "params": {
+        "pitch": 1,
+        "volume": 1
+      },
+      "timbre": "sine"
+    }
+  },
+  "master": {
+    "ceilingDb": -6,
+    "fadeInS": 1,
+    "gainDb": -9
+  },
+  "materials": {
+    "ceiling": "noise",
+    "floor": "thud",
+    "obstacle": "metal",
+    "wall": "wood"
+  },
+  "name": "Race",
+  "scale": {
+    "octaves": 4,
+    "rootHz": 130.8128,
+    "steps": [0, 2, 4, 7, 9]
+  },
+  "version": 1
+}

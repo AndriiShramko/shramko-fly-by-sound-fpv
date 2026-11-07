@@ -1,0 +1,118 @@
+{
+  "duckDb": 12,
+  "format": "shramko-sonic-theme/1",
+  "id": "soft",
+  "layers": {
+    "height": {
+      "gainDb": -12,
+      "params": {
+        "bandSoftM": 0.3,
+        "baseStep": 3,
+        "glideMs": 80,
+        "maxStep": 17,
+        "metresPerStep": 0.5,
+        "roughDepth": 0.6,
+        "roughHz": 38
+      },
+      "timbre": "pad"
+    },
+    "room": {
+      "gainDb": -22,
+      "params": {
+        "bedLowpassHz": 900,
+        "bedOrder": 0,
+        "bedStep": 0,
+        "opennessFullM": 25,
+        "reverbMax": 0.45,
+        "reverbMin": 0.1
+      },
+      "timbre": "air"
+    },
+    "safety": {
+      "gainDb": -6,
+      "params": {
+        "distFarM": 12,
+        "ildBoostDb": 6,
+        "lowpassFarHz": 2500,
+        "lowpassNearHz": 16000,
+        "periodFarMs": 1400,
+        "periodNearMs": 110,
+        "pingMs": 120,
+        "pingStep": 10,
+        "pitchCeilingStep": 12,
+        "pitchFloorStep": 0,
+        "pitchObstacleStep": 9,
+        "pitchWallStep": 7,
+        "pulseMs": 60,
+        "reverbSendFar": 0.35,
+        "ttcFarS": 4
+      },
+      "timbre": "mallet"
+    },
+    "shape": {
+      "gainDb": -10,
+      "params": {
+        "cornerMs": 70,
+        "faceHz": 2.5,
+        "orbitHz": 0.9,
+        "shapeStep": 9,
+        "sizeBoostDb": 4,
+        "sweepHz": 0.5
+      },
+      "timbre": "pluck"
+    },
+    "speed": {
+      "gainDb": -20,
+      "params": {
+        "noiseMix": 0.3,
+        "speedMaxMps": 15,
+        "tempoMaxHz": 9,
+        "tempoMinHz": 1,
+        "tickMs": 18,
+        "tickStep": 5
+      },
+      "timbre": "air"
+    },
+    "target": {
+      "gainDb": -10,
+      "params": {
+        "farM": 40,
+        "humStep": 2,
+        "lapChimeMs": 900,
+        "missFullM": 3,
+        "nearM": 2,
+        "noteMs": 320,
+        "rateFarHz": 1.2,
+        "rateNearHz": 8,
+        "roughMax": 0.8
+      },
+      "timbre": "pad"
+    },
+    "voice": {
+      "gainDb": -3,
+      "params": {
+        "pitch": 1,
+        "volume": 1
+      },
+      "timbre": "sine"
+    }
+  },
+  "master": {
+    "ceilingDb": -6,
+    "fadeInS": 1,
+    "gainDb": -9
+  },
+  "materials": {
+    "ceiling": "air",
+    "floor": "thud",
+    "obstacle": "metal",
+    "wall": "wood"
+  },
+  "name": "Soft",
+  "scale": {
+    "octaves": 4,
+    "rootHz": 130.8128,
+    "steps": [0, 2, 4, 7, 9]
+  },
+  "version": 1
+}

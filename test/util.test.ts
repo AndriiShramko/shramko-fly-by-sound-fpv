@@ -2,6 +2,7 @@ import { createHash, randomBytes } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 import {
     canonicalJson,
+    canonicalPretty,
     CanonicalJsonError,
     createRng,
     Sha256,
@@ -160,5 +161,34 @@ describe('quaternions', () => {
         near(quatRotate(quatConjugate(q), quatRotate(q, v)), v);
         const twice = quatMultiply(q, q);
         near(quatRotate(twice, [0, 0, -1]), quatRotate(yawQuat(114), [0, 0, -1]));
+    });
+});
+
+describe('canonicalPretty', () => {
+    it('lays out sorted keys with two spaces and short number arrays on one line', () => {
+        const text = canonicalPretty({ b: [1, 2, 3], a: { y: 'x', x: null }, list: [{ k: 1 }], empty: {}, none: [] });
+        expect(text).toBe(['{', '  "a": {', '    "x": null,', '    "y": "x"', '  },', '  "b": [1, 2, 3],', '  "empty": {},', '  "list": [', '    {', '      "k": 1', '    }', '  ],', '  "none": []', '}'].join('\n'));
+    });
+
+    it('is the same value as canonicalJson says, and long number arrays go down the page', () => {
+        const value = { v: Array.from({ length: 20 }, (_, i) => i / 4), s: ['a', 'b'], o: { 1: 'one', 2: 'two' } };
+        expect(JSON.parse(canonicalPretty(value))).toEqual(JSON.parse(canonicalJson(value)));
+        expect(canonicalPretty(value).split('\n').length).toBeGreaterThan(20);
+        expect(canonicalPretty([1, 2])).toBe('[1, 2]');
+    });
+
+    it('is stable when written, read and written again', () => {
+        const value = { z: [0.1, -0, 1e21], a: { m: [[1, 2], [3, 4]], d: 'é' } };
+        const once = canonicalPretty(value);
+        expect(canonicalPretty(JSON.parse(once))).toBe(once);
+        expect(once).toContain('[0.1, 0, 1e+21]');
+    });
+
+    it('refuses what canonicalJson refuses', () => {
+        expect(() => canonicalPretty({ a: Number.NaN })).toThrow(CanonicalJsonError);
+        expect(() => canonicalPretty({ d: new Date(0) })).toThrow(CanonicalJsonError);
+        const cyclic: Record<string, unknown> = {};
+        cyclic['self'] = cyclic;
+        expect(() => canonicalPretty(cyclic)).toThrow(/cycle/);
     });
 });
