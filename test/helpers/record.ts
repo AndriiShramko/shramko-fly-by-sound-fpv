@@ -12,7 +12,7 @@ import { MemorySink, packSession, readPackage, SessionWriter, type SessionPackag
 import { getBuiltinTheme } from '../../src/theme';
 import { yawQuat } from '../../src/util/vec';
 import { createAnalyticWorld } from '../../src/world';
-import { DEVICE, CONSENT } from './session-input';
+import { CONSENT, CONSENT_VOICE, DEVICE } from './session-input';
 
 export interface HostOptions {
     readonly hz?: number;
@@ -204,7 +204,7 @@ export class RecordingHost {
     }
 
     /** The recorded session as a package: written through a SessionWriter into memory and zipped. */
-    async toPackage(options: { readonly chunkFrames?: number } = {}): Promise<{ readonly bytes: Uint8Array; readonly pkg: SessionPackage }> {
+    async toPackage(options: { readonly chunkFrames?: number; readonly voice?: { readonly offsetMs: number; readonly slices: readonly Uint8Array[] } } = {}): Promise<{ readonly bytes: Uint8Array; readonly pkg: SessionPackage }> {
         const sink = new MemorySink();
         const world = this.world;
         const last = this.frames.at(-1)?.t ?? this.t;
@@ -220,13 +220,17 @@ export class RecordingHost {
                 settings: this.prefs,
                 assists: this.lesson.assists,
                 device: { ...DEVICE, locale: this.locale },
-                consent: CONSENT,
+                consent: options.voice === undefined ? CONSENT : CONSENT_VOICE,
                 pilot: { id: 'testPilot01', nickname: null },
                 clock: { startIso: '2026-11-07T10:00:00Z', frameHz: this.o.recordHz }
             },
             ...(options.chunkFrames === undefined ? {} : { chunkFrames: options.chunkFrames })
         });
         const events = [...this.events, { t: last, kind: 'session', what: 'end' } as SessionEvent];
+        if (options.voice !== undefined) {
+            writer.setVoiceOffset(options.voice.offsetMs);
+            for (const slice of options.voice.slices) writer.voice(slice);
+        }
         for (const f of this.frames) writer.frame(f);
         for (const e of events) writer.event(e);
         await writer.finish({ ended: new Date(Date.parse('2026-11-07T10:00:00Z') + last + 1000).toISOString() });

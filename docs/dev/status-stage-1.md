@@ -13,8 +13,8 @@ Plan: ShramkoGSFPV `docs/wip/v12-plan.md`, section 4.1 (steps 1 to 13). Spec: `d
 - [x] 7 Audio proofs `test-audio/`, commit 262c3b8: direction, pulse rate, ceiling, fade-in, voice budget, each with a broken-engine control that fails; evidence in `evidence/audio-proofs.json` (`pnpm proof:audio`, about 11 s)
 - [x] 8 Lessons and runner, commit 09cbc75: 21 lessons of modules 0-7 in `lessons/` with `paths.json` (full 21, fast 7), strict loader, pure `LessonRunner` with a host interface (`src/lesson/`); for every goal kind a scripted pass and a near miss (441 Node tests in all)
 - [x] 9 Session format `src/session/`, commit adce222 (49 tests; fixtures written by Python's zipfile and gzip)
-- [x] 10 Replay core `src/replay/`, commit: the one titled "Step 10" (18 tests: scripted flights recorded by a test double of the host, re-derived, with a negative control for every way a replay can differ)
-- [ ] 11 Report tool `tools/report.ts`
+- [x] 10 Replay core `src/replay/`, commit 3c93b91 (18 tests: scripted flights recorded by a test double of the host, re-derived, with a negative control for every way a replay can differ)
+- [x] 11 Report tool `tools/report.ts`, commit: the one titled "Step 11" (20 tests, `pnpm report <package.zip>`)
 - [ ] 12 Demo and Sound Lab `demo/`
 - [ ] 13 `docs/testing/` and tag `stage1-rc1`
 
@@ -94,11 +94,18 @@ Step 10, replay core
 - Not known to the replay, so passed in when they matter: the lesson's saved progress at the start (`progress`, matters for lessons that need several blocks) and the dice of the ears game (`seed`).
 - `test/helpers/record.ts` is the test double of the host loop (`RecordingHost`): it flies a scripted craft at 60 Hz, speaks through a simulated queue (45 ms per character against the runner's 65), answers questions, records 30 Hz frames with cue ids and the events, and writes a package through `SessionWriter`. The report tests use it too.
 
+Step 11, report tool
+- `tools/report.ts`: `buildReport(pkg, options)` makes the report (format `shramko-sonic-report/1`, plain JSON), `renderMarkdown(report)` the text for a person, `parseTranscript` reads JSON (Whisper-like: `start` and `end` in seconds, or `startMs` and `endMs`), SRT and WebVTT, `main(argv, io)` is the whole command line over an injected file system. `pnpm report <package.zip> [--transcript f] [--track f] [--json f] [--md f] [--format md|json] [--no-replay] [--lenient]`; exit 0 done, 1 a file or the package cannot be read, 2 wrong use.
+- It reports: outcome (passed, not passed, unfinished, no lesson), attempts with result, time, touches, gates and resets, the time of every gate since the attempt began (or was restarted by a reset to the start) and of every leg, the mean miss of the gate centres, the flown path's length, speeds, and its distance from the polyline through the gates (start position, then the course's gates in order; per attempt and overall; frames up to the last gate of a passed attempt), the answers, the survey, a timeline of events and spoken lines, and the replay check line. Warnings: an unfinished (recovered) session, package problems in lenient reading, a voice file with no transcript, gaps of over a second in the flight log, replay notes.
+- `--transcript`: segments are on the voice clock; `manifest.clock.voiceOffsetMs` puts them on the session clock, so what the pilot said sits between the events (at the same instant the event comes first). The transcription itself is made elsewhere: the tool never touches the network.
+- A scan lesson needs its gates from `--track` (a track file; `trackToObjects` at the manifest's transform); without it the path deviation is null. A scan session is replayed without the simulator's world (no hazard cues), which the warnings say.
+- The Python-made fixture (`test/fixtures/session-python-store.zip`) reports correctly and its replay check FAILS, as it should: its events were not made by this runner.
+
 ## Risks for the next agent
 
 - The engine reads theme numbers by the names in `LAYER_PARAMS`. Ducking under speech cannot be proven offline (speechSynthesis is outside the graph): `duckDb` is unit-tested, the rest needs ears. With `selfVoice` off the engine ducks for an estimated speaking time.
 - Lesson texts need the parameters named in test/locales.test.ts (`ARGUMENTS`).
-- `tools/*.ts` cannot run under plain Node (extensionless imports, JSON imports): run them through vitest or a bundler; `tsx` is not a devDependency. Decide at step 11.
+- `tools/*.ts` cannot run under plain Node (extensionless imports, JSON imports): `tools/run-tool.mjs <tool> [arguments]` loads a tool through Vite's server-side module loader (Vite is already a devDependency; no tsx, nothing written to disk, about 1 s), `pnpm report` uses it. Tests call a tool's `main` in-process.
 - This repository's tests (`test/`, Node only, about 1.5 s) are also globbed by the simulator's vitest when this is its submodule; they use only paths relative to the test file.
 - The lesson texts make promises the lesson files must keep: corridor says a touch sends the craft back to the last checkpoint (assist `onTouch: 'bump-recentre'`), walls-hall says a touch is only a soft bump (`'bump'`), the ears lessons have no world (`{ kind: 'none' }`), hover-height.goal.1 needs `seconds` and move-stop.intro.1 needs `metres`.
 - The formatter relies on `Intl.PluralRules` and `Intl.NumberFormat` (CLDR data): fine in every browser and in Node with full ICU (Node 22 has it).
