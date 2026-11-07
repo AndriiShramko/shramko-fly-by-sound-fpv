@@ -115,7 +115,22 @@ Mapping polarity, the direction in which a quantity maps to a sound:
 
 ## 7. Children and students
 
-(pending)
+Early-blind versus late-blind hearing, which decides what to encode:
+
+| Finding | Source | Strength |
+|---|---|---|
+| Congenitally and early blind adults discriminate pitch and timbre better than matched sighted adults; late-blind adults do not | Wan et al., as summarised in a review [58] | REPORTED |
+| Nine congenitally blind adults (27 sighted controls) were severely impaired at spatial bisection (is the middle of three sounds nearer the first or the third?): thresholds 4.2 times typical, half at chance; simpler spatial tasks and temporal bisection were intact | [59] | MEASURED |
+| Congenitally blind children aged 9-14 show the same bisection deficit and a lower minimum-audible-angle precision, with temporal tasks intact; the authors say the capacity recovers with age | [60] | MEASURED |
+| Early-blind people can be worse at judging vertical position and the relative position of three sounds, yet better at peripheral localisation and distance discrimination | background section of [37] | REPORTED |
+
+- Design consequence (INFERRED): carry relative quantities (closer, faster, off course) with pitch, timbre and tempo, which early-blind listeners hear well, and keep spatial position coarse (left, centre, right) instead of asking for fine comparisons of source separation. Pre-test polarity per user, because blindness onset changed polarity in at least one mapping [19].
+- Game training works for children: 44 visually impaired children aged 6-17 trained for 12 weeks with a wearable audio bracelet, in weekly 45 min sessions with a rehabilitator (9 h) plus about 5 h a week at home with a relative (60 h; 69 h in total); the child chose the sounds (elephant, mosquito, drums) to stay motivated; the audio group improved on almost all spatial tests and the control group, taught psychomotor lessons at other centres, did not (not randomised) [61] (MEASURED). The therapist or relative wore the device too, to make it more entertaining.
+- A short game can transfer: seven early-blind 16-17 year olds explored an audio-only action-game model of a real building for 60 min (two 30 min sessions plus 15 min of familiarisation); route finding in the real building was markedly good and correlated with game score [62] (MEASURED, n = 7). Earlier, AudioDoom, a 3D acoustic story world, was field-tested with blind children in a Chilean school and spatial sound produced navigable mental structures (preliminary) [63] (REPORTED).
+- Formats already used with visually impaired children: LEAP offers free open-source binaural games, tic-tac-toe in two-dimensional audio space, tennis for movement and speed in three-dimensional audio, and "Curve", where the child hears an equation's graph as notes and repeats it before a time limit [64] (REPORTED). Participants in a navigation training study treated it as a game and all enjoyed it, which the review links to less distress than real-world training [12] (REPORTED).
+- Teachers and instructors: the instructor should observe, offer help when needed and tailor the programme, and users can be paired to help each other [12]; visually impaired adults asked for a hands-on sighted instructor in the first drone flights because fear of crashing stopped them exploring [56] (REPORTED).
+- Session length: no study I opened reports an optimal length for children. Sessions ran 20 min in the Bucharest game, where fatigue rose with scene complexity [45], 30 min twice in Connors' game and 45 min weekly in Cappagli's. I therefore propose bursts of 10-15 min with a break and no more than about 30 min a sitting (INFERRED, to be tested).
+- Not found: a controlled study of children flying or steering by sound; guidance from a teacher-of-the-blind body on audio-game session length; studies of audio-only games with blind children under six.
 
 ## 8. Measuring progress
 
@@ -192,3 +207,10 @@ Mapping polarity, the direction in which a quantity maps to a sound:
 55. Godfroy-Cooper M, Miller JD, Szoboszlay Z, Wenzel EM (2017). 3D-sonification for obstacle avoidance in brownout conditions. Proc AHS International 73rd Annual Forum. https://ntrs.nasa.gov/citations/20170011173 <!-- godfroy2017 -->
 56. Gadiraju V, Garcia J, Kane SK, Brock AM (2021). "It is fascinating to make these beasts fly": understanding visually impaired people's motivations and needs for drone piloting. Proc ASSETS '21. https://par.nsf.gov/biblio/10323221 <!-- gadiraju2021 -->
 57. George R. EarPilot: flying an airplane by ear (session description, Minnebar 19). https://sessions.minnestar.org/sessions/1687 <!-- earpilot -->
+58. Jóhannesson ÓI, Balan O, Unnthorsson R, Moldoveanu A, Kristjánsson Á (2016). The Sound of Vision Project: on the feasibility of an audio-haptic representation of the environment, for the visually impaired. Brain Sci 6(3):20. https://pmc.ncbi.nlm.nih.gov/articles/PMC5039449/ <!-- johannesson2016 -->
+59. Gori M, Sandini G, Martinoli C, Burr DC (2014). Impairment of auditory spatial localization in congenitally blind human subjects. Brain 137:288-293. https://pmc.ncbi.nlm.nih.gov/articles/PMC3891446/ <!-- gori2014 -->
+60. Vercillo T, Burr D, Gori M (2016). Early visual deprivation severely compromises the auditory sense of space in congenitally blind children. Dev Psychol 52(6). https://pmc.ncbi.nlm.nih.gov/articles/PMC5053362/ <!-- vercillo2016 -->
+61. Cappagli G, et al. (2019). Audio motor training improves mobility and spatial cognition in visually impaired children. Sci Rep 9. https://pmc.ncbi.nlm.nih.gov/articles/PMC6397231/ <!-- cappagli2019 -->
+62. Connors EC, Chrastil ER, Sánchez J, Merabet LB (2014). Action video game play and transfer of navigation and spatial cognition skills in adolescents who are blind. Front Hum Neurosci 8:133. https://pmc.ncbi.nlm.nih.gov/articles/PMC3949101/ <!-- connors2014 -->
+63. Lumbreras M, Sánchez J (1998). 3D aural interactive hyperstories for blind children (AudioDoom). ICDVRAT proceedings archive. https://oneswitch.org.uk/OS-REPOSITORY/MUSEUM/VARIOUS/VR/ICDArchive2021/1998/P/1998_16.pdf <!-- audiodoom1998 -->
+64. Paths to Literacy (Perkins School for the Blind and TSBVI). LEAP games using binaural sound. https://www.pathstoliteracy.org/resource/leap-games-using-binaural-sound <!-- leap -->
