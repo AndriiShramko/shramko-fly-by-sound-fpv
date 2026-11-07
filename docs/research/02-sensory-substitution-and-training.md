@@ -95,7 +95,23 @@ Mapping polarity, the direction in which a quantity maps to a sound:
 
 ## 6. Blind people flying, and drone sonification
 
-(pending)
+- Real aircraft: Miles Hilton-Barber had flight-instrument output converted to speech (angle of bank, altitude, track) and trained four years with a sighted co-pilot before his London to Sydney microlight flight; he still needed that co-pilot [51] (REPORTED, his own account). Blind pilots currently use an attitude sonification to control aircraft attitude [52] (REPORTED).
+- Attitude by sound, simulator: blind and sighted pilots flying successive manoeuvres on sonification alone both reached target attitudes with good accuracy and did not differ significantly; harder manoeuvres raised subjective workload and lowered brain responses to unexpected sounds, so the authors restrict the display to simple recovery and guidance manoeuvres [52] (MEASURED).
+- Attitude by sound, real aircraft (16 pilots, vision blocked): roll was an interaural level shift towards the high wing; pitch was a spectral tilt plus an added pitch of 1000 Hz nose-up and 2400 Hz nose-down, chosen over spatial elevation cues because elevation localises poorly without individual head models and in noise. Errors fell by about 40% (pitch) and 90% (roll) against no audio, the first recovery move was correct in about 85% of trials, 3 of 160 trials were aborted, and the authors say precise control was not expected. They also note that earlier displays made of plain tones and noise were fatiguing and annoying and pilots disengaged them, which is why they used the pilot's own music as the carrier [53] (MEASURED, REPORTED for the history).
+- Drones and UAVs: continuous sonification of course deviation gave 1.9 s (19%) faster reactions than discrete alerts in 39 military participants, but it interfered with discrete late-arrival alerts [54] (MEASURED). A spatialised pulse sonification (shorter pulse period as the helicopter drifts to an obstacle) in cockpit noise was localised to between under 3 and 14 degrees, with front-back reversals; a narrowband tone with level differences beat a broadband tone with generic head-model spectral cues (4 participants, two of them authors) [55] (MEASURED, tiny n).
+- Blind and low-vision drone pilots, interviews (59 survey answers, 13 interviews): 54% had high interest and 55% had never flown or been near a drone; the main motive was flying with sighted family. They want altitude, speed and direction, speech only for threats such as crash warnings, perceptual beeps and tones for 3D space, a user-controlled amount of feedback ("one brain and only two ears"), audio not from the noisy drone but through headphones (one asked for bone conduction), and a sighted instructor in the first flights because fear of a crash stops exploration [56] (REPORTED, small sample).
+
+| Quantity | Cue with some evidence | Gap |
+|---|---|---|
+| Roll or bank | left-right level shift [53]; an attitude sonification used by blind pilots [52] | no test with FPV-style fast rotation (INFERRED gap) |
+| Pitch angle | spectral tilt plus pitch [53] | nose-up got the lower tone, the reverse of "up = higher"; whether that was easy to learn is not reported |
+| Altitude | none measured; users ask for it [56] | I found no study of altitude sonification with measured performance |
+| Speed | tempo (polarity agreed by blind and sighted [19]); "sound slider" [42] | not tested for flight |
+| Obstacle or wall | pulse period shrinks with closeness, spatialised [20, 55] | tested with 4 and 9 people |
+| Off course | continuous sonified deviation [54] | masks discrete alerts |
+
+- Not found: any published blind FPV racing pilot; a measured sonification of drone altitude or speed with blind users; the Neubauer and Teas 1992 Air Force report (the host blocked it) and the Sound Flyer's exact mapping (publisher blocked). EarPilot, an iPhone app that lets a blind pilot fly basic manoeuvres in an aeroplane, is described only in a conference talk blurb [57] (REPORTED, no results).
+- Consequence (INFERRED): start flight training in a self-levelling mode with altitude hold, because the evidence supports coarse attitude and recovery by ear and not precise manual control; the Bucharest game also dropped aircraft-style controls for quadcopter-style translation [45]. Remove assists step by step.
 
 ## 7. Children and students
 
@@ -169,3 +185,10 @@ Mapping polarity, the direction in which a quantity maps to a sound:
 48. MDN Web Docs: ARIA live regions. https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Guides/Live_regions <!-- mdn_live -->
 49. MDN Web Docs: SpeechSynthesis. https://developer.mozilla.org/en-US/docs/Web/API/SpeechSynthesis <!-- mdn_speech -->
 50. MDN Web Docs: PannerNode.panningModel. https://developer.mozilla.org/en-US/docs/Web/API/PannerNode/panningModel <!-- mdn_panner -->
+51. Cackett P (2025). Danger zone: Miles Hilton-Barber (interview). Eye News 32(1), June/July 2025. https://www.eyenews.uk.com/media/41220/eyeam25-hilton-barber-final2.pdf <!-- hiltonbarber -->
+52. Valéry B, Scannella S, Peysakhovich V, Barone P, Causse M (2017). Can an aircraft be piloted via sonification with an acceptable attentional cost? A comparison of blind and sighted pilots. Appl Ergon 62:227-236 (abstract). https://pubmed.ncbi.nlm.nih.gov/28411733/ <!-- valery2017 -->
+53. Simpson BD, Brungart DS, Dallman RC, Yasky RJ, Romigh GD (2007). Flying by ear: blind flight with a music-based artificial horizon. Proc Human Factors and Ergonomics Society (NASA copy). https://ntrs.nasa.gov/citations/20080042307 <!-- simpson2007 -->
+54. Donmez B, Cummings ML, Graham HD (2009). Auditory decision aiding in supervisory control of multiple unmanned aerial vehicles. Hum Factors 51(5):718-729 (abstract). https://pubmed.ncbi.nlm.nih.gov/20196296/ <!-- donmez2009 -->
+55. Godfroy-Cooper M, Miller JD, Szoboszlay Z, Wenzel EM (2017). 3D-sonification for obstacle avoidance in brownout conditions. Proc AHS International 73rd Annual Forum. https://ntrs.nasa.gov/citations/20170011173 <!-- godfroy2017 -->
+56. Gadiraju V, Garcia J, Kane SK, Brock AM (2021). "It is fascinating to make these beasts fly": understanding visually impaired people's motivations and needs for drone piloting. Proc ASSETS '21. https://par.nsf.gov/biblio/10323221 <!-- gadiraju2021 -->
+57. George R. EarPilot: flying an airplane by ear (session description, Minnebar 19). https://sessions.minnestar.org/sessions/1687 <!-- earpilot -->
