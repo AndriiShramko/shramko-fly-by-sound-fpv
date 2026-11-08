@@ -109,10 +109,12 @@ The review's fixes (`docs/wip/s13-sound-review.md`, 2 blockers, 6 majors, 8 mino
 | m8 build-machine folders | placeholders here; the design document is the lead's | this doc |
 | (proofs' evidence after the engine changes) | | 2f5a671 |
 
-Checks on the last commit: `pnpm typecheck` clean; `pnpm test` 26 files, 674 tests (the locale lint and the layout
-check run inside it, `test/locales.test.ts` and `test/layout.test.ts`; `node tools/run-tool.mjs locale-lint` and
-`check-layout` need the `main()` that s13-lessons adds to those tools); `pnpm proof:audio` 3 files, 9 proofs, every
-broken control failing; `pnpm listen` 8 of 8 checks valid and passing, fresh for inputs fd752e0f7bf9.
+Checks on the last commit: `pnpm typecheck` clean; `pnpm test` 26 files, 674 tests; the locale lint (0 problems, 4
+languages, 425 keys) and the layout check (0 problems), run as tools through Vite's loader as `tools/run-tool.mjs`
+does (`node tools/run-tool.mjs locale-lint` and `check-layout` need the `main()` that s13-lessons adds to those
+tools; inside `pnpm test` they run as `test/locales.test.ts` and `test/layout.test.ts`); `pnpm proof:audio` 3 files,
+9 proofs, every broken control failing; `pnpm listen` 8 of 8 checks valid and passing, fresh for inputs fd752e0f7bf9.
+Trial merges: with s13-lessons see "Needs from other lanes"; with s13-worlds (fef8869) no conflict.
 
 Left open, with reasons:
 
