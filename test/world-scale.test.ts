@@ -13,6 +13,7 @@ import type { Goal, LessonDef, SonicObject } from '../src/contract';
 import { getLesson, lessonPaths, SHIPPED_LESSON_IDS } from '../src/lesson';
 import { createAnalyticWorld, type AnalyticWorldInfo } from '../src/world';
 import { ScriptedPilot } from './helpers/pilot';
+import { alongTrack } from './helpers/along';
 import { fullStickSeconds, scaleRow, type Reach, type ScaleRow } from './helpers/reach';
 import { playLesson } from './helpers/truth';
 
@@ -131,16 +132,34 @@ describe('rooms at the scale of a micro drone (M41-18)', () => {
         expect(t(c, 'straightM')).toBeLessThan(6);
         expect(t(asV012('corridor'), 'segmentM')).toBeGreaterThan(WALL_S[1]);
         expect(t(asV012('corridor'), 'straightM')).toBeGreaterThan(6);
-        // the goals follow the corridor: the straight, then most of the rest of the track
+        // the goals follow the corridor: the straight, then the track to its last few metres. A goal 'fly-distance' counts
+        // the attempt's whole path (review M1: the goals are met in turn, each against the path flown since the attempt
+        // began, not added up), so the last one is the track's length less a margin for a pilot who cuts the corners
         const goals = c.goals.filter((g): g is Extract<Goal, { kind: 'fly-distance' }> => g.kind === 'fly-distance').map((g) => g.metres);
         const w = worldOf(c)!;
         const track = w.checkpoints ?? [];
         let length = 0;
         for (let i = 1; i < track.length; i++) length += Math.hypot(track[i]!.pos[0] - track[i - 1]!.pos[0], track[i]!.pos[1] - track[i - 1]!.pos[1], track[i]!.pos[2] - track[i - 1]!.pos[2]);
         expect(goals[0]).toBe(w.resolved['straightM']);
-        expect((goals[0] as number) + (goals[1] as number)).toBeLessThan(length);
-        expect((goals[0] as number) + (goals[1] as number)).toBeGreaterThan(0.8 * length);
-    });
+        const onLastStretch = (metres: number): boolean => metres < length - 4 + 1e-9 && metres > length - 6;
+        expect(onLastStretch(goals.at(-1) as number), `${goals.at(-1)} of ${length.toFixed(2)} m`).toBe(true);
+        // control: the goals as they were (15 and 100, read as 115 of the 126 m) pass at 100 m, 26 m before the end
+        expect(onLastStretch(100)).toBe(false);
+        // and the truth bot is counted there, on the last 6 m of the track, past every pillar but the last (the robust end
+        // is lane s13-lessons' goal 'track-end' at the merge: test/world-track-end.test.ts)
+        const p = new ScriptedPilot(c);
+        const counted: { at: number | null } = { at: null };
+        const step = p.tick.bind(p);
+        p.tick = () => {
+            step();
+            if (counted.at === null && p.of('lesson').some((e) => e.what === 'attempt-pass')) counted.at = alongTrack(track, p.pos);
+        };
+        playLesson(p, () => 'truth', 1);
+        const at = counted.at ?? -1;
+        expect(at).toBeGreaterThan(length - 6);
+        const pillars = w.objects().filter((o) => o.shape.kind === 'pillar').map((o) => alongTrack(track, o.pos)).sort((a, b) => a - b);
+        expect(at).toBeGreaterThan((pillars.at(-2) as number) + 0.3);
+    }, 120000);
 
     it.each(CHANGED)('the truth bot passes %s in at most 2 x r attempts, with no touch', (id) => {
         const l = getLesson(id);

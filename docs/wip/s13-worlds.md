@@ -20,7 +20,7 @@ Review fixes (`docs/wip/s13-worlds-review.md`; what was done and why: "Review fi
 - [x] B1. The tunnels' free sides exported as `OBSTACLE_FREE_SIDES` / `ObstacleFreeSide` (no clash with lane s13-sound)
 - [x] M9. Every tunnel obstacle blocks the centre line by 0.2 m or more (the long tunnel's free ways 0.7 m)
 - [x] M3. rings-heights: no height passes rings of two levels
-- [ ] M1, M2, M8. The corridor's last goal, the tunnels' lesson checkpoints, `track-end` at the merge
+- [x] M1, M2, M8. The corridor's last goal, the tunnels' lesson checkpoints, `track-end` at the merge
 - [ ] M5, M7, m1, m2, m3. walls-hall's words and stop distance, the new lessons' layers, wording
 - [ ] m4, m5, m7, M4, M6. AGENTS.md, this doc, the merge notes
 - [ ] All checks, final status
@@ -229,10 +229,11 @@ lesson with a goal other than hold-height, approach-stop or around): the owner's
   were already near; its sections now come every 2.85 s and its first straight takes 5.8 s (was 17.5 s).
 - Numbers of lesson files that follow the geometry, moved with it (their meaning stays lane s13-lessons'): walls-row
   `goals[0].metres` 22 -> 9; move-speed `goals[0].metres` 6 -> 4 (the zone's near face); move-stop
-  `intro[0].params.metres` 30 -> 9 (the zone's distance, said aloud); corridor `goals` 50 / 240 -> 15 / 100 (the
-  straight, then 115 of the 126 m track, as v0.12 had 290 of 335) and its five `checkpoints` (`at`, `pose.pos`) to the
-  new starts of the sections. Lesson versions stay 2 (none released since v0.12, whose recordings are version 1 and are
-  reported so).
+  `intro[0].params.metres` 30 -> 9 (the zone's distance, said aloud); corridor `goals` 50 / 240 -> 15 / 121 (review
+  M1: each goal counts the attempt's whole path, so the second is met at 121 m of the 126 m track; it was 100, read
+  wrongly as 15 + 100) and its five `checkpoints` (`at`, `pose.pos`) to the new starts of the sections, cp-3 and cp-5
+  facing the bend that starts there (yaw 90, review M6). Lesson versions stay 2 (none released since v0.12, whose
+  recordings are version 1 and are reported so).
 - Tests (`test/world-scale.test.ts`): every room lesson's walls and legs in 2 to 3 s and its ceiling in 1.5 to 2.5 s;
   walls-hall the smallest room; the zones in 2 to 3 s; hover-turn's ring within 5 m on the same bearing (within 1
   degree); the corridor's sections in 2 to 3 s and its straight under 6 s; the goals follow the corridor's track; the
@@ -281,10 +282,11 @@ lesson with a goal other than hold-height, approach-stop or around): the owner's
   follows the whole track, sampled on 52 points of it every 5 cm): the default drone (0.077 m) has 0.27 m to spare in
   the narrowest tunnels (the long tunnel's free ways of 0.7 m since review M9; 0.37 m at the 1.2 m tunnels' corners) and
   the largest preset (0.318 m, an 8-inch X8) 0.03 m; both pass every tunnel.
-- The lessons' own checkpoints (the present runner's respawn, M41-20 until lane s13-lessons reads the world's): the
-  start, the first point after each bend, 1.5 m before each obstacle on its free way, each stage's start; radius half
-  the cross section's diagonal (and 0.6 m more before an obstacle, so a craft not yet off the middle reaches it). The
-  world's own track has 11 to 63 checkpoints, at most 5 m apart, the stage ends marked.
+- The lessons' own checkpoints: since review M8 only the start and the end of the track (radius half the cross
+  section's diagonal); the world's own track (11 to 62 checkpoints, at most 5 m apart, the stage ends marked) is what
+  lane s13-lessons' runner respawns along. Until then they were the start, the first point after each bend, 1.5 m before
+  each obstacle and each stage's start, for the runner of eee530b; before an obstacle their chime sounded over the
+  open-way chime.
 - Registered (additive): `src/lesson/library.ts`, `lessons/paths.json` (full: all six after corridor; fast: tunnel-gaps
   only, the one lesson that teaches finding the free way past an obstacle by the open-way chime of M41-14, which no other
   lesson of the fast path has; the others train what the corridor starts), `src/i18n/catalog.ts` and the four locales
@@ -293,10 +295,11 @@ lesson with a goal other than hold-height, approach-stop or around): the owner's
   simulator's start screen sorts by it (`apps/fly/src/sonic/start-model.ts:40`).
 - Tests (`test/world-tunnels.test.ts`): the six on the ladder after corridor, one on the fast path, every order its
   place; wide, narrow, narrower get narrower; a turn or an obstacle every 2 to 3.2 s at the lesson's cap; the goal the
-  track's length less under 4 m; the lesson's checkpoints on the track; a flood fill at 0.12 m from start to end and
-  the widest sphere over the largest drone; the truth bot passes each in at most 2 x r with no touch; every obstacle
-  open on its stated side only (a sphere swept along each of the four strips); the long tunnel's five stage marks, its
-  measure and its parts, its widths; the intro's promise; five bad specs refused. Controls: each obstacle grown over its
+  track's length less under 4 m; the lesson's checkpoints on the track (review M8: the start and the end); a flood
+  fill at 0.12 m from start to end and the widest sphere over the largest drone; the truth bot passes each in at most
+  2 x r with no touch; every obstacle open on its stated side only (a sphere swept along each of the four strips); the
+  long tunnel's five stage marks, its measure and its parts, its widths; the intro's promise; bad specs refused (seven
+  since review M9). Controls: each obstacle grown over its
   free way makes the tunnel impassable to the same flood fill; a stage 3 made wider (2.8 m) fails the measure.
   `test/world-cavities.test.ts` and `test/world-track.test.ts` take every layout of version 2 too (its cavities are the
   shell; its tracks keep the gaps, dirs and free lines).
@@ -376,6 +379,39 @@ They are now `OBSTACLE_FREE_SIDES` / `ObstacleFreeSide` (the vocabulary of the `
   touch, and the floor, middle and ceiling bands come in that order with room between them. Control: the same lesson
   with its 2 m rings shares heights, and 2 m passes ring-1, ring-2, ring-4 and ring-5.
 
+### M1, M2, M8: the end of the corridor and of the tunnels, and their own checkpoints
+
+- M1, the reading: the goals of a lesson are met in turn, each against the path flown since the attempt began
+  (`fly-distance`: `attemptPathM() >= metres`), so the corridor's 15 / 100 counted the attempt at 100 m of its 126 m track
+  (measured here: the truth bot at 100.0 m), five of its seven pillars unflown. The second goal is now 121 m (the
+  track's last 4 to 6 m, a margin for a pilot who cuts the corners closer than the track): the truth bot is counted at
+  121 m, past the sixth pillar. `test/world-scale.test.ts` holds the last goal against the track's length, not the sum,
+  and flies it; control: 100 is off the last stretch.
+- M2: any goal that counts metres counts a longer path early. The robust end is lane s13-lessons' goal `track-end`
+  (their review fix R5, f107116: met when the last point of the world's track is passed), which came after this
+  review; this lane cannot name it (its validator and runner are theirs). So at the merge the corridor and the six
+  tunnels take `"goals": [{ "kind": "track-end" }]` (For the lead's merge). Until then they keep `fly-distance` (the
+  tunnels at the track's length less under 4 m, the corridor at 121 m).
+- `test/world-track-end.test.ts`: every one of these tracks ends past its last obstacle and its last corner (by more
+  than 1 m, measured along the track: `test/helpers/along.ts`). Control, flown with this lane's runner: a pilot whose
+  path is 10 % longer than the track (each leg flown with a step back and forth of 5 % of it) under `fly-distance` of the
+  track less 4 m is counted at 111 m in the corridor (its last pillar ends at 124), 34.7 m in tunnel-bends (its last
+  corner at 35.1) and 134 m in tunnel-long (its last obstacle ends at 144). Once the validator knows `track-end` (after
+  the merge) the same file flies the shipped goals of all seven with the truth bot and with that longer pilot and
+  requires the count at the end of the track, past everything; it fails while a lesson still has another goal, so the
+  merge item cannot be missed. In this lane those seven cases are skipped (the feature test is the validator itself).
+- M8: the tunnels' own checkpoints are only the start and the end of the track now (tunnel-long had 30, tunnel-gaps one
+  1.5 m before each obstacle): lane s13-lessons' runner chimes every lesson checkpoint but the first, and does the
+  respawn along the world's list, so the ones before obstacles chimed inside the open-way chime's stretch and the
+  others every 2 s. The end checkpoint is there for `track-end` (their validator asks a lesson with it for two
+  checkpoints or more). Test (`test/world-tunnels.test.ts`): each tunnel's checkpoints are the track's first and last
+  point, the end facing along the track, and none (but the start) lies from 10 m before an obstacle to its back.
+  Control: points 1.5 m before each obstacle, as the tunnels had them, all lie there. In this lane alone (the runner of
+  eee530b, which respawns at lesson checkpoints only) a touch in a tunnel now puts the craft back at its start; the
+  merged runner puts it 1 m before the last point of the world's list passed.
+- M6's facing: the corridor's cp-3 and cp-5 now face the bend that starts there (yaw 90, as lane s13-lessons set them);
+  at yaw 0 a respawn there faced a wall 1.25 m ahead.
+
 ## Needs from the simulator
 
 1. Draw the room from the package's boxes (`apps/fly/src/sonic/primitives.ts:215-231`, `cavityBoxes`), and delete the
@@ -441,6 +477,12 @@ rule and `pathMissM` filter are expected to raise it. Nothing to do unless it dr
 
 ## For the lead's merge
 
+- The end of the corridor and of the six tunnels (review M1, M2): after merging lane s13-lessons, set the `goals` of
+  `corridor`, `tunnel-wide`, `tunnel-narrow`, `tunnel-narrower`, `tunnel-bends`, `tunnel-gaps` and `tunnel-long` to
+  `[{ "kind": "track-end" }]` (their goal of review R5). The corridor's cp-6 (s13-lessons put it at v0.12's end,
+  (90, 2, -245)) goes to this corridor's end, `"at": [36, 1.25, -93]`, pose the same with `yawDeg` 0 (the last leg
+  runs along -Z, the end wall 1.25 m ahead); the tunnels already carry two checkpoints, the start and the end, as their validator asks.
+  `test/world-track-end.test.ts` then runs its seven merged cases and fails for any of the seven left on another goal.
 - `src/contract.ts`: added `CavityBox`, `WorldCheckpoint`, `AnalyticWorld.cavities?`, `AnalyticWorld.checkpoints?`
   (nothing else changed).
 - Lesson files (step 5): `world` and `start` are this lane's; besides them `goals[*].metres` of walls-row, move-speed

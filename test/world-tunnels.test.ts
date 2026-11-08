@@ -9,6 +9,7 @@ import type { AnalyticWorldSpec, LessonDef, SonicObject, Vec3, WorldCheckpoint }
 import { createTranslator, DICTS } from '../src/i18n';
 import { BODY_RADIUS_M, getLesson, lessonPaths } from '../src/lesson';
 import { createAnalyticWorld, makeSpec, sdBox, tunnelStages, WorldSpecError, type AnalyticWorldInfo } from '../src/world';
+import { alongTrack } from './helpers/along';
 import { NEW_LESSONS } from './helpers/new-lessons';
 import { ScriptedPilot } from './helpers/pilot';
 import { DEFAULT_CRAFT_M, fullStickSeconds, LARGEST_CRAFT_M } from './helpers/reach';
@@ -95,6 +96,27 @@ function widestCraft(w: AnalyticWorldInfo): number {
     return lo;
 }
 
+/**
+ * Where the open-way chime of an obstacle sounds: from 10 m before its front to its back, along the track (lane s13-sound
+ * starts it when the time to contact drops under 3 s; the review measured 7.7 to 9.7 m before a block at 2.5 m/s). The
+ * points (but the first, the start, which gives no checkpoint chime) that lie in such a stretch: a checkpoint there would
+ * chime over the open way (review M8).
+ */
+function chimeClashes(w: AnalyticWorldInfo, points: readonly Vec3[]): string[] {
+    const list = w.checkpoints as WorldCheckpoint[];
+    const out: string[] = [];
+    for (const b of w.objects().filter((o) => o.id.startsWith('block-'))) {
+        const centre = alongTrack(list, b.pos);
+        const half = Math.max(...(b.shape as { size: Vec3 }).size.filter((_, i) => i !== 1)) / 2;
+        const reach = Math.min(half, 0.5);
+        points.forEach((p, i) => {
+            const at = alongTrack(list, p);
+            if (i > 0 && at >= centre - reach - 10 && at <= centre + reach) out.push(`point ${i + 1} at ${at.toFixed(1)} m, ${b.id} at ${centre.toFixed(1)} m`);
+        });
+    }
+    return out;
+}
+
 /** Turns of the track: checkpoints whose heading differs from the one before. */
 const turnsOf = (list: readonly WorldCheckpoint[]): number => list.filter((c, i) => i > 0 && (Math.abs(c.dir[0] - list[i - 1]!.dir[0]) > 1e-6 || Math.abs(c.dir[2] - list[i - 1]!.dir[2]) > 1e-6)).length;
 
@@ -167,8 +189,31 @@ describe('tunnels (M41-21)', () => {
         const metres = (l.goals[0] as { metres: number }).metres;
         expect(metres).toBeLessThan(length);
         expect(metres).toBeGreaterThan(length - 4);
-        // the lesson's own checkpoints stand on the track (so a touch puts the craft back near it, M41-20)
+        // the lesson's own checkpoints stand on the track
         for (const cp of l.checkpoints) expect(Math.min(...list.map((c) => Math.hypot(c.pos[0] - cp.at[0], c.pos[1] - cp.at[1], c.pos[2] - cp.at[2]))), cp.id).toBeLessThan(0.01);
+    });
+
+    it.each(TUNNELS)('%s: its own checkpoints are the start and the end of the track, none where the open-way chime of an obstacle sounds (review M8)', (id) => {
+        const l = getLesson(id);
+        const w = worldOf(l);
+        const list = w.checkpoints as WorldCheckpoint[];
+        const first = list[0] as WorldCheckpoint, last = list[list.length - 1] as WorldCheckpoint;
+        expect(l.checkpoints.map((c) => c.at), id).toEqual([first.pos, last.pos]);
+        expect(l.checkpoints[0]!.pose).toEqual(l.start);
+        // the end faces along the track (a respawn there would face the way on)
+        const a = (l.checkpoints[1]!.pose.yawDeg * Math.PI) / 180;
+        expect(Math.sin(a) * last.dir[0] - Math.cos(a) * last.dir[2], id).toBeCloseTo(1, 9);
+        expect(chimeClashes(w, l.checkpoints.map((c) => c.at)), id).toEqual([]);
+    });
+
+    it('control: checkpoints 1.5 m before each obstacle, as the tunnels had them, stand where the open-way chime sounds', () => {
+        for (const id of ['tunnel-gaps', 'tunnel-long']) {
+            const w = worldOf(getLesson(id));
+            const before = w.landmarks.filter((m) => m.id.startsWith('gap-')).map((m) => m.pos);
+            const clashes = chimeClashes(w, [w.start.pos, ...before]);
+            // every one of them (points 2 to n + 1), each in the stretch of its own obstacle at least
+            expect(new Set(clashes.map((c) => c.split(' ')[1])).size, id).toBe(before.length);
+        }
     });
 
     it.each(TUNNELS)('%s: a craft can fly it from the start to the end (flood fill at 0.12 m), and the largest drone fits the track', (id) => {

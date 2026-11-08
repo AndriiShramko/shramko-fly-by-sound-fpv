@@ -33,7 +33,7 @@
       "id": "cp-3",
       "pose": {
         "pos": [0, 1.25, -27],
-        "yawDeg": 0
+        "yawDeg": 90
       },
       "radiusM": 2.5
     },
@@ -51,7 +51,7 @@
       "id": "cp-5",
       "pose": {
         "pos": [18, 1.25, -75],
-        "yawDeg": 0
+        "yawDeg": 90
       },
       "radiusM": 2.5
     }
@@ -65,7 +65,7 @@
     },
     {
       "kind": "fly-distance",
-      "metres": 100
+      "metres": 121
     }
   ],
   "id": "corridor",
