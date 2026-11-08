@@ -56,6 +56,12 @@
   - The virtual listener's first rig, `pnpm listen`: scripted flights rendered through the real engine and measured
     (stems that sum to the mix, the height glide, hazard onsets, the cues over the motor, the voice over the mix), each
     check with a control broken on purpose; its evidence is keyed by the hash of every input.
+  - The words check, `pnpm listen:words`: every line of the four locales said by the local Windows voice of its
+    language (David, Helena, Paulina, Irina) and transcribed by Whisper large-v3, its word error rate against one bound
+    per language, the Russian lines said by the English voice as the control (`evidence/listen/VL-4-words.json`). The
+    Spanish, Polish and Russian lines' lengths are measured with those voices for the lesson timing tests. In Spanish,
+    Polish and Russian, K's help and every line that names a key say "press the key T", not "press T": said by those
+    voices, the key's name ran into the verb or was lost (the Spanish "press T" was heard as one word).
 - Rooms, tunnels and rings at the scale of a micro drone (v0.13):
   - Every world generator builds every version it published (`GENERATOR_VERSIONS`, `buildsVersion`, `paramSchema`,
     `NEWEST_VERSION`), so a recording's walls can always be built again. Version 2 of hall, pillars, rings, squares and

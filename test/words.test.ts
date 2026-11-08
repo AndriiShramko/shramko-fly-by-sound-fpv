@@ -1,10 +1,11 @@
 // The words check (lane s13-elev E2-2, tools/listen-words.ts): how a transcript is compared with a line, and what the
 // lines are. The round trip itself (each line said by the local voice of its language, transcribed by Whisper large-v3)
 // runs on a machine with the voices and a GPU: pnpm listen:words, evidence/listen/VL-4-words.json.
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { LOCALES } from '../src/contract';
+import { LOCALES, type Locale } from '../src/contract';
 import { DICTS } from '../src/i18n';
-import { BOUNDS, HEARD, isNumber, KEY_OF, packageLines, putBack, score, wordErrors, words } from '../tools/listen-words';
+import { BOUNDS, CONTROL, CONTROL_MIN_SHARE, HEARD, isNumber, KEY_OF, packageLines, putBack, score, VOICES, wordErrors, words } from '../tools/listen-words';
 
 describe('the words of a line and of a transcript', () => {
     it('are compared without case and punctuation', () => {
@@ -107,3 +108,47 @@ describe('the lines of the check', () => {
     });
 });
 
+describe('the last run of the words check (evidence/listen/VL-4-words.json)', () => {
+    interface Row {
+        readonly locale: Locale;
+        readonly key: string;
+        readonly text: string;
+        readonly heard: string;
+        readonly rate: number;
+    }
+    interface Language {
+        readonly lines: number;
+        readonly bound: number;
+        readonly over: readonly string[];
+        readonly voice: string;
+    }
+    const ev = JSON.parse(readFileSync(new URL('../evidence/listen/VL-4-words.json', import.meta.url), 'utf8')) as { valid: boolean; pass: boolean; languages: Record<Locale, Language>; control: { locale: string; voice: string; share: number; fails: boolean }; rows: Row[] };
+
+    it('heard every line of every language with its own voice, each within its language\'s bound, the bounds those of the check', () => {
+        expect(ev.valid).toBe(true);
+        expect(ev.pass).toBe(true);
+        for (const locale of LOCALES) {
+            const l = ev.languages[locale];
+            expect(l.lines, locale).toBe(Object.keys(DICTS[locale]).length);
+            expect(l.bound, locale).toBe(BOUNDS[locale]);
+            expect(l.voice, locale).toBe(VOICES[locale]);
+            expect(l.over, locale).toEqual([]);
+        }
+    });
+
+    it('scored again here, every line it heard with an error is within its bound, and scores as it did', () => {
+        expect(ev.rows.length).toBeGreaterThan(0);
+        for (const r of ev.rows) {
+            const s = score({ locale: r.locale, key: r.key, text: r.text }, VOICES[r.locale], r.heard);
+            expect(s.rate, `${r.locale} ${r.key}`).toBeCloseTo(r.rate, 4);
+            expect(s.rate, `${r.locale} ${r.key}: "${r.text}" heard "${r.heard}"`).toBeLessThanOrEqual(BOUNDS[r.locale]);
+        }
+    });
+
+    it('control: the Russian lines said by the English voice fail the Russian bound', () => {
+        expect(ev.control.locale).toBe(CONTROL.locale);
+        expect(ev.control.voice).toBe(CONTROL.voice);
+        expect(ev.control.fails).toBe(true);
+        expect(ev.control.share).toBeGreaterThanOrEqual(CONTROL_MIN_SHARE);
+    });
+});

@@ -72,12 +72,16 @@ and below change with it. In the same lane: "wrong way" between gates, which the
   ears lessons' length per language. Controls, each failing its test, then restored: one Spanish line measured longer
   than its estimate (254, not 253), one Russian glossary line at 60 s (sounds under speech in ears-glossary), one
   Russian line missing from its fixture
-- [ ] E2-2 Round trip, in progress: the tool is in (`pnpm listen:words`: `tools/listen-words.ts`, `tools/listen/words.py`,
-  `test/words.test.ts`; faster-whisper 1.2.1 in the listener's environment, `tools/listen/requirements.txt`). First
-  run (2104 lines, 2517 clips with the control): K's help lost the key's name in Spanish, Polish and Russian ("Pulsa
-  T para" heard "Púlsate para", "Pulsa G" "Pulsaje", "Naciśnij I, aby" "Naciśnij, aby", "Нажми T" "Нажмите", "Нажми U"
-  "Нажми её"), so the 17 lines of each that name a key now say "the key" first (la tecla, klawisz, клавишу); the
-  transcriber moved to `transcribe()` with timestamps (below). The second run, the records and the bounds next
+- [x] E2-2 Round trip (details below): `pnpm listen:words` (`tools/listen-words.ts`, `tools/listen/words.py`; faster-whisper
+  1.2.1 in the listener's environment, `tools/listen/requirements.txt`): all 526 lines of each locale said by its
+  voice, transcribed by Whisper large-v3, word error rate per line; bound 0.2 in each language, met by every line;
+  the control, the Russian lines said by David, fails it (525 of 526 over, median 1). K's help lost the key's name in
+  Spanish, Polish and Russian ("Pulsa T para" heard "Púlsate para", "Naciśnij I, aby" "Naciśnij, aby", "Нажми T"
+  "Нажмите", "Нажми U" "Нажми её"): the 17 lines of each that name a key now say "the key" first (la tecla, klawisz,
+  клавишу) and are heard with it. No other text was wrong; 56 words the voices say otherwise are recorded with why
+  (`HEARD`). Evidence `evidence/listen/VL-4-words.json`; `test/words.test.ts` (the words, the errors, the records, the
+  evidence scored again). Controls: a Spanish line in Cyrillic fails the run (heard as nothing), restored; the
+  Russian bound at 0.15 fails the evidence tests, restored
 - [ ] E2-3 (the next agent's)
 - [ ] E2-4 (the next agent's)
 
@@ -297,6 +301,42 @@ How (`tools/listen-words.ts`, `tools/listen/words.py`):
   "Bramka druga z pięciu"), and costs one when nothing is heard for it.
 - Evidence: `evidence/listen/VL-4-words.json`, keyed by the hash of the locales, the code that fills the lines, the
   clip maker, the transcriber and the driver; every line heard with an error is in it with its transcript.
+
+The run (2104 lines, 2517 clips with the control; Whisper 3.5 to 5 minutes per voice and language):
+
+| | English, David | Spanish, Helena | Polish, Paulina | Russian, Irina |
+|---|---|---|---|---|
+| words | 4022 | 4071 | 3448 | 3283 |
+| lines heard with no error | 490 | 499 | 496 | 461 |
+| lines over 0.2 before the records | 23 | 7 | 8 | 26 |
+| words recorded (`HEARD`) | 16 | 6 | 11 | 23 |
+| with them: lines heard exactly, mean rate, largest | 520, 0.001, 0.17 | 512, 0.003, 0.20 | 514, 0.003, 0.20 | 509, 0.004, 0.20 |
+
+The control, the 526 Russian lines said by David: 525 over the bound, median rate 1 (David skips the Cyrillic letters:
+a line comes back as nothing, a lone letter or a stray phrase); the one under it is "Fly by Sound".
+
+What was wrong, and fixed: K's help (and every line that names a key) in Spanish, Polish and Russian, before the run
+of this table. Said by the voices, a letter right after the verb ran into it or was lost: "Pulsa T para" heard as the
+word "Púlsate", "Pulsa G" as "Pulsaje", the Polish "Naciśnij I, aby" (the letter I is also the word "and") as
+"Naciśnij, aby", the Russian "Нажми T" as "Нажмите" (press, polite) and "Нажми U" as "Нажми её" (press her). Now "Pulsa
+la tecla T", "Naciśnij klawisz I", "Нажми клавишу T": all 51 lines heard with their key. English "Press T" was heard
+right and stays.
+
+What the voices say otherwise (recorded, the text kept; the ones a pilot may mishear too, for testers and the owner):
+
+- English, David: "height tone" is heard as "high tone" in all nine lines that say it (the t runs into tone); "Gate 2"
+  as "Gay 2"; "passed" as "past" or "pest"; "Off course" alone as "of course"; one word alone ("Ears", "Race").
+- Spanish, Helena: "aros" (rings) alone or first in a title as "a los"; "dron" as "dran" everywhere; "Cubo" alone.
+- Polish, Paulina: "węższy" (narrower) as "wyższy" (higher), and "najwęższy" as "najwyższy", in all five tunnel lines
+  that say them; "sześcianu" (of the cube) as "60" or misspelt; "dron" as "dran"; one word alone ("Słup", "Wyjdź").
+- Russian, Irina: the verbs of flying with a prefix, "пролети" (fly through), "облети", "долети", "подлети", are heard
+  as "пролейте" (pour) and the like in 22 of the 23 lines that say one, most of them a lesson's goal; "гул" (the hum)
+  as "гол" (a goal) in 12 of its 13 lines; "Fly by" is spelt letter by letter; one or two words alone with unstressed
+  endings ("Мягкая" as "Мягкое", "Тише" as "Тиши").
+
+The rest is Whisper's writing, not the voice: American spellings, digits for number words, the percent sign, a missing
+accent. A limit: the check hears what a voice cannot say or a listener may mishear, not spelling. A misspelt word that
+the voice reads as written comes back as written ("las tecals", tried on purpose, passed).
 
 ## Needs from the simulator
 

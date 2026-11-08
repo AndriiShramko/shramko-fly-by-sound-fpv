@@ -1,0 +1,1759 @@
+{
+ "format": "shramko-listen-evidence/1",
+ "key": "8d70a40dfea15a157f32d3ba0cc8f37937f6b102e8742258bdc512cff4e7bf0e",
+ "inputs": {
+  "hash": "8d70a40dfea15a157f32d3ba0cc8f37937f6b102e8742258bdc512cff4e7bf0e",
+  "files": 14,
+  "version": 1,
+  "voices": {
+   "en": "Microsoft David Desktop",
+   "es": "Microsoft Helena Desktop",
+   "pl": "Microsoft Paulina Desktop",
+   "ru": "Microsoft Irina Desktop"
+  },
+  "decode": {
+   "model": "Systran/faster-whisper-large-v3",
+   "revision": "edaa852ec7e145841d8ffdb056a99866b5f0a478",
+   "device": "cuda",
+   "computeType": "float16",
+   "call": "WhisperModel.transcribe, one clip at a time, in the clip's language",
+   "options": {
+    "beamSize": 5,
+    "temperature": 0,
+    "timestamps": true,
+    "conditionOnPreviousText": false,
+    "vad": false
+   }
+  },
+  "tools": {
+   "python": "3.11.9",
+   "faster-whisper": "1.2.1",
+   "ctranslate2": "4.8.5",
+   "numpy": "2.4.6"
+  }
+ },
+ "date": "2026-11-08T19:53:16.584Z",
+ "id": "VL-4-words",
+ "claim": "every line of the four locales, said by the local Windows voice of its language and transcribed by Whisper large-v3, has a word error rate (case and punctuation normalised) at most its language's bound; the Russian lines said by the English voice fail it",
+ "run": "pnpm listen:words",
+ "valid": true,
+ "pass": true,
+ "normalised": "lower case; the letter yo as ye; apostrophes dropped; every other character that is not a letter, a mark or a digit a space. Two words of the line heard as one, or one as two, are no error; a word with a digit is a number and matches one to three words of the transcript; a recorded word a voice says otherwise (heard) is put back before counting",
+ "languages": {
+  "en": {
+   "voice": "Microsoft David Desktop",
+   "lines": 526,
+   "words": 4022,
+   "bound": 0.2,
+   "exact": 520,
+   "meanRate": 0.0011,
+   "maxRate": 0.1667,
+   "over": [],
+   "heard": [
+    {
+     "locale": "en",
+     "key": "*",
+     "said": "height tone",
+     "heard": "high tone",
+     "why": "the t of height runs into tone: \"height tone\" is heard as \"high tone\", in all nine lines that say it"
+    },
+    {
+     "locale": "en",
+     "key": "*",
+     "said": "metres",
+     "heard": "meters",
+     "why": "Whisper writes the American spelling"
+    },
+    {
+     "locale": "en",
+     "key": "*",
+     "said": "centre",
+     "heard": "center",
+     "why": "Whisper writes the American spelling"
+    },
+    {
+     "locale": "en",
+     "key": "*",
+     "said": "target hum",
+     "heard": "target hub",
+     "why": "the two words alone (the cue and the layer): hum is heard as hub"
+    },
+    {
+     "locale": "en",
+     "key": "*",
+     "said": "passed",
+     "heard": "past",
+     "why": "the two sound the same"
+    },
+    {
+     "locale": "en",
+     "key": "*",
+     "said": "passed",
+     "heard": "pest",
+     "why": "passed at the end of a short line is heard as pest"
+    },
+    {
+     "locale": "en",
+     "key": "*",
+     "said": "gate",
+     "heard": "gay",
+     "why": "the t of gate runs into the number after it: \"Gate 2\" is heard as \"Gay 2\" or \"Gay too\""
+    },
+    {
+     "locale": "en",
+     "key": "*",
+     "said": "stopped 3",
+     "heard": "stop 3",
+     "why": "the -ed of stopped runs into the number after it"
+    },
+    {
+     "locale": "en",
+     "key": "*",
+     "said": "20 percent",
+     "heard": "20%",
+     "why": "Whisper writes the percent sign"
+    },
+    {
+     "locale": "en",
+     "key": "module.0.name",
+     "said": "Ears",
+     "heard": "Gears",
+     "why": "a word alone, with nothing around it to tell it by (the first run heard \"here's\")"
+    },
+    {
+     "locale": "en",
+     "key": "theme.race.name",
+     "said": "Race",
+     "heard": "Raise",
+     "why": "a word alone, with nothing around it to tell it by"
+    },
+    {
+     "locale": "en",
+     "key": "cue.target.off.name",
+     "said": "Off course",
+     "heard": "Of course",
+     "why": "two words alone, heard as the phrase \"of course\""
+    },
+    {
+     "locale": "en",
+     "key": "menu.setting.calm",
+     "said": "Calm",
+     "heard": "comm",
+     "why": "two words alone: calm without its l is written comm"
+    },
+    {
+     "locale": "en",
+     "key": "menu.setting.height-target",
+     "said": "note",
+     "heard": "node",
+     "why": "the last of three words alone"
+    },
+    {
+     "locale": "en",
+     "key": "reason.height-low",
+     "said": "Too",
+     "heard": "to",
+     "why": "the two sound the same"
+    },
+    {
+     "locale": "en",
+     "key": "reason.zone-past",
+     "said": "Past",
+     "heard": "Pass",
+     "why": "the t of past runs into the"
+    }
+   ]
+  },
+  "es": {
+   "voice": "Microsoft Helena Desktop",
+   "lines": 526,
+   "words": 4071,
+   "bound": 0.2,
+   "exact": 512,
+   "meanRate": 0.0026,
+   "maxRate": 0.2,
+   "over": [],
+   "heard": [
+    {
+     "locale": "es",
+     "key": "*",
+     "said": "aros",
+     "heard": "a los",
+     "why": "aros (rings) alone or first in a title is heard as \"a los\""
+    },
+    {
+     "locale": "es",
+     "key": "*",
+     "said": "dron",
+     "heard": "dran",
+     "why": "the voice says dron with an open o that Whisper writes as a, in every line with the word"
+    },
+    {
+     "locale": "es",
+     "key": "*",
+     "said": "2 de 5",
+     "heard": "2D5",
+     "why": "Whisper writes \"dos de cinco\" as 2D5"
+    },
+    {
+     "locale": "es",
+     "key": "*",
+     "said": "20 por ciento",
+     "heard": "20%",
+     "why": "Whisper writes the percent sign"
+    },
+    {
+     "locale": "es",
+     "key": "cue.shape.cube.name",
+     "said": "Cubo",
+     "heard": "Cuba",
+     "why": "a word alone, with nothing around it to tell it by"
+    },
+    {
+     "locale": "es",
+     "key": "menu.value.heading",
+     "said": "donde",
+     "heard": "dónde",
+     "why": "the value says where you look (donde, no question); Whisper writes it as the question dónde"
+    }
+   ]
+  },
+  "pl": {
+   "voice": "Microsoft Paulina Desktop",
+   "lines": 526,
+   "words": 3448,
+   "bound": 0.2,
+   "exact": 514,
+   "meanRate": 0.0031,
+   "maxRate": 0.2,
+   "over": [],
+   "heard": [
+    {
+     "locale": "pl",
+     "key": "*",
+     "said": "węższy",
+     "heard": "wyższy",
+     "why": "the nasal ę of węższy (narrower) is heard as y: wyższy (higher), in every line with the word"
+    },
+    {
+     "locale": "pl",
+     "key": "*",
+     "said": "najwęższy",
+     "heard": "najwyższy",
+     "why": "as węższy: the narrowest is heard as the highest"
+    },
+    {
+     "locale": "pl",
+     "key": "*",
+     "said": "sześcianu",
+     "heard": "60",
+     "why": "sześcianu (of the cube) is heard as sześćdziesiąt and written 60, or misspelt (the next three)"
+    },
+    {
+     "locale": "pl",
+     "key": "*",
+     "said": "sześcianu",
+     "heard": "szejsianu",
+     "why": "the same word heard, but misspelt"
+    },
+    {
+     "locale": "pl",
+     "key": "*",
+     "said": "sześcianu",
+     "heard": "szeisianu",
+     "why": "the same word heard, but misspelt"
+    },
+    {
+     "locale": "pl",
+     "key": "*",
+     "said": "sześcianu",
+     "heard": "sześianu",
+     "why": "the same word heard, but misspelt"
+    },
+    {
+     "locale": "pl",
+     "key": "*",
+     "said": "dron",
+     "heard": "dran",
+     "why": "the voice says dron with an open o that Whisper writes as a, in every line with the word"
+    },
+    {
+     "locale": "pl",
+     "key": "app.name",
+     "said": "Fly by",
+     "heard": "Flajby",
+     "why": "the name alone: Paulina says Fly the Polish way, flaj, and Whisper joins the two words"
+    },
+    {
+     "locale": "pl",
+     "key": "cue.shape.pillar.name",
+     "said": "Słup",
+     "heard": "Swoop",
+     "why": "a word alone, with nothing around it to tell it by"
+    },
+    {
+     "locale": "pl",
+     "key": "menu.main.quit",
+     "said": "Wyjdź",
+     "heard": "Wyjęć",
+     "why": "a word alone, with nothing around it to tell it by"
+    },
+    {
+     "locale": "pl",
+     "key": "lesson.rings-line.title",
+     "said": "Obręcze",
+     "heard": "Obręczę",
+     "why": "Whisper writes the plural with the ending of the accusative singular"
+    }
+   ]
+  },
+  "ru": {
+   "voice": "Microsoft Irina Desktop",
+   "lines": 526,
+   "words": 3283,
+   "bound": 0.2,
+   "exact": 509,
+   "meanRate": 0.004,
+   "maxRate": 0.2,
+   "over": [],
+   "heard": [
+    {
+     "locale": "ru",
+     "key": "*",
+     "said": "пролети",
+     "heard": "пролейте",
+     "why": "fly through (пролети) is heard as pour (пролейте); with the other verbs of flying with a prefix (the next four), in 22 of the 23 lines that say one"
+    },
+    {
+     "locale": "ru",
+     "key": "*",
+     "said": "облети",
+     "heard": "облейте",
+     "why": "the same habit as with пролети"
+    },
+    {
+     "locale": "ru",
+     "key": "*",
+     "said": "долети",
+     "heard": "далейте",
+     "why": "the same habit as with пролети"
+    },
+    {
+     "locale": "ru",
+     "key": "*",
+     "said": "долети",
+     "heard": "долейте",
+     "why": "the same habit as with пролети"
+    },
+    {
+     "locale": "ru",
+     "key": "*",
+     "said": "подлети",
+     "heard": "подлейте",
+     "why": "the same habit as with пролети"
+    },
+    {
+     "locale": "ru",
+     "key": "*",
+     "said": "гул",
+     "heard": "гол",
+     "why": "the hum (гул) is heard as a goal (гол), in 12 of the 13 lines with the word"
+    },
+    {
+     "locale": "ru",
+     "key": "*",
+     "said": "гулом",
+     "heard": "голым",
+     "why": "the same habit as with гул"
+    },
+    {
+     "locale": "ru",
+     "key": "*",
+     "said": "препятствие",
+     "heard": "препятствия",
+     "why": "unstressed, the endings -ие and -ия sound the same"
+    },
+    {
+     "locale": "ru",
+     "key": "*",
+     "said": "держись середины",
+     "heard": "держись с середины",
+     "why": "the сь of держись runs into середины and Whisper writes a с between them"
+    },
+    {
+     "locale": "ru",
+     "key": "*",
+     "said": "коснёшься стены",
+     "heard": "кознёшь со стены",
+     "why": "коснёшься (you touch) before стены is heard as кознёшь со"
+    },
+    {
+     "locale": "ru",
+     "key": "app.name",
+     "said": "Fly by",
+     "heard": "F.L.Y.B.Y.",
+     "why": "Irina spells Fly by letter by letter (in the menu's welcome it comes out as flui bui)"
+    },
+    {
+     "locale": "ru",
+     "key": "cue.target.note.name",
+     "said": "Нота ворот",
+     "heard": "Нотоворот",
+     "why": "two words alone, heard as one with the unstressed a as o"
+    },
+    {
+     "locale": "ru",
+     "key": "cue.shape.pillar.name",
+     "said": "Столб",
+     "heard": "Столп",
+     "why": "a word alone, with nothing around it to tell it by: the final б is said as п"
+    },
+    {
+     "locale": "ru",
+     "key": "layer.shape.name",
+     "said": "Звуки форм",
+     "heard": "Звуки и форм",
+     "why": "Whisper hears an и between two words"
+    },
+    {
+     "locale": "ru",
+     "key": "theme.soft.name",
+     "said": "Мягкая",
+     "heard": "Мягкое",
+     "why": "a word alone, with nothing around it to tell it by: the unstressed ending -ая is heard as -ое"
+    },
+    {
+     "locale": "ru",
+     "key": "theme.clear.name",
+     "said": "Чёткая",
+     "heard": "Чёткое",
+     "why": "a word alone, with nothing around it to tell it by: the unstressed ending -ая is heard as -ое"
+    },
+    {
+     "locale": "ru",
+     "key": "menu.change.louder",
+     "said": "Громче",
+     "heard": "Громчие",
+     "why": "a word alone, with nothing around it to tell it by: the unstressed final е is heard as ие"
+    },
+    {
+     "locale": "ru",
+     "key": "menu.change.quieter",
+     "said": "Тише",
+     "heard": "Тиши",
+     "why": "a word alone, with nothing around it to tell it by: the unstressed final е is heard as и"
+    },
+    {
+     "locale": "ru",
+     "key": "survey.anchor.very-afraid",
+     "said": "сильное опасение",
+     "heard": "сильные опасения",
+     "why": "unstressed endings, heard as the plural"
+    },
+    {
+     "locale": "ru",
+     "key": "lesson.rings-small.goal.1",
+     "said": "самое маленькое",
+     "heard": "самые маленькие",
+     "why": "unstressed endings, heard as the plural"
+    },
+    {
+     "locale": "ru",
+     "key": "lesson.hover-height.goal.1",
+     "said": "Держи тон",
+     "heard": "Держит он",
+     "why": "the т of тон is heard as the end of держи: держит он"
+    },
+    {
+     "locale": "ru",
+     "key": "lesson.corridor.intro.2",
+     "said": "к той стене",
+     "heard": "кто из тени",
+     "why": "к той стене (to that wall) is heard as кто из тени"
+    },
+    {
+     "locale": "ru",
+     "key": "lesson.corridor.intro.2",
+     "said": "Отодвинься",
+     "heard": "Отодвинь",
+     "why": "the reflexive ending is not heard"
+    }
+   ]
+  }
+ },
+ "control": {
+  "locale": "ru",
+  "voice": "Microsoft David Desktop",
+  "lines": 526,
+  "overBound": 525,
+  "share": 0.9981,
+  "medianRate": 1,
+  "fails": true
+ },
+ "rows": [
+  {
+   "locale": "en",
+   "key": "cue.safety.free.glossary",
+   "text": "A pair of quick notes, again and again, while something blocks the way ahead. Equal notes from left or right: the way is there. From above, notes moving like your height tone in a climb: the way is above. From below, the other way: below.",
+   "heard": "A pair of quick notes, again and again, while something blocks the way ahead. Equal notes from left or right, the way is there. From above, notes moving like your high tone in a climb, the way is above. From below, the other way, below.",
+   "rawRate": 0.0222,
+   "rate": 0
+  },
+  {
+   "locale": "en",
+   "key": "cue.safety.reset.name",
+   "text": "Re-centre",
+   "heard": "Re-center.",
+   "rawRate": 0.5,
+   "rate": 0
+  },
+  {
+   "locale": "en",
+   "key": "cue.height.tone.name",
+   "text": "Height tone",
+   "heard": "High tone",
+   "rawRate": 0.5,
+   "rate": 0
+  },
+  {
+   "locale": "en",
+   "key": "cue.height.rough.glossary",
+   "text": "When the height tone buzzes, you are too high or too low for this lesson.",
+   "heard": "When the high tone buzzes, you are too high or too low for this lesson.",
+   "rawRate": 0.0667,
+   "rate": 0
+  },
+  {
+   "locale": "en",
+   "key": "cue.target.hum.name",
+   "text": "Target hum",
+   "heard": "Target hub",
+   "rawRate": 0.5,
+   "rate": 0
+  },
+  {
+   "locale": "en",
+   "key": "cue.target.off.name",
+   "text": "Off course",
+   "heard": "Of course.",
+   "rawRate": 0.5,
+   "rate": 0
+  },
+  {
+   "locale": "en",
+   "key": "cue.target.stage.name",
+   "text": "Stage passed",
+   "heard": "Stage Past",
+   "rawRate": 0.5,
+   "rate": 0
+  },
+  {
+   "locale": "en",
+   "key": "cue.shape.square.glossary",
+   "text": "A sound that runs along four sides and ticks at every corner.",
+   "heard": "A sound that runs along 4 sides and ticks at every corner.",
+   "rawRate": 0.0833,
+   "rate": 0.0833
+  },
+  {
+   "locale": "en",
+   "key": "layer.height.name",
+   "text": "Height tone",
+   "heard": "High tone",
+   "rawRate": 0.5,
+   "rate": 0
+  },
+  {
+   "locale": "en",
+   "key": "layer.target.name",
+   "text": "Target hum",
+   "heard": "Target hub",
+   "rawRate": 0.5,
+   "rate": 0
+  },
+  {
+   "locale": "en",
+   "key": "module.0.name",
+   "text": "Ears",
+   "heard": "Gears",
+   "rawRate": 1,
+   "rate": 0
+  },
+  {
+   "locale": "en",
+   "key": "theme.race.name",
+   "text": "Race",
+   "heard": "Raise.",
+   "rawRate": 1,
+   "rate": 0
+  },
+  {
+   "locale": "en",
+   "key": "lesson.ears-walls.hint.1",
+   "text": "The knocks come from the side where the wall is. A floor sounds low, and a ceiling sounds airy.",
+   "heard": "The knocks come from the side where the wall is. A floor sounds low, and a ceiling sounds eerie.",
+   "rawRate": 0.0526,
+   "rate": 0.0526
+  },
+  {
+   "locale": "en",
+   "key": "lesson.ears-game.hint.1",
+   "text": "Listen to the colour of the sound: knock, thud, puff, ring or tick.",
+   "heard": "Listen to the color of the sound, knock, thud, puff, ring or tick.",
+   "rawRate": 0.0769,
+   "rate": 0.0769
+  },
+  {
+   "locale": "en",
+   "key": "lesson.move-stop.intro.1",
+   "text": "A zone is waiting ahead of you, about 3 metres away.",
+   "heard": "A zone is waiting ahead of you, about 3 meters away.",
+   "rawRate": 0.0909,
+   "rate": 0
+  },
+  {
+   "locale": "en",
+   "key": "lesson.corridor.intro.3",
+   "text": "When something blocks the way ahead, you hear a pair of quick notes again and again. They come from where the way goes on: left, right, above or below. Above, they move like your height tone in a climb, below the other way.",
+   "heard": "When something blocks the way ahead, you hear a pair of quick notes again and again. They come from where the way goes on, left, right, above or below. Above, they move like your high tone in a climb, below the other way.",
+   "rawRate": 0.0233,
+   "rate": 0
+  },
+  {
+   "locale": "en",
+   "key": "lesson.tunnel-gaps.intro.3",
+   "text": "If the way is above, the chime comes from above and moves like your height tone in a climb. If it is below, the chime comes from below and moves the other way.",
+   "heard": "If the way is above, the chime comes from above and moves like your high tone in a climb. If it is below, the chime comes from below and moves the other way.",
+   "rawRate": 0.0303,
+   "rate": 0
+  },
+  {
+   "locale": "en",
+   "key": "lesson.rings-line.intro.1",
+   "text": "Now there are two or three rings in a row, and then some with a turn.",
+   "heard": "Now there are 2 or 3 rings in a row, and then some with a turn.",
+   "rawRate": 0.125,
+   "rate": 0.125
+  },
+  {
+   "locale": "en",
+   "key": "menu.welcome",
+   "text": "Welcome to Fly by Sound. Move through the menu with the arrow keys or the stick. Press Enter or button one to choose. Press Escape to go back.",
+   "heard": "Welcome to fly by sound. Move through the menu with the arrow keys or the stick. Press enter or button 1 to choose. escape to go back.",
+   "rawRate": 0.0714,
+   "rate": 0.0714
+  },
+  {
+   "locale": "en",
+   "key": "menu.lesson.passed",
+   "text": "passed",
+   "heard": "Pest",
+   "rawRate": 1,
+   "rate": 0
+  },
+  {
+   "locale": "en",
+   "key": "menu.setting.calm",
+   "text": "Calm mode",
+   "heard": "comm mode",
+   "rawRate": 0.5,
+   "rate": 0
+  },
+  {
+   "locale": "en",
+   "key": "menu.setting.polarity",
+   "text": "Height tone",
+   "heard": "High tone",
+   "rawRate": 0.5,
+   "rate": 0
+  },
+  {
+   "locale": "en",
+   "key": "menu.setting.volume",
+   "text": "Volume: Height tone",
+   "heard": "Volume, high tone",
+   "rawRate": 0.3333,
+   "rate": 0
+  },
+  {
+   "locale": "en",
+   "key": "menu.setting.pitch",
+   "text": "Pitch: Height tone",
+   "heard": "Pitch, high tone",
+   "rawRate": 0.3333,
+   "rate": 0
+  },
+  {
+   "locale": "en",
+   "key": "menu.setting.height-target",
+   "text": "Target height note",
+   "heard": "Target height node.",
+   "rawRate": 0.3333,
+   "rate": 0
+  },
+  {
+   "locale": "en",
+   "key": "status.lesson",
+   "text": "Lesson: Hold your height. Attempt 2.",
+   "heard": "Hold your height. Attempt 2.",
+   "rawRate": 0.1667,
+   "rate": 0.1667
+  },
+  {
+   "locale": "en",
+   "key": "fly.gate",
+   "text": "Gate 2 of 5.",
+   "heard": "Gay 2 of 5",
+   "rawRate": 0.25,
+   "rate": 0
+  },
+  {
+   "locale": "en",
+   "key": "fly.step-passed",
+   "text": "Step passed. Well done.",
+   "heard": "Step past. Well done.",
+   "rawRate": 0.25,
+   "rate": 0
+  },
+  {
+   "locale": "en",
+   "key": "fly.stage",
+   "text": "Stage 2 passed.",
+   "heard": "Stage 2 Pest",
+   "rawRate": 0.3333,
+   "rate": 0
+  },
+  {
+   "locale": "en",
+   "key": "reason.height-high",
+   "text": "Too high 20 percent of the time.",
+   "heard": "too high 20% of the time.",
+   "rawRate": 0.1429,
+   "rate": 0
+  },
+  {
+   "locale": "en",
+   "key": "reason.height-low",
+   "text": "Too low 20 percent of the time.",
+   "heard": "to low 20% of the time.",
+   "rawRate": 0.2857,
+   "rate": 0
+  },
+  {
+   "locale": "en",
+   "key": "reason.zone-past",
+   "text": "Past the zone by 3 metres.",
+   "heard": "Pass the zone by 3 meters.",
+   "rawRate": 0.3333,
+   "rate": 0
+  },
+  {
+   "locale": "en",
+   "key": "reason.zone-short",
+   "text": "Stopped 3 metres short of the zone.",
+   "heard": "Stop 3 meters short of the zone.",
+   "rawRate": 0.2857,
+   "rate": 0
+  },
+  {
+   "locale": "en",
+   "key": "reason.stop-far",
+   "text": "Stopped 3 metres away. Stop within 2 metres.",
+   "heard": "Stop 3 meters away. Stop within 2 meters.",
+   "rawRate": 0.375,
+   "rate": 0
+  },
+  {
+   "locale": "en",
+   "key": "reason.distance",
+   "text": "3 of 5 metres flown.",
+   "heard": "3 of 5 meters flown.",
+   "rawRate": 0.2,
+   "rate": 0
+  },
+  {
+   "locale": "en",
+   "key": "reason.gate-missed",
+   "text": "Gate 2 was missed.",
+   "heard": "Gay too was missed.",
+   "rawRate": 0.25,
+   "rate": 0
+  },
+  {
+   "locale": "es",
+   "key": "cue.safety.reset.glossary",
+   "text": "Un barrido rápido que avisa de que el dron volvió al último punto de control.",
+   "heard": "Un barrido rápido que avisa de que el Dran volvió al último punto de control.",
+   "rawRate": 0.0667,
+   "rate": 0
+  },
+  {
+   "locale": "es",
+   "key": "cue.target.checkpoint.glossary",
+   "text": "Una campanilla de grave a agudo, una sola vez, cuando llegas a un punto de control.",
+   "heard": "Una campanilla de grave agudo, una sola vez, cuando llegas a un punto de control.",
+   "rawRate": 0.0625,
+   "rate": 0.0625
+  },
+  {
+   "locale": "es",
+   "key": "cue.shape.cube.name",
+   "text": "Cubo",
+   "heard": "Cuba.",
+   "rawRate": 1,
+   "rate": 0
+  },
+  {
+   "locale": "es",
+   "key": "module.5.name",
+   "text": "Aros",
+   "heard": "A los.",
+   "rawRate": 2,
+   "rate": 0
+  },
+  {
+   "locale": "es",
+   "key": "lesson.ears-walls.intro.1",
+   "text": "Una pared hace golpes cortos de madera. Cuanto más cerca está, más rápidos suenan.",
+   "heard": "Una pared hace golpes cortos de madera. Cuanto más cerca está, más rápido suenan.",
+   "rawRate": 0.0714,
+   "rate": 0.0714
+  },
+  {
+   "locale": "es",
+   "key": "lesson.ears-shapes.intro.1",
+   "text": "Los objetos tienen sus propios sonidos. Un aro gira a tu alrededor. Un cuadrado hace tic en sus esquinas. Un pilar sube y baja.",
+   "heard": "Los objetos tienen sus propios sonidos. Un aro gira a tu alrededor. Un cuadrado hace tique en sus esquinas. Un pilar sube y baja.",
+   "rawRate": 0.0417,
+   "rate": 0.0417
+  },
+  {
+   "locale": "es",
+   "key": "lesson.ears-game.hint.1",
+   "text": "Fíjate en el color del sonido: golpe, golpe grave, soplo, aro o tic.",
+   "heard": "Fíjate en el color del sonido, golpe, golpe grave, soplo, arrow o tick.",
+   "rawRate": 0.1538,
+   "rate": 0.1538
+  },
+  {
+   "locale": "es",
+   "key": "lesson.hover-height.intro.1",
+   "text": "Ahora vuelas, pero con calma. El dron se nivela solo, así que tú solo eliges a qué altura va.",
+   "heard": "Ahora vuelas, pero con calma. El Dran se nivela solo, así que tú solo eliges a qué altura va.",
+   "rawRate": 0.0526,
+   "rate": 0
+  },
+  {
+   "locale": "es",
+   "key": "lesson.move-speed.intro.1",
+   "text": "Ahora te vas a mover. Los tics suaves te dicen tu velocidad. Tics más rápidos significan que vuelas más rápido.",
+   "heard": "Ahora te vas a mover. Los tics suaves te dicen tu velocidad. Tics más rápido significan que vuelas más rápido.",
+   "rawRate": 0.05,
+   "rate": 0.05
+  },
+  {
+   "locale": "es",
+   "key": "lesson.move-speed.intro.2",
+   "text": "Vuela un poco hacia delante y suelta la palanca. El dron frena y se detiene.",
+   "heard": "Vuela un poco hacia delante y suelta la palanca. El Dran frena y se detiene.",
+   "rawRate": 0.0667,
+   "rate": 0
+  },
+  {
+   "locale": "es",
+   "key": "lesson.move-speed.goal.1",
+   "text": "Vuela hacia delante, luego frena y para.",
+   "heard": "Vuela hacia adelante, luego frena y para.",
+   "rawRate": 0.1429,
+   "rate": 0.1429
+  },
+  {
+   "locale": "es",
+   "key": "lesson.corridor.intro.4",
+   "text": "El pasillo tiene varias etapas. Un sonido te avisa cuando terminas cada una. Si tocas una pared, vuelves solo un poco atrás.",
+   "heard": "El pasillo tiene varias etapas. Un sonido te avisa cuando terminas cada una. Si tocas una pared, vuelve solo un poco atrás.",
+   "rawRate": 0.0455,
+   "rate": 0.0455
+  },
+  {
+   "locale": "es",
+   "key": "lesson.tunnel-wide.hint.1",
+   "text": "Cuando los golpes de delante se aceleran, para y escucha dónde está libre.",
+   "heard": "Cuando los golpes de delante se aceleran, para y escucha donde está libre.",
+   "rawRate": 0.0769,
+   "rate": 0.0769
+  },
+  {
+   "locale": "es",
+   "key": "lesson.tunnel-bends.pass",
+   "text": "Has superado todas las curvas.",
+   "heard": "Ha superado todas las curvas.",
+   "rawRate": 0.2,
+   "rate": 0.2
+  },
+  {
+   "locale": "es",
+   "key": "lesson.rings-first.intro.1",
+   "text": "Ahora el aro. Un murmullo grave sale del centro del aro. Vuela hacia el murmullo.",
+   "heard": "Ahora el aro. Un murmullo grave se hiel del centro del aro. Vuela hacia el murmullo.",
+   "rawRate": 0.1333,
+   "rate": 0.1333
+  },
+  {
+   "locale": "es",
+   "key": "lesson.rings-first.retry",
+   "text": "Probemos otra vez. Primero alinéate.",
+   "heard": "Probemos otra vez. Primero alineate.",
+   "rawRate": 0.2,
+   "rate": 0.2
+  },
+  {
+   "locale": "es",
+   "key": "lesson.rings-small.title",
+   "text": "Aros más pequeños",
+   "heard": "A los más pequeños.",
+   "rawRate": 0.6667,
+   "rate": 0
+  },
+  {
+   "locale": "es",
+   "key": "headphones.trial",
+   "text": "Sonido 2 de 5.",
+   "heard": "Sonido 2D5",
+   "rawRate": 0.5,
+   "rate": 0
+  },
+  {
+   "locale": "es",
+   "key": "menu.welcome",
+   "text": "Te damos la bienvenida a Fly by Sound. Muévete por el menú con las flechas o con la palanca. Pulsa Enter o el botón uno para elegir. Pulsa Escape para volver.",
+   "heard": "Te damos la bienvenida a Flyby Sound. Muévete por el menú con las flechas o con la palanca. Pulsa entero el botón 1 para elegir. Pulsa Escape para volver.",
+   "rawRate": 0.0323,
+   "rate": 0.0323
+  },
+  {
+   "locale": "es",
+   "key": "menu.item",
+   "text": "Sonido desde arriba y desde abajo. Elemento 2 de 5.",
+   "heard": "Sonido desde arriba y desde abajo. Elemento 2D5.",
+   "rawRate": 0.2,
+   "rate": 0
+  },
+  {
+   "locale": "es",
+   "key": "menu.value.heading",
+   "text": "hacia donde miras",
+   "heard": "¿Hacia dónde miras?",
+   "rawRate": 0.3333,
+   "rate": 0
+  },
+  {
+   "locale": "es",
+   "key": "menu.value.body",
+   "text": "todo el dron, con la inclinación",
+   "heard": "Todo el dran, con la inclinación.",
+   "rawRate": 0.1667,
+   "rate": 0
+  },
+  {
+   "locale": "es",
+   "key": "help.reset",
+   "text": "Pulsa la tecla R para volver al último punto de control. Mantenla pulsada para empezar la lección de nuevo.",
+   "heard": "Pulsa la tecla R para volver al último punto de control. Manténla pulsada para empezar la lección de nuevo.",
+   "rawRate": 0.0526,
+   "rate": 0.0526
+  },
+  {
+   "locale": "es",
+   "key": "reason.height-high",
+   "text": "Demasiado alto el 20 por ciento del tiempo.",
+   "heard": "Demasiado alto el 20% del tiempo.",
+   "rawRate": 0.25,
+   "rate": 0
+  },
+  {
+   "locale": "es",
+   "key": "reason.height-low",
+   "text": "Demasiado bajo el 20 por ciento del tiempo.",
+   "heard": "demasiado bajo el 20% del tiempo.",
+   "rawRate": 0.25,
+   "rate": 0
+  },
+  {
+   "locale": "es",
+   "key": "survey.item.up-direction",
+   "text": "Cuando el dron sube, ¿qué sonido esperabas?",
+   "heard": "Cuando el dran sube, ¿qué sonido esperabas?",
+   "rawRate": 0.1429,
+   "rate": 0
+  },
+  {
+   "locale": "es",
+   "key": "survey.item.turned-off",
+   "text": "¿Bajaste o apagaste algún sonido? Di cuál y por qué.",
+   "heard": "¿Bajaste o apagaste algún sonido? ¿De cuál y por qué?",
+   "rawRate": 0.1,
+   "rate": 0.1
+  },
+  {
+   "locale": "pl",
+   "key": "app.name",
+   "text": "Fly by Sound",
+   "heard": "Flajby Sound",
+   "rawRate": 0.6667,
+   "rate": 0
+  },
+  {
+   "locale": "pl",
+   "key": "cue.safety.reset.glossary",
+   "text": "Szybki przesuw, który mówi, że dron wrócił do ostatniego punktu kontrolnego.",
+   "heard": "Szybki przesuw, który mówi, że dran wrócił do ostatniego punktu kontrolnego.",
+   "rawRate": 0.0909,
+   "rate": 0
+  },
+  {
+   "locale": "pl",
+   "key": "cue.shape.pillar.name",
+   "text": "Słup",
+   "heard": "Swoop.",
+   "rawRate": 1,
+   "rate": 0
+  },
+  {
+   "locale": "pl",
+   "key": "lesson.ears-headphones.intro.1",
+   "text": "Sprawdźmy twoje słuchawki. Najlepiej działają słuchawki z kablem, a głośność ma być wygodna, nigdy zbyt duża.",
+   "heard": "Sprawdźcie migrek Twoje słuchawki. Najlepiej działają słuchawki z kablem, a głośność ma być wygodna, nigdy zbyt duża.",
+   "rawRate": 0.125,
+   "rate": 0.125
+  },
+  {
+   "locale": "pl",
+   "key": "lesson.hover-height.intro.1",
+   "text": "Teraz lecisz, ale spokojnie. Dron sam się poziomuje, więc ty wybierasz tylko, jak wysoko ma być.",
+   "heard": "Teraz lecisz, ale spokojnie. Dran sam się poziomuje, więc ty wybierasz tylko, jak wysoko ma być.",
+   "rawRate": 0.0625,
+   "rate": 0
+  },
+  {
+   "locale": "pl",
+   "key": "lesson.move-speed.intro.2",
+   "text": "Przeleć trochę do przodu, a potem puść drążek. Dron zwalnia i zatrzymuje się.",
+   "heard": "Przeleć trochę do przodu, a potem puść drążek. Dran zwalnia i zatrzymuje się.",
+   "rawRate": 0.0769,
+   "rate": 0
+  },
+  {
+   "locale": "pl",
+   "key": "lesson.move-speed.hint.1",
+   "text": "Gdy tykanie zwalnia i cichnie, to znaczy, że stoisz w miejscu.",
+   "heard": "Gdy tykanie zwalnia isicznie, to znaczy, że stoisz w miejscu.",
+   "rawRate": 0.1818,
+   "rate": 0.1818
+  },
+  {
+   "locale": "pl",
+   "key": "lesson.corridor.intro.4",
+   "text": "Korytarz ma kilka etapów. Dźwięk da ci znać, gdy skończysz każdy z nich. Jeśli dotkniesz ściany, cofniesz się tylko kawałek.",
+   "heard": "Korytarz ma kilka etapów. Dźwięk da ci znać, gdy skończysz każdy z nich. Jeśli dotkniesz ściany, kowniesz się tylko kawałek.",
+   "rawRate": 0.05,
+   "rate": 0.05
+  },
+  {
+   "locale": "pl",
+   "key": "lesson.tunnel-narrow.intro.1",
+   "text": "Ten tunel jest węższy. Obie ściany są blisko.",
+   "heard": "Ten tunel jest wyższy. Obie ściany są blisko.",
+   "rawRate": 0.125,
+   "rate": 0
+  },
+  {
+   "locale": "pl",
+   "key": "lesson.tunnel-narrower.title",
+   "text": "Jeszcze węższy tunel",
+   "heard": "Jeszcze wyższy tunel.",
+   "rawRate": 0.3333,
+   "rate": 0
+  },
+  {
+   "locale": "pl",
+   "key": "lesson.tunnel-narrower.intro.1",
+   "text": "Teraz jeszcze węższy. Z każdej strony zostaje niewiele miejsca.",
+   "heard": "Teraz jeszcze wyższy. Z każdej strony zostaje niewiele miejsca.",
+   "rawRate": 0.1111,
+   "rate": 0
+  },
+  {
+   "locale": "pl",
+   "key": "lesson.tunnel-narrower.pass",
+   "text": "Nawet najwęższy tunel pokonany!",
+   "heard": "Nawet najwyższy tunel pokonany.",
+   "rawRate": 0.25,
+   "rate": 0
+  },
+  {
+   "locale": "pl",
+   "key": "lesson.tunnel-long.intro.2",
+   "text": "Robi się węższy, jest więcej zakrętów, a potem pojawiają się przeszkody.",
+   "heard": "Robi się wyższy, jest więcej zakrętów, a potem pojawiają się przeszkody.",
+   "rawRate": 0.0909,
+   "rate": 0
+  },
+  {
+   "locale": "pl",
+   "key": "lesson.tunnel-long.intro.3",
+   "text": "Jeśli dotkniesz ściany, cofniesz się tylko kawałek.",
+   "heard": "Jeśli dotkniesz ściany, kowniesz się tylko kawałek.",
+   "rawRate": 0.1429,
+   "rate": 0.1429
+  },
+  {
+   "locale": "pl",
+   "key": "lesson.rings-line.title",
+   "text": "Obręcze w rzędzie",
+   "heard": "Obręczę w rzędzie.",
+   "rawRate": 0.3333,
+   "rate": 0
+  },
+  {
+   "locale": "pl",
+   "key": "lesson.shapes-cube.title",
+   "text": "Rama sześcianu",
+   "heard": "Rama 60",
+   "rawRate": 0.5,
+   "rate": 0
+  },
+  {
+   "locale": "pl",
+   "key": "lesson.shapes-cube.intro.1",
+   "text": "Rama sześcianu to pudło z belek, otwarte ze wszystkich stron. Jej dźwięk przeskakuje między przodem a tyłem.",
+   "heard": "Rama szeisianu to pudło z belek, otwarte ze wszystkich stron. Jej dźwięk przeskakuje między przodem a tyłem.",
+   "rawRate": 0.0588,
+   "rate": 0
+  },
+  {
+   "locale": "pl",
+   "key": "lesson.shapes-cube.intro.3",
+   "text": "Potem zapytam cię, jaki to był kształt. Możesz pominąć to pytanie.",
+   "heard": "Potem zapytamy rykcie, jaki to był kształt. Możesz pominąć to pytanie.",
+   "rawRate": 0.1818,
+   "rate": 0.1818
+  },
+  {
+   "locale": "pl",
+   "key": "lesson.shapes-cube.goal.1",
+   "text": "Przeleć przez ramę sześcianu i nazwij jej kształt.",
+   "heard": "Przeleć przez ramę sześianu i nazwij jej kształt.",
+   "rawRate": 0.125,
+   "rate": 0
+  },
+  {
+   "locale": "pl",
+   "key": "lesson.shapes-cube.pass",
+   "text": "Rama sześcianu pokonana.",
+   "heard": "Rama Szejsianu pokonana.",
+   "rawRate": 0.3333,
+   "rate": 0
+  },
+  {
+   "locale": "pl",
+   "key": "lesson.shapes-cube.hint.1",
+   "text": "Dźwięk przeskakuje między przodem a tyłem. Pomiędzy nimi jesteś w środku sześcianu.",
+   "heard": "Dźwięk przeskakuje między przodem a tyłem. Pomiędzy nimi jesteś w środku szeisianu.",
+   "rawRate": 0.0833,
+   "rate": 0
+  },
+  {
+   "locale": "pl",
+   "key": "headphones.os-spatial",
+   "text": "Wyłącz Windows Sonic, Atmos i inne efekty przestrzenne. Zmieniają dźwięk.",
+   "heard": "Wyłącz Windows Sonic, Atmes i inne efekty przestrzenne. Zmieniają dźwięk.",
+   "rawRate": 0.1,
+   "rate": 0.1
+  },
+  {
+   "locale": "pl",
+   "key": "menu.main.quit",
+   "text": "Wyjdź",
+   "heard": "Wyjęć.",
+   "rawRate": 1,
+   "rate": 0
+  },
+  {
+   "locale": "pl",
+   "key": "send.partial-telegram",
+   "text": "Autor dostał lot tylko przez Telegram. E-mail spróbuje jeszcze raz.",
+   "heard": "Autor dostał lot tylko przez Telegram. E-mail spróbuję jeszcze raz.",
+   "rawRate": 0.0909,
+   "rate": 0.0909
+  },
+  {
+   "locale": "pl",
+   "key": "status.progress",
+   "text": "Lekcja 6 z 28: Utrzymaj wysokość. Krok 2 z 3. Próba 2. Zaliczone 1 z 3.",
+   "heard": "Lekcja szósta z dwudziestu ośmiu, utrzymaj wysokość. Krok drugi z trzej próba drugiego zaliczony jeden z trzech.",
+   "rawRate": 0.0625,
+   "rate": 0.0625
+  },
+  {
+   "locale": "pl",
+   "key": "fly.progress",
+   "text": "Próba 2. Zaliczone 1 z 3.",
+   "heard": "Próba drugiego zaliczony jeden z trzech.",
+   "rawRate": 0.1667,
+   "rate": 0.1667
+  },
+  {
+   "locale": "pl",
+   "key": "reason.height-high",
+   "text": "Za wysoko przez 20 procent czasu.",
+   "heard": "Za wysoko przez 20% czasu.",
+   "rawRate": 0.1667,
+   "rate": 0.1667
+  },
+  {
+   "locale": "pl",
+   "key": "reason.height-low",
+   "text": "Za nisko przez 20 procent czasu.",
+   "heard": "Za nisko przez 20% czasu.",
+   "rawRate": 0.1667,
+   "rate": 0.1667
+  },
+  {
+   "locale": "pl",
+   "key": "reason.distance",
+   "text": "Przelecone 3 z 5 metrów.",
+   "heard": "Przelekony 3 z 5 metrów.",
+   "rawRate": 0.2,
+   "rate": 0.2
+  },
+  {
+   "locale": "pl",
+   "key": "survey.item.up-direction",
+   "text": "Gdy dron leci w górę, jaki dźwięk wydawał ci się naturalny?",
+   "heard": "Gdy dran leci w górę, jaki dźwięk wydawał ci się naturalny?",
+   "rawRate": 0.0909,
+   "rate": 0
+  },
+  {
+   "locale": "ru",
+   "key": "app.name",
+   "text": "Fly by Sound",
+   "heard": "F.L.Y.B.Y. Sound",
+   "rawRate": 1,
+   "rate": 0
+  },
+  {
+   "locale": "ru",
+   "key": "cue.safety.obstacle.name",
+   "text": "Препятствие",
+   "heard": "Препятствия",
+   "rawRate": 1,
+   "rate": 0
+  },
+  {
+   "locale": "ru",
+   "key": "cue.safety.free.glossary",
+   "text": "Пара быстрых нот, снова и снова, пока впереди препятствие. Одинаковые слева или справа: проход с той стороны. Сверху ноты идут так же, как твой тон высоты при подъёме: проход сверху. Снизу и наоборот: проход снизу.",
+   "heard": "Пара быстрых нот, снова и снова, пока впереди препятствия Одинаковые слева или справа, проход с той стороны Сверху ноты идут так же, как твой тон высоты при подъёме, проход сверху Снизу и наоборот, проход снизу",
+   "rawRate": 0.0286,
+   "rate": 0
+  },
+  {
+   "locale": "ru",
+   "key": "cue.safety.wrong-side.glossary",
+   "text": "Три ноты вниз: кольцо пройдено с обратной стороны. Так не считается. Вернись и пролети через него с нужной стороны.",
+   "heard": "Три ноты вниз, кольцо пройдено с обратной стороны Так не считается Вернись и пролейте через него с нужной стороны",
+   "rawRate": 0.0526,
+   "rate": 0
+  },
+  {
+   "locale": "ru",
+   "key": "cue.target.hum.name",
+   "text": "Гул цели",
+   "heard": "Гол цели",
+   "rawRate": 0.5,
+   "rate": 0
+  },
+  {
+   "locale": "ru",
+   "key": "cue.target.hum.glossary",
+   "text": "Низкий тёплый гул из центра следующих ворот. Лети на него. Чем ближе ворота, тем чаще он повторяется.",
+   "heard": "Низкий тёплый гол из центра следующих ворот Лети на него Чем ближе ворота, тем чаще он повторяется",
+   "rawRate": 0.0588,
+   "rate": 0
+  },
+  {
+   "locale": "ru",
+   "key": "cue.target.off.glossary",
+   "text": "Когда гул становится шершавым, ты не на одной линии с воротами. Когда он снова гладкий, ты на линии.",
+   "heard": "Когда гол становится шершавым, ты не на одной линии с воротами Когда он снова гладкий, ты на линии",
+   "rawRate": 0.0556,
+   "rate": 0
+  },
+  {
+   "locale": "ru",
+   "key": "cue.target.note.name",
+   "text": "Нота ворот",
+   "heard": "Нотоворот",
+   "rawRate": 1,
+   "rate": 0
+  },
+  {
+   "locale": "ru",
+   "key": "cue.shape.pillar.name",
+   "text": "Столб",
+   "heard": "СТОЛП",
+   "rawRate": 1,
+   "rate": 0
+  },
+  {
+   "locale": "ru",
+   "key": "layer.target.name",
+   "text": "Гул цели",
+   "heard": "Гол цели",
+   "rawRate": 0.5,
+   "rate": 0
+  },
+  {
+   "locale": "ru",
+   "key": "layer.shape.name",
+   "text": "Звуки форм",
+   "heard": "Звуки и форм",
+   "rawRate": 0.5,
+   "rate": 0
+  },
+  {
+   "locale": "ru",
+   "key": "theme.soft.name",
+   "text": "Мягкая",
+   "heard": "Мягкое.",
+   "rawRate": 1,
+   "rate": 0
+  },
+  {
+   "locale": "ru",
+   "key": "theme.clear.name",
+   "text": "Чёткая",
+   "heard": "Чёткое.",
+   "rawRate": 1,
+   "rate": 0
+  },
+  {
+   "locale": "ru",
+   "key": "theme.race.what",
+   "text": "Короткие резкие звуки для быстрого полёта.",
+   "heard": "Короткие и резкие звуки для быстрого полёта",
+   "rawRate": 0.1667,
+   "rate": 0.1667
+  },
+  {
+   "locale": "ru",
+   "key": "lesson.ears-game.hint.1",
+   "text": "Вслушайся в окраску звука: стук, глухой удар, дуновение, кружение или тиканье.",
+   "heard": "Вслушайся в окраску звука, стук, глухой удар, дуновение, кружение или тикание",
+   "rawRate": 0.0909,
+   "rate": 0.0909
+  },
+  {
+   "locale": "ru",
+   "key": "lesson.hover-height.goal.1",
+   "text": "Держи тон гладким 5 секунд.",
+   "heard": "Держит он гладким 5 секунд",
+   "rawRate": 0.4,
+   "rate": 0
+  },
+  {
+   "locale": "ru",
+   "key": "lesson.hover-height.hint.1",
+   "text": "Если тон дребезжит и он высокий, немного снизься. Если дребезжит и он низкий, поднимись.",
+   "heard": "Если тон дребезжит и он высокий, немного снися Если дребезжит и он низкий, поднимись",
+   "rawRate": 0.0714,
+   "rate": 0.0714
+  },
+  {
+   "locale": "ru",
+   "key": "lesson.move-speed.intro.2",
+   "text": "Пролети немного вперёд, потом отпусти стик. Дрон замедлится и остановится.",
+   "heard": "Пролейте немного вперёд, потом отпусти стик Дрон замедлится и остановится",
+   "rawRate": 0.1,
+   "rate": 0
+  },
+  {
+   "locale": "ru",
+   "key": "lesson.move-stop.intro.2",
+   "text": "Лети туда и остановись внутри. Спокойный гул отмечает зону.",
+   "heard": "Лети туда и остановись внутри Спокойный гол отмечает зону",
+   "rawRate": 0.1111,
+   "rate": 0
+  },
+  {
+   "locale": "ru",
+   "key": "lesson.move-stop.hint.1",
+   "text": "Замедляйся до того, как подлетишь. Чем ближе зона, тем чаще повторяется гул.",
+   "heard": "Замедлийся до того, как подлетишь Чем ближе зона, тем чаще повторяется гол",
+   "rawRate": 0.1667,
+   "rate": 0.0833
+  },
+  {
+   "locale": "ru",
+   "key": "lesson.walls-hall.intro.3",
+   "text": "Если всё же коснёшься, ничего не сломается. Это просто мягкий удар.",
+   "heard": "Если всё же кознёшься, ничего не сломается. Это просто мягкий удар.",
+   "rawRate": 0.0909,
+   "rate": 0.0909
+  },
+  {
+   "locale": "ru",
+   "key": "lesson.walls-hall.goal.1",
+   "text": "Подлети к каждой стене и остановись близко к ней, не коснувшись её.",
+   "heard": "Подлейте к каждой стене и остановись близко к ней, не коснувшись её",
+   "rawRate": 0.0833,
+   "rate": 0
+  },
+  {
+   "locale": "ru",
+   "key": "lesson.walls-pillar.intro.2",
+   "text": "Облети его по кругу, не касаясь.",
+   "heard": "Облейте его по кругу, не касаясь",
+   "rawRate": 0.1667,
+   "rate": 0
+  },
+  {
+   "locale": "ru",
+   "key": "lesson.walls-pillar.goal.1",
+   "text": "Облети столб вокруг.",
+   "heard": "Облейте столб вокруг",
+   "rawRate": 0.3333,
+   "rate": 0
+  },
+  {
+   "locale": "ru",
+   "key": "lesson.walls-row.goal.1",
+   "text": "Пролети через ряд, не коснувшись ни одного столба.",
+   "heard": "Пролейте через ряд, не коснувшись ни одного столба",
+   "rawRate": 0.125,
+   "rate": 0
+  },
+  {
+   "locale": "ru",
+   "key": "lesson.corridor.intro.2",
+   "text": "Держись середины. Если стук слышен с одной стороны, тебя сносит к той стене. Отодвинься от неё.",
+   "heard": "Держись с середины Если стук слышен с одной стороны, тебя сносит кто из тени Отодвинь от неё",
+   "rawRate": 0.3125,
+   "rate": 0
+  },
+  {
+   "locale": "ru",
+   "key": "lesson.corridor.intro.4",
+   "text": "В коридоре несколько этапов. Звук подскажет, когда ты закончишь каждый из них. Если коснёшься стены, вернёшься совсем немного назад.",
+   "heard": "В коридоре несколько этапов Звук подскажет, когда ты закончишь каждый из них Если кознёшь со стены, вернёшься совсем немного назад",
+   "rawRate": 0.1053,
+   "rate": 0
+  },
+  {
+   "locale": "ru",
+   "key": "lesson.corridor.hint.1",
+   "text": "Замедляйся перед поворотом. Стук подскажет, где стена.",
+   "heard": "Замедлийся перед поворотом Стук подскажет, где стена",
+   "rawRate": 0.1429,
+   "rate": 0.1429
+  },
+  {
+   "locale": "ru",
+   "key": "lesson.tunnel-wide.goal.1",
+   "text": "Долети до конца тоннеля.",
+   "heard": "Далейте до конца тоннеля",
+   "rawRate": 0.25,
+   "rate": 0
+  },
+  {
+   "locale": "ru",
+   "key": "lesson.tunnel-narrow.intro.2",
+   "text": "Держись середины: там стук слева и справа звучит одинаково.",
+   "heard": "Держись с середины, там стук слева и справа звучит одинаково",
+   "rawRate": 0.1111,
+   "rate": 0
+  },
+  {
+   "locale": "ru",
+   "key": "lesson.tunnel-narrow.goal.1",
+   "text": "Долети до конца тоннеля.",
+   "heard": "Далейте до конца тоннеля",
+   "rawRate": 0.25,
+   "rate": 0
+  },
+  {
+   "locale": "ru",
+   "key": "lesson.tunnel-narrower.goal.1",
+   "text": "Долети до конца тоннеля.",
+   "heard": "Далейте до конца тоннеля",
+   "rawRate": 0.25,
+   "rate": 0
+  },
+  {
+   "locale": "ru",
+   "key": "lesson.tunnel-bends.goal.1",
+   "text": "Долети до конца тоннеля.",
+   "heard": "Далейте до конца тоннеля",
+   "rawRate": 0.25,
+   "rate": 0
+  },
+  {
+   "locale": "ru",
+   "key": "lesson.tunnel-gaps.goal.1",
+   "text": "Облети все препятствия и долети до конца тоннеля.",
+   "heard": "Облейте все препятствия и долейте до конца тоннеля",
+   "rawRate": 0.25,
+   "rate": 0
+  },
+  {
+   "locale": "ru",
+   "key": "lesson.tunnel-long.intro.3",
+   "text": "Если коснёшься стены, вернёшься совсем недалеко назад.",
+   "heard": "Если кознёшь со стены, вернёшься совсем недалеко назад",
+   "rawRate": 0.2857,
+   "rate": 0
+  },
+  {
+   "locale": "ru",
+   "key": "lesson.tunnel-long.goal.1",
+   "text": "Пролети все этапы до конца.",
+   "heard": "Пролейте все этапы до конца",
+   "rawRate": 0.2,
+   "rate": 0
+  },
+  {
+   "locale": "ru",
+   "key": "lesson.rings-first.intro.1",
+   "text": "Теперь кольцо. Низкий гул идёт из центра кольца. Лети на гул.",
+   "heard": "Теперь кольцо. Низкий гол идёт из центра кольца. Лети на гол.",
+   "rawRate": 0.1818,
+   "rate": 0
+  },
+  {
+   "locale": "ru",
+   "key": "lesson.rings-first.intro.2",
+   "text": "Если гул гладкий, ты на одной линии с кольцом. Если шершавый, тебя снесло в сторону. Подправляй курс, пока он не станет гладким.",
+   "heard": "Если гол гладкий, ты на одной линии с кольцом Если шершавый, тебя снесло в сторону Подправляй курс, пока он не станет гладким",
+   "rawRate": 0.0455,
+   "rate": 0
+  },
+  {
+   "locale": "ru",
+   "key": "lesson.rings-first.goal.1",
+   "text": "Пролети сквозь кольцо.",
+   "heard": "Пролейте сквозь кольцо",
+   "rawRate": 0.3333,
+   "rate": 0
+  },
+  {
+   "locale": "ru",
+   "key": "lesson.rings-first.hint.1",
+   "text": "Поворачивайся, пока гул не окажется прямо перед тобой, и тогда влетай.",
+   "heard": "Поворачивайся, пока гол не окажется прямо перед тобой, и тогда влетай",
+   "rawRate": 0.0909,
+   "rate": 0
+  },
+  {
+   "locale": "ru",
+   "key": "lesson.rings-line.goal.1",
+   "text": "Пролети сквозь все кольца по порядку.",
+   "heard": "Пролейте сквозь все кольца по порядку.",
+   "rawRate": 0.1667,
+   "rate": 0
+  },
+  {
+   "locale": "ru",
+   "key": "lesson.rings-small.goal.1",
+   "text": "Пролети сквозь кольца, даже сквозь самое маленькое.",
+   "heard": "Пролейте сквозь кольца, даже сквозь самые маленькие",
+   "rawRate": 0.4286,
+   "rate": 0
+  },
+  {
+   "locale": "ru",
+   "key": "lesson.rings-small.hint.1",
+   "text": "Гладкий гул прямо перед тобой значит, что ты пройдёшь.",
+   "heard": "Гладкий гол прямо перед тобой значит, что ты пройдёшь",
+   "rawRate": 0.1111,
+   "rate": 0
+  },
+  {
+   "locale": "ru",
+   "key": "lesson.rings-heights.goal.1",
+   "text": "Пролети сквозь все кольца, каждое на своей высоте.",
+   "heard": "Пролейте сквозь все кольца, каждая на своей высоте",
+   "rawRate": 0.25,
+   "rate": 0.125
+  },
+  {
+   "locale": "ru",
+   "key": "lesson.rings-course.intro.2",
+   "text": "Лети за гулом от кольца к кольцу. Последнее кольцо завершает песенку.",
+   "heard": "Лети за голым от кольца к кольцу Последнее кольцо завершает песенку",
+   "rawRate": 0.0909,
+   "rate": 0
+  },
+  {
+   "locale": "ru",
+   "key": "lesson.rings-course.goal.1",
+   "text": "Пролети сквозь каждое кольцо, ничего не коснувшись.",
+   "heard": "Пролейте сквозь каждое кольцо, ничего не коснувшись",
+   "rawRate": 0.1429,
+   "rate": 0
+  },
+  {
+   "locale": "ru",
+   "key": "lesson.shapes-square.intro.1",
+   "text": "У квадратных ворот четыре перекладины. Их звук щёлкает в каждом углу.",
+   "heard": "У квадратных ворот 4 перекладины Их звук щёлкает в каждом углу",
+   "rawRate": 0.0909,
+   "rate": 0.0909
+  },
+  {
+   "locale": "ru",
+   "key": "lesson.shapes-square.intro.2",
+   "text": "Пролети через их середину.",
+   "heard": "Пролейте через их середину.",
+   "rawRate": 0.25,
+   "rate": 0
+  },
+  {
+   "locale": "ru",
+   "key": "lesson.shapes-square.goal.1",
+   "text": "Пролети сквозь квадрат.",
+   "heard": "Пролейте сквозь квадрат",
+   "rawRate": 0.3333,
+   "rate": 0
+  },
+  {
+   "locale": "ru",
+   "key": "lesson.shapes-series.goal.1",
+   "text": "Пролети сквозь все квадраты по порядку.",
+   "heard": "Пролейте сквозь все квадраты по порядку.",
+   "rawRate": 0.1667,
+   "rate": 0
+  },
+  {
+   "locale": "ru",
+   "key": "lesson.shapes-cube.goal.1",
+   "text": "Пролети сквозь каркас куба и назови его форму.",
+   "heard": "Пролейте сквозь каркас куба и назови его форму",
+   "rawRate": 0.125,
+   "rate": 0
+  },
+  {
+   "locale": "ru",
+   "key": "lesson.free-garden.intro.2",
+   "text": "Лети за гулом от кольца к кольцу. Твоё время измеряется.",
+   "heard": "Лети за голым от кольца к кольцу Твоё время измеряется",
+   "rawRate": 0.1,
+   "rate": 0
+  },
+  {
+   "locale": "ru",
+   "key": "lesson.free-garden.intro.3",
+   "text": "Лети плавно. Побеждает самый быстрый чистый полёт.",
+   "heard": "Лети плавно Побеждает самый быстрый и чистый полёт",
+   "rawRate": 0.1429,
+   "rate": 0.1429
+  },
+  {
+   "locale": "ru",
+   "key": "lesson.free-garden.goal.1",
+   "text": "Пролети цепочку колец как можно быстрее, не касаясь стен.",
+   "heard": "Пролейте цепочку колец как можно быстрее, не касаясь стен",
+   "rawRate": 0.1111,
+   "rate": 0
+  },
+  {
+   "locale": "ru",
+   "key": "menu.welcome",
+   "text": "Добро пожаловать в Fly by Sound. Двигайся по меню стрелками или стиком. Нажми Enter или первую кнопку, чтобы выбрать. Нажми Escape, чтобы вернуться.",
+   "heard": "Добро пожаловать в FLUI BUI SOUND Двигайся по меню стрелками или стиком Нажми Enter или первую кнопку, чтобы выбрать Нажми Escape, чтобы вернуться",
+   "rawRate": 0.087,
+   "rate": 0.087
+  },
+  {
+   "locale": "ru",
+   "key": "menu.change.louder",
+   "text": "Громче.",
+   "heard": "ГРОМЧИЕ",
+   "rawRate": 1,
+   "rate": 0
+  },
+  {
+   "locale": "ru",
+   "key": "menu.change.quieter",
+   "text": "Тише.",
+   "heard": "ТИШИ",
+   "rawRate": 1,
+   "rate": 0
+  },
+  {
+   "locale": "ru",
+   "key": "send.delivered",
+   "text": "Доставлено. Автор получил твой полёт в Telegram и по электронной почте. Спасибо.",
+   "heard": "Доставлено Автор получил твой полёт в Телеграм и по электронной почте Спасибо",
+   "rawRate": 0.0833,
+   "rate": 0.0833
+  },
+  {
+   "locale": "ru",
+   "key": "send.partial-email",
+   "text": "Автор получил полёт только по почте. Telegram попробует ещё раз.",
+   "heard": "Автор получил полёт только по почте Телеграм попробует ещё раз",
+   "rawRate": 0.1,
+   "rate": 0.1
+  },
+  {
+   "locale": "ru",
+   "key": "status.progress",
+   "text": "Урок 6 из 28: Держи высоту. Шаг 2 из 3. Попытка 2. Засчитано 1 из 3.",
+   "heard": "Урок 6 из 28, держи высоту Шаг 2 из 3 Попытка 2 Защита на 1 из 3",
+   "rawRate": 0.0625,
+   "rate": 0.0625
+  },
+  {
+   "locale": "ru",
+   "key": "fly.progress",
+   "text": "Попытка 2. Засчитано 1 из 3.",
+   "heard": "Попытка 2 Защита на один из трёх",
+   "rawRate": 0.1667,
+   "rate": 0.1667
+  },
+  {
+   "locale": "ru",
+   "key": "reason.height-high",
+   "text": "Слишком высоко 20 процентов времени.",
+   "heard": "Слишком высоко 20% времени",
+   "rawRate": 0.2,
+   "rate": 0.2
+  },
+  {
+   "locale": "ru",
+   "key": "reason.height-low",
+   "text": "Слишком низко 20 процентов времени.",
+   "heard": "Слишком низко 20% времени",
+   "rawRate": 0.2,
+   "rate": 0.2
+  },
+  {
+   "locale": "ru",
+   "key": "reason.distance",
+   "text": "Пролетено 3 из 5 метров.",
+   "heard": "Пролете на 3 из 5 метров.",
+   "rawRate": 0.2,
+   "rate": 0.2
+  },
+  {
+   "locale": "ru",
+   "key": "survey.anchor.very-afraid",
+   "text": "Очень сильное опасение",
+   "heard": "Очень сильные опасения",
+   "rawRate": 0.6667,
+   "rate": 0
+  }
+ ]
+}

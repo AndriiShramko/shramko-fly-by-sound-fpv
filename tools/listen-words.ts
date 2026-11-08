@@ -117,7 +117,71 @@ export interface Heard {
     readonly why: string;
 }
 
-export const HEARD: readonly Heard[] = [];
+const SAME_SOUND = 'the two sound the same';
+const ONE_WORD = 'a word alone, with nothing around it to tell it by';
+
+export const HEARD: readonly Heard[] = [
+    // English, Microsoft David
+    { locale: 'en', key: '*', said: 'height tone', heard: 'high tone', why: 'the t of height runs into tone: "height tone" is heard as "high tone", in all nine lines that say it' },
+    { locale: 'en', key: '*', said: 'metres', heard: 'meters', why: 'Whisper writes the American spelling' },
+    { locale: 'en', key: '*', said: 'centre', heard: 'center', why: 'Whisper writes the American spelling' },
+    { locale: 'en', key: '*', said: 'target hum', heard: 'target hub', why: 'the two words alone (the cue and the layer): hum is heard as hub' },
+    { locale: 'en', key: '*', said: 'passed', heard: 'past', why: SAME_SOUND },
+    { locale: 'en', key: '*', said: 'passed', heard: 'pest', why: 'passed at the end of a short line is heard as pest' },
+    { locale: 'en', key: '*', said: 'gate', heard: 'gay', why: 'the t of gate runs into the number after it: "Gate 2" is heard as "Gay 2" or "Gay too"' },
+    { locale: 'en', key: '*', said: 'stopped 3', heard: 'stop 3', why: 'the -ed of stopped runs into the number after it' },
+    { locale: 'en', key: '*', said: '20 percent', heard: '20%', why: 'Whisper writes the percent sign' },
+    { locale: 'en', key: 'module.0.name', said: 'Ears', heard: 'Gears', why: `${ONE_WORD} (the first run heard "here's")` },
+    { locale: 'en', key: 'theme.race.name', said: 'Race', heard: 'Raise', why: ONE_WORD },
+    { locale: 'en', key: 'cue.target.off.name', said: 'Off course', heard: 'Of course', why: 'two words alone, heard as the phrase "of course"' },
+    { locale: 'en', key: 'menu.setting.calm', said: 'Calm', heard: 'comm', why: 'two words alone: calm without its l is written comm' },
+    { locale: 'en', key: 'menu.setting.height-target', said: 'note', heard: 'node', why: 'the last of three words alone' },
+    { locale: 'en', key: 'reason.height-low', said: 'Too', heard: 'to', why: SAME_SOUND },
+    { locale: 'en', key: 'reason.zone-past', said: 'Past', heard: 'Pass', why: 'the t of past runs into the' },
+    // Spanish, Microsoft Helena
+    { locale: 'es', key: '*', said: 'aros', heard: 'a los', why: 'aros (rings) alone or first in a title is heard as "a los"' },
+    { locale: 'es', key: '*', said: 'dron', heard: 'dran', why: 'the voice says dron with an open o that Whisper writes as a, in every line with the word' },
+    { locale: 'es', key: '*', said: '2 de 5', heard: '2D5', why: 'Whisper writes "dos de cinco" as 2D5' },
+    { locale: 'es', key: '*', said: '20 por ciento', heard: '20%', why: 'Whisper writes the percent sign' },
+    { locale: 'es', key: 'cue.shape.cube.name', said: 'Cubo', heard: 'Cuba', why: ONE_WORD },
+    { locale: 'es', key: 'menu.value.heading', said: 'donde', heard: 'dónde', why: 'the value says where you look (donde, no question); Whisper writes it as the question dónde' },
+    // Polish, Microsoft Paulina
+    { locale: 'pl', key: '*', said: 'węższy', heard: 'wyższy', why: 'the nasal ę of węższy (narrower) is heard as y: wyższy (higher), in every line with the word' },
+    { locale: 'pl', key: '*', said: 'najwęższy', heard: 'najwyższy', why: 'as węższy: the narrowest is heard as the highest' },
+    { locale: 'pl', key: '*', said: 'sześcianu', heard: '60', why: 'sześcianu (of the cube) is heard as sześćdziesiąt and written 60, or misspelt (the next three)' },
+    { locale: 'pl', key: '*', said: 'sześcianu', heard: 'szejsianu', why: 'the same word heard, but misspelt' },
+    { locale: 'pl', key: '*', said: 'sześcianu', heard: 'szeisianu', why: 'the same word heard, but misspelt' },
+    { locale: 'pl', key: '*', said: 'sześcianu', heard: 'sześianu', why: 'the same word heard, but misspelt' },
+    { locale: 'pl', key: '*', said: 'dron', heard: 'dran', why: 'the voice says dron with an open o that Whisper writes as a, in every line with the word' },
+    { locale: 'pl', key: 'app.name', said: 'Fly by', heard: 'Flajby', why: 'the name alone: Paulina says Fly the Polish way, flaj, and Whisper joins the two words' },
+    { locale: 'pl', key: 'cue.shape.pillar.name', said: 'Słup', heard: 'Swoop', why: ONE_WORD },
+    { locale: 'pl', key: 'menu.main.quit', said: 'Wyjdź', heard: 'Wyjęć', why: ONE_WORD },
+    { locale: 'pl', key: 'lesson.rings-line.title', said: 'Obręcze', heard: 'Obręczę', why: 'Whisper writes the plural with the ending of the accusative singular' },
+    // Russian, Microsoft Irina
+    { locale: 'ru', key: '*', said: 'пролети', heard: 'пролейте', why: 'fly through (пролети) is heard as pour (пролейте); with the other verbs of flying with a prefix (the next four), in 22 of the 23 lines that say one' },
+    { locale: 'ru', key: '*', said: 'облети', heard: 'облейте', why: 'the same habit as with пролети' },
+    { locale: 'ru', key: '*', said: 'долети', heard: 'далейте', why: 'the same habit as with пролети' },
+    { locale: 'ru', key: '*', said: 'долети', heard: 'долейте', why: 'the same habit as with пролети' },
+    { locale: 'ru', key: '*', said: 'подлети', heard: 'подлейте', why: 'the same habit as with пролети' },
+    { locale: 'ru', key: '*', said: 'гул', heard: 'гол', why: 'the hum (гул) is heard as a goal (гол), in 12 of the 13 lines with the word' },
+    { locale: 'ru', key: '*', said: 'гулом', heard: 'голым', why: 'the same habit as with гул' },
+    { locale: 'ru', key: '*', said: 'препятствие', heard: 'препятствия', why: 'unstressed, the endings -ие and -ия sound the same' },
+    { locale: 'ru', key: '*', said: 'держись середины', heard: 'держись с середины', why: 'the сь of держись runs into середины and Whisper writes a с between them' },
+    { locale: 'ru', key: '*', said: 'коснёшься стены', heard: 'кознёшь со стены', why: 'коснёшься (you touch) before стены is heard as кознёшь со' },
+    { locale: 'ru', key: 'app.name', said: 'Fly by', heard: 'F.L.Y.B.Y.', why: 'Irina spells Fly by letter by letter (in the menu\'s welcome it comes out as flui bui)' },
+    { locale: 'ru', key: 'cue.target.note.name', said: 'Нота ворот', heard: 'Нотоворот', why: 'two words alone, heard as one with the unstressed a as o' },
+    { locale: 'ru', key: 'cue.shape.pillar.name', said: 'Столб', heard: 'Столп', why: `${ONE_WORD}: the final б is said as п` },
+    { locale: 'ru', key: 'layer.shape.name', said: 'Звуки форм', heard: 'Звуки и форм', why: 'Whisper hears an и between two words' },
+    { locale: 'ru', key: 'theme.soft.name', said: 'Мягкая', heard: 'Мягкое', why: `${ONE_WORD}: the unstressed ending -ая is heard as -ое` },
+    { locale: 'ru', key: 'theme.clear.name', said: 'Чёткая', heard: 'Чёткое', why: `${ONE_WORD}: the unstressed ending -ая is heard as -ое` },
+    { locale: 'ru', key: 'menu.change.louder', said: 'Громче', heard: 'Громчие', why: `${ONE_WORD}: the unstressed final е is heard as ие` },
+    { locale: 'ru', key: 'menu.change.quieter', said: 'Тише', heard: 'Тиши', why: `${ONE_WORD}: the unstressed final е is heard as и` },
+    { locale: 'ru', key: 'survey.anchor.very-afraid', said: 'сильное опасение', heard: 'сильные опасения', why: 'unstressed endings, heard as the plural' },
+    { locale: 'ru', key: 'lesson.rings-small.goal.1', said: 'самое маленькое', heard: 'самые маленькие', why: 'unstressed endings, heard as the plural' },
+    { locale: 'ru', key: 'lesson.hover-height.goal.1', said: 'Держи тон', heard: 'Держит он', why: 'the т of тон is heard as the end of держи: держит он' },
+    { locale: 'ru', key: 'lesson.corridor.intro.2', said: 'к той стене', heard: 'кто из тени', why: 'к той стене (to that wall) is heard as кто из тени' },
+    { locale: 'ru', key: 'lesson.corridor.intro.2', said: 'Отодвинься', heard: 'Отодвинь', why: 'the reflexive ending is not heard' }
+];
 
 const contains = (list: readonly string[], part: readonly string[]): number => {
     for (let i = 0; i + part.length <= list.length && part.length > 0; i++) if (part.every((w, k) => list[i + k] === w)) return i;
@@ -144,8 +208,11 @@ export function putBack(hyp: readonly string[], ref: readonly string[], locale: 
 
 // ------------------------------------------------------------------ the bounds and the voices
 
-/** The largest word error rate a line of each language may have (after HEARD), set so that every line meets it. */
-export const BOUNDS: Readonly<Record<Locale, number>> = { en: 0, es: 0, pl: 0, ru: 0 };
+/**
+ * The largest word error rate a line of each language may have (after HEARD): one wrong word in five. Every line meets
+ * it; every line that did not was looked at and its wording fixed (K's help) or its misheard word recorded (HEARD).
+ */
+export const BOUNDS: Readonly<Record<Locale, number>> = { en: 0.2, es: 0.2, pl: 0.2, ru: 0.2 };
 
 /** The local voice of each language: the Windows desktop voices (SAPI), the ones the length fixtures were measured with. */
 export const VOICES: Readonly<Record<Locale, string>> = {
@@ -262,7 +329,7 @@ export function simulatorLines(root: string): Line[] {
             need: '120',
             detail: '42',
             now: '0:30',
-            total: '1:05',
+            total: key === 'sonicrec.replay.time' ? '1:05' : '5',
             matched: '18',
             recorded: '20',
             cues: '95',
