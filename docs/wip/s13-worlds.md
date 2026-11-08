@@ -298,7 +298,7 @@ lesson with a goal other than hold-height, approach-stop or around): the owner's
 - Lesson `rings-heights` (module 5, after rings-small, before rings-course; format 2, version 1; not on the fast path,
   which keeps rings-first and rings-course): rings v2 `line` of five 2 m rings at middle, floor, ceiling, floor, middle
   (2.5, 1.5, 3.5, 1.5, 2.5 m), 6 m apart, the first 5.5 m ahead, in a room 9 x 36.5 x 5 m; start (0, 2.5, 16.75);
-  caps 3 and 1.5 m/s (rings-line's). Legs 2.68, 2.85 (four times) and 2.65 s, side walls 2.3 s, ceiling 1.96 s; each
+  caps 3 and 1.5 m/s (rings-line's). Legs 2.68, 2.85 (four times) and 2.64 s, side walls 2.3 s, ceiling 1.96 s; each
   height change (1 or 2 m) fits its leg at the climb cap. Layers safety, target, height and voice (lane s13-sound
   tunes them: the target tone of M41-12 is the next ring's centre). Goal: every ring in order; 3 counted attempts.
   Intro (four languages): the rings at the floor, in the middle and under the ceiling; "the gliding one is your height,
