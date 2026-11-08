@@ -296,6 +296,7 @@
     "menu.setting.frame": "Dźwięk obraca się razem z",
     "menu.setting.motor": "Dźwięk silnika",
     "menu.setting.height-target": "Dźwięk docelowej wysokości",
+    "menu.setting.motor-level": "Głośność silnika",
     "menu.value.on": "włączone",
     "menu.value.off": "wyłączone",
     "menu.value.up-higher": "w górę to wyższy dźwięk",

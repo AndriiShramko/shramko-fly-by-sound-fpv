@@ -283,10 +283,17 @@ export interface SonicPrefs {
     /** listener frame: 'heading' (default, tilt ignored) or the full body attitude */
     readonly listenerFrame: 'heading' | 'body';
     /**
-     * v0.13 (lane s13-sound, M41-12): the height layer's second, steady tone at the target height (the
-     * next gate, or the band centre). Absent in documents written before v0.13; absent or true: on.
+     * v0.13 (lane s13-sound, M41-12): the height layer's target note, about once a second at the target
+     * height's pitch (the next gate, or the band centre). Absent in documents written before v0.13; absent
+     * or true: on.
      */
     readonly heightTarget?: boolean;
+    /**
+     * v0.13 (lane s13-sound, M41-16, review m3): the pilot's own motor level in this mode, dB over the
+     * calibrated one (-24 to 6; absent: 0). It acts after the motor bus's leveller, which otherwise holds
+     * the motor at one level whatever the simulator's own volume slider says.
+     */
+    readonly motorGainDb?: number;
 }
 
 // ------------------------------------------------------------------ lessons

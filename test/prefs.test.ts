@@ -27,7 +27,7 @@ function set(obj: unknown, key: string, value: unknown): unknown {
 describe('the defaults', () => {
     const d = defaultPrefs();
 
-    it('are what the spec says: soft theme, not calm, up is higher, the app speaks, captions on, the motor on (v0.13, M41-16), the full path, the heading frame, the target tone on', () => {
+    it('are what the spec says: soft theme, not calm, up is higher, the app speaks, captions on, the motor on (v0.13, M41-16) at its calibrated level, the full path, the heading frame, the target tone on', () => {
         expect(d).toEqual({
             format: FORMATS.prefs,
             theme: 'soft',
@@ -41,8 +41,20 @@ describe('the defaults', () => {
             motorSound: true,
             path: 'full',
             listenerFrame: 'heading',
-            heightTarget: true
+            heightTarget: true,
+            motorGainDb: 0
         });
+    });
+
+    it("the pilot's motor level (review m3): -24 to 6 dB, optional (a document without it is valid), a bad one refused", () => {
+        expect(validatePrefs({ ...d, motorGainDb: -12 }).ok).toBe(true);
+        const { motorGainDb: _gone, ...without } = d;
+        expect(validatePrefs(without).ok).toBe(true);
+        expect(validatePrefs({ ...d, motorGainDb: 9 }).ok).toBe(false);
+        expect(validatePrefs({ ...d, motorGainDb: 'loud' }).ok).toBe(false);
+        const read = readPrefs({ ...d, motorGainDb: 40 });
+        expect(read.prefs.motorGainDb).toBe(0);
+        expect(read.issues.map((i) => i.path)).toEqual(['motorGainDb']);
     });
 
     it('are valid, and fresh every time', () => {

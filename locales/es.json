@@ -296,6 +296,7 @@
     "menu.setting.frame": "El sonido gira con",
     "menu.setting.motor": "Sonido del motor",
     "menu.setting.height-target": "Tono de la altura objetivo",
+    "menu.setting.motor-level": "Volumen del motor",
     "menu.value.on": "activado",
     "menu.value.off": "desactivado",
     "menu.value.up-higher": "arriba es un tono más agudo",

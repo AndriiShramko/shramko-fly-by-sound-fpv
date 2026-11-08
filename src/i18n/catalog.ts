@@ -165,6 +165,7 @@ export const FREE_KEYS = [
     'menu.setting.frame',
     'menu.setting.motor',
     'menu.setting.height-target',
+    'menu.setting.motor-level',
     'menu.value.on',
     'menu.value.off',
     'menu.value.up-higher',

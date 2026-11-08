@@ -296,6 +296,7 @@
     "menu.setting.frame": "Звук поворачивается вместе с",
     "menu.setting.motor": "Звук моторов",
     "menu.setting.height-target": "Тон нужной высоты",
+    "menu.setting.motor-level": "Громкость моторов",
     "menu.value.on": "включено",
     "menu.value.off": "выключено",
     "menu.value.up-higher": "вверх это более высокий тон",

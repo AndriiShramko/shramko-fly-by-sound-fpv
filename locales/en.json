@@ -296,6 +296,7 @@
     "menu.setting.frame": "Sound turns with",
     "menu.setting.motor": "Motor sound",
     "menu.setting.height-target": "Target height tone",
+    "menu.setting.motor-level": "Motor volume",
     "menu.value.on": "on",
     "menu.value.off": "off",
     "menu.value.up-higher": "up is a higher tone",

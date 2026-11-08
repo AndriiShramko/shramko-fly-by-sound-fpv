@@ -13,6 +13,8 @@ import { THEME_ID } from '../theme/schema';
 
 export const PREFS_LIMITS = {
     gainDb: { min: -24, max: 12 },
+    /** the pilot's motor level over the calibrated one, dB (review m3): quieter at will, at most 6 dB louder */
+    motorGainDb: { min: -24, max: 6 },
     pitchSteps: { min: -12, max: 12 },
     speechRate: { min: 0.5, max: 2 }
 } as const;
@@ -31,14 +33,15 @@ export function defaultPrefs(): SonicPrefs {
         motorSound: true,
         path: 'full',
         listenerFrame: 'heading',
-        heightTarget: true
+        heightTarget: true,
+        motorGainDb: 0
     };
 }
 
-const KEYS = ['format', 'theme', 'calm', 'heightPolarity', 'layerGainDb', 'layerPitchSteps', 'selfVoice', 'speechRate', 'captions', 'motorSound', 'path', 'listenerFrame', 'heightTarget'] as const;
+const KEYS = ['format', 'theme', 'calm', 'heightPolarity', 'layerGainDb', 'layerPitchSteps', 'selfVoice', 'speechRate', 'captions', 'motorSound', 'path', 'listenerFrame', 'heightTarget', 'motorGainDb'] as const;
 type Key = (typeof KEYS)[number];
 /** Keys added after the first documents were written (v0.13): a document without them is still valid. */
-const ADDED_KEYS: readonly Key[] = ['heightTarget'];
+const ADDED_KEYS: readonly Key[] = ['heightTarget', 'motorGainDb'];
 /** The keys every document must have. */
 const REQUIRED_KEYS: readonly Key[] = KEYS.filter((k) => !ADDED_KEYS.includes(k));
 
@@ -74,7 +77,8 @@ const FIELDS: Readonly<Record<Key, FieldCheck>> = {
     motorSound: (c, v, path) => c.boolean(v, path),
     path: (c, v, path) => c.oneOf(v, path, ['full', 'fast'] as const),
     listenerFrame: (c, v, path) => c.oneOf(v, path, ['heading', 'body'] as const),
-    heightTarget: (c, v, path) => c.boolean(v, path)
+    heightTarget: (c, v, path) => c.boolean(v, path),
+    motorGainDb: (c, v, path) => c.number(v, path, PREFS_LIMITS.motorGainDb)
 };
 
 /** Strict: every field present and valid (a field added in v0.13 may be absent), nothing else. */
