@@ -7,7 +7,7 @@
 //   static voices (24)  one-off notes from a fixed direction (touch ping), HRTF panner -> layer bus
 //   centre              height tone and its target tone, speed ticks, room bed and drone, gate notes, chimes
 //   layer buses         theme gain + pilot gain -> duck (speech, urgent hazard) -> master
-//   motor bus           the simulator's motor (motorInput) -> low-pass -> leveller -> level -> duck -> master (M41-16)
+//   motor bus           the simulator's motor (motorInput) -> band-pass -> leveller -> level -> duck -> master (M41-16)
 //   reverb              synthetic warm hall, return follows the room's openness
 //   output              master -> compressor -> soft clipper at the ceiling -> fade -> destination
 //
@@ -60,13 +60,17 @@ const HARMONY_GAIN = 0.8;
 // ducks under speech by the theme's duckDb and under an urgent hazard as the other layers do.
 /** Low-pass cutoff of the motor, Hz (second order). */
 export const MOTOR_LOWPASS_HZ = 1500;
+/** High-pass cutoff of the motor, Hz (second order): a 5-inch rotor's rumble goes, its blade-pass note and a whoop's rotor stay. */
+export const MOTOR_HIGHPASS_HZ = 400;
 /** The leveller: threshold, knee and ratio of the motor's compressor (its make-up gain is taken back out). */
 export const MOTOR_LEVELLER = { thresholdDb: -50, kneeDb: 6, ratio: 4, attackS: 0.03, releaseS: 0.3 } as const;
 /**
- * Gain after the leveller, dB: puts the simulator's motor (its default volume, 15 %) about 10 dB under the
- * cue mix of a flying lesson. Calibrated by the virtual listener's rig (test-audio/listen, evidence/listen).
+ * Gain after the leveller, dB. Calibrated by the virtual listener's rig (pnpm listen, evidence/listen/VL-2-motor.json):
+ * the simulator's motor at its default volume (15 %) sits about 14.5 LU under the cues of a ring flight, 2 dB under
+ * the most that keeps every cue at least 6 dB over the motor in its own third-octave bands (16 dB gave the shape
+ * trace 5.8 dB at 630 Hz, where it binds first).
  */
-export const MOTOR_LEVEL_DB = 10;
+export const MOTOR_LEVEL_DB = 14;
 /** The engine's own wake-up, ms: keeps rhythms placed between frames. */
 const PUMP_MS = 25;
 /** With no frame for this long, the engine plans on from the last one (previews, menus), s. */
@@ -388,6 +392,11 @@ export class FlyBySoundEngine implements SonicEngine {
         if (this.hooks.tap !== undefined) output.master.connect(this.hooks.tap);
         const solo = this.hooks.solo;
         const heard = (part: SoloPart | 'voice'): boolean => solo === undefined || (part !== 'voice' && solo.includes(part));
+        // a part a solo render leaves out still runs into a silent node, so every voice is processed as in the full
+        // mix (a node no output pulls is not processed, and its filters and HRTF state would differ when it is heard again)
+        const mute = ctx.createGain();
+        mute.gain.value = 0;
+        mute.connect(output.master);
         output.setMasterDb(theme.master.gainDb, ctx.currentTime);
         output.master.gain.value = dbToGain(theme.master.gainDb);
 
@@ -425,9 +434,9 @@ export class FlyBySoundEngine implements SonicEngine {
             centre.connect(centreSend);
             centreSend.connect(wet);
             dry.connect(duckDry);
-            if (heard(id)) duckDry.connect(output.master);
+            duckDry.connect(heard(id) ? output.master : mute);
             wet.connect(duckWet);
-            if (heard(id)) duckWet.connect(reverbIn);
+            duckWet.connect(heard(id) ? reverbIn : mute);
             layers[id] = { dry, wet, centre, duckDry, duckWet, duckTarget: 1 };
         }
 
@@ -490,10 +499,14 @@ export class FlyBySoundEngine implements SonicEngine {
         }
 
         const aux = ctx.createGain();
-        if (heard('aux')) aux.connect(output.master);
+        aux.connect(heard('aux') ? output.master : mute);
 
         // the motor bus
         const motorIn = ctx.createGain();
+        const motorHp = ctx.createBiquadFilter();
+        motorHp.type = 'highpass';
+        motorHp.frequency.value = MOTOR_HIGHPASS_HZ;
+        motorHp.Q.value = Math.SQRT1_2;
         const motorLp = ctx.createBiquadFilter();
         motorLp.type = 'lowpass';
         motorLp.frequency.value = MOTOR_LOWPASS_HZ;
@@ -510,12 +523,13 @@ export class FlyBySoundEngine implements SonicEngine {
         motorGate.gain.value = this.planner.prefs.motorSound ? 1 : 0;
         const motorDuck = ctx.createGain();
         if (this.hooks.motorBus === 'raw') motorIn.connect(motorGate);
-        else motorIn.connect(motorLp);
+        else motorIn.connect(motorHp);
+        motorHp.connect(motorLp);
         motorLp.connect(leveller);
         leveller.connect(motorLevel);
         motorLevel.connect(motorGate);
         motorGate.connect(motorDuck);
-        if (heard('motor')) motorDuck.connect(output.master);
+        motorDuck.connect(heard('motor') ? output.master : mute);
         const motor = { input: motorIn, gate: motorGate, duck: motorDuck, duckTarget: 1 };
 
         // height: tone -> roughness -> out
