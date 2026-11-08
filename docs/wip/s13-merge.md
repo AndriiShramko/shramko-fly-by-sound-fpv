@@ -48,7 +48,16 @@ and the corridor's goal (s13-lessons' "For the lead's merge" item 2, review R5) 
   theme are FAIL too. Broken on purpose twice, then restored: every failure told as an older build fails 4 tests
   (both controls of the v0.12 file, the moved flight, the verdict table); any version difference told as older fails
   2. Full suite 756 of 756.
-- [ ] 4e. The lines of walls-hall and the corridor say what the knocks of v0.13 mean (four languages)
+- [x] 4e. The lines of walls-hall and the corridor say what the knocks of v0.13 mean (s13-sound review m4; the goal
+  stays `stopWithinM` 3). en: `lesson.walls-hall.intro.2` "Fly slowly toward a wall until you hear knocks, then
+  stop.", `lesson.walls-hall.hint.1` "Fly to the wall slowly. Stop as soon as you hear knocks.",
+  `lesson.corridor.intro.2` "Stay in the middle. Knocks from one side mean you are drifting toward that wall. Move
+  away from it."; es, pl and ru say the same as people say it there (`locales/*.json`). Locale lint 0 problems (4
+  languages, 469 keys), layout check 0 problems. The three English lines were measured again with the Windows voice
+  of `test/fixtures/tts-en-david.json` (Microsoft David Desktop, the same method; an unchanged line, walls-hall's
+  intro.1, measured 8.64 s as in the fixture): 4.56, 4.92 and 7.515 s; the schedule test's recorded fact is now 263
+  of the 376 English lines longer than the estimate (262 before, with the old lines). No person has heard the new
+  lines yet; es, pl and ru have no local voice on this machine (s13-sound's M4).
 - [ ] 4f. `docs/design/virtual-listener.md` section 14 without the build machine's folders
 - [ ] 5. Full checks on the final commit: typecheck, test, locale lint, layout check, proof:audio, listen
 - [ ] 6. Final status: what merged, the conflicts, the merge items with their commits, the checks with numbers, what
