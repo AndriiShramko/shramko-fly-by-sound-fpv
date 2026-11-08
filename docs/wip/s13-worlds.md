@@ -15,6 +15,16 @@ navigation and truth bot `test/helpers/truth.ts`). No push. Every step one commi
 - [x] 7. Rings at different heights (M41-22): the heights parameter and lesson rings-heights
 - [x] 8. All checks, final status (below: Final status)
 
+Review fixes (`docs/wip/s13-worlds-review.md`; what was done and why: "Review fixes" below):
+
+- [x] B1. The tunnels' free sides exported as `OBSTACLE_FREE_SIDES` / `ObstacleFreeSide` (no clash with lane s13-sound)
+- [ ] M9. Every tunnel obstacle blocks the centre line by 0.2 m or more (the long tunnel's free ways 0.7 m)
+- [ ] M3. rings-heights: no height passes rings of two levels
+- [ ] M1, M2, M8. The corridor's last goal, the tunnels' lesson checkpoints, `track-end` at the merge
+- [ ] M5, M7, m1, m2, m3. walls-hall's words and stop distance, the new lessons' layers, wording
+- [ ] m4, m5, m7, M4, M6. AGENTS.md, this doc, the merge notes
+- [ ] All checks, final status
+
 ## Ownership
 
 Mine: `src/world/*`, the lesson files' `world`, `start` and `assists`, new lesson files, generator goldens and digests,

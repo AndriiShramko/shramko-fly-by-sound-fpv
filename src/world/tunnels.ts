@@ -22,9 +22,9 @@ import { list, names, num, oneOf, WorldSpecError, type ResolvedParams, type Sche
 import { cavityShell, type Box } from './parts';
 import { APPROACH_M, corridorNodes, type Dodge, type Run } from './track';
 
-/** The sides an obstacle can leave free. */
-export const FREE_SIDES = ['up', 'down', 'left', 'right'] as const;
-export type FreeSide = (typeof FREE_SIDES)[number];
+/** The sides an obstacle can leave free: the vocabulary of the 'gaps' parameter (named for obstacles, so no other module's export in src/index.ts clashes with it). */
+export const OBSTACLE_FREE_SIDES = ['up', 'down', 'left', 'right'] as const;
+export type ObstacleFreeSide = (typeof OBSTACLE_FREE_SIDES)[number];
 /** How far an obstacle reaches into the surfaces it stands on, metres. */
 export const OBSTACLE_EMBED_M = 0.05;
 /** An obstacle is at least this thick across the tunnel, metres (a thinner one is no obstacle). */
@@ -40,7 +40,7 @@ export const TUNNEL_SCHEMA: Schema = {
     segmentM: num(5, 2, 80),
     bendCount: num(2, 0, 40, true),
     endM: num(5, 1, 400),
-    gaps: names('up,right,down,left', FREE_SIDES, 24),
+    gaps: names('up,right,down,left', OBSTACLE_FREE_SIDES, 24),
     gapM: num(1.2, 0.5, 10),
     obstacleDepthM: num(1, 0.2, 10),
     obstacleRunM: num(5.5, 3, 80),
@@ -64,7 +64,7 @@ export function buildTunnel(p: ResolvedParams): Built {
     const layout = s(p, 'layout');
     const gapM = n(p, 'gapM');
     const depth = n(p, 'obstacleDepthM');
-    const sides = (p['gaps'] as string).split(',') as FreeSide[];
+    const sides = (p['gaps'] as string).split(',') as ObstacleFreeSide[];
 
     const boxes: Box[] = [];
     const objects: SonicObject[] = [];
@@ -101,7 +101,7 @@ export function buildTunnel(p: ResolvedParams): Built {
         mark(`bend-${turns}`, [last.from[0] + hx * Math.min(w / 2, leg / 2), y0, last.from[2] + hz * Math.min(w / 2, leg / 2)]);
     };
     /** a run of obstacleRunM with an obstacle in its middle that leaves `side` free */
-    const obstacle = (side: FreeSide): void => {
+    const obstacle = (side: ObstacleFreeSide): void => {
         const run = n(p, 'obstacleRunM');
         if (depth + 2 * APPROACH_M > run) throw new WorldSpecError(`corridor: an obstacle ${depth} m deep needs a run of at least ${depth + 2 * APPROACH_M} m, got ${run}`);
         const across = side === 'left' || side === 'right' ? w - gapM : h - gapM;
@@ -142,7 +142,7 @@ export function buildTunnel(p: ResolvedParams): Built {
         mark(`gap-${obstacleNo}`, [x + hx * before + rx * free.right, y0 + free.up, z + hz * before + rz * free.right]);
         forward(run, [{ along, reach: depth / 2, right: free.right, up: free.up }]);
     };
-    const nextSide = (): FreeSide => sides[sideNo++ % sides.length] as FreeSide;
+    const nextSide = (): ObstacleFreeSide => sides[sideNo++ % sides.length] as ObstacleFreeSide;
 
     switch (layout) {
         case 'gaps':
