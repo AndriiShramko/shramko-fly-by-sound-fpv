@@ -1,12 +1,12 @@
 {
  "format": "shramko-listen-index/1",
- "key": "61b845a0509414a2a8d86994e3cb1eeea2122f32b8f27afbd718c7b5ca1ca64b",
+ "key": "fd752e0f7bf9d26563ecb8016af38c0abbeb50c9029efbee5f07d5178e57b781",
  "pass": true,
  "inputs": {
-  "hash": "61b845a0509414a2a8d86994e3cb1eeea2122f32b8f27afbd718c7b5ca1ca64b",
-  "files": 106,
-  "driver": 1,
-  "measure": 1,
+  "hash": "fd752e0f7bf9d26563ecb8016af38c0abbeb50c9029efbee5f07d5178e57b781",
+  "files": 109,
+  "driver": 2,
+  "measure": 2,
   "chrome": "156.0.8078.80",
   "tools": {
    "python": "3.11.9",
@@ -16,7 +16,7 @@
    "pyloudnorm": "0.2.0"
   }
  },
- "date": "2026-11-08T12:04:04.427Z",
+ "date": "2026-11-08T13:39:34.656Z",
  "run": "pnpm listen",
  "checks": [
   {
@@ -60,6 +60,12 @@
    "valid": true,
    "pass": true,
    "file": "VL-2-motor.json"
+  },
+  {
+   "id": "VL-3-height",
+   "valid": true,
+   "pass": true,
+   "file": "VL-3-height.json"
   }
  ]
 }

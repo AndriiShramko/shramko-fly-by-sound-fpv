@@ -1,0 +1,256 @@
+{
+ "format": "shramko-listen-evidence/1",
+ "key": "fd752e0f7bf9d26563ecb8016af38c0abbeb50c9029efbee5f07d5178e57b781",
+ "inputs": {
+  "hash": "fd752e0f7bf9d26563ecb8016af38c0abbeb50c9029efbee5f07d5178e57b781",
+  "files": 109,
+  "driver": 2,
+  "measure": 2,
+  "chrome": "156.0.8078.80",
+  "tools": {
+   "python": "3.11.9",
+   "numpy": "2.4.6",
+   "scipy": "1.17.1",
+   "soundfile": "0.14.0",
+   "pyloudnorm": "0.2.0"
+  }
+ },
+ "date": "2026-11-08T13:39:34.656Z",
+ "id": "VL-3-height",
+ "claim": "in a hover lesson's band the height layer neither wobbles nor buzzes at any distance from the target (envelope modulation at most 10 % between 2 and 70 Hz, in the plain height tone between target notes and in each note), so it cannot pass for the out-of-band buzz (\"too high or too low\") or the target hum's off-aim beat (2 to 7 Hz); out of the band it buzzes (at least 30 % at the theme's 38 Hz) (control: the first v0.13 design, a steady target tone 6 dB under the height tone, beats in the band)",
+ "thresholds": {
+  "inBandModDepth": {
+   "value": 0.1,
+   "kind": "proposal"
+  },
+  "outBandBuzzDepth": {
+   "value": 0.3,
+   "kind": "proposal"
+  }
+ },
+ "measured": {
+  "targetNotes": 21,
+  "heights": [
+   {
+    "heightM": 2.5,
+    "inBand": true,
+    "windows": 3,
+    "modDepth2to70Hz": 0.002,
+    "byKind": {
+     "note": 0.002,
+     "tone": 0.001
+    },
+    "buzzDepth": 0
+   },
+   {
+    "heightM": 2.45,
+    "inBand": true,
+    "windows": 3,
+    "modDepth2to70Hz": 0.007,
+    "byKind": {
+     "note": 0.007,
+     "tone": 0.002
+    },
+    "buzzDepth": 0
+   },
+   {
+    "heightM": 2.4,
+    "inBand": true,
+    "windows": 3,
+    "modDepth2to70Hz": 0.008,
+    "byKind": {
+     "note": 0.008,
+     "tone": 0.002
+    },
+    "buzzDepth": 0
+   },
+   {
+    "heightM": 2.3,
+    "inBand": true,
+    "windows": 3,
+    "modDepth2to70Hz": 0.009,
+    "byKind": {
+     "note": 0.009,
+     "tone": 0.002
+    },
+    "buzzDepth": 0
+   },
+   {
+    "heightM": 2.2,
+    "inBand": true,
+    "windows": 3,
+    "modDepth2to70Hz": 0.008,
+    "byKind": {
+     "note": 0.008,
+     "tone": 0.002
+    },
+    "buzzDepth": 0.001
+   },
+   {
+    "heightM": 2.05,
+    "inBand": true,
+    "windows": 3,
+    "modDepth2to70Hz": 0.01,
+    "byKind": {
+     "note": 0.01,
+     "tone": 0.002
+    },
+    "buzzDepth": 0
+   },
+   {
+    "heightM": 2.7,
+    "inBand": true,
+    "windows": 3,
+    "modDepth2to70Hz": 0.01,
+    "byKind": {
+     "note": 0.01,
+     "tone": 0.002
+    },
+    "buzzDepth": 0
+   },
+   {
+    "heightM": 2.95,
+    "inBand": true,
+    "windows": 3,
+    "modDepth2to70Hz": 0.011,
+    "byKind": {
+     "note": 0.011,
+     "tone": 0.002
+    },
+    "buzzDepth": 0.001
+   },
+   {
+    "heightM": 1.6,
+    "inBand": false,
+    "windows": 3,
+    "modDepth2to70Hz": 0.429,
+    "byKind": {
+     "note": 0.002,
+     "tone": 0.429
+    },
+    "buzzDepth": 0.429
+   },
+   {
+    "heightM": 3.4,
+    "inBand": false,
+    "windows": 3,
+    "modDepth2to70Hz": 0.428,
+    "byKind": {
+     "note": 0.002,
+     "tone": 0.428
+    },
+    "buzzDepth": 0.428
+   }
+  ]
+ },
+ "controls": [
+  {
+   "name": "steady target tone 6 dB under the height tone (before review M2)",
+   "measured": [
+    {
+     "heightM": 2.5,
+     "inBand": true,
+     "windows": 1,
+     "modDepth2to70Hz": 0,
+     "byKind": {
+      "pair": 0
+     },
+     "buzzDepth": 0
+    },
+    {
+     "heightM": 2.45,
+     "inBand": true,
+     "windows": 1,
+     "modDepth2to70Hz": 0.43,
+     "byKind": {
+      "pair": 0.43
+     },
+     "buzzDepth": 0
+    },
+    {
+     "heightM": 2.4,
+     "inBand": true,
+     "windows": 1,
+     "modDepth2to70Hz": 0.435,
+     "byKind": {
+      "pair": 0.435
+     },
+     "buzzDepth": 0.009
+    },
+    {
+     "heightM": 2.3,
+     "inBand": true,
+     "windows": 1,
+     "modDepth2to70Hz": 0.426,
+     "byKind": {
+      "pair": 0.426
+     },
+     "buzzDepth": 0
+    },
+    {
+     "heightM": 2.2,
+     "inBand": true,
+     "windows": 1,
+     "modDepth2to70Hz": 0.432,
+     "byKind": {
+      "pair": 0.432
+     },
+     "buzzDepth": 0.431
+    },
+    {
+     "heightM": 2.05,
+     "inBand": true,
+     "windows": 1,
+     "modDepth2to70Hz": 0.436,
+     "byKind": {
+      "pair": 0.436
+     },
+     "buzzDepth": 0
+    },
+    {
+     "heightM": 2.7,
+     "inBand": true,
+     "windows": 1,
+     "modDepth2to70Hz": 0.439,
+     "byKind": {
+      "pair": 0.439
+     },
+     "buzzDepth": 0.047
+    },
+    {
+     "heightM": 2.95,
+     "inBand": true,
+     "windows": 1,
+     "modDepth2to70Hz": 0.434,
+     "byKind": {
+      "pair": 0.434
+     },
+     "buzzDepth": 0.434
+    },
+    {
+     "heightM": 1.6,
+     "inBand": false,
+     "windows": 1,
+     "modDepth2to70Hz": 0.31,
+     "byKind": {
+      "pair": 0.31
+     },
+     "buzzDepth": 0.302
+    },
+    {
+     "heightM": 3.4,
+     "inBand": false,
+     "windows": 1,
+     "modDepth2to70Hz": 0.309,
+     "byKind": {
+      "pair": 0.309
+     },
+     "buzzDepth": 0.308
+    }
+   ],
+   "ok": true
+  }
+ ],
+ "valid": true,
+ "pass": true
+}

@@ -1,11 +1,11 @@
 {
  "format": "shramko-listen-evidence/1",
- "key": "61b845a0509414a2a8d86994e3cb1eeea2122f32b8f27afbd718c7b5ca1ca64b",
+ "key": "fd752e0f7bf9d26563ecb8016af38c0abbeb50c9029efbee5f07d5178e57b781",
  "inputs": {
-  "hash": "61b845a0509414a2a8d86994e3cb1eeea2122f32b8f27afbd718c7b5ca1ca64b",
-  "files": 106,
-  "driver": 1,
-  "measure": 1,
+  "hash": "fd752e0f7bf9d26563ecb8016af38c0abbeb50c9029efbee5f07d5178e57b781",
+  "files": 109,
+  "driver": 2,
+  "measure": 2,
   "chrome": "156.0.8078.80",
   "tools": {
    "python": "3.11.9",
@@ -15,7 +15,7 @@
    "pyloudnorm": "0.2.0"
   }
  },
- "date": "2026-11-08T12:04:04.427Z",
+ "date": "2026-11-08T13:39:34.656Z",
  "id": "VL-6-speech",
  "claim": "the voice (all its lines, at the engine's utterance volume, the Windows desktop voice) is 3 to 6 LU over the flight's mix, in every theme (control: the v0.12 utterance volume 1)",
  "thresholds": {
@@ -30,8 +30,8 @@
  "measured": {
   "soft": {
    "voiceLufs": -23.82,
-   "mixLufs": -28.48,
-   "overLu": 4.66,
+   "mixLufs": -28.58,
+   "overLu": 4.76,
    "volume": 0.74,
    "lines": [
     {
@@ -46,21 +46,21 @@
      "t0": 6.5,
      "volume": 0.74,
      "speechLufs": -22.96,
-     "over3sBeforeLu": 3.75
+     "over3sBeforeLu": 3.89
     },
     {
      "key": "fly.attempt",
      "t0": 11,
      "volume": 0.74,
      "speechLufs": -25.74,
-     "over3sBeforeLu": 10.86
+     "over3sBeforeLu": 10.54
     }
    ]
   },
   "clear": {
    "voiceLufs": -20.57,
-   "mixLufs": -25.22,
-   "overLu": 4.65,
+   "mixLufs": -25.23,
+   "overLu": 4.66,
    "volume": 0.87,
    "lines": [
     {
@@ -75,21 +75,21 @@
      "t0": 6.5,
      "volume": 0.87,
      "speechLufs": -19.71,
-     "over3sBeforeLu": 4.64
+     "over3sBeforeLu": 4.76
     },
     {
      "key": "fly.attempt",
      "t0": 11,
      "volume": 0.87,
      "speechLufs": -22.49,
-     "over3sBeforeLu": 13.21
+     "over3sBeforeLu": 12.95
     }
    ]
   },
   "race": {
    "voiceLufs": -23.07,
-   "mixLufs": -27.8,
-   "overLu": 4.73,
+   "mixLufs": -27.71,
+   "overLu": 4.64,
    "volume": 0.77,
    "lines": [
     {
@@ -104,14 +104,14 @@
      "t0": 6.5,
      "volume": 0.77,
      "speechLufs": -22.21,
-     "over3sBeforeLu": 4.19
+     "over3sBeforeLu": 3.95
     },
     {
      "key": "fly.attempt",
      "t0": 11,
      "volume": 0.77,
      "speechLufs": -24.99,
-     "over3sBeforeLu": 10.63
+     "over3sBeforeLu": 10.37
     }
    ]
   }
@@ -122,8 +122,8 @@
    "measured": {
     "soft": {
      "voiceLufs": -17.32,
-     "mixLufs": -28.48,
-     "overLu": 11.16,
+     "mixLufs": -28.58,
+     "overLu": 11.26,
      "volume": 1,
      "lines": [
       {
@@ -138,21 +138,21 @@
        "t0": 6.5,
        "volume": 1,
        "speechLufs": -16.46,
-       "over3sBeforeLu": 10.25
+       "over3sBeforeLu": 10.39
       },
       {
        "key": "fly.attempt",
        "t0": 11,
        "volume": 1,
        "speechLufs": -19.24,
-       "over3sBeforeLu": 17.36
+       "over3sBeforeLu": 17.04
       }
      ]
     },
     "clear": {
      "voiceLufs": -17.32,
-     "mixLufs": -25.22,
-     "overLu": 7.9,
+     "mixLufs": -25.23,
+     "overLu": 7.91,
      "volume": 1,
      "lines": [
       {
@@ -167,21 +167,21 @@
        "t0": 6.5,
        "volume": 1,
        "speechLufs": -16.46,
-       "over3sBeforeLu": 7.89
+       "over3sBeforeLu": 8.01
       },
       {
        "key": "fly.attempt",
        "t0": 11,
        "volume": 1,
        "speechLufs": -19.24,
-       "over3sBeforeLu": 16.46
+       "over3sBeforeLu": 16.2
       }
      ]
     },
     "race": {
      "voiceLufs": -17.32,
-     "mixLufs": -27.8,
-     "overLu": 10.48,
+     "mixLufs": -27.71,
+     "overLu": 10.39,
      "volume": 1,
      "lines": [
       {
@@ -196,14 +196,14 @@
        "t0": 6.5,
        "volume": 1,
        "speechLufs": -16.46,
-       "over3sBeforeLu": 9.94
+       "over3sBeforeLu": 9.7
       },
       {
        "key": "fly.attempt",
        "t0": 11,
        "volume": 1,
        "speechLufs": -19.24,
-       "over3sBeforeLu": 16.38
+       "over3sBeforeLu": 16.12
       }
      ]
     }
