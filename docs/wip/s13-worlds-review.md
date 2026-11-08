@@ -23,10 +23,11 @@ ShramkoGSFPV `apps/fly/src/sonic/` (read only). Evidence at the end.
 **Before the merge, the lane should fix:**
 
 - B1: a name clash that breaks the typecheck once merged with s13-sound.
-- Three things a pilot would notice:
+- Four things a pilot would notice:
   - the corridor counts an attempt before its last section (M1);
   - the tunnels count it before, or right at, their last obstacle (M2);
-  - rings-heights can be flown at nearly one height (M3).
+  - rings-heights can be flown at nearly one height (M3);
+  - the long tunnel's first obstacle does not block the middle of the tunnel (M9).
 
 **M4 to M8 are the lead's merge items** (simulator drawing, cross-lane fields, layers, stale tests, chimes).
 
@@ -37,7 +38,8 @@ ShramkoGSFPV `apps/fly/src/sonic/` (read only). Evidence at the end.
 - Respawn near the crash: yes, once merged with s13-lessons' runner (the world list, about 1 to 6 m back). In this
   lane alone, the corridor's own checkpoints are up to 37 m apart (m5).
 - Tunnels progressively harder: yes. But "lesson passed" can come before the last obstacle (M2). In tunnel-gaps, a
-  checkpoint chime sounds at every obstacle inside the open-way chime's window (M8).
+  checkpoint chime sounds at every obstacle inside the open-way chime's window (M8). The long tunnel's first obstacle
+  can be flown straight past, unheard (M9).
 - Rings at different heights: placed right. But a pilot holding 1.62 to 2.38 m passes four of the five rings (M3).
 
 ## Findings
@@ -45,8 +47,10 @@ ShramkoGSFPV `apps/fly/src/sonic/` (read only). Evidence at the end.
 ### B1 (blocker): `FREE_SIDES` and `FreeSide` are exported twice once merged with s13-sound
 
 - **Where:** `src/world/index.ts:7` (defined in `src/world/tunnels.ts:26-27`). Lane s13-sound exports the same names
-  from `src/sense/freeway.ts:17-18`. `src/index.ts` re-exports both modules with `export *`.
-- **What:** a trial merge of s13-sound (c48de8c) and s13-worlds has no textual conflict, but `pnpm typecheck` fails:
+  from `src/sense/freeway.ts` (lines 17-18 at c48de8c, 21-22 at its tip ea9eaff). `src/index.ts` re-exports both
+  modules with `export *`.
+- **What:** a trial merge of s13-sound (c48de8c, and again at ea9eaff) and s13-worlds has no textual conflict, but
+  `pnpm typecheck` fails:
   `src/index.ts(17,1): error TS2308: Module './sense' has already exported a member named 'FREE_SIDES'`, and the same
   for `FreeSide`. Both lists hold the same four names in a different order. Under ESM, a clashing `export *` name is
   also dropped from the package namespace. The simulator imports the package's `src/index.ts`, so its typecheck at the
@@ -147,7 +151,7 @@ ShramkoGSFPV `apps/fly/src/sonic/` (read only). Evidence at the end.
 - **Fix:** lane s13-lessons, or the lead at the merge, takes the lane's proposed English line ("A small room", "You
   are in a small, empty room ...") with its three translations, and sets `stopWithinM` to 1.5.
 
-### M6 (major, the lead's merge): two conflicts and twelve stale tests of the other lanes
+### M6 (major, the lead's merge): two conflicts and stale tests of the other lanes (16 at their current tips)
 
 - **Where and what:**
   - **corridor.json conflict.** A trial merge of s13-lessons (1862a33) and s13-worlds conflicts in
@@ -155,17 +159,23 @@ ShramkoGSFPV `apps/fly/src/sonic/` (read only). Evidence at the end.
     and yaw 0 faces the wall) and added `stage` 1 to 4. This lane moved their positions. The lane doc's "Merge by
     field ... do not touch these lines" is stale: s13-lessons touched these lines after eee530b.
   - **progress.test.ts conflict.** `test/progress.test.ts` conflicts too (the lesson count, 21 against the path's 28).
-  - **Nine s13-lessons tests fail** after resolving. All fly v0.12 coordinates (z = 64 and 56 around a ring at 60; -49
-    and -80 in the corridor; an injected list flown through the corridor's pillar, now at z = -21), or expect the
-    corridor's track to come from its lesson checkpoints, where it now comes from the world:
+  - **s13-lessons tests fail** after resolving: nine at 1862a33, and thirteen at its tip 1b5d06c (its review fixes R6,
+    R8 and R9 added four more of the same kind). All fly v0.12 coordinates (z = 64 and 56 around a ring at 60; -49 and
+    -80 in the corridor; a flight straight down x = 0 to z = -30 or -60, through what is now the corridor's pillar at
+    z = -21 and its first bend), or expect the corridor's track to come from its lesson checkpoints, where it now comes
+    from the world. At 1b5d06c:
     - `test/direction.test.ts`: three tests;
-    - `test/praise.test.ts`: "comes from a pool of short lines ...";
-    - `test/respawn.test.ts`: three tests;
+    - `test/pause.test.ts`: two tests (R8);
+    - `test/praise.test.ts`: "comes from a pool of short lines ..." and "a stage is said once ..." (R6);
+    - `test/respawn.test.ts`: four tests (one is R9);
     - `test/runner.test.ts`: "the corridor: checkpoints are reached in turn ..." and "reset to the last checkpoint
       ...".
 
-    None points at the shape of the world list.
-  - **Three s13-sound tests fail** in a trial merge of s13-sound and s13-worlds:
+    None points at the shape of the world list. R6's rule (a stage from the world list when it marks stages, else
+    from the lesson's checkpoints) fits this lane: the corridor's version-1 list marks none, and the tunnels' lesson
+    checkpoints carry none.
+  - **Three s13-sound tests fail** in a trial merge of s13-sound and s13-worlds (the same three at c48de8c and at
+    ea9eaff):
     - `test/replay-v012.test.ts`, the control: it assumes rings-first's world is unchanged, and it now gets a
       `world-id` note;
     - `test/ttc.test.ts`, "the 0.5 m pillar": it pins walls-pillar's v0.12 pillar (radius 0.5, a 22 m run-up); the
@@ -176,11 +186,12 @@ ShramkoGSFPV `apps/fly/src/sonic/` (read only). Evidence at the end.
     that is (0, 1.25, -27) and (18, 1.25, -75), both facing +X. Taken whole, s13-worlds' side makes both respawns
     face a wall 1.25 m ahead.
   - progress.test.ts: s13-lessons' form, with the count taken from the path.
-  - The twelve tests: take positions from the worlds, as this lane did for its own (doc, step 5).
+  - The stale tests (13 + 3 at the tips): take positions from the worlds, as this lane did for its own (doc, step 5).
   - ttc.test.ts: either pin `makeSpec('pillars', ..., 0, 1)` (version 1 still builds) or rerun the M41-13 check on the
     new pillar. The 0.3 m pillar is the one pilots meet.
 
-  With these resolutions the s13-lessons merge typechecks and 872 of 881 tests pass before the nine are updated.
+  With these resolutions the s13-lessons merge typechecks: 872 of 881 tests pass at 1862a33, 881 of 894 at 1b5d06c,
+  before the stale ones are updated.
 
 ### M7 (major, the lead's merge with s13-sound): the seven new lessons lack the layers every flying lesson now has
 
@@ -203,13 +214,38 @@ ShramkoGSFPV `apps/fly/src/sonic/` (read only). Evidence at the end.
     respawn;
   - one-off cues are not gated by the lesson's layers (s13-sound `src/cues/planner.ts`, `cue()`).
 - **What:** I measured this in the merged sound engine (s13-sound + s13-worlds, its recording host, flying the world
-  track at 2.5 m/s). At each of the four blocks, `safety.free:<side>` starts 7.5 to 9.0 m before the block, and the
-  two-note `target.checkpoint` fires 3.9 to 4.4 m before it, inside that window. Locating the open-way chime by ear is
+  track at 2.5 m/s; at c48de8c and again at ea9eaff). At each of tunnel-gaps' four blocks, `safety.free:<side>` starts
+  7.7 to 9.7 m before the block, and the two-note `target.checkpoint` fires about 4.7 m before it, inside that window.
+  tunnel-long is the same at blocks 2 to 5 (block 1: see M9). Locating the open-way chime by ear is
   the one thing tunnel-gaps teaches. The Russian glossary on the s13-sound tip describes both cues with the same words
   ("a short double chime"). In tunnel-long, the 29 lesson checkpoints chime about every 2 s at the cap.
 - **Fix:** once the world list does the respawn (the s13-lessons merge), drop the six tunnels' lesson checkpoints, or
   at least those before obstacles. The lane doc already says "keep or drop them". Ask s13-sound to give the two
   glossary lines different words.
+
+### M9 (major): the long tunnel's stage-3 obstacle does not block the middle of the tunnel
+
+- **Where:**
+  - `lessons/tunnel-long.json`: stage widths 3, 2.4, 1.8, 1.4, 1.2 m; `gapM` 1.0; `gaps` "right,up,down,up,down";
+  - `src/world/tunnels.ts`, the `left` and `right` cases of `obstacle()`;
+  - `test/world-tunnels.test.ts` (the side-strip check).
+- **What:** block-1, the first obstacle of the ladder's long tunnel and stage 3's only one, stands in the 1.8 m stage
+  with its free way on the right. It covers 0.8 m from the left wall and stops 0.10 m short of the centre line
+  (measured: the world's sdf on the centre line past the block is 0.100 m).
+  - A craft flying straight down the middle passes it. The simulator's default drone (bound 0.077 m) does not touch
+    it; the package's 0.12 m radius grazes it by 2 cm.
+  - In the merged sound engine (s13-sound tip) it gets no open-way chime at all, because nothing is in the path.
+
+  So stage 3's "and then obstacles come" (the intro's promise, and the stage measure, which counts it at twice the
+  weight of a turn) is not felt. Compare the other blocks: tunnel-gaps' four block the centre line by 0.30 m, and
+  tunnel-long's blocks 2 to 5 by 0.20 m. The lane doc's "the free way's centre 0.7 m off the line" holds for the
+  up and down blocks in the 2.4 m-high tunnel; for this one it is 0.4 m. The test checks that each strip is open on
+  its stated side only, not that the obstacle stands in the way.
+- **Fix:**
+  - Make a side obstacle cover the centre line: refuse a `gapM` over half the width less a margin (say
+    `w / 2 - 0.3`), or give stage 3 a 0.6 m side gap or an up or down block.
+  - Add a test that every obstacle blocks its run's centre line by at least 0.2 m, so a craft on the line must move.
+    Control: today's block-1.
 
 ### m1 (minor): Russian "narrower" is a homograph a speech engine reads as "already"
 
@@ -297,9 +333,12 @@ ShramkoGSFPV `apps/fly/src/sonic/` (read only). Evidence at the end.
   clone, gives the same id (digest) and bounds for all 15 worlds, with main's own specs. The session fixture's
   `scene.id` (hall-67e9057a) is v0.12's walls-hall. The session is synthetic (test host, test pilot, no voice): no
   personal data.
-- **Trial merges** (scratch clones, nothing pushed, lane branches untouched):
-  - s13-lessons + s13-worlds: two conflicts (M6). Resolved as M6 says: typecheck passes, 872 of 881 tests pass.
-  - s13-sound + s13-worlds: no conflict. Typecheck fails (B1); 935 of 938 tests pass (M6, M7).
+- **Trial merges** (scratch clones, nothing pushed, lane branches untouched), each at the tip I first read and again at
+  the tip each lane had moved to during this review:
+  - s13-lessons + s13-worlds: two conflicts (M6). Resolved as M6 says, typecheck passes. 872 of 881 tests pass at
+    1862a33, 881 of 894 at 1b5d06c.
+  - s13-sound + s13-worlds: no conflict. Typecheck fails (B1). 935 of 938 tests pass at c48de8c, 942 of 945 at
+    ea9eaff (M6, M7).
 - **Contract:** s13-lessons' `worldCheckpoints` (its `src/lesson/track.ts`) accepts the lists as they are: two or more
   points, finite `pos` and `dir`, an integer `stage`. Its runner respawns 1 m before the last world point passed and
   says "Stage k passed" from the world's `stage`. s13-sound's target tone takes the next gate's height
