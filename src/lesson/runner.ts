@@ -54,16 +54,22 @@
 // WRONG_WAY_MPS for more than WRONG_WAY_S gives the cue event 'wrong-way' and "You are flying back. Turn
 // around.", at most once every WRONG_WAY_EVERY_S; a gate crossed from its back side gives 'wrong-side' and
 // its line, and is not counted.
+//
+// Respawn (M41-20). A touch in a lesson that re-centres, or a short R, puts the craft RESPAWN_BEFORE_M
+// before the furthest point of the track passed in this attempt (a lesson checkpoint, or a point of the
+// world's checkpoint list), facing along the track (a checkpoint's own pose yaw, a world point's dir), and
+// the attempt's flown path goes back to what it was there, so a stretch flown twice is not counted twice. A
+// long R still goes back to the start; with no point passed yet a short R goes to the start of the attempt.
 import type { Checkpoint, CueEvent, CueId, FlightSample, Goal, LessonDef, LessonProgress, LessonRunner, Locale, MaterialClass, Pose, SessionEvent, SonicFrameInput, SonicObject, SonicWorld, SpeechLine, Vec3 } from '../contract';
 import { DICTS } from '../i18n/dicts';
 import { createTranslator, type Dicts, type Translator } from '../i18n/translator';
 import { createRng } from '../util/rng';
 import { distance as dist3, dot, normalize, sub, yawQuat } from '../util/vec';
 import { createAnalyticWorld, makeSpec, type AnalyticWorldInfo } from '../world/analytic-world';
-import { createTracker, type GoalScore, type GoalTracker, type Outcome } from './goals';
+import { BODY_RADIUS_M, createTracker, type GoalScore, type GoalTracker, type Outcome } from './goals';
 import { lessonAfter, lessonPaths } from './library';
 import { APPROACHES, GAME_SCENE_S, isGlossary, NARRATED_SCENE_S, playS, REPEAT_GAP_S, REPEAT_PLAYS, SHAPE_ORDER } from './sounds';
-import { lessonTrack, type LessonTrack } from './track';
+import { lessonTrack, yawOf, type LessonTrack, type TrackPoint } from './track';
 import { headingBasis, worldToListener } from '../sense/frame';
 
 // ------------------------------------------------------------------ host interface
@@ -235,6 +241,10 @@ export const WRONG_WAY_MPS = 0.5;
 /** ... for longer than this, s, is flying the wrong way; it is said at most once every WRONG_WAY_EVERY_S. */
 export const WRONG_WAY_S = 1;
 export const WRONG_WAY_EVERY_S = 5;
+/** A respawn puts the craft this far before the last point of the track it passed, m. */
+export const RESPAWN_BEFORE_M = 1;
+/** A point of the world's checkpoint list is passed by crossing its plane forward this close to it, m. */
+export const PASS_POINT_M = 4;
 /** A gate's back side is told at most this often, s (a craft that hovers on the plane would cross it to and fro). */
 export const WRONG_SIDE_EVERY_S = 3;
 /** The praise lines of a counted attempt (keys praise.1 .. praise.PRAISE_LINES). */
@@ -346,6 +356,8 @@ class Runner implements LessonSession {
     private backSince: number | null = null;
     private lastWrongWay = -Infinity;
     private lastWrongSide = -Infinity;
+    // respawn: the furthest point of the track passed in this attempt (its index on the track) and the path flown there
+    private passedPoint: { readonly point: TrackPoint; readonly index: number; readonly pathM: number; readonly checkpoint: Checkpoint | null } | null = null;
     // progress
     /** attempts and counted attempts of this lesson version, earlier sessions included */
     private attemptsDone: number;
@@ -684,6 +696,7 @@ class Runner implements LessonSession {
         this.goalIndex = 0;
         this.shapeOutcome = null;
         this.lastCheckpoint = null;
+        this.passedPoint = null;
         this.reached.clear();
         this.earsAnswers = new Map();
         this.goalScores = [];
@@ -777,25 +790,79 @@ class Runner implements LessonSession {
             this.touchCount++;
             this.emit({ t, kind: 'touch', material: this.touchMaterial(s.pos), speed: Math.round(speedOf(s) * 100) / 100, pos: s.pos });
             if (this.lesson.assists.onTouch === 'bump-recentre') {
-                const cp = this.lastCheckpoint;
-                const pose = cp === null ? this.startPose(this.attemptNo) : cp.pose;
-                this.actions.push({ kind: 'place', pose, to: cp === null ? 'start' : 'checkpoint' });
+                const back = this.respawn();
+                this.actions.push({ kind: 'place', pose: back.pose, to: back.to });
                 this.actions.push({ kind: 'cue', event: { kind: 'reset' } });
-                this.emit({ t, kind: 'reset', to: cp === null ? 'start' : 'checkpoint', checkpointId: cp === null ? null : cp.id });
+                this.emit({ t, kind: 'reset', to: back.to, checkpointId: back.id });
                 this.prev = null; // the jump is not flight
                 this.backSince = null;
             }
         }
         for (const cp of this.lesson.checkpoints) {
-            if (this.reached.has(cp.id) || dist3(s.pos, cp.at) > cp.radiusM) continue;
+            if (this.reached.has(cp.id) || segmentDistance(prev.pos, s.pos, cp.at) > cp.radiusM) continue;
             this.reached.add(cp.id);
             this.lastCheckpoint = cp;
             this.emit({ t, kind: 'checkpoint', id: cp.id });
+            this.passed(cp.id, cp);
             if (cp.stage !== undefined) this.stagePassed(cp.stage);
             else if (this.lesson.checkpoints.indexOf(cp) > 0) this.actions.push({ kind: 'cue', event: { kind: 'checkpoint' } });
         }
+        this.passWorldPoints(prev, s);
         this.checkDirection(s);
         this.evaluateGoals(s, prev, t);
+    }
+
+    /** A point of the track was passed: the furthest one passed is where a respawn goes back to. */
+    private passed(id: string, checkpoint: Checkpoint | null): void {
+        const track = this.track();
+        let index: number;
+        let point: TrackPoint | undefined;
+        if (checkpoint !== null) {
+            // the world's own list, when there is one, is the finer track: the lesson's checkpoints do not move the respawn then
+            if (track?.source === 'world') return;
+            index = this.lesson.checkpoints.indexOf(checkpoint);
+            const a = (checkpoint.pose.yawDeg * Math.PI) / 180;
+            point = track?.source === 'checkpoints' ? track.points[index] : { id, pos: checkpoint.at, dir: [Math.sin(a), 0, -Math.cos(a)], pose: checkpoint.pose };
+        } else {
+            index = (track?.points ?? []).findIndex((p) => p.id === id);
+            point = track?.points[index];
+        }
+        if (point === undefined || (this.passedPoint !== null && index <= this.passedPoint.index)) return;
+        this.passedPoint = { point, index, pathM: this.pathM, checkpoint };
+    }
+
+    /** The world's checkpoint list: a point is passed by crossing its plane forward close to it (stages are said). */
+    private passWorldPoints(prev: FlightSample, s: FlightSample): void {
+        const track = this.track();
+        if (track === null || track.source !== 'world') return;
+        const from = this.passedPoint === null ? 0 : this.passedPoint.index + 1;
+        for (let i = from; i < track.points.length; i++) {
+            const p = track.points[i] as TrackPoint;
+            const before = dot(sub(prev.pos, p.pos), p.dir);
+            const after = dot(sub(s.pos, p.pos), p.dir);
+            if (!(before < 0 && after >= 0) || dist3(s.pos, p.pos) > PASS_POINT_M) continue;
+            this.passed(p.id, null);
+            if (p.stage !== undefined) this.stagePassed(p.stage);
+        }
+    }
+
+    /**
+     * Where a touch that re-centres, or a short R, puts the craft: RESPAWN_BEFORE_M before the furthest point passed,
+     * facing along the track, the path flown set back to what it was there; the attempt's start when none was passed.
+     */
+    private respawn(): { readonly pose: Pose; readonly to: 'start' | 'checkpoint'; readonly id: string | null } {
+        const passed = this.passedPoint;
+        if (passed === null) return { pose: this.startPose(Math.max(this.attemptNo, 1)), to: 'start', id: null };
+        const { point, checkpoint } = passed;
+        // a lesson checkpoint's own pose says how to face there (its height too); a world point its direction
+        const yawDeg = checkpoint !== null ? checkpoint.pose.yawDeg : yawOf(point.dir);
+        const at = checkpoint !== null ? checkpoint.pose.pos : point.pos;
+        const a = (yawDeg * Math.PI) / 180;
+        const before: Vec3 = [point.pos[0] - Math.sin(a) * RESPAWN_BEFORE_M, at[1], point.pos[2] + Math.cos(a) * RESPAWN_BEFORE_M];
+        const w = this.worldRef as { sdf?: (x: number, y: number, z: number) => number } | null;
+        const free = typeof w?.sdf !== 'function' || (w.sdf(before[0], before[1], before[2]) as number) > BODY_RADIUS_M + 0.2;
+        this.pathM = Math.max(0, passed.pathM - RESPAWN_BEFORE_M);
+        return { pose: { pos: free ? before : at, yawDeg }, to: 'checkpoint', id: checkpoint?.id ?? point.id };
     }
 
     /** The lesson's track, built the first time a frame brings the world. */
@@ -1409,10 +1476,12 @@ class Runner implements LessonSession {
     reset(to: 'checkpoint' | 'start', t: number): { readonly pose: Pose; readonly events: readonly SessionEvent[] } {
         this.t = Math.max(this.t, t);
         if (this.left) return { pose: this.startPose(Math.max(this.attemptNo, 1)), events: this.drain() };
-        const cp = to === 'checkpoint' ? this.lastCheckpoint : null;
-        const pose = cp === null ? this.startPose(Math.max(this.attemptNo, 1)) : cp.pose;
-        this.emit({ t, kind: 'reset', to, checkpointId: cp === null ? null : cp.id });
+        // a short R: near the last point passed (M41-20); a long R: the start
+        const back = to === 'checkpoint' && !this.ears && this.phaseValue === 'flying' ? this.respawn() : null;
+        const pose = back === null ? this.startPose(Math.max(this.attemptNo, 1)) : back.pose;
+        this.emit({ t, kind: 'reset', to, checkpointId: back === null ? null : back.id });
         this.prev = null;
+        this.backSince = null;
         if (to === 'start' && this.phaseValue === 'flying') {
             // the same attempt again from the start (a manual reset is not a failure)
             this.attemptT0 = t;
@@ -1421,6 +1490,7 @@ class Runner implements LessonSession {
             this.goalIndex = 0;
             this.shapeOutcome = null;
             this.lastCheckpoint = null;
+            this.passedPoint = null;
             this.reached.clear();
             this.script.length = 0;
             this.current = null;
@@ -1503,6 +1573,14 @@ class Runner implements LessonSession {
         if (this.scene === null) return null;
         return demoFrame(this.scene.scene, (t - this.scene.t0) / 1000, t, this.sceneWorlds);
     }
+}
+
+/** How close the segment a..b comes to p (a fast craft can pass a checkpoint between two frames), m. */
+function segmentDistance(a: Vec3, b: Vec3, p: Vec3): number {
+    const ab = sub(b, a);
+    const len2 = dot(ab, ab);
+    const u = len2 < 1e-12 ? 0 : Math.min(1, Math.max(0, dot(sub(p, a), ab) / len2));
+    return dist3(p, [a[0] + ab[0] * u, a[1] + ab[1] * u, a[2] + ab[2] * u]);
 }
 
 /**

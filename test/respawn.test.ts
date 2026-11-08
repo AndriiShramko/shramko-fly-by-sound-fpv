@@ -1,0 +1,110 @@
+// M41-20: respawn near the crash. "In the long tunnel it throws me back far, to the very start; do not
+// throw the pilot back so far." A touch in a lesson that re-centres, or a short R, puts the craft 1 m before
+// the furthest checkpoint passed in the attempt, facing along the track; the path flown goes back to what it
+// was there; a long R still goes to the start. Tests on the corridor lesson.
+import { describe, expect, it } from 'vitest';
+import type { Pose, SonicWorld, Vec3 } from '../src/contract';
+import { getLesson, RESPAWN_BEFORE_M, type RunnerAction } from '../src/lesson';
+import { createAnalyticWorld } from '../src/world';
+import { ScriptedPilot } from './helpers/pilot';
+import { corridorLine } from './helpers/truth';
+
+const places = (p: ScriptedPilot): Extract<RunnerAction, { kind: 'place' }>[] => p.actions.filter((a): a is Extract<RunnerAction, { kind: 'place' }> => a.kind === 'place');
+
+/** free distance straight ahead of a pose in the corridor's world, m */
+function aheadM(world: SonicWorld, pose: Pose): number {
+    const a = (pose.yawDeg * Math.PI) / 180;
+    return world.castRay(pose.pos, [Math.sin(a), 0, -Math.cos(a)], 100)?.distance ?? 100;
+}
+
+function corridor(world?: SonicWorld): ScriptedPilot {
+    const p = new ScriptedPilot(getLesson('corridor'), {}, world);
+    p.begin();
+    p.until(() => p.run.phase === 'flying', 60);
+    return p;
+}
+
+/** the corridor's centre line up to the point `upTo` (inclusive) */
+function line(p: ScriptedPilot): Vec3[] {
+    if (p.analytic === null) throw new Error('the corridor has a world');
+    return corridorLine(p.analytic.resolved);
+}
+
+describe('a touch or a short R: back to 1 m before the last checkpoint passed, facing along the corridor', () => {
+    it('after the third checkpoint (the bends turn right there): placed before it, facing the bends, not the start', () => {
+        const p = corridor();
+        const pts = line(p);
+        // through the obstacle section and 10 m into the first bend, then a touch
+        for (const q of pts.slice(1, 5)) p.flyTo(q);
+        p.flyTo([10, 2, -80]);
+        expect(p.of('checkpoint').map((c) => c.id)).toEqual(['cp-1', 'cp-2', 'cp-3']);
+        p.touchNext = true;
+        p.tick();
+        const back = places(p).at(-1);
+        expect(back?.to).toBe('checkpoint');
+        expect(back?.pose).toEqual({ pos: [0 - RESPAWN_BEFORE_M, 2, -80], yawDeg: 90 });
+        expect(p.of('reset').at(-1)).toMatchObject({ to: 'checkpoint', checkpointId: 'cp-3' });
+        // facing along the track: open corridor ahead (the first bend, 15 m and the corner), where the checkpoint's old pose faced a wall
+        const world = p.world as SonicWorld;
+        expect(aheadM(world, back?.pose as Pose)).toBeGreaterThan(15);
+        expect(aheadM(world, { pos: [0, 2, -80], yawDeg: 0 })).toBeLessThan(3);
+        // a short R does the same; a long R goes to the start, the same attempt again
+        const r = p.run.reset('checkpoint', p.t);
+        expect(r.pose).toEqual(back?.pose);
+        const start = p.run.reset('start', p.t);
+        expect(start.pose).toEqual(getLesson('corridor').start);
+        expect(p.run.attempt).toBe(1);
+    }, 60000);
+
+    it('the path flown goes back to what it was at the checkpoint: a stretch flown twice is not counted twice', () => {
+        // where the first goal (50 m flown) is met, with and without a touch at 45 m that sends the craft back to the start (cp-1)
+        const at = (touch: boolean): Vec3 => {
+            const p = corridor();
+            p.flyTo([0, 2, -45]);
+            if (touch) {
+                p.touchNext = true;
+                p.tick();
+                expect(places(p).at(-1)?.pose.pos).toEqual([0, 2, 1]);
+            }
+            p.flyTo([0, 2, -60]);
+            const met = p.log.findIndex((x) => 'event' in x && x.event.kind === 'goal');
+            expect(met).toBeGreaterThan(0);
+            return p.pos;
+        };
+        // the goal is met where it is met without the touch (at 50 m along the corridor); had the 45 m flown before the
+        // touch still counted, it would be met about 5 m after the start instead
+        const plain = at(false);
+        expect(plain[2]).toBeLessThan(-49);
+        p_close(at(true), plain);
+    }, 60000);
+
+    it('with the world\'s own checkpoint list, back to 1 m before the last point of it passed, facing its way', () => {
+        const lesson = getLesson('corridor');
+        if (lesson.world.kind !== 'analytic') throw new Error('the corridor has a world');
+        const built = createAnalyticWorld(lesson.world.spec);
+        const points = [0, -6, -12, -18, -24, -30, -36, -42, -48].map((z) => ({ pos: [0, 2, z] as Vec3, dir: [0, 0, -1] as Vec3 }));
+        const dense = Object.assign(Object.create(built) as SonicWorld, { checkpoints: points });
+        const p = corridor(dense);
+        p.flyTo([0, 2, -27]);
+        p.touchNext = true;
+        p.tick();
+        // the last point passed is the one at -24: 1 m before it, not the lesson's checkpoint at the start
+        expect(places(p).at(-1)?.pose).toEqual({ pos: [0, 2, -23], yawDeg: 0 });
+        expect(p.of('reset').at(-1)).toMatchObject({ to: 'checkpoint', checkpointId: 'w5' });
+    }, 60000);
+
+    it('with no checkpoint passed yet (a lesson without any) a short R goes to the start of the attempt', () => {
+        const p = new ScriptedPilot(getLesson('rings-first'));
+        p.begin();
+        p.until(() => p.run.phase === 'flying', 60);
+        p.flyTo([0, 3, 66]);
+        const r = p.run.reset('checkpoint', p.t);
+        expect(r.pose).toEqual(getLesson('rings-first').start);
+        expect(r.events[0]).toMatchObject({ kind: 'reset', to: 'checkpoint', checkpointId: null });
+    }, 60000);
+});
+
+/** two points within 1.5 m of each other */
+function p_close(a: Vec3, b: Vec3): void {
+    expect(Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2])).toBeLessThan(1.5);
+}

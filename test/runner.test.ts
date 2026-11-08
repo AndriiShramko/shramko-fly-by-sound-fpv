@@ -467,9 +467,10 @@ describe('pass rules, touches, resets and progress', () => {
         p.tick();
         const place = p.actions.filter((a): a is Extract<RunnerAction, { kind: 'place' }> => a.kind === 'place').at(-1)!;
         expect(place.to).toBe('checkpoint');
-        expect(place.pose).toEqual(lesson.checkpoints[1]!.pose);
+        // 1 m before the checkpoint, facing along the corridor (M41-20)
+        expect(place.pose).toEqual({ pos: [0, 2, -49], yawDeg: 0 });
         expect(p.of('reset').at(-1)).toMatchObject({ to: 'checkpoint', checkpointId: 'cp-2' });
-        expect(p.pos).toEqual(lesson.checkpoints[1]!.pose.pos);
+        expect(p.pos).toEqual([0, 2, -49]);
     });
 
     it('reset to the last checkpoint and to the start; a reset to the start begins the same attempt again', () => {
@@ -478,7 +479,7 @@ describe('pass rules, touches, resets and progress', () => {
         p.begin();
         p.flyTo([0, 2, -55], 4);
         const cp = p.run.reset('checkpoint', p.t);
-        expect(cp.pose).toEqual(lesson.checkpoints[1]!.pose);
+        expect(cp.pose).toEqual({ pos: [0, 2, -49], yawDeg: 0 });
         expect(cp.events[0]).toMatchObject({ kind: 'reset', to: 'checkpoint', checkpointId: 'cp-2' });
         const start = p.run.reset('start', p.t);
         expect(start.pose).toEqual(lesson.start);

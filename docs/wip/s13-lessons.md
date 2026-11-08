@@ -12,7 +12,7 @@ from `main` 7d4b4b9. No push. Every step one commit with this Status in it.
 - [x] 5. Every named sound three times with no speech over it; validator rule and schedule check
 - [x] 6. Praise and stages (M41-11)
 - [x] 7. Direction: wrong way, wrong side (M41-15)
-- [ ] 8. Respawn near the crash (M41-20, runner side)
+- [x] 8. Respawn near the crash (M41-20, runner side)
 - [ ] 9. Never silence between attempts (M41-10, runner side)
 - [ ] 10. Strings in four languages, speech lint, all checks
 
@@ -216,6 +216,25 @@ walls line) go through the same queue, so the fix (wait for the report) also wai
   flying forward, a slow drift back (0.3 m/s), a short move back (0.6 s) and a hall with no track are never told
   (controls); a world list reversed makes forward the wrong way (the world's list wins); a ring crossed backward is told
   and not counted, then counted forward; a whole course flown forward is never told.
+
+### Step 8: respawn near the crash (M41-20, runner side)
+
+- A touch in a lesson that re-centres (`bump-recentre`, the corridor) or a short R puts the craft 1 m before the furthest
+  point of the track passed in the attempt (`RESPAWN_BEFORE_M`), facing along the track: a lesson checkpoint's own pose
+  yaw and height, or a world point's `dir`. With the world's checkpoint list (lane s13-worlds) its points are the respawn
+  points (passed by crossing their plane forward within 4 m) and the lesson's checkpoints no longer move it; without it,
+  the lesson's checkpoints. A respawn point inside a wall falls back to the checkpoint itself. With nothing passed yet a
+  short R goes to the attempt's start; a long R always to the start (the same attempt again, as before).
+- The attempt's flown path goes back to what it was at that point, so the corridor's fly-distance goals are not met by
+  flying one stretch twice.
+- A checkpoint is reached when the craft's segment between two frames comes within its radius (a fast craft no longer
+  skips it). The corridor's cp-3 and cp-5 now face +X (yaw 90), the way the bends that begin there go: the old yaw 0
+  faced the wall 2.5 m ahead.
+- Tests (`test/respawn.test.ts`): after cp-3 a touch places the craft at (-1, 2, -80) facing the bends (more than 15 m
+  free ahead; the old pose had less than 3 m), a short R the same, a long R the start; the 50 m goal is met where it is
+  met without a touch; with a world list, back to 1 m before its last point passed; a lesson without checkpoints goes
+  back to its start.
+- The density of respawn points is the worlds lane's: the corridor's own checkpoints are 30 to 75 m apart.
 
 ## Needs from the simulator
 
