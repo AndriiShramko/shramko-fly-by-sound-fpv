@@ -72,7 +72,9 @@ and below change with it. In the same lane: "wrong way" between gates, which the
   ears lessons' length per language. Controls, each failing its test, then restored: one Spanish line measured longer
   than its estimate (254, not 253), one Russian glossary line at 60 s (sounds under speech in ears-glossary), one
   Russian line missing from its fixture
-- [ ] E2-2 (the next agent's)
+- [ ] E2-2 Round trip, in progress: the tool is in (`pnpm listen:words`: `tools/listen-words.ts`, `tools/listen/words.py`,
+  `test/words.test.ts`; faster-whisper 1.2.1 in the listener's environment, `tools/listen/requirements.txt`); the run,
+  the bounds and the lines over them next
 - [ ] E2-3 (the next agent's)
 - [ ] E2-4 (the next agent's)
 

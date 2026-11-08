@@ -31,6 +31,7 @@
     "proof:audio": "vitest run --config vitest.proof.config.ts",
     "report": "node tools/run-tool.mjs report",
     "listen": "node tools/run-tool.mjs listen",
+    "listen:words": "node tools/run-tool.mjs listen-words",
     "demo": "node demo/build.mjs --serve",
     "demo:build": "node demo/build.mjs"
   },
