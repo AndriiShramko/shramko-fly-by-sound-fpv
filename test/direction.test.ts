@@ -8,6 +8,7 @@ import { getLesson, lessonTrack, toLocal, worldCheckpoints, WRONG_WAY_EVERY_S, t
 import { quatRotate } from '../src/util/vec';
 import { createAnalyticWorld } from '../src/world';
 import { ScriptedPilot } from './helpers/pilot';
+import { flyTruth, truthAnswerer } from './helpers/truth';
 
 type Say = Extract<RunnerAction, { kind: 'say' }>;
 const lines = (p: ScriptedPilot, key: string): number => p.actions.filter((a): a is Say => a.kind === 'say' && a.line.key === key).length;
@@ -182,6 +183,25 @@ describe('a gate crossed from its back side', () => {
         p.flyTo(atGate(r2, [0, 0, -2])); // and through it from the front
         expect(p.of('gate').map((g) => g.gateId)).toEqual([r1.id, r2.id]);
         expect(lines(p, 'fly.wrong-side')).toBe(1);
+    }, 60000);
+
+    // the truth bot flies 4 m before and 4 m past each gate, so with gates 5 to 7 m apart it flies back 1 to 3 m between
+    // two of them, within LINE_UP_M of the gate that counts next: a correct flight (s13-worlds' note to the merge); and
+    // every attempt after the first begins with a place at the start, from past a gate (merge item 8g of s13-merge: the
+    // runner took that jump for a crossing from the back side and told "wrong side" at the start of attempts 2 and 3)
+    it.each(['rings-first', 'rings-line', 'rings-small', 'rings-heights', 'rings-course', 'shapes-square', 'shapes-series', 'shapes-cube'])('%s flown by the truth bot to its pass: never told the wrong way or the wrong side', (id) => {
+        const p = new ScriptedPilot(getLesson(id));
+        p.answerer = truthAnswerer(p);
+        p.begin();
+        for (let k = 0; k < 6 && p.run.phase !== 'passed'; k++) {
+            p.until(() => p.run.phase === 'flying' || p.run.phase === 'passed', 600);
+            if (p.run.phase !== 'passed') flyTruth(p);
+        }
+        expect(p.run.phase).toBe('passed');
+        expect(p.of('touch')).toEqual([]);
+        expect(cueOf(p, 'wrong-way')).toEqual([]);
+        expect(cueOf(p, 'wrong-side')).toEqual([]);
+        expect(lines(p, 'fly.wrong-way') + lines(p, 'fly.wrong-side')).toBe(0);
     }, 60000);
 
     it('control: a course flown forward is never told either thing', () => {

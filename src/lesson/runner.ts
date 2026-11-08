@@ -295,6 +295,8 @@ export const PASS_POINT_M = 4;
  * attempt never ended). No pilot is that exact, so it changes nothing in flight.
  */
 export const PASS_POINT_TOLERANCE_M = 1e-6;
+/** A move this long from one frame to the next is a jump (a reset, a place), never flight, m. */
+export const JUMP_M = 3;
 /** A gate's back side is told at most this often, s (a craft that hovers on the plane would cross it to and fro). */
 export const WRONG_SIDE_EVERY_S = 3;
 /** The praise lines of a counted attempt (keys praise.1 .. praise.PRAISE_LINES). */
@@ -793,6 +795,8 @@ class Runner implements LessonSession {
                 const pose = this.startPose(this.attemptNo);
                 this.actions.push({ kind: 'place', pose, to: 'start' });
                 this.emit({ t, kind: 'reset', to: 'start', checkpointId: null });
+                // the jump is not flight: from past a gate back to the start is no crossing of it from its back side
+                this.prev = null;
             }
         }
         this.lessonEvent('attempt-start', t);
@@ -864,13 +868,15 @@ class Runner implements LessonSession {
         const prev = this.prev;
         this.prev = sample;
         if (!this.began || this.left || this.phaseValue === 'passed') return this.drain();
-        if (prev !== null && !this.listening) {
-            const d = dist3(prev.pos, sample.pos);
-            if (d < 3) this.pathM += d; // a longer jump is a reset, not flight
-        }
+        const jump = prev !== null && dist3(prev.pos, sample.pos) >= JUMP_M;
+        if (prev !== null && !this.listening && !jump) this.pathM += dist3(prev.pos, sample.pos); // a longer jump is a reset, not flight
         this.advance(t);
         if (this.phaseValue === 'flying' && !this.ears && !this.listening) {
-            this.fly(this.goalClock(sample), this.goalClock(prev ?? sample), t);
+            // a place (an attempt begun at the start, or where the last one got to) is no flight: in advance() it set prev
+            // aside, and a jump crosses no gate, point or checkpoint, in whichever frame a recording shows it (live the frame
+            // after the place; in a replay, whose estimated speech can begin the attempt a frame or two before, a later one)
+            const from = this.prev === null || jump ? sample : (prev ?? sample);
+            this.fly(this.goalClock(sample), this.goalClock(from), t);
             // what an attempt that just ended says goes out with this frame
             this.advance(t);
         }
