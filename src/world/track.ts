@@ -23,6 +23,13 @@ export const GATE_EXIT_M = 1;
 export const OBSTACLE_EXIT_M = 1;
 /** A move to the side, up or down takes at least this many metres of track per metre of offset. */
 export const DODGE_SLOPE = 3;
+/**
+ * A corridor's track ends this far before the wall that closes it, metres (review M2): the end of the course is
+ * where a pilot counts as through it (lane s13-lessons' goal 'track-end'), and a pilot who brakes at the sound of
+ * that wall and stops a metre or two before it must have passed it. At the tunnels' caps (2 to 3 m/s) it is about
+ * a second before contact.
+ */
+export const END_CLEAR_M = 2.5;
 
 export interface TrackNode {
     readonly pos: Vec3;
@@ -124,7 +131,9 @@ export interface Run {
  * the next one `half` after it, so the straight line between the two stays inside the corner square or
  * the shaft, clear of the inner corner by half * sqrt(2) / 2. Past an obstacle it moves to the free way's
  * centre over DODGE_SLOPE metres per metre of offset, reaches it APPROACH_M before the obstacle's front,
- * keeps it OBSTACLE_EXIT_M past its back, and comes back the same way.
+ * keeps it OBSTACLE_EXIT_M past its back, and comes back the same way. The last run's box reaches `half`
+ * past its end, where the closing wall stands: the track ends END_CLEAR_M before that wall (no later
+ * than the run's end, no earlier than where it joined the run).
  */
 export function corridorNodes(runs: readonly Run[]): TrackNode[] {
     const nodes: TrackNode[] = [];
@@ -138,7 +147,7 @@ export function corridorNodes(runs: readonly Run[]): TrackNode[] {
             a !== undefined && b !== undefined && (Math.abs(a.heading[0] - b.heading[0]) > 1e-9 || Math.abs(a.heading[2] - b.heading[2]) > 1e-9 || Math.abs(a.to[1] - b.from[1]) > 1e-9);
         const total = len(sub(run.to, run.from));
         const a0 = joint(prev, run) ? Math.min(run.half, total / 2) : 0;
-        const a1 = joint(run, next) ? Math.max(total - run.half, total / 2) : total;
+        const a1 = joint(run, next) ? Math.max(total - run.half, total / 2) : next === undefined ? Math.max(a0, Math.min(total, total + run.half - END_CLEAR_M)) : total;
         const right: Vec3 = [-run.heading[2] + 0, 0, run.heading[0] + 0];
         const at = (along: number, r = 0, u = 0): Vec3 => add(add(run.from, scale(run.heading, along)), add(scale(right, r), [0, u, 0]));
         if (i === 0 || a0 > 0) push(at(a0), run.heading);

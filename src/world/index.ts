@@ -3,5 +3,5 @@ export { buildsVersion, GENERATOR_VERSION, GENERATOR_VERSIONS, NEWEST_VERSION, P
 export * from './sdf';
 export { objectPart, shapeBoundRadius, shapeHalfExtents, type Part } from './parts';
 export { FLOOR_MARGIN_M, LEVELS, WALL_MARGIN_M } from './rooms-v2';
-export { APPROACH_M, CHECKPOINT_SPACING_M } from './track';
+export { APPROACH_M, CHECKPOINT_SPACING_M, END_CLEAR_M } from './track';
 export { OBSTACLE_EMBED_M, OBSTACLE_FREE_SIDES, tunnelStages, type ObstacleFreeSide, type TunnelStage } from './tunnels';

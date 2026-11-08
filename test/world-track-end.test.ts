@@ -13,7 +13,7 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import type { LessonDef, SonicObject, Vec3, WorldCheckpoint } from '../src/contract';
 import { getLesson, validateLesson } from '../src/lesson';
-import { createAnalyticWorld, type AnalyticWorldInfo } from '../src/world';
+import { createAnalyticWorld, END_CLEAR_M, type AnalyticWorldInfo } from '../src/world';
 import { alongTrack, trackLength } from './helpers/along';
 import { ScriptedPilot } from './helpers/pilot';
 import { flyTruth } from './helpers/truth';
@@ -21,8 +21,9 @@ import { flyTruth } from './helpers/truth';
 const LESSONS = ['corridor', 'tunnel-wide', 'tunnel-narrow', 'tunnel-narrower', 'tunnel-bends', 'tunnel-gaps', 'tunnel-long'];
 const worldOf = (l: LessonDef): AnalyticWorldInfo => createAnalyticWorld((l.world as { spec: Parameters<typeof createAnalyticWorld>[0] }).spec);
 
-/** True when the package's validator knows the goal 'track-end' (lane s13-lessons, review R5): after the merge. */
-const TRACK_END = validateLesson({ ...(JSON.parse(readFileSync(new URL('../lessons/corridor.json', import.meta.url), 'utf8')) as object), goals: [{ kind: 'track-end' }] }).ok;
+/** tunnel-gaps with the goal 'track-end' (lane s13-lessons, review R5), through the package's validator: known after the merge. */
+const PROBE = validateLesson({ ...(JSON.parse(readFileSync(new URL('../lessons/tunnel-gaps.json', import.meta.url), 'utf8')) as object), goals: [{ kind: 'track-end' }] });
+const TRACK_END = PROBE.ok;
 
 /** What a pilot must have flown before the attempt may count: the back of the last solid object and the last corner, along the track. */
 function lastHardPart(w: AnalyticWorldInfo): { at: number; what: string } {
@@ -74,18 +75,35 @@ function countedAt(lesson: LessonDef, how: 'longer' | 'truth'): number | null {
                 p.flyTo(b);
             }
         }
-        p.until(() => !flying(), 5);
     }
+    // a pilot flies on toward the wall that closes the track (END_CLEAR_M ahead of its last point); a bot that stops
+    // exactly on the last point can stay a rounding error short of crossing it (1.5e-13 m in tunnel-wide)
+    if (flying()) {
+        const last = list[list.length - 1] as WorldCheckpoint;
+        p.flyTo([last.pos[0] + last.dir[0] * 0.5, last.pos[1], last.pos[2] + last.dir[2] * 0.5]);
+    }
+    p.until(() => !flying(), 5);
     return seen.at;
 }
 
 describe('the end of the corridor and of every tunnel (review M1, M2)', () => {
-    it.each(LESSONS)('%s: the track ends past its last obstacle and its last corner, on its last straight', (id) => {
+    it('the goal track-end is known (after the merge with lane s13-lessons) or refused only as a goal kind this build lacks', () => {
+        // so the merged cases below never skip for another reason
+        if (!PROBE.ok) expect(PROBE.issues.map((i) => `${i.path}: ${i.message}`).join(' | ')).toMatch(/^goals\[0\]\.kind: [^|]*$/);
+    });
+
+    it.each(LESSONS)('%s: the track ends past its last obstacle and its last corner, 2.5 m before the wall that closes it; control: the end of its last run', (id) => {
         const w = worldOf(getLesson(id));
         const list = w.checkpoints as WorldCheckpoint[];
         const length = trackLength(list);
         const hard = lastHardPart(w);
         expect(length - hard.at, `${hard.what} at ${hard.at.toFixed(2)} of ${length.toFixed(2)} m`).toBeGreaterThan(1);
+        // a pilot who brakes at the sound of the closing wall and stops a metre or two before it has passed the end
+        const last = list[list.length - 1] as WorldCheckpoint;
+        expect(w.castRay(last.pos, last.dir, 20)!.distance, id).toBeCloseTo(END_CLEAR_M, 6);
+        // control: the end of the last run, where the track ended until this fix, is 0.6 to 1.5 m before that wall
+        const end = w.landmarks.find((m) => m.id === 'end')!.pos;
+        expect(w.castRay(end, last.dir, 20)!.distance, id).toBeLessThan(1.6);
     });
 
     // the longer the track, the earlier: 10 % of the corridor (126 m) is 13 m, of the long tunnel (152 m) 15 m. Measured
@@ -106,7 +124,8 @@ describe('the end of the corridor and of every tunnel (review M1, M2)', () => {
     describe.runIf(TRACK_END)('with the goal track-end (lane s13-lessons R5, after the merge)', () => {
         it.each(LESSONS)('%s: the shipped goal counts the truth bot and a pilot whose path is 10 percent longer only at the end of the track', (id) => {
             const lesson = getLesson(id);
-            expect(lesson.goals.map((g) => g.kind), `${id}: set its goals to [{ kind: 'track-end' }] at the merge`).toEqual(['track-end']);
+            // the tunnels: [track-end]; the corridor: its straight, then [track-end] (For the lead's merge)
+            expect(lesson.goals.map((g) => g.kind), `${id}: its goals end on 'track-end' at the merge`).toEqual(id === 'corridor' ? ['fly-distance', 'track-end'] : ['track-end']);
             const w = worldOf(lesson);
             const length = trackLength(w.checkpoints as WorldCheckpoint[]);
             const hard = lastHardPart(w);

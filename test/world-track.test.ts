@@ -11,7 +11,7 @@ import { BODY_RADIUS_M, getLesson, SHIPPED_LESSON_IDS } from '../src/lesson';
 import { canonicalJson } from '../src/util/canonical';
 import { sha256Hex } from '../src/util/sha256';
 import { quatRotate } from '../src/util/vec';
-import { createAnalyticWorld, GENERATOR_VERSIONS, makeSpec, paramSchema, type AnalyticWorldInfo } from '../src/world';
+import { createAnalyticWorld, END_CLEAR_M, GENERATOR_VERSIONS, makeSpec, paramSchema, type AnalyticWorldInfo } from '../src/world';
 import { LARGEST_CRAFT_M } from './helpers/reach';
 
 const TRACK_GENERATORS = ['corridor', 'rings', 'squares', 'cube-frames'] as const;
@@ -123,8 +123,11 @@ describe('the checkpoint list of a world with a track', () => {
         const l = getLesson('corridor');
         const w = createAnalyticWorld((l.world as { spec: AnalyticWorldSpec }).spec);
         const list = w.checkpoints as WorldCheckpoint[];
+        // the track runs to END_CLEAR_M before the wall that closes the corridor (review M2), on the line to its end
         const end = w.landmarks.find((m) => m.id === 'end')!.pos;
-        expect(dist((list[list.length - 1] as WorldCheckpoint).pos, end)).toBeLessThan(1e-6);
+        const last = list[list.length - 1] as WorldCheckpoint;
+        expect(dist(last.pos, end)).toBeCloseTo(END_CLEAR_M - (w.resolved['widthM'] as number) / 2, 6);
+        expect(w.castRay(last.pos, last.dir, 20)!.distance).toBeCloseTo(END_CLEAR_M, 6);
         expect(largestGap(list)).toBeLessThanOrEqual(6);
         // control: the lesson file's own checkpoints (v0.12, at the starts of the sections) fail the same check
         expect(largestGap(l.checkpoints.map((cp) => ({ pos: cp.at, dir: [0, 0, -1] as Vec3 })))).toBeGreaterThan(6);
