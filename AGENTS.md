@@ -31,7 +31,7 @@ Shramko Fly by Sound: the sound engine, lessons and session format that let blin
 - **Strings go into all four locales.** Lesson ids and keys live in `src/i18n/catalog.ts`; the parity test and the speech lint fail on a missing key.
 - **Generators are pinned by golden tests.** Changing a generator or its defaults needs a `GENERATOR_VERSION` bump and regenerated goldens.
 - **`tools/*.ts` do not run under plain Node** (extensionless imports): use `node tools/run-tool.mjs <tool>`, vitest or a bundler.
-- **Hosts must record the replay markers:** a `lesson open` event, `key` events with `reset.checkpoint`, `reset.start` or `next`, and a `speech` event with key `speech.end` whenever they call `runner.spoken(t)` (`REPLAY_KEY_ACTIONS`, `SPEECH_END_KEY` in `src/replay`). Without them the replay check fails on times.
+- **Hosts must record the replay markers:** a `lesson open` event, `key` events with the actions of `REPLAY_KEY_ACTIONS` (resets, next, previous, repeat, next and previous lesson) before the runner's call, a `speech` event with key `speech.end` whenever they call `runner.spoken(t)` (`SPEECH_END_KEY` in `src/replay`), and `session` pause and resume events where they call `runner.pause(t)` and `runner.resume(t)`. Without them the replay check fails on times.
 - **Hosts pass `say.interrupt` to speech and send `setLayers({ on: [] })` when frames stop**, or the demo keeps sounding.
 - **Privacy is enforced in code:** the session writer throws for a minor's package that claims `send` or `speechRecognition` without a confirmed guardian. Do not weaken it.
 - **Every claim about sound needs a measurement** in `test-audio/` with a negative control (an engine broken on purpose must fail). How it feels is for human ears; say so instead of guessing.

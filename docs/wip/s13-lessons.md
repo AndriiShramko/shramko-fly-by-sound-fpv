@@ -25,7 +25,7 @@ Review fixes (`docs/wip/s13-lessons-review.md`, one commit per fix or small grou
 - [ ] R5 the corridor ends at its end: a goal 'track-end'
 - [x] R6 a stage said once: from the world's list when it marks stages, else from the lesson's checkpoints
 - [x] R7 a lesson that moves on by itself is saved skipped, not passed
-- [ ] R8 pause: the host contract
+- [x] R8 pause: the lesson waits with the flight (runner pause and resume), and the host contract
 - [x] R9 the corridor's retry line and where the next attempt starts
 - [x] R10 the schedule's repeat rule pinned to 3 plays
 - [x] R11 an intro cue from the side its line names
@@ -94,6 +94,10 @@ From `@shramko/sonic-fpv` (all in `src/lesson/*` unless said):
   with its action before the runner's call, as it does for N and R.
 - Timing contract: the runner now waits for `spoken(t)` (the host's whole speech queue empty) before a sound or the next
   step; the simulator's bridge already reports it.
+- Pause (review R8): `pause(t)` when the flight pauses (the lesson menu, the simulator's pause), `resume(t)` when it goes
+  on, at the moments the bridge writes its `session` pause and resume events; while paused the runner takes no frame and
+  no `spoken(t)` (the queue then carries the menu's lines); after `resume(t)` the host reports `spoken(t)` once its queue
+  is empty (at once when it already is). Keys work while paused. `view().paused`.
 
 ## Ownership
 
@@ -423,6 +427,24 @@ walls line) go through the same queue, so the fix (wait for the report) also wai
   own negative controls; a host never sets them). Moving the v0.12 rule out of the runner would need a pass-rule hook,
   which is the same machinery under another name.
 
+### Review R8: the lesson waits with the flight
+
+- The review offered a line in the contract ("the host holds `spoken(t)` while paused") or a pause in the runner. A
+  line alone leaves the lesson's clocks running through the pause: the bridge's clock runs on through pauses (it is
+  voice.webm's), so a question asked before the Escape menu times out during it, an attempt's time limit runs on, and
+  the first frame after a pause in hover-height's band counts the whole pause as held. So the runner has `pause(t)` and
+  `resume(t)`: while paused it takes no frame and no `spoken(t)`; `resume(t)` moves every clock it keeps on by the pause
+  (the step's start, its plays, a question's time to answer, the speech deadline, the attempt's time limit and goals,
+  a repeat going on) and measures the next frame afresh. The replay takes `session` pause and resume events as inputs
+  (`src/replay/replay.ts`, besides the keys and the speech ends); the demo host pauses the lesson with P.
+- Tests (`test/pause.test.ts`), each with the control of a host that only stops stepping the runner (v0.12's way): a
+  question asked before a 60 s pause is still open after it and times out 20 s of lesson time later (control: skipped at
+  once); 3 s in hover-height's band then a pause longer than its window meets nothing (control: met); a pause longer
+  than rings-first's time limit does not fail the attempt, the ring then counts (control: failed); the menu's speech
+  ending while paused starts no sound, after resume the sound plays three times (control: the same report starts it);
+  a recording with a 70 s pause replays to the same events (control: without its session events it does not).
+- What it cannot do: lines the menu cut are not said again by themselves (Z gives the step again).
+
 ## Needs from the simulator
 
 All in `C:/dev/gsfpv-v03/apps/fly/src/sonic/` (read only here; lane v13-host):
@@ -448,6 +470,13 @@ All in `C:/dev/gsfpv-v03/apps/fly/src/sonic/` (read only here; lane v13-host):
 5. Progress: keep the new `skipped` field when the prefs store a lesson's progress (`packages/prefs/src/doc.ts` 212-220,
    `validSonicProgress` drops unknown fields) and show it on the start screen (`start-model.ts` 44-49 `stateOf`: a
    'skipped' state beside passed, current, new).
+6. Pause (review R8), `bridge.ts` 268-274 `frame()`: where it writes the `session` pause and resume events, also call
+   `runner.pause(t)` and `runner.resume(t)` with the same t (the replay takes the pause from those events); while
+   paused do not call `runner.spoken(t)` (`bridge.ts` 443-451: the queue then holds the lesson menu's lines), and right
+   after `resume(t)` call `spoken()` (with its speech.end marker) if the queue is empty. Why: the Escape menu of M41-3
+   pauses the flight and speaks through the same queue; without this the lesson says its next lines or starts its
+   next sound over the menu, a question asked before the menu times out during it, an attempt's time limit runs on,
+   and a pause in hover-height's band counts as time held (the simulator's own pause does the same today).
 
 
 ## Needs from other lanes

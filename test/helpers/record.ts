@@ -154,6 +154,27 @@ export class RecordingHost {
         this.touchFlag = true;
     }
 
+    /**
+     * The flight pauses for `seconds` (the lesson menu, review R8): the host writes the session events where it calls
+     * runner.pause and runner.resume, records no frame meanwhile, and reports the end of speech again on resume.
+     */
+    pauseFor(seconds: number): void {
+        this.events.push({ t: this.t, kind: 'session', what: 'pause' });
+        this.record(this.runner.pause(this.t));
+        this.drain();
+        this.t += seconds * 1000;
+        this.events.push({ t: this.t, kind: 'session', what: 'resume' });
+        this.record(this.runner.resume(this.t));
+        this.drain();
+        // the queue went on meanwhile (with the menu's lines); empty now, it says so
+        if (this.t >= this.ttsEnd) this.speaking = false;
+        if (!this.speaking && this.o.speechEnds === 'markers') {
+            this.events.push({ t: this.t, kind: 'speech', key: SPEECH_END_KEY, text: '' });
+            this.record(this.runner.spoken(this.t));
+            this.drain();
+        }
+    }
+
     /** A key of the pilot: the host calls the runner and records the key event. */
     press(action: (typeof REPLAY_KEY_ACTIONS)[keyof typeof REPLAY_KEY_ACTIONS]): void {
         const codes: Record<string, string> = { next: 'KeyN', previous: 'KeyB', repeat: 'KeyZ', 'next-lesson': 'Escape', 'previous-lesson': 'Escape' };

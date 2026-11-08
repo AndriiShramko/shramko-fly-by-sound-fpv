@@ -122,8 +122,19 @@ export class DemoHost {
         }
     }
 
-    setPaused(on: boolean): void {
+    /**
+     * P at page time `tMs`: the flight pauses or goes on, and the lesson with it (runner.pause, runner.resume: its
+     * clocks leave the pause out); on going on, the end of speech is reported again when nothing is being said.
+     */
+    setPaused(on: boolean, tMs: number = this.t): void {
+        if (this.pausedValue === on) return;
         this.pausedValue = on;
+        this.t = Math.max(this.t, tMs);
+        const runner = this.runner;
+        if (runner === null) return;
+        this.record(on ? runner.pause(this.t) : runner.resume(this.t));
+        if (!on && this.speaking === 0) this.record(runner.spoken(this.t));
+        this.handle(runner, runner.takeActions());
     }
 
     private record(list: readonly SessionEvent[]): void {

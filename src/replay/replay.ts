@@ -15,6 +15,8 @@
 //   speech ends    `speech` events with the key SPEECH_END_KEY: the moment the host's speech queue
 //                  ran empty and it called runner.spoken(t). Without them the runner's own estimate
 //                  of how long a line takes is used, which is exact only if the host did the same.
+//   pauses         `session` events pause and resume (v0.13): the host calls runner.pause(t) and
+//                  runner.resume(t) where it writes them, so the lesson's clocks leave the pause out
 //   the start      the first `lesson open` event: when the host called runner.begin(t)
 // The host (the simulator's recorder) must therefore write those events; the comparer
 // (compare.ts) then checks everything else against the recording.
@@ -78,7 +80,8 @@ type Input =
     | { readonly t: number; readonly kind: 'spoken' }
     | { readonly t: number; readonly kind: 'answer'; readonly value: number; readonly via: 'key' | 'voice' }
     | { readonly t: number; readonly kind: 'reset'; readonly to: 'checkpoint' | 'start' }
-    | { readonly t: number; readonly kind: 'next' | 'previous' | 'repeat' | 'next-lesson' | 'previous-lesson' };
+    | { readonly t: number; readonly kind: 'next' | 'previous' | 'repeat' | 'next-lesson' | 'previous-lesson' }
+    | { readonly t: number; readonly kind: 'pause' | 'resume' };
 
 /** The inputs a recording holds, in time order (events with the same time keep their order). */
 function inputsOf(events: readonly SessionEvent[], firstT: number): { readonly inputs: Input[]; readonly touches: number[]; readonly markers: number; readonly hasOpen: boolean } {
@@ -102,6 +105,7 @@ function inputsOf(events: readonly SessionEvent[], firstT: number): { readonly i
         else if (e.kind === 'key' && e.action === REPLAY_KEY_ACTIONS.repeat) inputs.push({ t: e.t, kind: 'repeat' });
         else if (e.kind === 'key' && e.action === REPLAY_KEY_ACTIONS.nextLesson) inputs.push({ t: e.t, kind: 'next-lesson' });
         else if (e.kind === 'key' && e.action === REPLAY_KEY_ACTIONS.previousLesson) inputs.push({ t: e.t, kind: 'previous-lesson' });
+        else if (e.kind === 'session' && (e.what === 'pause' || e.what === 'resume')) inputs.push({ t: e.t, kind: e.what });
         else if (e.kind === 'touch') touches.push(e.t);
     }
     if (!hasOpen) inputs.push({ t: firstT, kind: 'begin' });
@@ -256,6 +260,12 @@ export class Replayer {
                 break;
             case 'previous-lesson':
                 this.add(runner.previousLesson(i.t), events);
+                break;
+            case 'pause':
+                this.add(runner.pause(i.t), events);
+                break;
+            case 'resume':
+                this.add(runner.resume(i.t), events);
                 break;
         }
         this.take(i.t, events, actions);

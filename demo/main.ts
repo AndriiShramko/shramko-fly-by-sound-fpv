@@ -140,7 +140,7 @@ function start(): void {
     function setPaused(on: boolean): void {
         if (engine === null || host === null) return;
         paused = on;
-        host.setPaused(on);
+        host.setPaused(on, now());
         byId<HTMLButtonElement>('pause').setAttribute('aria-pressed', String(on));
         if (on) void engine.suspend();
         else void engine.resume();

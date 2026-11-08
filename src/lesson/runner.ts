@@ -15,6 +15,8 @@
 //   a 'go' action: the lesson G left first (returnTo), else the lesson after (or before) this one on the
 //                  pilot's path (lessonAfter, lessonBefore), else the start screen
 //   I: run.view() and run.statusLine()            (what the host draws and says: lesson k of n, step, attempt, count)
+//   the flight pauses (the Escape menu, the simulator's pause): run.pause(t); it goes on: run.resume(t), then
+//                  run.spoken(t) once the speech queue is empty (at once when it already is); see "Pause" below
 //
 // Steps. A lesson is a short list of steps the pilot can tell apart and move between. A flying lesson
 // has two: 1 the task (its title and intro lines) and 2 flying (the attempts). A lesson without a
@@ -67,6 +69,13 @@
 // long R still goes back to the start; with no point passed yet a short R goes to the start of the attempt.
 // When an attempt of such a lesson fails (its time ran out), the next one begins at that point too, not at
 // the far start (review R9).
+//
+// Pause (review R8). While the flight is paused (the lesson menu of M41-3 speaks through the same queue) the
+// lesson waits: pause(t) stops it, and resume(t) moves every clock it keeps on by the pause (the step's start,
+// its plays, a question's time to answer, the speech deadline, the attempt's time limit and its goals), so a
+// pause never counts as time held in a band, never times a question out and never starts a sound or a line over
+// the menu. A report of the queue ran empty while paused is the menu's, not the lesson's: it is not taken; the
+// host reports spoken(t) after resume(t) when its queue is empty. Keys still work while paused.
 //
 // Never silence (M41-10, the runner's part). Between attempts target() keeps giving the first target of the
 // next attempt (the gate, the zone, the sound to turn to), so the target layer goes on sounding while the
@@ -161,6 +170,8 @@ export interface LessonView {
     readonly skipped: boolean;
     /** Z while flying: the task is being said again and the attempt waits */
     readonly listening: boolean;
+    /** the flight is paused (pause(t)): the lesson waits */
+    readonly paused: boolean;
     /** a sound the step is playing now (a named sound plays three times): its cue, which play and of how many; null otherwise */
     readonly playing: { readonly cue: CueId; readonly index: number; readonly of: number } | null;
 }
@@ -184,6 +195,10 @@ export interface LessonSession extends LessonRunner {
     nextLesson(t: number): readonly SessionEvent[];
     /** the previous lesson at once (the lesson menu) */
     previousLesson(t: number): readonly SessionEvent[];
+    /** the flight paused (the lesson menu, the simulator's pause): the lesson waits, its clocks stop (review R8) */
+    pause(t: number): readonly SessionEvent[];
+    /** the flight goes on: every clock moves on by the pause; then report spoken(t) once the speech queue is empty */
+    resume(t: number): readonly SessionEvent[];
     /** where the pilot is: lesson, step, attempt, count */
     view(): LessonView;
     /** the view as one line to say (I) */
@@ -319,7 +334,8 @@ interface Block {
 
 interface Running {
     readonly step: Step;
-    readonly t0: number;
+    /** when the step began (moved on by a pause) */
+    t0: number;
     answered: boolean;
     /** say, ask: the batch of lines the step handed to the host's speech queue */
     batch: number;
@@ -408,6 +424,8 @@ class Runner implements LessonSession {
     private left = false;
     /** the lesson ended by moving on after failures in a row (a lesson that does not block), not by a pass */
     private movedOn = false;
+    /** the flight is paused since then (pause(t)), or null */
+    private pausedAt: number | null = null;
     /** a failed attempt of a course that re-centres: the furthest point it passed, where the next attempt begins */
     private resumeFrom: Runner['passedPoint'] = null;
     /** Z while flying: the task is said again; the goals and the attempt's clock wait from listenT0 */
@@ -675,6 +693,8 @@ class Runner implements LessonSession {
 
     spoken(t: number): readonly SessionEvent[] {
         this.t = Math.max(this.t, t);
+        // paused, the queue holds the lesson menu's lines: its running empty says nothing about the lesson's (review R8)
+        if (this.pausedAt !== null) return this.drain();
         // every line handed so far has been said (the host's queue ran empty)
         this.spokenUpTo = this.handed;
         this.speechDeadline = t;
@@ -821,6 +841,7 @@ class Runner implements LessonSession {
         const t = sample.t;
         this.t = t;
         this.worldRef = world;
+        if (this.pausedAt !== null) return this.drain(); // a host steps no paused frame; one that does changes nothing
         const prev = this.prev;
         this.prev = sample;
         if (!this.began || this.left || this.phaseValue === 'passed') return this.drain();
@@ -1604,6 +1625,45 @@ class Runner implements LessonSession {
         return { pose, events: this.drain() };
     }
 
+    // -------------------------------------------------------------- pause
+
+    pause(t: number): readonly SessionEvent[] {
+        this.t = Math.max(this.t, t);
+        if (this.pausedAt === null && this.began && !this.left) this.pausedAt = t;
+        return this.drain();
+    }
+
+    resume(t: number): readonly SessionEvent[] {
+        this.t = Math.max(this.t, t);
+        const at = this.pausedAt;
+        if (at === null) return this.drain();
+        this.pausedAt = null;
+        const d = Math.max(0, t - at);
+        // every clock the lesson keeps moves on by the pause, as if it had not been
+        const c = this.current;
+        if (c !== null) {
+            c.t0 += d;
+            if (c.playT0 !== null) {
+                c.playT0 += d;
+                c.playEnd += d;
+            }
+            if (c.askSpokenAt !== null) c.askSpokenAt += d;
+        }
+        if (this.speechDeadline > at) this.speechDeadline += d;
+        if (this.scene !== null) this.scene = { scene: this.scene.scene, t0: this.scene.t0 + d };
+        // the attempt's time limit and its goals' clock (goalClock) leave the pause out; a repeat (Z) going on waits it out too
+        this.pausedMs += d;
+        if (this.listening) this.listenT0 += d;
+        this.lastWrongWay += d;
+        this.lastWrongSide += d;
+        this.backSince = null;
+        // the first frame after the pause is not measured against the last one before it (no jump, no time in a band)
+        this.prev = null;
+        this.advance(t);
+        this.afterScript(t);
+        return this.drain();
+    }
+
     // -------------------------------------------------------------- what the host shows and says
 
     view(): LessonView {
@@ -1638,6 +1698,7 @@ class Runner implements LessonSession {
             passed: this.passedValue,
             skipped: this.skippedValue,
             listening: this.listening,
+            paused: this.pausedAt !== null,
             playing: this.playing()
         };
     }
