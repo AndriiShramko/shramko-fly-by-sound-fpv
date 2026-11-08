@@ -23,7 +23,16 @@ Review fixes (`docs/wip/s13-lessons-review.md`, one commit per fix or small grou
 - [x] R3 G's way back: 'go next' is the host's advance(), a lesson opened by G is not marked skipped
 - [ ] R4 the simulator's tests the gitlink move breaks, listed
 - [ ] R5 the corridor ends at its end: a goal 'track-end'
-- [ ] R6 to R15 minors
+- [x] R6 a stage said once: from the world's list when it marks stages, else from the lesson's checkpoints
+- [x] R7 a lesson that moves on by itself is saved skipped, not passed
+- [ ] R8 pause: the host contract
+- [ ] R9 the corridor's retry line and where the next attempt starts
+- [ ] R10 the schedule's repeat rule pinned to 3 plays
+- [ ] R11 an intro cue from the side its line names
+- [ ] R12 wording of the new lines in ru, pl, en
+- [ ] R13 v0.12 recordings played back
+- [ ] R14 public docs
+- [ ] R15 test machinery marked internal
 - [ ] Checks after the fixes, final status
 
 ## Final status (2026-11-08)
@@ -353,6 +362,19 @@ walls line) go through the same queue, so the fix (wait for the report) also wai
 - Tests (`test/navigation.test.ts`): N through the glossary with `returnTo` leaves it neither passed nor skipped, heard
   to its end its pass says the way back with the left lesson's title; controls: the same glossary on the ladder is
   marked skipped, and its pass names the next lesson on the path (ears-walls). Each rule broken on its own fails its test.
+
+### Review R6 and R7
+
+- R6: a course's stages come from one source, the world's checkpoint list when it marks any, else the lesson's
+  checkpoints; a lesson checkpoint whose stage the world's list replaces only chimes. The review's fix ("skip a lesson
+  checkpoint's stage when the track comes from the world") would lose every stage of the corridor after the merge: lane
+  s13-worlds' list for the corridor (world version 1) marks none, only its tunnels of version 2 do. Test
+  (`test/praise.test.ts`): a world list that ends stage 1 at -30 m says it there and not again at cp-2 (-50 m); control:
+  a list with no stages leaves stage 1 to cp-2. The old rule fails the test.
+- R7: a lesson that does not block and moves on after its failures in a row keeps the phase 'passed' (the host goes on)
+  but is saved `passed: false, skipped: true` (unless it was passed before), as a lesson left with N; Z then says that
+  it moves on, not the pass line. Test (`test/pass-rule.test.ts`, every shipped lesson that does not block, a pilot who
+  does nothing); the old rule fails it.
 
 ## Needs from the simulator
 

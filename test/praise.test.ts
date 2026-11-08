@@ -2,10 +2,11 @@
 // twice in a row; "Better than last time!" only when its score really improved; the pass is the fanfare,
 // the lesson's own line and what comes next; a checkpoint that ends a stage says "Stage k passed".
 import { describe, expect, it } from 'vitest';
-import type { CueEvent, Goal } from '../src/contract';
+import type { CueEvent, Goal, SonicWorld, Vec3 } from '../src/contract';
 import { createTranslator, DICTS } from '../src/i18n';
 import { getLesson, lessonAfter, PRAISE_LINES, type RunnerAction } from '../src/lesson';
 import { LOCALES } from '../src/contract';
+import { createAnalyticWorld } from '../src/world';
 import { ScriptedPilot } from './helpers/pilot';
 import { corridorLine } from './helpers/truth';
 
@@ -136,4 +137,33 @@ describe('the pass and the stages', () => {
         expect(said(q).filter((l) => l.key === 'fly.stage')).toEqual([]);
         expect(cues(q).filter((c) => c.kind === 'checkpoint').length).toBeGreaterThanOrEqual(4);
     }, 120000);
+
+    it("a stage is said once: from the world's checkpoint list when it marks stages, else from the lesson's checkpoints (review R6)", () => {
+        const lesson = getLesson('corridor');
+        if (lesson.world.kind !== 'analytic') throw new Error('the corridor has a world');
+        const built = createAnalyticWorld(lesson.world.spec);
+        // a world list along the straight, every 6 m, that ends stage 1 at -30 m (the lesson's own stage 1 is cp-2 at -50 m)
+        const list = (withStage: boolean): SonicWorld =>
+            Object.assign(Object.create(built) as SonicWorld, {
+                checkpoints: [0, -6, -12, -18, -24, -30, -36, -42].map((z) => ({ pos: [0, 2, z] as Vec3, dir: [0, 0, -1] as Vec3, ...(withStage && z === -30 ? { stage: 1 } : {}) }))
+            });
+        const fly = (world: SonicWorld): { stages: (number | undefined)[]; at: number[] } => {
+            const p = new ScriptedPilot(lesson, {}, world);
+            p.begin();
+            p.until(() => p.run.phase === 'flying', 60);
+            const at: number[] = [];
+            let seen = 0;
+            for (let z = -2; z >= -60; z -= 2) {
+                p.flyTo([0, 2, z]);
+                const n = cues(p).filter((c) => c.kind === 'stage').length;
+                if (n > seen) at.push(z);
+                seen = n;
+            }
+            return { stages: cues(p).flatMap((c) => (c.kind === 'stage' ? [c.stage] : [])), at };
+        };
+        // the world marks stage 1 at -30 m: said there, and not again at cp-2
+        expect(fly(list(true))).toEqual({ stages: [1], at: [-30] });
+        // control: a world list with no stages leaves them to the lesson's checkpoints (cp-2 at -50 m, reached within its 2.5 m)
+        expect(fly(list(false))).toEqual({ stages: [1], at: [-48] });
+    }, 60000);
 });

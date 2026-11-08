@@ -398,6 +398,8 @@ class Runner implements LessonSession {
     private lastAtT = 0;
     /** the pilot left the lesson (a 'go' action): nothing more happens */
     private left = false;
+    /** the lesson ended by moving on after failures in a row (a lesson that does not block), not by a pass */
+    private movedOn = false;
     /** Z while flying: the task is said again; the goals and the attempt's clock wait from listenT0 */
     private listening = false;
     private listenT0 = 0;
@@ -831,7 +833,7 @@ class Runner implements LessonSession {
             this.lastCheckpoint = cp;
             this.emit({ t, kind: 'checkpoint', id: cp.id });
             this.passed(cp.id, cp);
-            if (cp.stage !== undefined) this.stagePassed(cp.stage);
+            if (cp.stage !== undefined && !this.stagesFromWorld()) this.stagePassed(cp.stage);
             else if (this.lesson.checkpoints.indexOf(cp) > 0) this.actions.push({ kind: 'cue', event: { kind: 'checkpoint' } });
         }
         this.passWorldPoints(prev, s);
@@ -858,7 +860,17 @@ class Runner implements LessonSession {
         this.passedPoint = { point, index, pathM: this.pathM, checkpoint };
     }
 
-    /** The world's checkpoint list: a point is passed by crossing its plane forward close to it (stages are said). */
+    /**
+     * Where a course's stages come from: the world's checkpoint list when it marks any, else the lesson's checkpoints;
+     * never both, or a stage is said twice (review R6). A world list without stages (the corridor of version 1) leaves
+     * them to the lesson's checkpoints.
+     */
+    private stagesFromWorld(): boolean {
+        const track = this.track();
+        return track !== null && track.source === 'world' && track.points.some((p) => p.stage !== undefined);
+    }
+
+    /** The world's checkpoint list: a point is passed by crossing its plane forward close to it (its stages are said). */
     private passWorldPoints(prev: FlightSample, s: FlightSample): void {
         const track = this.track();
         if (track === null || track.source !== 'world') return;
@@ -1110,9 +1122,14 @@ class Runner implements LessonSession {
         this.actions.push({ kind: 'say', line: this.nextLine(), interrupt: false });
     }
 
-    /** A lesson that does not block ends after `attempts` failures in a row: it never holds anyone back. */
+    /**
+     * A lesson that does not block ends after `attempts` failures in a row: it never holds anyone back. Its phase is
+     * 'passed', so the host goes on as after a pass, but it is saved as skipped, not passed (review R7): the start
+     * screen shows it as a lesson left without passing, like one left with N.
+     */
     private moveOn(t: number, lines: readonly SpeechLine[]): void {
-        this.passedValue = true;
+        if (!this.passedValue && !this.detour) this.skippedValue = true;
+        this.movedOn = true;
         this.phaseValue = 'passed';
         this.lessonEvent('passed', t);
         this.script.length = 0;
@@ -1464,7 +1481,8 @@ class Runner implements LessonSession {
                 this.script.unshift(...this.introBlock().steps);
                 return;
             }
-            this.actions.push({ kind: 'say', line: this.lesson.speech.pass, interrupt: true });
+            // after the end: the pass line, or that the lesson moved on without a pass
+            this.actions.push({ kind: 'say', line: this.movedOn ? { key: 'fly.moving-on' } : this.lesson.speech.pass, interrupt: true });
         });
     }
 

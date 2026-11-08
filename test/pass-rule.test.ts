@@ -138,6 +138,9 @@ describe('format 2: r counted attempts in total pass a lesson (M41-8)', () => {
                 expect(p.run.phase, id).toBe('passed');
                 expect(p.said(), id).toContain('fly.moving-on');
                 expect(p.run.progress().blocksPassed, id).toBe(0);
+                // saved as left without a pass, as N leaves it, not as passed (review R7)
+                expect(p.run.progress(), id).toMatchObject({ passed: false, skipped: true });
+                expect(p.run.view(), id).toMatchObject({ phase: 'passed', passed: false, skipped: true });
             }
             if (fails >= rule.attempts && rule.blocking) {
                 expect(p.said().filter((k) => k === 'fly.offer-next').length, id).toBe(Math.floor(fails / rule.attempts));
