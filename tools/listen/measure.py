@@ -6,9 +6,9 @@ control (the engine or the host broken on purpose) fails it, and it passes only 
     python -X utf8 tools/listen/measure.py --renders <dir> --clips <dir> --out <results.json>
 
 A render is <job>.wav (float32, 4 channels: ears L, ears R, pre-chain L, pre-chain R) with <job>.json
-(the truth per frame, the speech spans, the request). What this cannot show: how any of it feels to a
-person; the voice and level Chrome really uses (the clips are the Windows desktop voice); a listener's
-own ears (no HRTF panel here).
+(the truth per frame, the speech spans, the target notes the engine placed, the request). What this cannot
+show: how any of it feels to a person; the voice and level Chrome really uses (the clips are the Windows
+desktop voice); a listener's own ears (no HRTF panel here).
 """
 import argparse
 import json
@@ -19,9 +19,9 @@ import sys
 import numpy as np
 import pyloudnorm as pyln
 import soundfile as sf
-from scipy.signal import resample_poly
+from scipy.signal import hilbert, resample_poly
 
-MEASURE_VERSION = 1
+MEASURE_VERSION = 2
 RATE = 48000
 
 # thresholds (kind: standard, calibrated on controls, proposal)
@@ -35,6 +35,14 @@ MOTOR_MARGIN_MIN_DB = 6.0  # the v13 plan
 STEMS_RESIDUAL_MAX_DB = -90.0  # design VL-0b
 STEMS_CONTROL_MIN_DB = -30.0
 SAPI_DB_PER_STEP = 0.25  # measured: SAPI desktop voices lose 2.5 dB per 10 steps of volume (0 to 100), linear in dB
+IN_BAND_MOD_MAX = 0.1  # proposal: the height layer in the band, its envelope modulated at most 10 % between 2 and 70 Hz (no wobble, no roughness)
+OUT_BAND_MOD_MIN = 0.3  # proposal: out of the band the buzz at the theme's roughHz is at least 30 % deep
+# test-audio/page/listen.ts HOVER_HEIGHTS, HOVER_HOLD_S: hover-height's band 2 to 3 m, the target its centre
+HOVER_HEIGHTS = [2.5, 2.45, 2.4, 2.3, 2.2, 2.05, 2.7, 2.95, 1.6, 3.4]
+HOVER_HOLD_S = 2.5
+HOVER_BAND = (2.0, 3.0)
+# the crafts whose motor stems the rig renders (test-audio/page/listen-types.ts CRAFTS); the first is the default
+CRAFTS = ['pavo20pro-3s', 'meteor65pro-1s', 'air65-1s', 'pavopico-2s', 'five-inch']
 
 
 def load(dirname, job):
@@ -337,24 +345,122 @@ def motor_margins(d, motor_job):
     return rows
 
 
+def motor_job(craft):
+    return 'flight-soft-solo-motor' if craft == CRAFTS[0] else 'flight-soft-solo-motor-' + craft
+
+
 def check_motor(d):
-    shipped = motor_margins(d, 'flight-soft-solo-motor')
+    per_craft = {c: motor_margins(d, motor_job(c)) for c in CRAFTS}
     raw = motor_margins(d, 'flight-soft-motor-raw-60-solo-motor')
-    ok = all(r['minMarginDb'] >= MOTOR_MARGIN_MIN_DB for r in shipped.values()) and len(shipped) == len(CUES)
+    ok = all(len(rows) == len(CUES) and all(r['minMarginDb'] >= MOTOR_MARGIN_MIN_DB for r in rows.values()) for rows in per_craft.values())
     ctrl_fails = any(r['minMarginDb'] < MOTOR_MARGIN_MIN_DB for r in raw.values())
-    mix, _ = load(d, 'flight-soft')
     cue_sum = sum(load(d, 'flight-soft-solo-' + c)[0][:, 2:4].astype(np.float64) for c in CUES)
-    motor = load(d, 'flight-soft-solo-motor')[0][:, 2:4].astype(np.float64)
-    raw_motor = load(d, 'flight-soft-motor-raw-60-solo-motor')[0][:, 2:4].astype(np.float64)
-    level = {'cuesLufs': round(lufs(cue_sum), 2), 'motorLufs': round(lufs(motor), 2), 'motorUnderCuesLu': round(lufs(cue_sum) - lufs(motor), 2), 'rawMotor60Lufs': round(lufs(raw_motor), 2)}
+    cues_lufs = lufs(cue_sum)
+    level = {'cuesLufs': round(cues_lufs, 2)}
+    for c in CRAFTS:
+        m = lufs(load(d, motor_job(c))[0][:, 2:4].astype(np.float64))
+        level[c] = {'motorLufs': round(m, 2), 'motorUnderCuesLu': round(cues_lufs - m, 2)}
+    level['rawMotor60Lufs'] = round(lufs(load(d, 'flight-soft-motor-raw-60-solo-motor')[0][:, 2:4].astype(np.float64)), 2)
+    worst = min((r['minMarginDb'], c, cue) for c, rows in per_craft.items() for cue, r in rows.items())
     return {
         'id': 'VL-2-motor',
-        'claim': 'every cue (safety, height, target, shape) is at least 6 dB over the motor in its own third-octave bands, where it sounds (control: the v0.12 path, the raw motor at the slider at 60 %)',
+        'claim': 'every cue (safety, height, target, shape) is at least 6 dB over the motor in its own third-octave bands, where it sounds, for the simulator\'s default craft and the micro presets and a 5-inch quad, the slider at its default 15 % (control: the v0.12 path, the raw motor at the slider at 60 %)',
         'thresholds': {'minMarginDb': {'value': MOTOR_MARGIN_MIN_DB, 'kind': 'v13 plan'}, 'ownBands': {'value': 'within 10 dB of the cue\'s strongest band', 'kind': 'proposal'}},
-        'measured': {'margins': shipped, 'level': level},
-        'controls': [{'name': 'raw motor at 60 % (no low-pass, no leveller, as v0.12 auxInput)', 'measured': raw, 'ok': ctrl_fails}],
+        'measured': {'worst': {'marginDb': worst[0], 'craft': worst[1], 'cue': worst[2]}, 'margins': per_craft, 'level': level},
+        'controls': [{'name': 'raw motor at 60 % (no low-pass, no leveller, as v0.12 auxInput), the default craft', 'measured': raw, 'ok': ctrl_fails}],
         'valid': ctrl_fails,
         'pass': ok and ctrl_fails,
+    }
+
+
+def mod_depth(x, lo, hi):
+    """Depth of the envelope's modulation between lo and hi Hz: the Hilbert envelope's fluctuation around its mean,
+    band-limited by a Hann-windowed spectrum; sqrt(2) times its rms, so an amplitude modulation of depth m gives m."""
+    if len(x) < 64:
+        return 0.0
+    e = np.abs(hilbert(x.astype(np.float64)))
+    mean = float(e.mean())
+    if mean <= 0:
+        return 0.0
+    r = e / mean - 1.0
+    w = np.hanning(len(r))
+    spec = np.fft.rfft(r * w)
+    freqs = np.fft.rfftfreq(len(r), 1.0 / RATE)
+    sel = (freqs >= lo) & (freqs <= hi)
+    ms = 2.0 * float(np.sum(np.abs(spec[sel]) ** 2)) / len(r) / float(np.sum(w ** 2))
+    return math.sqrt(2.0 * ms)
+
+
+def hover_windows(meta, steady):
+    """Per held height: the windows where one sound holds still. Shipped: the plain height tone between two target
+    notes, and each note's body (the swaps and the glide after a change of height left out). Control (steady pair):
+    the whole held stretch."""
+    out = []
+    notes = sorted(meta.get('targetNotes') or [], key=lambda n: n['t0'])
+    for i, h in enumerate(HOVER_HEIGHTS):
+        s0, s1 = i * HOVER_HOLD_S + 0.4, (i + 1) * HOVER_HOLD_S - 0.05
+        wins = []
+        if steady:
+            wins.append(('pair', s0, s1))
+        else:
+            inside = [n for n in notes if s0 - 0.3 <= n['t0'] <= s1]
+            edges = [s0]
+            for n in inside:
+                a, b = n['t0'] + 0.03, n['t0'] + n['noteS'] - 0.02
+                if a >= s0 and b <= s1 and b - a > 0.1:
+                    wins.append(('note', a, b))
+                edges.append(n['t0'] - 0.05)
+                edges.append(n['t0'] + n['noteS'] + 0.015 + 0.02 + 0.04)
+            edges.append(s1)
+            for a, b in zip(edges[0::2], edges[1::2]):
+                a, b = max(a, s0), min(b, s1)
+                if b - a >= 0.3:
+                    wins.append(('tone', a, b))
+        out.append((h, wins))
+    return out
+
+
+def hover_rows(d, job, rough_hz):
+    x, meta = load(d, job)
+    mono = x[:, 2:4].mean(axis=1).astype(np.float64)
+    steady = meta['request'].get('variant') == 'target-steady'
+    rows = []
+    for h, wins in hover_windows(meta, steady):
+        in_band = HOVER_BAND[0] <= h <= HOVER_BAND[1]
+        depth = 0.0
+        buzz = 0.0
+        kinds = {}
+        for kind, a, b in wins:
+            seg = mono[int(a * RATE) : int(b * RATE)]
+            lo = 6.0 if kind == 'note' else 2.0
+            dep = mod_depth(seg, lo, 70.0)
+            depth = max(depth, dep)
+            kinds[kind] = max(kinds.get(kind, 0.0), dep)
+            if kind != 'note':
+                buzz = max(buzz, mod_depth(seg, rough_hz - 8.0, rough_hz + 8.0))
+        rows.append({'heightM': h, 'inBand': in_band, 'windows': len(wins), 'modDepth2to70Hz': round(depth, 3), 'byKind': {k: round(v, 3) for k, v in kinds.items()}, 'buzzDepth': round(buzz, 3)})
+    notes = meta.get('targetNotes') or []
+    return rows, len(notes)
+
+
+def check_height_meanings(d):
+    rough_hz = 38.0  # soft theme height.roughHz
+    shipped, n_notes = hover_rows(d, 'hover-band-soft', rough_hz)
+    steady, _ = hover_rows(d, 'hover-band-soft-target-steady', rough_hz)
+    in_band = [r for r in shipped if r['inBand']]
+    out_band = [r for r in shipped if not r['inBand']]
+    ok_in = all(r['windows'] > 0 and r['modDepth2to70Hz'] <= IN_BAND_MOD_MAX for r in in_band)
+    ok_out = all(r['buzzDepth'] >= OUT_BAND_MOD_MIN for r in out_band)
+    ctrl_off = [r for r in steady if r['inBand'] and abs(r['heightM'] - 2.5) > 1e-9]
+    ctrl_fails = sum(1 for r in ctrl_off if r['modDepth2to70Hz'] > IN_BAND_MOD_MAX) >= len(ctrl_off) - 1
+    return {
+        'id': 'VL-3-height',
+        'claim': 'in a hover lesson\'s band the height layer neither wobbles nor buzzes at any distance from the target (envelope modulation at most 10 % between 2 and 70 Hz, in the plain height tone between target notes and in each note), so it cannot pass for the out-of-band buzz ("too high or too low") or the target hum\'s off-aim beat (2 to 7 Hz); out of the band it buzzes (at least 30 % at the theme\'s 38 Hz) (control: the first v0.13 design, a steady target tone 6 dB under the height tone, beats in the band)',
+        'thresholds': {'inBandModDepth': {'value': IN_BAND_MOD_MAX, 'kind': 'proposal'}, 'outBandBuzzDepth': {'value': OUT_BAND_MOD_MIN, 'kind': 'proposal'}},
+        'measured': {'targetNotes': n_notes, 'heights': shipped},
+        'controls': [{'name': 'steady target tone 6 dB under the height tone (before review M2)', 'measured': steady, 'ok': ctrl_fails}],
+        'valid': ctrl_fails,
+        'pass': ok_in and ok_out and ctrl_fails,
     }
 
 
@@ -369,6 +475,7 @@ def main():
     checks = [check_determinism(a.renders), check_stems(a.renders), check_pitch(a.renders), check_onset(a.renders)]
     checks += check_speech_and_peak(a.renders, a.clips, themes)
     checks.append(check_motor(a.renders))
+    checks.append(check_height_meanings(a.renders))
     versions = {'python': sys.version.split()[0], 'numpy': np.__version__, 'scipy': __import__('scipy').__version__, 'soundfile': sf.__version__, 'pyloudnorm': getattr(pyln, '__version__', '0.2.0')}
     with open(a.out, 'w', encoding='utf8') as f:
         json.dump({'measure': MEASURE_VERSION, 'tools': versions, 'checks': checks}, f, indent=1)

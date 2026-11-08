@@ -12,7 +12,11 @@
 //
 // The motor: a stand-in that follows the simulator's motor sound (ShramkoGSFPV apps/fly/src/audio/motor-sound.ts:
 // four rotor voices with the blade-pass harmonics, prop wash through a band-pass, the volume slider's curve),
-// with seeded noise, played into the engine's motorInput. Not the simulator's code: its recipe.
+// with seeded noise, played into the engine's motorInput. Not the simulator's code: its recipe, with the rotor
+// speeds of the simulator's crafts (CRAFTS; the default craft unless the request names another, review M3).
+//
+// The hover band (review M2): the height layer alone over a hover lesson's band, the craft held at heights in
+// and out of it, so the measurer can tell the target notes, the plain height tone and the out-of-band buzz apart.
 import type { FlightSample, LessonLayers, SonicObject, SonicPrefs, SonicWorld, SpeechOut, Vec3 } from '../../src/contract';
 import { createSonicEngine, type EngineTestHooks, type FlyBySoundEngine, type SoloPart } from '../../src/audio';
 import { defaultPrefs } from '../../src/prefs/prefs';
@@ -20,9 +24,9 @@ import { getBuiltinTheme } from '../../src/theme/builtin';
 import { createRng } from '../../src/util/rng';
 import { yawQuat } from '../../src/util/vec';
 import { createAnalyticWorld, makeSpec } from '../../src/world/analytic-world';
-import { RATE, RIG_VERSION, SCENARIOS, VARIANTS, type RenderRequest, type RenderResult, type SpeechClip, type SpeechSpan, type TruthRow } from './listen-types';
+import { CRAFTS, DEFAULT_CRAFT, RATE, RIG_VERSION, SCENARIOS, VARIANTS, type CraftId, type RenderRequest, type RenderResult, type SpeechClip, type SpeechSpan, type TruthRow } from './listen-types';
 
-export type { RenderRequest, RenderResult, ScenarioId, SoloName, SpeechClip, SpeechSpan, TruthRow, Variant } from './listen-types';
+export type { CraftId, RenderRequest, RenderResult, ScenarioId, SoloName, SpeechClip, SpeechSpan, TruthRow, Variant } from './listen-types';
 
 const FRAME_S = 1 / 60;
 
@@ -39,17 +43,23 @@ function voiceHarmonics(blades: number): Float32Array {
     return a;
 }
 
-/** Rotor speed at full output: a 5-inch quad on 6S (KV 1950, 0.8 loaded, 22 V), Hz. */
-const ROTOR_FULL_HZ = (1950 * 0.8 * 0.10471975511965977 * 22) / (2 * Math.PI);
+/** The flights' motor outputs are written for this hover output; a craft's own hover output scales them. */
+const SCENARIO_HOVER = 0.42;
 
 class MotorStandIn {
+    private readonly rotorFullHz: number;
+    private readonly scaleOut: number;
     private readonly master: GainNode;
     private readonly gains: GainNode[] = [];
     private readonly oscs: OscillatorNode[] = [];
     private readonly wash: GainNode;
     private readonly band: BiquadFilterNode;
 
-    constructor(ctx: BaseAudioContext, out: AudioNode, blades = 3) {
+    constructor(ctx: BaseAudioContext, out: AudioNode, craft: CraftId) {
+        const c = CRAFTS[craft];
+        const blades = c.blades;
+        this.rotorFullHz = c.rotorFullHz;
+        this.scaleOut = c.hoverOut / SCENARIO_HOVER;
         this.master = ctx.createGain();
         this.master.gain.value = 0;
         this.master.connect(out);
@@ -86,8 +96,13 @@ class MotorStandIn {
         noise.start();
     }
 
-    /** motorMix() of motor-sound.ts for four motors at `m` (slightly apart, as a real quad's), the airspeed and the volume slider (0..100). */
-    apply(at: number, m: number, speed: number, volume: number): void {
+    /**
+     * motorMix() of motor-sound.ts for four motors at `m` (slightly apart, as a real quad's), the airspeed and the
+     * volume slider (0..100). `m` is the flight's output for a craft that hovers at SCENARIO_HOVER: scaled to this one.
+     */
+    apply(at: number, flightM: number, speed: number, volume: number): void {
+        const m = Math.min(Math.max(flightM * this.scaleOut, 0), 1);
+        const ROTOR_FULL_HZ = this.rotorFullHz;
         const vol = Math.min(Math.max(volume, 0), 100) / 100;
         this.master.gain.setTargetAtTime(Math.pow(vol, 1.5) * 0.7, at, 0.03);
         const spread = [1, 1.012, 0.991, 1.006];
@@ -135,6 +150,14 @@ const BODY = 0.12;
 
 const smooth = (x: number): number => (x <= 0 ? 0 : x >= 1 ? 1 : x * x * (3 - 2 * x));
 
+/**
+ * The hover band's held heights (hover-height's band, 2 to 3 m, its target the centre, 2.5 m), each for HOVER_HOLD_S:
+ * the target, 5, 10, 20 and 30 cm under it, 2.05 m near the band's edge, 20 and 45 cm over it, then out of the band
+ * under it and over it (the buzz).
+ */
+export const HOVER_HEIGHTS: readonly number[] = [2.5, 2.45, 2.4, 2.3, 2.2, 2.05, 2.7, 2.95, 1.6, 3.4];
+export const HOVER_HOLD_S = 2.5;
+
 function scenarioOf(req: RenderRequest): Scenario {
     const base = defaultPrefs();
     switch (req.scenario) {
@@ -177,6 +200,22 @@ function scenarioOf(req: RenderRequest): Scenario {
                 events: [],
                 motorVolume: null,
                 wallZ: HALL_FRONT_Z
+            };
+        }
+        case 'hover-band': {
+            // the height layer alone, a target (the band centre) and the band's roughness: in the band one tone at a
+            // time (the glide, then the target note in its place); out of it the glide buzzes
+            return {
+                seconds: HOVER_HEIGHTS.length * HOVER_HOLD_S,
+                layers: { on: ['height'], heightBandM: [2, 3], hazardVoices: 0 },
+                prefs: base,
+                world: null,
+                frame: (t) => ({ pos: [0, HOVER_HEIGHTS[Math.min(Math.floor(t / HOVER_HOLD_S), HOVER_HEIGHTS.length - 1)] as number, 0], vel: [0, 0, 0], yawDeg: 0, motor: 0.42 }),
+                target: () => null,
+                say: [],
+                events: [],
+                motorVolume: null,
+                wallZ: null
             };
         }
         case 'flight': {
@@ -295,13 +334,16 @@ export async function render(req: RenderRequest): Promise<RenderResult> {
     earsIn.channelCount = 2;
     earsIn.channelCountMode = 'explicit';
     earsIn.connect(ears);
+    const targetNotes: { t0: number; hz: number; noteS: number }[] = [];
     const hooks: EngineTestHooks = {
         destination: earsIn,
         tap: pre,
+        onTargetNote: (t0, hz, noteS) => targetNotes.push({ t0, hz, noteS }),
         ...(req.solo === null ? {} : { solo: req.solo as readonly SoloPart[] }),
         ...(req.variant === 'stepped' ? { steppedHeight: true } : {}),
         ...(req.variant === 'seed-2' ? { noiseSeed: 2 } : {}),
-        ...(req.variant === 'motor-raw-60' ? { motorBus: 'raw' as const } : {})
+        ...(req.variant === 'motor-raw-60' ? { motorBus: 'raw' as const } : {}),
+        ...(req.variant === 'target-steady' ? { targetTone: 'steady' as const } : {})
     };
     const speech = new ClockSpeech(req.clips);
     const engine = createSonicEngine({
@@ -314,7 +356,7 @@ export async function render(req: RenderRequest): Promise<RenderResult> {
         ...(req.variant === 'distance-only' ? { sampler: { enterDistM: { front: 6, 'front-left': 5, 'front-right': 5, 'front-up': 3, 'front-down': 1.8, left: 4, right: 4, back: 3, up: 1.5, down: 1.5 }, enterTtcS: 0.1 } } : {})
     });
     await engine.start(ctx);
-    const motor = sc.motorVolume === null ? null : new MotorStandIn(ctx, engine.motorInput as AudioNode);
+    const motor = sc.motorVolume === null ? null : new MotorStandIn(ctx, engine.motorInput as AudioNode, req.craft ?? DEFAULT_CRAFT);
     const truth: TruthRow[] = [];
     const says = [...sc.say].sort((a, b) => a.t - b.t);
     const events = [...sc.events].sort((a, b) => a.t - b.t);
@@ -369,7 +411,7 @@ export async function render(req: RenderRequest): Promise<RenderResult> {
     step(1);
     const buffer = await ctx.startRendering();
     const channels = [0, 1, 2, 3].map((c) => base64(buffer.getChannelData(c)));
-    return { rate: RATE, frames, channels, truth, speech: speech.spans, userAgent: navigator.userAgent };
+    return { rate: RATE, frames, channels, truth, speech: speech.spans, targetNotes, userAgent: navigator.userAgent };
 }
 
-(globalThis as unknown as { SonicListen: unknown }).SonicListen = { render, RIG_VERSION, SCENARIOS, VARIANTS };
+(globalThis as unknown as { SonicListen: unknown }).SonicListen = { render, RIG_VERSION, SCENARIOS, VARIANTS, CRAFTS };

@@ -23,7 +23,7 @@
     "cue.height.rough.name": "Brzęczenie wysokości",
     "cue.height.rough.glossary": "Gdy dźwięk wysokości brzęczy, jesteś za wysoko albo za nisko jak na tę lekcję.",
     "cue.height.target.name": "Docelowa wysokość",
-    "cue.height.target.glossary": "Drugi, równy dźwięk na wysokości, na której trzeba lecieć. Im bliżej jesteś, tym wolniej oba dźwięki pulsują. Gdy brzmią jak jeden, jesteś na miejscu.",
+    "cue.height.target.glossary": "Mniej więcej raz na sekundę krótka nuta wskazuje wysokość, na której trzeba lecieć. Zmieniaj wysokość tak, żeby twój dźwięk zbliżał się do tej nuty. Gdy brzmią tak samo, jesteś na miejscu.",
     "cue.speed.tick.name": "Tykanie prędkości",
     "cue.speed.tick.glossary": "Miękkie tykanie jak w zegarze. Im szybciej lecisz, tym szybciej tyka.",
     "cue.target.hum.name": "Pomruk celu",

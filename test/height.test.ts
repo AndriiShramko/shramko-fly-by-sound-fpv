@@ -1,6 +1,8 @@
 // The height layer of v0.13 (M41-12, owner's message 41): the height tone glides with the height, never
-// in steps, and a steady target tone on the scale marks the target height (the band centre in a hover
-// lesson, the next gate's centre in a ring or gate lesson). Each claim has a control that must fail.
+// in steps, and a short note on the scale marks the target height about once a second (the band centre in a
+// hover lesson, the next gate's centre in a ring or gate lesson); the height tone gives way to it, so the two
+// never beat (review M2: the engine's part is measured by the rig, evidence/listen/VL-3-height.json). Each
+// claim has a control that must fail.
 import { describe, expect, it } from 'vitest';
 import type { FlightSample, LessonLayers, SonicObject, SonicPrefs, SonicWorld, ThemeDef, Vec3 } from '../src/contract';
 import { alignOffset, centsBetween, CuePlanner, heightTones, referenceHeightM, targetHeightM, type HeightPlan } from '../src/cues';
@@ -170,7 +172,7 @@ describe('the target tone', () => {
         }
     });
 
-    it('beats slower and slower as the craft reaches the target, from below and from above, down to none', () => {
+    it('is nearer and nearer the height tone in pitch as the craft reaches the target, from below and from above, down to the same pitch', () => {
         const theme = getBuiltinTheme('soft');
         const planner = new CuePlanner({ theme, layers: HEIGHT_ONLY([2, 3]) });
         for (const side of [-1, 1]) {
@@ -183,11 +185,12 @@ describe('the target tone', () => {
             }
             expect(prev).toBe(0);
         }
-        // at 5 cm the beat is a few Hz: heard as a slow wobble
+        // at 5 cm the two are a few Hz apart (under a quarter of a semitone), at 0.5 m two or three semitones
         const near = planAt(planner, 2.55, null, null);
-        const beat = Math.abs(near.hz - near.target!.hz);
-        expect(beat).toBeGreaterThan(1);
-        expect(beat).toBeLessThan(15);
+        expect(Math.abs(centsBetween(near.hz, near.target!.hz))).toBeGreaterThan(5);
+        expect(Math.abs(centsBetween(near.hz, near.target!.hz))).toBeLessThan(40);
+        const far = planAt(planner, 2, null, null);
+        expect(Math.abs(centsBetween(far.hz, far.target!.hz))).toBeGreaterThan(190);
     });
 
     it('follows the next gate: a new target, a new note; no gate, the band centre; none, no tone', () => {
@@ -223,19 +226,25 @@ describe('the target tone', () => {
         expect(off.height!.target).toBeNull();
     });
 
-    it('is quieter in the calm preset (shallower beating), and the band roughness is halved there', () => {
+    it('comes less often in the calm preset, and the band roughness is halved there', () => {
         for (const theme of THEMES) {
             const calm = applyCalm(theme);
-            expect(calm.layers.height.params['targetDb']).toBe((theme.layers.height.params['targetDb'] as number) - 4);
+            expect(calm.layers.height.params['targetPeriodMs']).toBeCloseTo((theme.layers.height.params['targetPeriodMs'] as number) * 1.3, 6);
             const a = new CuePlanner({ theme, layers: HEIGHT_ONLY([2, 3]) });
             const b = new CuePlanner({ theme, prefs: { ...defaultPrefs(), calm: true }, layers: HEIGHT_ONLY([2, 3]) });
-            expect(planAt(b, 2.5, null, null).target!.gainDb).toBeLessThan(planAt(a, 2.5, null, null).target!.gainDb);
+            expect(planAt(b, 2.5, null, null).target!.periodS).toBeGreaterThan(planAt(a, 2.5, null, null).target!.periodS);
             expect(planAt(b, 4, null, null).rough).toBeCloseTo(planAt(a, 4, null, null).rough / 2, 6);
         }
     });
 
-    it('sits under the height tone in level, so the beat is a wobble, not a hole', () => {
-        for (const theme of THEMES) expect(theme.layers.height.params['targetDb'] as number).toBeLessThanOrEqual(-3);
+    it('is a short note about once a second, as loud as the height tone it stands in for (review M2)', () => {
+        for (const theme of THEMES) {
+            const t = planAt(new CuePlanner({ theme, layers: HEIGHT_ONLY([2, 3]) }), 2.5, null, null).target!;
+            expect(t.periodS, theme.id).toBeGreaterThanOrEqual(0.8);
+            expect(t.periodS, theme.id).toBeLessThanOrEqual(1.6);
+            expect(t.noteS, theme.id).toBeLessThanOrEqual(t.periodS / 3);
+            expect(Math.abs(t.gainDb), theme.id).toBeLessThanOrEqual(3);
+        }
     });
 });
 
@@ -279,7 +288,7 @@ describe('the lessons hear it', () => {
     it('heightTones agrees with noteHzAt and the pilot shift moves both tones by whole steps', () => {
         const theme = getBuiltinTheme('soft');
         const p = theme.layers.height.params as Record<string, number>;
-        const rule = { baseStep: p['baseStep'] as number, maxStep: p['maxStep'] as number, metresPerStep: p['metresPerStep'] as number, roughDepth: 0.6, bandSoftM: 0.3, targetDb: -6 };
+        const rule = { baseStep: p['baseStep'] as number, maxStep: p['maxStep'] as number, metresPerStep: p['metresPerStep'] as number, roughDepth: 0.6, bandSoftM: 0.3, targetDb: 0, targetPeriodS: 1.25, targetNoteS: 0.28 };
         const t0 = heightTones(1.37, 2.5, [2, 3], rule, theme.scale, 'up-higher', 0, 0);
         const t2 = heightTones(1.37, 2.5, [2, 3], rule, theme.scale, 'up-higher', 0, 2);
         expect(t0.hz).toBeCloseTo(noteHzAt(theme.scale, t0.position), 9);

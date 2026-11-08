@@ -5,7 +5,7 @@
 //   moving voices (8)   notes / tone -> roughness -> low-pass -> level -> HRTF panner -> ILD -> layer bus
 //                                                                       \-> reverb send
 //   static voices (24)  one-off notes from a fixed direction (touch ping), HRTF panner -> layer bus
-//   centre              height tone and its target tone, speed ticks, room bed and drone, gate notes, chimes
+//   centre              height tone and its target notes, speed ticks, room bed and drone, gate notes, chimes
 //   layer buses         theme gain + pilot gain -> duck (speech, urgent hazard) -> master
 //   motor bus           the simulator's motor (motorInput) -> band-pass -> leveller -> level -> duck -> master (M41-16)
 //   reverb              synthetic warm hall, return follows the room's openness
@@ -43,7 +43,18 @@ const SHAPE_AIR = 0.18;
 const ACCENT_GAIN = 0.42;
 const NOTE_GAIN = 0.55;
 const HEIGHT_GAIN = 0.34;
-/** How fast the target tone moves to the next gate's note, s (a change of target, never a step of the height). */
+/** The target note's peak gain: its fundamental as loud as the height tone's (0.85 of the tone's voice), before the theme's height.targetDb. */
+const TARGET_NOTE_GAIN = HEIGHT_GAIN * 0.85;
+/** The height tone fades out over this before a target note and back in over it after the note's release, s. */
+const TARGET_SWAP_S = 0.02;
+/** A target note's attack and release, s: the two never overlap (at the same pitch they could cancel). */
+const TARGET_ATTACK_S = 0.008;
+const TARGET_RELEASE_S = 0.015;
+/** A target note's soft octave over its fundamental: a touch brighter than the glide, so it is heard as the target's own. */
+const TARGET_OCTAVE = 0.12;
+/** The control's steady target tone (before review M2): 6 dB under the height tone. */
+const STEADY_TARGET_DB = -6;
+/** How fast the control's steady target tone moves to the next gate's note, s. */
 const TARGET_GLIDE_S = 0.12;
 const TICK_GAIN = 0.4;
 const BED_GAIN = 0.5;
@@ -108,6 +119,14 @@ export interface EngineTestHooks {
     readonly steppedHeight?: boolean;
     /** 'raw': the motor input goes straight to the master as v0.12's auxInput did (the rig's motor control) */
     readonly motorBus?: 'shipped' | 'raw';
+    /**
+     * 'steady': the target height as a second, steady tone 6 dB under the height tone, both sounding together, as
+     * before review M2 (the rig's control: the pair beats); default 'note': a short note about once a second, the
+     * height tone giving way to it
+     */
+    readonly targetTone?: 'note' | 'steady';
+    /** told the audio time of every target note the engine places (the rig's truth) */
+    readonly onTargetNote?: (t0: number, hz: number, noteS: number) => void;
 }
 
 export interface EngineOptions {
@@ -192,11 +211,16 @@ interface Graph {
     readonly statics: StaticSlot[];
     readonly aux: GainNode;
     readonly motor: { readonly input: GainNode; readonly gate: GainNode; readonly duck: GainNode; duckTarget: number };
-    // height: the glide (through the roughness) and the steady target tone (not roughened)
+    // height: the glide (through the roughness and the gate that lets the target notes through alone) and the
+    // target notes (not roughened)
     readonly heightRough: Roughness;
+    readonly heightSwap: GainNode;
     readonly heightOut: GainNode;
     heightTone: ToneVoice | null;
-    readonly heightTarget: ToneVoice;
+    readonly targetOut: GainNode;
+    readonly targetTrain: PulseTrain;
+    /** the control's steady target tone (EngineTestHooks.targetTone 'steady'), made on first use */
+    steadyTarget: ToneVoice | null;
     // speed
     readonly speedOut: GainNode;
     readonly speedTrain: PulseTrain;
@@ -334,7 +358,7 @@ export class FlyBySoundEngine implements SonicEngine {
             }
             g.drone.stop(now);
             if (g.heightTone !== null) g.heightTone.stop(now);
-            g.heightTarget.stop(now);
+            if (g.steadyTarget !== null) g.steadyTarget.stop(now);
             for (const s of g.moving) if (s.tone !== null) s.tone.stop(now);
             g.output.disconnect();
         }
@@ -532,20 +556,26 @@ export class FlyBySoundEngine implements SonicEngine {
         motorDuck.connect(heard('motor') ? output.master : mute);
         const motor = { input: motorIn, gate: motorGate, duck: motorDuck, duckTarget: 1 };
 
-        // height: tone -> roughness -> out
+        // height: tone -> roughness -> swap (it gives way to each target note) -> out
         const heightRough = new Roughness(ctx, now);
+        const heightSwap = ctx.createGain();
+        heightSwap.gain.value = 1;
         const heightOut = ctx.createGain();
         heightOut.gain.value = 0;
-        heightRough.output.connect(heightOut);
+        heightRough.output.connect(heightSwap);
+        heightSwap.connect(heightOut);
         heightOut.connect(layers.height.dry);
         const heightSend = ctx.createGain();
         heightSend.gain.value = 0.1;
         heightOut.connect(heightSend);
         heightSend.connect(layers.height.wet);
-        // the target tone: one pure partial (no sub-octave), so it beats against the height tone's
-        // fundamental alone; past the roughness, so it stays steady when the craft leaves the band
-        const heightTarget = new ToneVoice(ctx, 'sine', now, 0, null, { family: 'sine', sub: false });
-        heightTarget.output.connect(layers.height.dry);
+        // the target notes: past the roughness, so a note is clean even when the craft is out of the band
+        const targetOut = ctx.createGain();
+        targetOut.connect(layers.height.dry);
+        const targetSend = ctx.createGain();
+        targetSend.gain.value = 0.1;
+        targetOut.connect(targetSend);
+        targetSend.connect(layers.height.wet);
 
         const speedOut = ctx.createGain();
         speedOut.gain.value = 1;
@@ -580,9 +610,12 @@ export class FlyBySoundEngine implements SonicEngine {
             aux,
             motor,
             heightRough,
+            heightSwap,
             heightOut,
             heightTone: null,
-            heightTarget,
+            targetOut,
+            targetTrain: createPulseTrain(),
+            steadyTarget: null,
             speedOut,
             speedTrain: createPulseTrain(),
             bed,
@@ -760,15 +793,17 @@ export class FlyBySoundEngine implements SonicEngine {
     }
 
     /**
-     * The height glide and its target tone (M41-12). Both are soft sines in every theme, whatever the
-     * theme's height timbre: two tones that are to beat must be pure (a pad's own 0.3 Hz swirl would beat
-     * too), and a gliding tone rich in partials roughens against the rest of the mix.
+     * The height glide and its target notes (M41-12, review M2). The glide is a soft sine in every theme,
+     * whatever the theme's height timbre (a pad's own 0.3 Hz swirl and a tone rich in partials roughen against
+     * the mix). The target notes are placed by the pump; while one sounds the glide gives way to it, so the
+     * two are never heard together and never beat.
      */
     private renderHeight(h: HeightPlan | null, now: number): void {
         const g = this.g as Graph;
+        if (h === null || h.target === null) this.stopTargetNotes(now);
+        if (g.steadyTarget !== null && (h === null || h.target === null)) g.steadyTarget.setLevel(0, now, 0.08);
         if (h === null) {
             g.heightOut.gain.setTargetAtTime(0, now, 0.08);
-            g.heightTarget.setLevel(0, now, 0.08);
             return;
         }
         if (g.heightTone === null) {
@@ -779,11 +814,64 @@ export class FlyBySoundEngine implements SonicEngine {
         g.heightTone.setNote(h.hz, now, h.glideS);
         g.heightRough.set(h.rough, h.roughHz, now);
         g.heightOut.gain.setTargetAtTime(HEIGHT_GAIN, now, 0.1);
-        if (h.target === null) g.heightTarget.setLevel(0, now, 0.08);
-        else {
-            g.heightTarget.setNote(h.target.hz, now, Math.max(TARGET_GLIDE_S, h.glideS));
-            g.heightTarget.setLevel(HEIGHT_GAIN * dbToGain(h.target.gainDb), now, 0.1);
+        if (h.target !== null && this.hooks.targetTone === 'steady') {
+            // the control: the first design, a second tone held under the height tone, both at once
+            if (g.steadyTarget === null) {
+                g.steadyTarget = new ToneVoice(g.ctx, 'sine', now, 0, null, { family: 'sine', sub: false });
+                g.steadyTarget.output.connect(g.layers.height.dry);
+            }
+            g.steadyTarget.setNote(h.target.hz, now, Math.max(TARGET_GLIDE_S, h.glideS));
+            g.steadyTarget.setLevel(HEIGHT_GAIN * dbToGain(STEADY_TARGET_DB), now, 0.1);
         }
+    }
+
+    /** No target height: no more notes, and the glide back at once if it was giving way. */
+    private stopTargetNotes(now: number): void {
+        const g = this.g as Graph;
+        if (g.targetTrain.last === null) return;
+        g.targetTrain.last = null;
+        const swap = g.heightSwap.gain as AudioParam & { cancelAndHoldAtTime?: (t: number) => AudioParam };
+        if (typeof swap.cancelAndHoldAtTime === 'function') swap.cancelAndHoldAtTime(now);
+        else swap.cancelScheduledValues(now);
+        swap.setTargetAtTime(1, now, TARGET_SWAP_S / 3);
+    }
+
+    /**
+     * One target note at `t0` (audio time): a held sine with a soft octave, `noteS` long. The glide fades out just
+     * before it and comes back just after its release, so the two never sound at once (no beat, and no cancelling
+     * at the same pitch): at the target the tone seems to go on through the note, a little brighter.
+     */
+    private playTargetNote(target: NonNullable<HeightPlan['target']>, t0: number, now: number): void {
+        const g = this.g as Graph;
+        const ctx = g.ctx;
+        const peak = TARGET_NOTE_GAIN * dbToGain(target.gainDb);
+        const held = t0 + target.noteS;
+        const end = held + TARGET_RELEASE_S;
+        const env = ctx.createGain();
+        env.gain.setValueAtTime(0, t0);
+        env.gain.linearRampToValueAtTime(peak, t0 + TARGET_ATTACK_S);
+        env.gain.setValueAtTime(peak, held);
+        env.gain.linearRampToValueAtTime(0, end);
+        env.connect(g.targetOut);
+        for (const [ratio, amp] of [
+            [1, 1],
+            [2, TARGET_OCTAVE]
+        ] as const) {
+            const osc = ctx.createOscillator();
+            osc.frequency.value = target.hz * ratio;
+            const gain = ctx.createGain();
+            gain.gain.value = amp;
+            osc.connect(gain);
+            gain.connect(env);
+            osc.start(t0);
+            osc.stop(end + 0.01);
+        }
+        const swap = g.heightSwap.gain;
+        swap.setValueAtTime(1, Math.max(t0 - TARGET_SWAP_S, now));
+        swap.linearRampToValueAtTime(0, t0);
+        swap.setValueAtTime(0, end);
+        swap.linearRampToValueAtTime(1, end + TARGET_SWAP_S);
+        if (this.hooks.onTargetNote !== undefined) this.hooks.onTargetNote(t0, target.hz, target.noteS);
     }
 
     private renderRoom(plan: FramePlan, now: number): void {
@@ -852,6 +940,11 @@ export class FlyBySoundEngine implements SonicEngine {
                 }
                 slot.accentT = Math.max(from, horizon);
             }
+        }
+        // the target notes (M41-12, review M2): one every periodS while there is a target height
+        const target = this.lastPlan?.height?.target ?? null;
+        if (target !== null && this.hooks.targetTone !== 'steady') {
+            for (const t0 of duePulses(g.targetTrain, now, horizon, target.periodS * scaleP)) this.playTargetNote(target, t0, now);
         }
         // speed ticks: a tone and a breath of air, mixed by the theme
         const sp = this.lastPlan?.speed ?? null;

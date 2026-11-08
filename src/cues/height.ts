@@ -3,13 +3,19 @@
 //   the height tone   glides continuously with the craft's height above the lesson floor, one scale step
 //                     per `metresPerStep`, never rounded to a note (v0.12 rounded it, and the owner heard
 //                     jumps and could not tell where he was between them)
-//   the target tone   a second, steady tone at the TARGET height: the next gate's centre in a ring or
-//                     gate lesson, else the centre of the lesson's height band; null when there is none
+//   the target note   a short note at the TARGET height's pitch, about once a second: the next gate's
+//                     centre in a ring or gate lesson, else the centre of the lesson's band; null when
+//                     there is none. While it sounds the height tone gives way to it (the engine), so the
+//                     two never sound together
 //
-// Both come from one mapping, so at the target height the two are in unison exactly; near it they beat,
-// slower and slower, and the beat stops when the craft is there. Up-higher: the height tone under the
-// target tone means "climb" (up-lower turns both over, so the craft's tone over the target's means
-// climb). The mapping is moved, once per lesson world, by less than half a step so that the lesson's
+// Both come from one mapping, so at the target height the note is the height tone's own pitch exactly:
+// the tone goes on at the same pitch through the note. Off the target the note is higher or lower than
+// the tone around it. Up-higher: the height tone under the target note means "climb" (up-lower turns
+// both over, so the craft's tone over the target's means climb). The first design (review M2) held the
+// target as a second, steady tone 6 dB under the height tone: the pair beat at 7 to 62 Hz over most of a
+// hover lesson's band, as rough as the out-of-band buzz ("too high or too low") and, near the target, at
+// the 2 to 7 Hz wobble of the target hum ("off to one side"). One tone at a time has no beat at all, so
+// the buzz and the hum keep their meanings. The mapping is moved, once per lesson world, by less than half a step so that the lesson's
 // reference height (its first gate, else its band centre) lands on a note: then the target tone is a
 // note of the scale for every target on that 0.5 m grid (shipped themes: 0.5 m per step); a target off
 // the grid keeps its exact unison and is reported as off the scale (`onScale` false).
@@ -64,8 +70,12 @@ export interface HeightToneRule {
     readonly metresPerStep: number;
     readonly roughDepth: number;
     readonly bandSoftM: number;
-    /** level of the target tone against the height tone, dB */
+    /** level of the target note against the height tone, dB */
     readonly targetDb: number;
+    /** time between two target notes, s */
+    readonly targetPeriodS: number;
+    /** length of a target note, s (the height tone gives way to it meanwhile) */
+    readonly targetNoteS: number;
 }
 
 export interface TargetTone {
@@ -79,6 +89,9 @@ export interface TargetTone {
     readonly onScale: boolean;
     /** against the height tone, dB */
     readonly gainDb: number;
+    /** a note every periodS, noteS long; the height tone gives way to it meanwhile */
+    readonly periodS: number;
+    readonly noteS: number;
 }
 
 export interface HeightTones {
@@ -118,7 +131,7 @@ export function heightTones(
         const raw = place(targetM);
         const whole = Math.round(raw);
         const onScale = Math.abs(raw - whole) <= SNAP;
-        target = { heightM: targetM, position: onScale ? whole : raw, hz: onScale ? noteHz(scale, whole) : noteHzAt(scale, raw), noteIndex: onScale ? whole : null, onScale, gainDb: rule.targetDb };
+        target = { heightM: targetM, position: onScale ? whole : raw, hz: onScale ? noteHz(scale, whole) : noteHzAt(scale, raw), noteIndex: onScale ? whole : null, onScale, gainDb: rule.targetDb, periodS: rule.targetPeriodS, noteS: rule.targetNoteS };
     }
     // the height tone at the target's own height is the target tone exactly (one mapping, one snap)
     const atTarget = target !== null && Math.abs(position - target.position) <= SNAP;

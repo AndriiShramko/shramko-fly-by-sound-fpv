@@ -91,8 +91,9 @@ export interface VoicePlan {
 }
 
 /**
- * The height layer (M41-12, src/cues/height.ts): a tone that glides with the height, and a steady
- * target tone (null when the lesson has no target height or the pilot turned it off).
+ * The height layer (M41-12, src/cues/height.ts): a tone that glides with the height, and a short note
+ * at the target height's pitch about once a second, the height tone giving way to it meanwhile (null
+ * when the lesson has no target height or the pilot turned it off).
  */
 export interface HeightPlan {
     /** the whole note nearest to the glide (the stepped tone of v0.12) */
@@ -672,7 +673,16 @@ export class CuePlanner {
 
     private heightRule(): HeightToneRule {
         const p = this.effectiveTheme.layers.height.params as Record<string, number>;
-        return { baseStep: p['baseStep'] as number, maxStep: p['maxStep'] as number, metresPerStep: p['metresPerStep'] as number, roughDepth: p['roughDepth'] as number, bandSoftM: p['bandSoftM'] as number, targetDb: (p['targetDb'] as number | undefined) ?? -6 };
+        return {
+            baseStep: p['baseStep'] as number,
+            maxStep: p['maxStep'] as number,
+            metresPerStep: p['metresPerStep'] as number,
+            roughDepth: p['roughDepth'] as number,
+            bandSoftM: p['bandSoftM'] as number,
+            targetDb: (p['targetDb'] as number | undefined) ?? 0,
+            targetPeriodS: ((p['targetPeriodMs'] as number | undefined) ?? 1250) / 1000,
+            targetNoteS: ((p['targetNoteMs'] as number | undefined) ?? 280) / 1000
+        };
     }
 
     /** The mapping's alignment: once per world, band, floor and step size (the lesson's reference height on a note). */
@@ -701,8 +711,8 @@ export class CuePlanner {
 
     /**
      * The height cues of the glossary: 'height.tone' glides up four steps and back, 'height.rough' holds a
-     * rough tone, 'height.target' holds a target tone four steps up while the height tone glides up into
-     * it and settles there in unison for the last fifth.
+     * rough tone, 'height.target' sounds the target note four steps up (at once, then about once a second)
+     * while the height tone glides up to its pitch and stays there for the last fifth.
      */
     private previewHeight(cue: CueId, u: number): HeightPlan {
         const theme = this.effectiveTheme;
@@ -720,7 +730,7 @@ export class CuePlanner {
         if (cue === 'height.target') {
             const t = place(Math.round(base + 4));
             const x = place(Math.round(base + 4) - 2.5 * Math.max(0, 1 - u / 0.8) ** 2);
-            const target: TargetTone = { heightM: 4 * rule.metresPerStep, position: t, hz: noteHz(theme.scale, t), noteIndex: t, onScale: true, gainDb: rule.targetDb };
+            const target: TargetTone = { heightM: 4 * rule.metresPerStep, position: t, hz: noteHz(theme.scale, t), noteIndex: t, onScale: true, gainDb: rule.targetDb, periodS: rule.targetPeriodS, noteS: rule.targetNoteS };
             return { ...common, noteIndex: Math.round(x), position: x, hz: x === t ? target.hz : noteHzAt(theme.scale, x), heightM: (x - base) * rule.metresPerStep, rough: 0, target };
         }
         const x = place(base + 4 * tri(u));

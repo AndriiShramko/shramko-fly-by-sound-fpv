@@ -23,10 +23,10 @@ import { chromium, type Browser, type Page } from 'playwright';
 import { build } from 'vite';
 import { DICTS } from '../src/i18n/dicts';
 import { createTranslator } from '../src/i18n/translator';
-import type { RenderRequest, RenderResult, SpeechClip } from '../test-audio/page/listen-types';
+import { CRAFT_IDS, DEFAULT_CRAFT, type RenderRequest, type RenderResult, type SpeechClip } from '../test-audio/page/listen-types';
 
 /** Bump when the driver's jobs or file layout change. */
-export const DRIVER_VERSION = 1;
+export const DRIVER_VERSION = 2;
 
 const ROOT = process.cwd();
 const HASHED = ['src', 'themes', 'lessons', 'locales', 'test-audio/page/listen.ts', 'tools/listen.ts', 'tools/listen', 'package.json', 'pnpm-lock.yaml'];
@@ -38,7 +38,10 @@ interface Job {
 
 const STEMS = ['safety', 'height', 'target', 'shape', 'room', 'motor'] as const;
 
-/** Every render the checks need: the flights, their stems and the controls. */
+/**
+ * Every render the checks need: the flights, their stems and the controls. The flights fly the simulator's default
+ * craft's motor; the motor's stem is rendered once more for every other craft (review M3).
+ */
 export function jobs(): Job[] {
     const out: Job[] = [];
     const add = (id: string, req: Omit<RenderRequest, 'clips'>): void => {
@@ -53,6 +56,9 @@ export function jobs(): Job[] {
     add('flight-soft-seed-2', { scenario: 'flight', theme: 'soft', variant: 'seed-2', solo: null });
     for (const s of STEMS) add(`flight-soft-solo-${s}`, { scenario: 'flight', theme: 'soft', variant: null, solo: [s] });
     add('flight-soft-motor-raw-60-solo-motor', { scenario: 'flight', theme: 'soft', variant: 'motor-raw-60', solo: ['motor'] });
+    for (const craft of CRAFT_IDS) if (craft !== DEFAULT_CRAFT) add(`flight-soft-solo-motor-${craft}`, { scenario: 'flight', theme: 'soft', variant: null, solo: ['motor'], craft });
+    add('hover-band-soft', { scenario: 'hover-band', theme: 'soft', variant: null, solo: null });
+    add('hover-band-soft-target-steady', { scenario: 'hover-band', theme: 'soft', variant: 'target-steady', solo: null });
     return out;
 }
 
@@ -215,7 +221,7 @@ async function renderAll(todo: readonly Job[], clips: readonly SpeechClip[], dir
             });
             writeFileSync(join(dir, `${job.id}.wav`), wavFloat32(channels, r.rate));
             const speech = r.speech.map((s) => ({ ...s, clipFile: files.get(s.key) ?? null }));
-            writeFileSync(join(dir, `${job.id}.json`), JSON.stringify({ job: job.id, request: job.req, frames: r.frames, rate: r.rate, truth: r.truth, speech, userAgent: r.userAgent }));
+            writeFileSync(join(dir, `${job.id}.json`), JSON.stringify({ job: job.id, request: job.req, frames: r.frames, rate: r.rate, truth: r.truth, speech, targetNotes: r.targetNotes, userAgent: r.userAgent }));
             log(`  rendered ${job.id}: ${(r.frames / r.rate).toFixed(1)} s of audio in ${((Date.now() - t0) / 1000).toFixed(1)} s`);
         }
         return browser.version();

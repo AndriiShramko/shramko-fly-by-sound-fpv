@@ -57,7 +57,9 @@ export const LAYER_PARAMS: Readonly<Record<LayerId, Readonly<Record<string, Para
         roughDepth: p(0, 1, 0.6, 'roughness (amplitude modulation depth) outside the lesson band, 0 to 1'),
         roughHz: p(10, 90, 38, 'rate of the roughness, Hz'),
         bandSoftM: p(0, 2, 0.3, 'distance outside the band over which the roughness grows to full, m'),
-        targetDb: added(p(-30, 0, -6, 'level of the steady target-height tone against the height tone, dB'))
+        targetDb: added(p(-30, 6, 0, 'level of the target-height note against the height tone it stands in for, dB')),
+        targetPeriodMs: added(p(600, 4000, 1250, 'time between two target-height notes, ms')),
+        targetNoteMs: added(p(120, 600, 280, 'length of a target-height note; the height tone gives way to it meanwhile, ms'))
     },
     speed: {
         tempoMinHz: p(0.3, 6, 1, 'tick rate at the slowest speed, Hz'),
@@ -105,6 +107,7 @@ export const PARAM_ORDER: readonly { readonly layer: LayerId; readonly low: stri
     { layer: 'safety', low: 'periodNearMs', high: 'periodFarMs' },
     { layer: 'safety', low: 'lowpassFarHz', high: 'lowpassNearHz' },
     { layer: 'height', low: 'baseStep', high: 'maxStep' },
+    { layer: 'height', low: 'targetNoteMs', high: 'targetPeriodMs' },
     { layer: 'speed', low: 'tempoMinHz', high: 'tempoMaxHz' },
     { layer: 'target', low: 'rateFarHz', high: 'rateNearHz' },
     { layer: 'target', low: 'nearM', high: 'farM' },

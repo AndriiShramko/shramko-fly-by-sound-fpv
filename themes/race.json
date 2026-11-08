@@ -13,7 +13,9 @@
         "metresPerStep": 0.5,
         "roughDepth": 0.8,
         "roughHz": 50,
-        "targetDb": -6
+        "targetDb": 0,
+        "targetNoteMs": 280,
+        "targetPeriodMs": 1250
       },
       "timbre": "sine"
     },
