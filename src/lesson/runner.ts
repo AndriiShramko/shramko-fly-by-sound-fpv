@@ -52,7 +52,8 @@
 // least BETTER_SHARE: the share in the height band, the miss of the gates' centres, the stop's distance, or
 // else the attempt's time); with it the cue event 'praise'. The pass is the fanfare, the lesson's own pass
 // line and "Lesson passed. Next, a bit harder: <the next lesson on the pilot's path>". A checkpoint that
-// ends a stage gives the cue event 'stage' and "Stage k passed".
+// ends a stage gives the cue event 'stage' and "Stage k passed"; any other but the first chimes ('checkpoint'),
+// but for the last one of a lesson that ends on 'track-end': the end of the track has the fanfare.
 //
 // Direction (M41-15). A lesson with a track (track.ts: the world's checkpoint list, the lesson's
 // checkpoints, or a course's gates) knows which way is forward: flying against it faster than
@@ -896,7 +897,7 @@ class Runner implements LessonSession {
             this.emit({ t, kind: 'checkpoint', id: cp.id });
             this.passed(cp.id, cp);
             if (cp.stage !== undefined && !this.stagesFromWorld()) this.stagePassed(cp.stage);
-            else if (this.lesson.checkpoints.indexOf(cp) > 0) this.actions.push({ kind: 'cue', event: { kind: 'checkpoint' } });
+            else if (this.lesson.checkpoints.indexOf(cp) > 0 && !this.endsTrack(cp)) this.actions.push({ kind: 'cue', event: { kind: 'checkpoint' } });
         }
         this.passWorldPoints(prev, s);
         if (s.touched) {
@@ -913,6 +914,15 @@ class Runner implements LessonSession {
         }
         this.checkDirection(s);
         this.evaluateGoals(s, prev, t);
+    }
+
+    /**
+     * The last of the lesson's checkpoints in a lesson whose last goal is 'track-end': the end of the track, which the
+     * fanfare (or a counted attempt's chime) tells a moment later, so it chimes no checkpoint of its own just before
+     * (review m1 of the merge: in the corridor and every tunnel the chime came about half a second before the fanfare).
+     */
+    private endsTrack(cp: Checkpoint): boolean {
+        return this.lesson.goals.at(-1)?.kind === 'track-end' && this.lesson.checkpoints.at(-1) === cp;
     }
 
     /** A point of the track was passed: the furthest one passed is where a respawn goes back to. */

@@ -289,8 +289,8 @@ simulator's part stays in the review's wave 2 list.
 - [x] 12. M1. A recording with a touch in the corridor or a tunnel replays PASS: a frame's points before its touch; the
   test host writes what the simulator writes, and every touched sample (W11)
 - [x] 13. M2. The target note named and played where it first sounds (hover-height); rings-heights' words for it
-- [ ] 14. M3. The open-way chime named and played in the corridor and in tunnel-gaps
-- [ ] 15. m1. The corridor's checkpoints line and its plays; the chime of a track's last checkpoint
+- [x] 14. M3. The open-way chime named and played in the corridor and in tunnel-gaps
+- [x] 15. m1. The corridor's checkpoints line and its plays; the chime of a track's last checkpoint (one commit with 14)
 - [ ] 16. m2. The stale lesson counts in `CITATION.cff`, `src/contract.ts` and `docs/testing/test-protocol.md`
 - [ ] 17. m3. Tests for the six tunnels' respawn and the open-way chime at the shipped obstacles
 - [ ] 18. n1. s13-worlds' Russian sentence in `test/progress.test.ts`, as `\u` escapes
@@ -350,6 +350,41 @@ simulator's part stays in the review's wave 2 list.
   six plays, then the note three times, then the goal. Broken on purpose (both lesson files as merged), then restored:
   the three checks fail ("height.target sounds while flying hover-height, and no lesson so far named it"). Full suite
   1049 of 1049, typecheck clean, locale lint 0 problems (522 keys), layout 0.
+
+### 14 and 15. M3 and m1: the corridor names the open way, its stages and the reset; a track's end is the fanfare
+
+One commit: both change the corridor's intro.
+
+- Tried first (the same probe as step 13): the open-way chime sounds in 988 of the corridor's 2147 flying frames at 50
+  Hz (about 20 s, the first 4 s into the flight), in 64 of walls-pillar's (head-on to its pillar at the start), 140 to
+  438 in tunnel-wide, -narrow, -narrower and -bends; tunnel-gaps' intro.2 names it and plays nothing. And in the truth
+  bot's flights the corridor's cp-2 to cp-5 give the stage figure with "Stage k passed.", the checkpoint chime sounds
+  once, at cp-6, 0.56 s before the fanfare, and every tunnel chimes its cp-2 0.5 to 0.84 s before its fanfare; a touch
+  goes back 1 m before the last point of the world's list, not to a checkpoint. Both findings hold.
+- M3: the corridor's new `intro.3`, after the walls' line, with `cues: [{ "cue": "safety.free", "from": "left" }]`:
+  "When something blocks the way ahead, you hear a pair of quick notes again and again. They come from where the way
+  goes on: left or right, or ahead if it goes up or down." (the glossary's words; es, pl and ru the same, Polish with
+  "two quick notes", which cannot be heard as "a few"). tunnel-gaps' intro.2 plays the same cue. walls-pillar keeps its
+  lines (the review left it to the owner: the full path names the chime in its second lesson, the glossary).
+- m1: the corridor's checkpoint line is `intro.4` now, with `cues: ["target.stage", "safety.reset"]`: "The corridor
+  has several stages. A sound tells you when you finish each one. If you touch a wall, you go back only a little way."
+  And the runner chimes no checkpoint for the last of a lesson's checkpoints when its last goal is `track-end`
+  (`endsTrack`, `src/lesson/runner.ts`; the header says so): the end of the corridor and of every tunnel is the
+  fanfare alone, and the checkpoint chime is neither named nor heard in the corridor. The retry line ("from the last
+  checkpoint") stands: a failed attempt begins again at the last point passed. The catalogue gives the corridor four
+  intro lines.
+- English lines measured the same way (the corridor's unchanged intro.2 again 7.515 s): intro.3 11.455 s (shorter
+  than its estimate; the checkpoint line it replaces, 6.755 s, was 0.01 s longer than its own), intro.4 9.64 s
+  (longer): 265 of 380 lines longer than the estimate.
+- Tests: `test/named-sounds.test.ts` watches the open-way chime too and sees it first in the corridor, which names it;
+  the corridor's and tunnel-gaps' lines that name the chime play it from the left; the corridor's intro.4 plays the
+  stage figure and the reset, and names no checkpoint chime. `test/praise.test.ts`: the truth bot flies the corridor
+  and the six tunnels to the pass; each reaches its last checkpoint, no checkpoint chime sounds, the last cue is the
+  fanfare, the corridor says 4 stages and tunnel-long 5; control: the corridor without its stages chimes at cp-2 to
+  cp-5 and not at its end, cp-6. Broken on purpose, then restored: both lesson files as merged fail three checks
+  ("safety.free sounds while flying corridor, and no lesson so far named it"); the runner without the rule fails the
+  end-of-track test ("corridor: expected [ { kind: 'checkpoint' } ] to deeply equal []"). Full suite 1052 of 1052,
+  typecheck clean, locale lint 0 problems (523 keys), layout 0.
 
 ## Final status (2026-11-08, the whole merge)
 

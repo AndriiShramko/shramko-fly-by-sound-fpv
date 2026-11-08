@@ -9,7 +9,7 @@ import { getLesson, lessonAfter, PRAISE_LINES, validateLesson, type RunnerAction
 import { LOCALES } from '../src/contract';
 import { createAnalyticWorld } from '../src/world';
 import { ScriptedPilot } from './helpers/pilot';
-import { corridorLine } from './helpers/truth';
+import { corridorLine, playLesson } from './helpers/truth';
 
 type Say = Extract<RunnerAction, { kind: 'say' }>;
 const said = (p: ScriptedPilot): Say['line'][] => p.actions.filter((a): a is Say => a.kind === 'say').map((a) => a.line);
@@ -173,6 +173,29 @@ describe('the pass and the stages', () => {
         // control: a world list with no stages leaves them to the lesson's checkpoints (cp-2 at -15 m, reached within its 2.5 m)
         expect(fly(list(false))).toEqual({ stages: [1], at: [-14], touches: 0 });
     }, 60000);
+
+    it('the end of the corridor and of every tunnel is the fanfare alone: the last checkpoint of a track-end lesson does not chime half a second before it (review m1 of the merge)', () => {
+        const flown = (lesson: ReturnType<typeof getLesson>): ScriptedPilot => {
+            const p = new ScriptedPilot(lesson);
+            playLesson(p, () => 'truth', 2 * lesson.pass.required);
+            expect(p.run.phase, lesson.id).toBe('passed');
+            return p;
+        };
+        for (const id of ['corridor', 'tunnel-wide', 'tunnel-narrow', 'tunnel-narrower', 'tunnel-bends', 'tunnel-gaps', 'tunnel-long']) {
+            const lesson = getLesson(id);
+            const p = flown(lesson);
+            // the last checkpoint was reached, and only the fanfare told the end
+            expect(p.of('checkpoint').at(-1)?.id, id).toBe(lesson.checkpoints.at(-1)?.id);
+            expect(cues(p).filter((c) => c.kind === 'checkpoint'), id).toEqual([]);
+            expect(cues(p).at(-1)?.kind, id).toBe('fanfare');
+            expect(cues(p).filter((c) => c.kind === 'stage').length, id).toBe(id === 'corridor' ? 4 : id === 'tunnel-long' ? 5 : 0);
+        }
+        // control: the corridor with its stages taken off chimes at cp-2 to cp-5, every checkpoint but the first and its end
+        const shipped = getLesson('corridor');
+        const plain = flown({ ...shipped, checkpoints: shipped.checkpoints.map(({ stage: _s, ...cp }) => cp) });
+        expect(plain.of('checkpoint').map((c) => c.id)).toEqual(['cp-1', 'cp-2', 'cp-3', 'cp-4', 'cp-5', 'cp-6']);
+        expect(cues(plain).filter((c) => c.kind === 'checkpoint')).toHaveLength(4);
+    }, 120000);
 });
 
 describe('the corridor ends at its end (review R5)', () => {

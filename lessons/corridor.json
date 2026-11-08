@@ -93,10 +93,19 @@
     },
     {
       "cues": [
-        "target.checkpoint",
-        "safety.reset"
+        {
+          "cue": "safety.free",
+          "from": "left"
+        }
       ],
       "key": "lesson.corridor.intro.3"
+    },
+    {
+      "cues": [
+        "target.stage",
+        "safety.reset"
+      ],
+      "key": "lesson.corridor.intro.4"
     },
     {
       "key": "lesson.corridor.goal.1"

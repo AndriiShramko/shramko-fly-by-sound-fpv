@@ -1,9 +1,12 @@
-// Review M2 of the v0.13 merge: a sound a pilot hears while flying is named, and played three times after the line
-// that names it (M41-5), in the lesson where his path first meets it or in one before it. The target note
+// Reviews M2, M3 and m1 of the v0.13 merge: a sound a pilot hears while flying is named, and played three times after
+// the line that names it (M41-5), in the lesson where his path first meets it or in one before it. The target note
 // (height.target, about once a second since lane s13-sound's review M2) sounds wherever there is a height band or a
-// gate; the glossary names every sound, but it is lesson 1 of the full path only, so the fast path must name it on its
-// own. Held here by flying each lesson of the fast path with the truth bot, the planner given every frame with the
-// lesson's layers, and asking of every watched sound it heard: did this lesson's intro, or an earlier one, name it?
+// gate; the open-way chime (safety.free) wherever something ahead leaves a way past it, in the corridor about 20 s of
+// its minute. The glossary names every sound, but it is lesson 1 of the full path only, so the fast path must name them
+// on its own. Held here by flying each lesson of the fast path with the truth bot, the planner given every frame with
+// the lesson's layers, and asking of every watched sound it heard: did this lesson's intro, or an earlier one, name it?
+// And a line that names a sound plays it: the open-way chime in the corridor and in tunnel-gaps, and what the
+// corridor's checkpoints sound like now (the stage figure; the reset after a touch), not the checkpoint chime.
 import { describe, expect, it } from 'vitest';
 import type { CueId, LessonDef } from '../src/contract';
 import { CuePlanner } from '../src/cues';
@@ -13,8 +16,8 @@ import { getBuiltinTheme } from '../src/theme';
 import { ScriptedPilot } from './helpers/pilot';
 import { playLesson } from './helpers/truth';
 
-/** The sounds whose naming is held here. */
-const WATCHED: readonly CueId[] = ['height.target'];
+/** The sounds whose naming is held here: the two that sound with no line of speech to tell what they are. */
+const WATCHED: readonly CueId[] = ['height.target', 'safety.free'];
 
 /** The cue ids a lesson names: the cues of its intro lines (each played three times after its line) and of its name-cues goals. */
 function namedBy(l: LessonDef): Set<string> {
@@ -48,7 +51,9 @@ function heard(id: string): Set<string> {
     return out;
 }
 
-describe('a sound heard while flying is named where the pilot first hears it (review M2 of the merge)', () => {
+const cuesOf = (l: LessonDef, key: string): readonly unknown[] | undefined => l.intro.find((x) => x.key === key)?.cues;
+
+describe('a sound heard while flying is named where the pilot first hears it (reviews M2 and M3 of the merge)', () => {
     it('the fast path names each watched sound in the lesson where it first sounds, or before', () => {
         const named = new Set<string>();
         const where: Record<string, string> = {};
@@ -62,8 +67,9 @@ describe('a sound heard while flying is named where the pilot first hears it (re
                 expect(named.has(c), `${c} sounds while flying ${id}, and no lesson so far named it`).toBe(true);
             }
         }
-        // the test sees each sound where it first sounds: the target note in hover-height, the fast path's first flight
-        expect(where).toEqual({ 'height.target': 'hover-height' });
+        // the test sees each sound where it first sounds: the target note in hover-height, the fast path's first flight,
+        // and the open-way chime in the corridor
+        expect(where).toEqual({ 'height.target': 'hover-height', 'safety.free': 'corridor' });
     }, 120000);
 
     it('the full path names them all in its second lesson, the glossary', () => {
@@ -78,5 +84,20 @@ describe('a sound heard while flying is named where the pilot first hears it (re
         expect(at('height.tone')).toBeGreaterThanOrEqual(0);
         expect(at('height.target')).toBeGreaterThan(at('height.tone'));
         expect(intro[at('height.target')]?.cues).toEqual(['height.target']);
+    });
+
+    it('the lines that name the open-way chime play it, from the left: the corridor\'s and tunnel-gaps\' intro.2', () => {
+        const free = [{ cue: 'safety.free', from: 'left' }];
+        expect(cuesOf(getLesson('corridor'), 'lesson.corridor.intro.3')).toEqual(free);
+        expect(cuesOf(getLesson('tunnel-gaps'), 'lesson.tunnel-gaps.intro.2')).toEqual(free);
+    });
+
+    it('the corridor names what its checkpoints sound like: the stage figure, and the reset after a touch (review m1)', () => {
+        const corridor = getLesson('corridor');
+        expect(cuesOf(corridor, 'lesson.corridor.intro.4')).toEqual(['target.stage', 'safety.reset']);
+        // its checkpoints end stages or end the track: the checkpoint chime is neither named nor heard there
+        expect(namedBy(corridor).has('target.checkpoint')).toBe(false);
+        expect(corridor.checkpoints.slice(1, -1).every((cp) => cp.stage !== undefined)).toBe(true);
+        expect(corridor.goals.at(-1)?.kind).toBe('track-end');
     });
 });

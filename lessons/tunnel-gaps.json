@@ -42,6 +42,12 @@
       "key": "lesson.tunnel-gaps.intro.1"
     },
     {
+      "cues": [
+        {
+          "cue": "safety.free",
+          "from": "left"
+        }
+      ],
       "key": "lesson.tunnel-gaps.intro.2"
     },
     {

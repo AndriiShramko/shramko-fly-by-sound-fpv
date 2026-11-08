@@ -77,7 +77,7 @@ export const LESSONS: readonly LessonSpec[] = [
     { id: 'walls-hall', module: 3, intro: 3, goals: 1, hints: 1 },
     { id: 'walls-pillar', module: 3, intro: 2, goals: 1, hints: 1 },
     { id: 'walls-row', module: 3, intro: 2, goals: 1, hints: 1 },
-    { id: 'corridor', module: 4, intro: 3, goals: 2, hints: 1 },
+    { id: 'corridor', module: 4, intro: 4, goals: 2, hints: 1 },
     { id: 'tunnel-wide', module: 4, intro: 2, goals: 1, hints: 1 },
     { id: 'tunnel-narrow', module: 4, intro: 2, goals: 1, hints: 1 },
     { id: 'tunnel-narrower', module: 4, intro: 2, goals: 1, hints: 1 },
