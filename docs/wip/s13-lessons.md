@@ -21,7 +21,7 @@ Review fixes (`docs/wip/s13-lessons-review.md`, one commit per fix or small grou
 - [x] R1 wrong way in a course: judged against the gate that counts next, not the track
 - [x] R2 shared cue events: payloads that take lane s13-sound's, the play length checked against the planner
 - [x] R3 G's way back: 'go next' is the host's advance(), a lesson opened by G is not marked skipped
-- [ ] R4 the simulator's tests the gitlink move breaks, listed
+- [x] R4 the simulator's tests the gitlink move breaks, listed (measured against this package, read only)
 - [x] R5 the corridor ends at its end: a goal 'track-end' (the corridor's goals field is the lead's to set at the merge)
 - [x] R6 a stage said once: from the world's list when it marks stages, else from the lesson's checkpoints
 - [x] R7 a lesson that moves on by itself is saved skipped, not passed
@@ -35,41 +35,66 @@ Review fixes (`docs/wip/s13-lessons-review.md`, one commit per fix or small grou
 - [x] R15 test machinery marked internal
 - [x] Found while measuring R4: a course's first attempt begins at its start (with R9 a pilot could be trapped for good)
 - [x] Found while measuring R4: a key at the time a step was due re-derives the same in a replay (the runner catches up first)
-- [ ] Checks after the fixes, final status
+- [x] Checks after the fixes, final status
 
-## Final status (2026-11-08)
+## Final status (2026-11-08, after the review)
 
-Done, one commit per step (branch `s13-lessons`, not pushed): step 1 7f83292, 2 318a8c5, 3 91c6dd5, 4 eee530b, 5 4b276e8,
-6 8a67aac, 7 3041e63, 8 1ec02b4, 9 6798f1e, 10 fc389e3 and the last commit (this Status, the replay building the runner
-with the manifest's path and speech rate, the proofs' evidence files).
+Done (branch `s13-lessons`, not pushed). Steps 1 to 10: 7f83292, 318a8c5, 91c6dd5, eee530b, 4b276e8, 8a67aac, 3041e63,
+1ec02b4, 6798f1e, fc389e3, e0d1f0a. Review fixes (`docs/wip/s13-lessons-review.md`), one commit per fix or small group:
+R1 1862a33, R2 cdb5733, R3 bcfa843, R6 and R7 bc35be4, R9 to R11 af563de, R12 c3541d6, R14 and R15 cb5abc4, R8 1b5d06c,
+R5 f107116; two defects found while measuring R4 against the simulator: a course's first attempt begins at its start
+df95a73, a key at the time a step was due re-derives the same 9336819; R4's measured list, R13's spec for the simulator
+and this Status in the last commit.
 
-Checks, all passing on the last commit: `pnpm typecheck`; `pnpm test` (27 files, 631 tests); `GPU_LOCK=C:/dev/.gpu-lock
-pnpm proof:audio` (headless Chrome 156, 3 files, 9 proofs: the engine proofs with their broken controls, the demo by
-keyboard alone, the demo's language marks; 49 s); `node tools/run-tool.mjs locale-lint` (0 problems, 4 languages, 452
-keys); `node tools/run-tool.mjs check-layout` (0 problems).
+Checks on the last commit, all passing: `pnpm typecheck`; `pnpm test` (29 files, 656 tests); `GPU_LOCK=C:/dev/.gpu-lock
+pnpm proof:audio` (headless Chrome 156, 3 files, 9 proofs, 49 s; its two evidence files rewritten by the run);
+`node tools/run-tool.mjs locale-lint` (0 problems, 4 languages, 455 keys); `node tools/run-tool.mjs check-layout`
+(0 problems). The simulator's Fly by Sound tests against this package, read only: 17 fail, 509 pass, 8 skipped, each
+failure listed with its reason and what v13-host changes under "Review R4" above (none is a defect left in the package).
+
+Where this lane did not do what the review proposed, with the evidence in the sections above:
+
+- R3: B from the first step of a lesson opened with G goes back to the lesson G left, not to `lessonBefore` of the
+  glossary: the pilot came from there, and the way back is what B means on a detour.
+- R5: the corridor's `goals` are outside this lane: the goal `track-end` and the end checkpoint cp-6 are in place, the
+  one-line change of the corridor's goal is the lead's at the merge ("For the lead's merge" item 2).
+- R6: stages come from the world's checkpoint list only when it marks any: dropping the lesson's stages whenever a
+  world list exists would silence every stage of lane s13-worlds' corridor, whose list marks none.
+- R8: not only a line in the contract: the runner pauses with the flight, because the host's clock runs on through
+  pauses (a question timed out, an attempt ran out of time, a pause counted as time held in the band).
+- R9: the next attempt of a course that re-centres resumes at the last point passed (the review's first option), so
+  "from the last checkpoint" is true; measured against the simulator this needed the first-attempt fix (df95a73).
+- R13: left to the simulator's replay player, specified ("Needs from the simulator" item 7).
 
 Left open, with the reason:
 
-1. How it sounds and feels: the three plays, the praise, the stage and the wrong-way cues are placeholders in
-   `src/cues/planner.ts` until lane s13-sound designs them; no person has heard them. The schedule check proves timing
-   against five speech models, not that a person notices a sound.
+1. How it sounds and feels: the three plays, the praise, the stage and the wrong-way cues sound as placeholders in
+   `src/cues/planner.ts` until the lead takes lane s13-sound's planner; no person has heard them. The schedule check
+   proves timing against five speech models and `test/repeat-plays.test.ts` holds the play length to the planner, not
+   that a person notices a sound.
 2. Real voice lengths were measured for English only (Windows voice Microsoft David; this machine has no Russian, Polish
-   or Spanish voice). The other languages are covered by the slow and very slow models (1.4 x and 2 x the estimate, with
-   0.3 s and 0.6 s to start each line), which pass.
+   or Spanish voice). The other languages are covered by the slow and very slow models, which pass. The new Russian
+   and Polish lines of R12 were written as a native speaker says them; no person has read them aloud.
 3. The owner's own flights were not recorded, so the hover-turn failure is reproduced by a model pilot (front/back
    reversal) that gives exactly "15 attempts without a pass" under the v0.12 rule; other causes cannot be ruled out.
-4. The corridor is passed at 240 m flown, during its fourth section (goals are not in my ownership): its last section and
-   stage 4 are never flown in a passing attempt. Review R5: the goal `track-end` and the checkpoint cp-6 at the end are
-   in place; the corridor's `goals[1]` becomes `{ "kind": "track-end" }` at the merge ("For the lead's merge" item 2).
-5. Respawn points are as dense as the checkpoints: 30 to 75 m apart in the corridor until lane s13-worlds gives the
-   world's checkpoint list (the runner already reads it).
-6. Recordings made with v0.12 (lesson version 1) do not verify: the rules changed. The replay says so ("lesson X is
-   version 2 here, the session was flown with 1", `test/replay.test.ts`).
+4. The shipped corridor still passes at 240 m flown until its goal is set at the merge (R5).
+5. Respawn points are as dense as the checkpoints: 30 to 75 m apart in the corridor until lane s13-worlds' world list
+   is merged (the runner reads it).
+6. Recordings made with v0.12 (lesson version 1) do not verify (the rules changed, the replay says so); their playback
+   needs the simulator's player (R13, item 7).
 7. move-speed still goes silent at rest and between attempts (its layers: speed and voice): the planner's bed (s13-sound).
-8. Outside my ownership, changed because the API needed it and nobody else owns them: `src/replay/replay.ts` (the new key
-   actions, the runner built with the manifest's path and speech rate), `tools/locale-lint.ts` and
-   `tools/check-layout.ts` (a `main()` each), `demo/*` (B, Z, the 'go' action), and two placeholder blocks in
-   `src/cues/planner.ts` (the new cue kinds compile and sound like existing ones).
+8. Changed outside the ownership table, because the API needed it or the review asked: `src/replay/replay.ts` (the new
+   key actions, the pause inputs, the runner built with the manifest's path and speech rate), `tools/locale-lint.ts` and
+   `tools/check-layout.ts` (a `main()` each), `demo/*` (B, Z, the 'go' action, P pauses the lesson), the placeholder
+   cases in `src/cues/planner.ts`, `AGENTS.md` (the host's replay markers), `README.md`, `AGENT_SETUP.md`,
+   `CHANGELOG.md` and `docs/design/stage-1-spec.md` (R14).
+9. Two failures of the simulator's tests are not pinned down (R4 table): rings-line's cues agree by kind on 98.9 % of
+   181 frames in the integration replay (99 % wanted), and the player says 9 of 10 recorded lines; both are for v13-host
+   to look at with the player change.
+
+Needs from the simulator: "Needs from the simulator" items 1 to 7 below, and the test updates of the R4 table, all on
+the v13-host branch together with the gitlink. Needs from other lanes: "Needs from other lanes" below (s13-sound) and
+"For the lead's merge" (the shared cue events' play length, the corridor's goal, s13-sound's v0.12 replay test).
 
 ## The API the host needs (summary)
 
@@ -496,6 +521,29 @@ walls line) go through the same queue, so the fix (wait for the report) also wai
   in a replay alike; not while paused. Test (`test/navigation.test.ts`): N in the frame that began attempt 2 replays to
   the same events (lesson events end attempt-start 2, leave 2); without the catch-up the replay check fails. The
   simulator's reader test's diffs are then empty.
+
+### Review R4: what moving the gitlink to this package breaks in the simulator
+
+Measured, not copied from the review: the simulator's Fly by Sound tests (`C:/dev/gsfpv-v03` at 51d7939, read only:
+`tools/bench/test/sonic-*.test.ts`, `sonicrec-*.test.ts` but the headers test, `packages/prefs/test/sonic.test.ts`), every
+import of the package (its `src`, its test helpers, its locales) pointed at this worktree by a vitest config kept outside
+the simulator, cache on U:. On 9336819: 17 fail, 509 pass, 8 skipped (534), 48 s (the review: 16 fail at e0d1f0a, 531 pass
+on the simulator's own pin). Each failure, why, and what lane v13-host changes with the gitlink:
+
+| Simulator test | Why it fails with this package | v13-host |
+|---|---|---|
+| sonic-lessons modules 1 to 5 (hover-height, move-speed, walls-hall, corridor, rings-first), "progress is saved at every attempt" | lesson format 2: r counted in total (3; the corridor 1), the tests count v0.12's 4 of 5, 8 of 10, 3 of 4 | expect the format 2 counts |
+| sonic-lessons module 0 (ears-headphones); sonic-int-replay "ears-headphones to its pass, then ears-glossary" | the rig's answerer reads the last 'preview' cue; a named sound is a 'repeat-cue' now (M41-5) | the answerer reads 'repeat-cue' too |
+| sonic-lessons "G opens the sound glossary and comes back", "review I3" | the glossary ends in 'go next', which today's host ignores: the pilot stays in it | "Needs from the simulator" items 1 and 2 |
+| sonic-bridge "walls-hall with N, R short, R long and a contact"; sonicrec-replay "fails when the recording does not hold what the lesson would have done" (its moved-flight control) | both flights press N while flying, which leaves the lesson now (M41-6): the contact after it is no touch of the lesson, and moving the flight after it changes nothing | press N in the task (it starts flying) or R, not while flying |
+| sonic-int-reader "the intro" | the task is said in parts (the lines up to a named sound, its three plays, the rest): the first batch has 2 lines, the test wants 4 or more | measure the task, not its first batch |
+| sonicrec-recorder "records a flight with the pilot's voice" | the manifest's lesson version is 2 | expect version 2 |
+| sonic-lessons "a restart is not a touch ... a wall still does" | its control flies on from the lesson's open and waits up to 60 s for a touch of the front wall; the first attempt now begins at the start when the craft left it during the task (see "a course's first attempt" above), so the touch comes later | start the control flight once the lesson flies, or wait longer |
+| sonic-int-replay "rings-first to its pass, then rings-line" | rings-first now re-derives every event (the touch the review saw is gone: the scripted pilot no longer reaches the wall); rings-line's cues agree by kind on 98.9 % of its 181 frames, the test wants 99 % (2 frames). Not pinned down; likely the edges of its named sounds in its 6 s window (each side starts a cue at its last frame's time, 16 ms and 33 ms grids) | look at the 2 frames with the player change of item 7 |
+| sonicrec-replay "the player ... feeds the engine what the lesson said and cued" | the player says 9 of the 10 recorded lines; not pinned down here (the review: "changed lines") | look at it with item 7 |
+
+The rule: move the gitlink only on the v13-host branch, together with "Needs from the simulator" and these test updates,
+never on the simulator's main first. Until v13-host takes the 'go' action, N in any flying lesson is a dead end.
 
 ## Needs from the simulator
 
