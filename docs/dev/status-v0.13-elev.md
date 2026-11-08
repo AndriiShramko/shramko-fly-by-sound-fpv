@@ -25,8 +25,11 @@ and below change with it. In the same lane: "wrong way" between gates, which the
   today (table below). Before any change, v0.13's placement recorded: the planner of 16c01a1 flown through tunnel-gaps
   (soft; race calm with the polarity turned over), hover-height, rings-heights, floor and ceiling in walls-hall and the
   previews (soft, clear), every frame's plan hashed (`test/helpers/placement.ts`, `test/fixtures/placement-v013.json`)
-- [ ] E1-2 Direction for up and down: the open-way chime, the target height note, ceiling and floor hazards from their
-  real direction, broadband to about 16 kHz; pitch, intervals and timing unchanged
+- [x] E1-2 Direction for up and down: the open-way chime from the middle of the way past the obstacle, the target note
+  from the target (a gate's centre, a band's middle 2 m ahead), the floor and the ceiling from below and above as
+  before, each with a breath of air from 4 to 16 kHz; pitch, intervals, rhythm and levels unchanged
+  (`test/elevation.test.ts`, 36 tests; decisions below). The setting is read as `SonicPrefs.heightDirection` (absent or
+  true: on); with it off every frame of the seven flights is v0.13's exactly
 - [ ] E1-3 The setting (on by default) that gives back v0.13's placement exactly; its label and spoken description in
   four languages
 - [ ] E1-4 Words: the glossary and the lesson lines say "from above or below"; tunnel-gaps intro.3 plays the chime
@@ -68,6 +71,44 @@ for a way above or below comes from ahead, the target note has no direction, and
 from below and above but carry almost nothing in the band where the HRTF tells height (the race theme's ceiling is the
 one exception).
 
+## Decisions
+
+### E1-2, up and down by direction too
+
+- The open-way chime above or below comes from the way itself: `findFreeWay` (`src/sense/freeway.ts`) now measures the
+  free span at the probe's depth (two rays from the probe point: back toward the craft's line to the obstacle's edge,
+  out to the far surface, each at most `FREE_SPAN_MAX_M` 1.8 m) and gives its middle (`FreeWay.middleM`) and the
+  listener-frame direction to it (`FreeWay.dir`). The middle, not the probe point: in tunnel-gaps the first probe that
+  fits is 0.55 m up while the way's middle is 0.9 m up, 22 degrees against 14 at 2 m, and Chrome's slices are 15
+  degrees apart. Measured on the box tunnels (a 1.2 m way past a block, at 3 m/s): the middle is 0.9 m out at every
+  frame, the chime 8.2 degrees above (or below) ahead with the block 5.9 m away, 14.8 at 3 m, 20.2 at 2.1 m and 31.0 at
+  1.1 m (the probe point alone: 5.0, 9.2, 12.7, 20.1). In tunnel-gaps, flown along its track at 2 m/s, the chime
+  above comes from 8 to 20 degrees up (median 13) and the one below from 8 to 20 down (median 12): Chrome's 15 and -15
+  degree slices, against 0 straight ahead. That is the real direction the task asks for; left and right keep their 60
+  degrees (`FREE_DIRS`, an exaggeration of the real one), their notes and spectrum: only the cues of up and down change.
+- A named or previewed chime (an intro's cue from up or down, the glossary's preview) has no obstacle to measure:
+  `FREE_PREVIEW_DIRS`, 30 degrees above or below ahead (Chrome's 30 and -30 degree slices after the engine's +7.5).
+- The target note: from the next gate's centre (the hum's direction); a band (hover-height, hover-turn) has no point,
+  so from the band's middle `TARGET_AHEAD_M` (2 m) ahead along the heading: 0.3 m under the middle is 8.5 degrees up,
+  0.5 m is 14, 0.9 m over it is 24 degrees down. There was no look-ahead in the planner to reuse; 2 m keeps the
+  direction a smooth function of the height (a point right over the craft would flip from straight up to straight
+  down at the middle). The glossary's preview comes from above while the tone climbs to it and from ahead at the end
+  (from below with the polarity turned over). The engine gives the target notes a panner of their own (8 + 24 + 1
+  panners; the voice-budget proof's bound says so) and brings the height tone back 6.5 ms later after a placed note
+  (Chrome's HRTF begins 5.6 ms late), so the tone and the note still never sound together.
+- The floor and the ceiling already came from below and above (the sampler's rays); what they lacked is the band where
+  the HRTF tells height. They, the chime above and below and the target note now carry a breath of air: white noise
+  through a second-order high-pass at 4 kHz and low-pass at 16 kHz (`AIR_BAND_HZ`), under the note's own envelope for
+  at most 0.25 s after the attack (`AIR_MAX_S`; the whole 280 ms of a target note), at `ELEVATION_AIR_DB` -10 dB
+  against a unit fundamental (`VoicePlan.airDb`, `TargetTone.airDb`). The chime's low-pass goes from 12 to 18 kHz
+  (`ELEVATION_LOWPASS_HZ`) so the breath reaches 16 kHz; the hazards keep their distance low-pass (16 kHz near).
+- Unchanged by construction and held by the tests: every note, interval, period, note length, level, roughness, beat
+  and Doppler of every voice, the height plans but for the target's `dir` and `airDb`, the one-off notes, the voice
+  slots and what is dropped, in all seven flights with the setting on against off.
+
 ## Needs from the simulator
 
-(filled as the steps land)
+- The panel (M41-25, wave 2 W14): `engine.plan.freeWay` has two new fields, `dir` (where the way's middle is, listener
+  frame) and `middleM` (how far beside the craft's line); `engine.plan.height.target.dir` is where the target note comes
+  from, and the active cue `height.target` carries that direction (it had none). Nothing in the host has to change for
+  the sound itself.

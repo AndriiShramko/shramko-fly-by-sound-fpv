@@ -334,6 +334,13 @@ export interface SonicPrefs {
      * the motor at one level whatever the simulator's own volume slider says.
      */
     readonly motorGainDb?: number;
+    /**
+     * v0.13 (lane s13-elev, owner's message 42): the cues of up and down also come from above or below through the
+     * HRTF, on top of the pitch that carries them: the open-way chime from the way above or below the obstacle, the
+     * target height note from the target, the floor and the ceiling from below and above, each with a breath of air up
+     * to about 16 kHz for the HRTF to shape. Absent or true: on; false: v0.13's placement exactly.
+     */
+    readonly heightDirection?: boolean;
 }
 
 // ------------------------------------------------------------------ lessons

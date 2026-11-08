@@ -6,6 +6,7 @@
 //                                                                       \-> reverb send
 //   static voices (24)  one-off notes from a fixed direction (touch ping), HRTF panner -> layer bus
 //   centre              height tone and its target notes, speed ticks, room bed and drone, gate notes, chimes
+//   target panner       the target notes from the target's direction (lane s13-elev, SonicPrefs.heightDirection)
 //   layer buses         theme gain + pilot gain -> duck (speech, urgent hazard) -> master
 //   motor bus           the simulator's motor (motorInput) -> band-pass -> leveller -> level, pilot gain -> duck -> master (M41-16)
 //   reverb              synthetic warm hall, return follows the room's openness
@@ -31,7 +32,7 @@ import type { SamplerOptions } from '../sense/sampler';
 import { getBuiltinTheme } from '../theme/builtin';
 import { createOutputChain, type OutputChain } from './output';
 import { createBrowserSpeech, estimateSpeechS, type SpeakOptions } from './speech';
-import { createSynthKit, makeReverbImpulse, playNote, Roughness, ToneVoice, type SynthKit } from './synth';
+import { addAir, createSynthKit, makeReverbImpulse, playNote, Roughness, ToneVoice, type SynthKit } from './synth';
 
 // Levels inside a layer, linear. With the shipped layer gains (-6 to -22 dB) and the master at -9 dB
 // a busy moment peaks near -20 dBFS: generous headroom under the -6 dBFS ceiling.
@@ -52,6 +53,14 @@ const TARGET_ATTACK_S = 0.008;
 const TARGET_RELEASE_S = 0.015;
 /** A target note's soft octave over its fundamental: a touch brighter than the glide, so it is heard as the target's own. */
 const TARGET_OCTAVE = 0.12;
+/**
+ * Lane s13-elev: a target note with a direction goes through the HRTF panner, whose impulse responses begin about
+ * 5.6 ms late (Chrome's onset at sample 268 of 48 kHz, docs/design/virtual-listener.md 2.7): the height tone comes
+ * back this much later after such a note, so the two still never sound together, s.
+ */
+const HRTF_ONSET_S = 0.0065;
+/** Lane s13-elev: the target panner moves to the next note's direction this long before it, while it is silent, s. */
+const TARGET_PAN_LEAD_S = 0.06;
 /** The control's steady target tone (before review M2): 6 dB under the height tone. */
 const STEADY_TARGET_DB = -6;
 /** How fast the control's steady target tone moves to the next gate's note, s. */
@@ -159,7 +168,7 @@ export interface EngineStats {
     readonly dropped: readonly string[];
     /** static voices playing a note now */
     readonly staticBusy: number;
-    /** PannerNodes this engine made: 8 moving + 24 static */
+    /** PannerNodes this engine made: 8 moving + 24 static + 1 for the target notes (lane s13-elev) */
     readonly panners: number;
     /** the most moving voices that ever sounded at once */
     readonly movingPeak: number;
@@ -224,6 +233,9 @@ interface Graph {
     readonly heightOut: GainNode;
     heightTone: ToneVoice | null;
     readonly targetOut: GainNode;
+    /** lane s13-elev: the target notes with a direction, into their own HRTF panner (null without panners) */
+    readonly targetPanned: GainNode;
+    readonly targetPanner: PannerNode | null;
     readonly targetTrain: PulseTrain;
     /** the control's steady target tone (EngineTestHooks.targetTone 'steady'), made on first use */
     steadyTarget: ToneVoice | null;
@@ -591,6 +603,14 @@ export class FlyBySoundEngine implements SonicEngine {
         targetSend.gain.value = 0.1;
         targetOut.connect(targetSend);
         targetSend.connect(layers.height.wet);
+        // lane s13-elev: the target notes that come from the target, through their own panner (as dry as the others)
+        const targetPanned = ctx.createGain();
+        const targetPanner = makePanner();
+        if (targetPanner !== null) {
+            targetPanned.connect(targetPanner);
+            targetPanner.connect(layers.height.dry);
+        } else targetPanned.connect(layers.height.dry);
+        targetPanned.connect(targetSend);
 
         const speedOut = ctx.createGain();
         speedOut.gain.value = 1;
@@ -629,6 +649,8 @@ export class FlyBySoundEngine implements SonicEngine {
             heightOut,
             heightTone: null,
             targetOut,
+            targetPanned,
+            targetPanner,
             targetTrain: createPulseTrain(),
             steadyTarget: null,
             speedOut,
@@ -854,7 +876,8 @@ export class FlyBySoundEngine implements SonicEngine {
     /**
      * One target note at `t0` (audio time): a held sine with a soft octave, `noteS` long. The glide fades out just
      * before it and comes back just after its release, so the two never sound at once (no beat, and no cancelling
-     * at the same pitch): at the target the tone seems to go on through the note, a little brighter.
+     * at the same pitch): at the target the tone seems to go on through the note, a little brighter. Lane s13-elev:
+     * with a direction the note comes from the target through its own panner, with a breath of air.
      */
     private playTargetNote(target: NonNullable<HeightPlan['target']>, t0: number, now: number): void {
         const g = this.g as Graph;
@@ -867,7 +890,19 @@ export class FlyBySoundEngine implements SonicEngine {
         env.gain.linearRampToValueAtTime(peak, t0 + TARGET_ATTACK_S);
         env.gain.setValueAtTime(peak, held);
         env.gain.linearRampToValueAtTime(0, end);
-        env.connect(g.targetOut);
+        const placed = target.dir !== undefined;
+        if (placed) {
+            env.connect(g.targetPanned);
+            const p = g.targetPanner;
+            if (p !== null) {
+                const [x, y, z] = pannerDirection(target.dir as NonNullable<typeof target.dir>);
+                const at = Math.max(now, t0 - TARGET_PAN_LEAD_S);
+                p.positionX.setValueAtTime(x, at);
+                p.positionY.setValueAtTime(y, at);
+                p.positionZ.setValueAtTime(z, at);
+            }
+            if (target.airDb !== undefined) addAir(g.kit, env, dbToGain(target.airDb), t0, held, end + 0.01);
+        } else env.connect(g.targetOut);
         for (const [ratio, amp] of [
             [1, 1],
             [2, TARGET_OCTAVE]
@@ -882,10 +917,11 @@ export class FlyBySoundEngine implements SonicEngine {
             osc.stop(end + 0.01);
         }
         const swap = g.heightSwap.gain;
+        const back = placed && g.targetPanner !== null ? end + HRTF_ONSET_S : end;
         swap.setValueAtTime(1, Math.max(t0 - TARGET_SWAP_S, now));
         swap.linearRampToValueAtTime(0, t0);
-        swap.setValueAtTime(0, end);
-        swap.linearRampToValueAtTime(1, end + TARGET_SWAP_S);
+        swap.setValueAtTime(0, back);
+        swap.linearRampToValueAtTime(1, back + TARGET_SWAP_S);
         if (this.hooks.onTargetNote !== undefined) this.hooks.onTargetNote(t0, target.hz, target.noteS);
     }
 
@@ -928,10 +964,12 @@ export class FlyBySoundEngine implements SonicEngine {
             if (v.periodS !== null) {
                 const period = v.periodS * scaleP;
                 const gain = v.layer === 'target' ? HUM_GAIN : PULSE_GAIN;
+                // lane s13-elev: a cue of up or down carries a breath of air for the HRTF (none in v0.13)
+                const air = v.airDb === undefined ? {} : { air: dbToGain(v.airDb) };
                 for (const t0 of duePulses(slot.train, now, horizon, period)) {
-                    playNote(g.kit, slot.input, { timbre: v.timbre, hz: v.hz, t0, durS: v.noteS, gain, cents: v.dopplerCents, beatHz: v.beatHz, beatDepth: v.beatDepth, maxS: Math.max(0.9 * period, 0.03) });
+                    playNote(g.kit, slot.input, { timbre: v.timbre, hz: v.hz, t0, durS: v.noteS, gain, cents: v.dopplerCents, beatHz: v.beatHz, beatDepth: v.beatDepth, maxS: Math.max(0.9 * period, 0.03), ...air });
                     // the open-way chime: its upper note with every pulse, a little softer
-                    if (v.harmonyHz !== undefined && v.harmonyHz !== null) playNote(g.kit, slot.input, { timbre: v.timbre, hz: v.harmonyHz, t0: t0 + HARMONY_DELAY_S, durS: v.noteS, gain: gain * HARMONY_GAIN, maxS: Math.max(0.9 * period - HARMONY_DELAY_S, 0.03) });
+                    if (v.harmonyHz !== undefined && v.harmonyHz !== null) playNote(g.kit, slot.input, { timbre: v.timbre, hz: v.harmonyHz, t0: t0 + HARMONY_DELAY_S, durS: v.noteS, gain: gain * HARMONY_GAIN, maxS: Math.max(0.9 * period - HARMONY_DELAY_S, 0.03), ...air });
                 }
             }
             if (v.trace !== null) {

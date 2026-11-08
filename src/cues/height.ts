@@ -21,7 +21,7 @@
 // the grid keeps its exact unison and is reported as off the scale (`onScale` false).
 //
 // Pure: the planner calls it every frame, the engine renders it, the replay re-derives it.
-import type { LessonLayers, ObjectShape, SonicObject, SonicPrefs, SonicWorld, ThemeDef } from '../contract';
+import type { LessonLayers, ObjectShape, SonicObject, SonicPrefs, SonicWorld, ThemeDef, Vec3 } from '../contract';
 import { heightPosition, noteHz, noteHzAt, scaleSize, type HeightMapping } from '../theme/pitch';
 import { bandRoughness, clamp } from './rules';
 
@@ -92,6 +92,13 @@ export interface TargetTone {
     /** a note every periodS, noteS long; the height tone gives way to it meanwhile */
     readonly periodS: number;
     readonly noteS: number;
+    /**
+     * Lane s13-elev (SonicPrefs.heightDirection on): where the note comes from, listener frame (the gate's centre, or the
+     * band's middle a little ahead); absent: no direction, straight into the height bus (v0.13)
+     */
+    readonly dir?: Vec3;
+    /** Lane s13-elev: the breath of air with the note, dB against its fundamental (the planner's airDb); absent: none */
+    readonly airDb?: number;
 }
 
 export interface HeightTones {

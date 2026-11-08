@@ -339,7 +339,8 @@ function mono(r: Rendered): Float32Array {
 // ------------------------------------------------------------------ 5. voice budget
 
 async function voiceBudget(): Promise<ProofResult> {
-    const claim = `at most ${MAX_MOVING_VOICES} moving voices sound at once when 15 ask for one, the hazards keep theirs, and the engine makes no more than 8 + 24 panners`;
+    // lane s13-elev: the target height note has its own panner (it comes from the target), so 8 + 24 + 1
+    const claim = `at most ${MAX_MOVING_VOICES} moving voices sound at once when 15 ask for one, the hazards keep theirs, and the engine makes no more than 8 + 24 panners and one for the target note`;
     const pillars = createAnalyticWorld(makeSpec('pillars', { layout: 'single', aheadM: 4, widthM: 8, heightM: 3, startHeightM: 0.6 }, 1));
     const run = async (hooks: EngineOptions['testHooks']): Promise<Check> => {
         const previews: CueEvent[] = Array.from({ length: 10 }, (_, i) => ({ kind: 'preview', cue: i % 2 === 0 ? 'shape.ring' : 'target.hum', dir: [Math.sin(i), 0, -Math.cos(i)] }));
@@ -361,7 +362,7 @@ async function voiceBudget(): Promise<ProofResult> {
         });
         const stats = r.engine.stats();
         return {
-            ok: stats.movingPeak <= MAX_MOVING_VOICES && r.panners <= MAX_MOVING_VOICES + 24 && hazardsKept,
+            ok: stats.movingPeak <= MAX_MOVING_VOICES && r.panners <= MAX_MOVING_VOICES + 24 + 1 && hazardsKept,
             measured: { movingPeak: stats.movingPeak, budget: MAX_MOVING_VOICES, pannersMade: r.panners, hazardsKeptTheirVoices: hazardsKept }
         };
     };

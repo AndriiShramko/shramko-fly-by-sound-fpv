@@ -5,7 +5,10 @@
 // low-frequency energy (research 01 section 2: the motion cue works best below 500 Hz), and a
 // quiet contact transient or breath of air between 2 and 6 kHz, so the HRTF has something to work
 // with: level differences between the ears and the pinna cues of front, back and height live
-// there (research 01 section 4). The pitch is the note; the transient is only its colour.
+// there (research 01 section 4). The pitch is the note; the transient is only its colour. A cue that tells up or
+// down by the HRTF (lane s13-elev) also gets a breath of air from 4 to 16 kHz (`NoteSpec.air`, `addAir`): the
+// pinna's cues of height live there, and a breath that ends at 6 kHz is placed badly even by one's own ears
+// (docs/design/virtual-listener.md, probe F).
 import type { Timbre } from '../contract';
 import { createRng } from '../util/rng';
 
@@ -205,9 +208,58 @@ export interface NoteSpec {
     readonly beatDepth?: number;
     /** the whole note, tail included, ends by then (a pulse never runs into the next one), s after t0 */
     readonly maxS?: number;
+    /**
+     * Lane s13-elev: a breath of air from AIR_BAND_HZ under the note's envelope for at most AIR_MAX_S after its attack,
+     * its RMS this times a unit fundamental's (the cue tells up or down by the HRTF); absent or 0: none
+     */
+    readonly air?: number;
 }
 
 const FLOOR = 0.001; // -60 dB: where an exponential envelope stops before its last short ramp to zero
+
+/** Lane s13-elev: the band of a breath of air (a second-order high-pass and low-pass), Hz. */
+export const AIR_BAND_HZ: readonly [number, number] = [4000, 16000];
+/** How long a note's breath of air lasts at most after its attack (it follows the note's own envelope meanwhile), s. */
+export const AIR_MAX_S = 0.25;
+/**
+ * The breath's gain for an `air` of 1, so that its RMS is a unit sine's (0.707): the kit's white noise (uniform, 0.577
+ * RMS from 0 to 24 kHz) keeps about 0.41 RMS in the band.
+ */
+export const AIR_NORM = 1.73;
+/** A breath ends with this ramp, s. */
+const AIR_RELEASE_S = 0.02;
+
+/**
+ * A breath of air (the kit's white noise in AIR_BAND_HZ) into `dest` from `t0`, at `air` (its RMS that times a unit
+ * sine's), held until `holdUntil` and then gone within AIR_RELEASE_S; the source stops at `stopAt`. `dest` is the
+ * note's envelope, so the breath also follows the note's own rise and fall.
+ */
+export function addAir(kit: SynthKit, dest: AudioNode, air: number, t0: number, holdUntil: number, stopAt: number): void {
+    const { ctx } = kit;
+    const src = ctx.createBufferSource();
+    src.buffer = kit.noise;
+    const hp = ctx.createBiquadFilter();
+    hp.type = 'highpass';
+    hp.frequency.value = AIR_BAND_HZ[0];
+    hp.Q.value = Math.SQRT1_2;
+    const lp = ctx.createBiquadFilter();
+    lp.type = 'lowpass';
+    lp.frequency.value = AIR_BAND_HZ[1];
+    lp.Q.value = Math.SQRT1_2;
+    const g = ctx.createGain();
+    const level = air * AIR_NORM;
+    const until = Math.max(t0 + 0.005, Math.min(holdUntil, stopAt - AIR_RELEASE_S));
+    g.gain.setValueAtTime(level, t0);
+    g.gain.setValueAtTime(level, until);
+    g.gain.linearRampToValueAtTime(0, until + AIR_RELEASE_S);
+    src.connect(hp);
+    hp.connect(lp);
+    lp.connect(g);
+    g.connect(dest);
+    const offset = kit.rand() * (kit.noise.duration - (stopAt - t0) - 0.05);
+    src.start(t0, Math.max(0, offset));
+    src.stop(Math.max(stopAt, until + AIR_RELEASE_S));
+}
 
 /** Plays one note into `dest`; returns the audio time it is silent by. */
 export function playNote(kit: SynthKit, dest: AudioNode, spec: NoteSpec): number {
@@ -309,6 +361,7 @@ export function playNote(kit: SynthKit, dest: AudioNode, spec: NoteSpec): number
         src.start(t0, Math.max(0, offset));
         src.stop(end);
     }
+    if (spec.air !== undefined && spec.air > 0) addAir(kit, env, spec.air, t0, t0 + attack + hold + Math.min(body, AIR_MAX_S), end);
     return end;
 }
 

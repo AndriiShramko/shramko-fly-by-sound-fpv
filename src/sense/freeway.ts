@@ -10,6 +10,11 @@
 // 0.7 m and missed every way that did not reach that far from the line). A gate (a ring, a square, a cube
 // frame with a place in the course) ahead gives no chime: the target layer leads through it (review m1).
 //
+// Where the way is (lane s13-elev, owner's message 42): the middle of the free span at the probe's depth, the
+// probe point moved along the side to halfway between the obstacle's edge and the far surface (the ceiling, the
+// floor, a wall), at most FREE_SPAN_MAX_M out: its direction is where the open-way chime of a way above or below
+// comes from. Two more rays, once a frame, only when a way was found.
+//
 // Pure and deterministic: rays only (SonicWorld.castRay), so analytic and scan worlds both work, and a
 // replay re-derives the same answer. At most 4 rays per probe and 40 probes a frame (a probe that cannot
 // see its point costs one), and only while an obstacle is that close ahead.
@@ -34,6 +39,11 @@ export const FREE_DEPTH_M = 1.5;
 export const FREE_PAST_M = 0.25;
 /** Half the width a passage must have across the side direction, m: the hull (0.12) and 3 cm, so a way is at least 0.3 m wide. */
 export const FREE_HALF_WIDTH_M = 0.15;
+/**
+ * How far the free span is measured each way from the probe point, m (lane s13-elev): an open side (no ceiling in
+ * reach) counts as free this far beyond the point, so the way's middle is at most half of it past the probe.
+ */
+export const FREE_SPAN_MAX_M = 1.8;
 /** The probes of v0.13 before the review (M1), for the tests' control only: 0.7, 1.2 and 1.8 m, half width 0.2 m. */
 export const FREE_PROBES_V013_FIRST = { offsetsM: [0.7, 1.2, 1.8], halfWidthM: 0.2 } as const;
 
@@ -56,6 +66,13 @@ export interface FreeWay {
     readonly obstacleM: number;
     /** time to contact with it along the nose, s */
     readonly ttcS: number;
+    /**
+     * Where the way is (lane s13-elev): the listener-frame unit vector from the craft to the middle of the free span
+     * past the obstacle's front, on the side found (above or below for a way up or down, ahead of the craft).
+     */
+    readonly dir: Vec3;
+    /** how far beside the craft's line that middle is, m */
+    readonly middleM: number;
 }
 
 export interface FreeWayOptions {
@@ -126,7 +143,14 @@ export function findFreeWay(flight: FlightSample, world: SonicWorld | null, fram
             if (blocked(point, fwd, FREE_DEPTH_M)) continue;
             if (blocked(add(point, scale(across, halfWidth)), fwd, FREE_DEPTH_M)) continue;
             if (blocked(add(point, scale(across, -halfWidth)), fwd, FREE_DEPTH_M)) continue;
-            return { side, offsetM: offset, obstacleM, ttcS };
+            // the middle of the free span there: halfway between the edge back toward the craft's line (the obstacle's
+            // side, or the line itself) and the far surface, at most FREE_SPAN_MAX_M out
+            const near = world.castRay(point, scale(across, -1), offset)?.distance ?? offset;
+            const far = world.castRay(point, across, FREE_SPAN_MAX_M)?.distance ?? FREE_SPAN_MAX_M;
+            const middleM = offset + (far - near) / 2;
+            const axis = FREE_SIDE_AXES[side];
+            const dir = normalize([axis[0] * middleM, axis[1] * middleM, -depth]);
+            return { side, offsetM: offset, obstacleM, ttcS, dir, middleM };
         }
     }
     return null;

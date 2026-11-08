@@ -1,6 +1,7 @@
 // The free way around an obstacle ahead (v0.13, M41-14, owner's message 41): when an obstacle ahead is
 // closer than about 3 s, an "open way" chime comes from the free side: left and right by its direction
-// (HRTF), above and below by its pitch (high = above), because HRTF elevation fails for most heads.
+// (HRTF), above and below by its contour (rising above), because HRTF elevation fails for most heads; since
+// lane s13-elev (owner's message 42) also from above or below, on top of the contour (test/elevation.test.ts).
 // Worlds here are tunnels of boxes with exact ray casts. Controls: a closed tunnel gives no chime, and a
 // gap on the left never gives a right chime.
 import { describe, expect, it } from 'vitest';
@@ -97,13 +98,21 @@ describe('the chime: left and right by direction, above and below by pitch', () 
         return v as VoicePlan;
     };
 
-    it('comes from the left for a left gap and from the right for a right one; up and down come from ahead', () => {
+    it('comes from the left for a left gap and from the right for a right one; up and down from above and below ahead (lane s13-elev), from ahead with the direction off (v0.13)', () => {
         expect(at('left').dir[0]).toBeLessThan(-0.5);
         expect(at('right').dir[0]).toBeGreaterThan(0.5);
+        const off = { ...defaultPrefs(), heightDirection: false };
         for (const side of ['up', 'down'] as const) {
-            expect(at(side).dir).toEqual(FREE_DIRS[side]);
-            expect(Math.abs(at(side).dir[1])).toBe(0); // no HRTF elevation to rely on
+            expect(at(side, off).dir).toEqual(FREE_DIRS[side]);
+            expect(Math.abs(at(side, off).dir[1])).toBe(0); // v0.13: no HRTF elevation, the contour alone
+            const v = at(side);
+            expect(Math.sign(v.dir[1]), side).toBe(side === 'up' ? 1 : -1);
+            expect(v.dir[2], side).toBeLessThan(0); // ahead
+            expect(Math.abs(v.dir[0]), side).toBeLessThan(1e-9); // straight above or below the way ahead
         }
+        // left and right keep their place
+        expect(at('left', off).dir).toEqual(at('left').dir);
+        expect(at('right', off).dir).toEqual(at('right').dir);
     });
 
     it('tells the way by its contour (review m2): equal notes from a side, rising for a way above, falling for one below, turned over with the polarity; every note on the scale', () => {

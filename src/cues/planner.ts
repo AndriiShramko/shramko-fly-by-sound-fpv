@@ -6,6 +6,13 @@
 //
 // Frames: directions are in the listener frame (heading by default, contract header), unit vectors.
 // The craft is the listener, at the origin of that frame.
+//
+// Up and down (lane s13-elev, owner's message 42): pitch carries them, and with SonicPrefs.heightDirection on (the
+// default) the cues that mean up or down also come from above or below through the HRTF: the open-way chime from the
+// way's middle past the obstacle (FreeWay.dir), the target height note from the target (a gate's centre, or a band's
+// middle TARGET_AHEAD_M ahead), the floor and the ceiling from where the sampler saw them (as in v0.13). Each carries a
+// breath of air up to about 16 kHz (`airDb`), because the HRTF tells height only in that band. Notes, intervals,
+// rhythm and levels stay v0.13's; with the setting off every plan is v0.13's exactly.
 import type { ActiveCue, CueEvent, CueId, FlightSample, LayerId, LessonLayers, MaterialClass, ObjectShape, Quat, SonicFrameInput, SonicObject, SonicPrefs, SonicWorld, ThemeDef, Timbre, Vec3 } from '../contract';
 import { LAYER_IDS } from '../contract';
 import { defaultPrefs } from '../prefs/prefs';
@@ -15,7 +22,7 @@ import { headingBasis, listenerBasis, worldToListener, type Basis } from '../sen
 import type { Hazard, SceneSample } from '../sense/types';
 import { applyCalm } from '../theme/calm';
 import { gateMelody, noteHz, noteHzAt } from '../theme/pitch';
-import { alignOffset, heightTones, referenceHeightM, targetHeightM, type HeightToneRule, type TargetTone } from './height';
+import { alignOffset, heightTones, isGate, referenceHeightM, targetHeightM, type HeightToneRule, type TargetTone } from './height';
 import { add, dot, length, normalize, quatConjugate, quatRotate, scale, sub, yawQuat } from '../util/vec';
 import {
     aimMissM,
@@ -88,6 +95,11 @@ export interface VoicePlan {
     readonly trace: TracePlan | null;
     /** a second note played with every pulse (the open-way chime's upper note), Hz; null for none */
     readonly harmonyHz?: number | null;
+    /**
+     * Lane s13-elev: a breath of air from about 4 to 16 kHz with every note, this many dB against a unit fundamental, so
+     * the HRTF can tell its height; absent: none (v0.13, and every cue that does not mean up or down)
+     */
+    readonly airDb?: number;
 }
 
 /**
@@ -205,6 +217,25 @@ export const FREE_DIRS: Readonly<Record<FreeSide, Vec3>> = {
 };
 /** How many scale steps above the side chime's note a way above starts (and a way below ends below it). */
 export const FREE_ELEVATION_STEPS = 3;
+/**
+ * Lane s13-elev: where a named or previewed way above or below comes from (no obstacle to measure it by): this many
+ * degrees above or below straight ahead. In flight the chime comes from the way itself (FreeWay.dir).
+ */
+export const FREE_PREVIEW_ELEVATION_DEG = 30;
+/** The directions of FREE_PREVIEW_ELEVATION_DEG, listener frame. */
+export const FREE_PREVIEW_DIRS: Readonly<Record<'up' | 'down', Vec3>> = {
+    up: [0, Math.sin((FREE_PREVIEW_ELEVATION_DEG * Math.PI) / 180), -Math.cos((FREE_PREVIEW_ELEVATION_DEG * Math.PI) / 180)],
+    down: [0, -Math.sin((FREE_PREVIEW_ELEVATION_DEG * Math.PI) / 180), -Math.cos((FREE_PREVIEW_ELEVATION_DEG * Math.PI) / 180)]
+};
+/**
+ * Lane s13-elev: a band's target height (a hover lesson's) has no point of its own; its note comes from the band's
+ * middle this far ahead of the craft along its heading, m: 0.5 m off the middle is 14 degrees above or below.
+ */
+export const TARGET_AHEAD_M = 2;
+/** Lane s13-elev: the breath of air a cue of up or down carries with the direction on, dB against a unit fundamental. */
+export const ELEVATION_AIR_DB = -10;
+/** Lane s13-elev: the open-way chime's low-pass when it comes from above or below (v0.13: 12 kHz), Hz. */
+export const ELEVATION_LOWPASS_HZ = 18000;
 /** Default direction of a preview, listener frame. */
 const FRONT: Vec3 = [0, 0, -1];
 
@@ -423,7 +454,7 @@ export class CuePlanner {
         if (this.on.has('safety')) {
             for (const h of scene.hazards) requests.push(this.hazardVoice(h, velL, `safety:${h.sector}`, PRIORITY.hazard - h.rank));
             freeWay = this.freeWayNow(input, frame);
-            if (freeWay !== null) requests.push(this.freeVoice(freeWay.side, `free:${freeWay.side}`, PRIORITY.free));
+            if (freeWay !== null) requests.push(this.freeVoice(freeWay.side, `free:${freeWay.side}`, PRIORITY.free, freeWay.dir));
         }
         if (this.on.has('target') && input.target !== null) requests.push(this.targetVoice(input.target, s, basis));
         if (this.on.has('shape')) {
@@ -485,13 +516,19 @@ export class CuePlanner {
         return null;
     }
 
+    /** Lane s13-elev: the cues of up and down also come from above or below (SonicPrefs.heightDirection: absent or true). */
+    private get elevation(): boolean {
+        return this.prefsValue.heightDirection !== false;
+    }
+
     /**
      * The open-way chime from a side (review m2): two quick notes on the scale whose contour tells the way with no
-     * note to compare against: two equal notes from the left or the right; from ahead a rising pair for a way above
-     * (starting three steps over the side's note) and a falling pair for one below (ending three steps under it),
-     * turned over with the polarity as the height tone is.
+     * note to compare against: two equal notes from the left or the right; a rising pair for a way above (starting
+     * three steps over the side's note) and a falling pair for one below (ending three steps under it), turned over
+     * with the polarity as the height tone is. Above and below come from ahead in v0.13; with the direction on (lane
+     * s13-elev) from the way itself (`wayDir`, else FREE_PREVIEW_DIRS) with a breath of air, the notes unchanged.
      */
-    private freeVoice(side: FreeSide, key: string, priority: number): Omit<VoicePlan, 'slot'> {
+    private freeVoice(side: FreeSide, key: string, priority: number, wayDir?: Vec3): Omit<VoicePlan, 'slot'> {
         const theme = this.effectiveTheme;
         const p = theme.layers.safety.params as Record<string, number>;
         const toward = side === 'up' ? 1 : side === 'down' ? -1 : 0;
@@ -501,12 +538,13 @@ export class CuePlanner {
         const lo = note(theme.scale, base, this.pitch('safety'), start);
         const hi = note(theme.scale, lo.index, 2 * move);
         const period = ((p['freePeriodMs'] as number | undefined) ?? 600) / 1000;
+        const placed = (side === 'up' || side === 'down') && this.elevation;
         return {
             key,
             cue: 'safety.free',
             layer: 'safety',
             priority,
-            dir: FREE_DIRS[side],
+            dir: placed ? (wayDir ?? FREE_PREVIEW_DIRS[side as 'up' | 'down']) : FREE_DIRS[side],
             distance: 1,
             timbre: NOTE_TIMBRE[theme.layers.target.timbre],
             noteIndex: lo.index,
@@ -514,7 +552,7 @@ export class CuePlanner {
             periodS: period,
             noteS: 0.16,
             gainDb: -4,
-            lowpassHz: 12000,
+            lowpassHz: placed ? ELEVATION_LOWPASS_HZ : 12000,
             reverbSend: 0.12,
             ildDb: 0,
             dopplerCents: 0,
@@ -523,7 +561,8 @@ export class CuePlanner {
             beatHz: 0,
             beatDepth: 0,
             trace: null,
-            harmonyHz: hi.hz
+            harmonyHz: hi.hz,
+            ...(placed ? { airDb: ELEVATION_AIR_DB } : {})
         };
     }
 
@@ -541,7 +580,7 @@ export class CuePlanner {
             });
         }
         if (height !== null) out.push({ id: height.rough > 0 ? 'height.rough' : 'height.tone', layer: 'height', dir: null, distance: null, rateHz: null, pitchHz: height.hz, rough: height.rough });
-        if (height !== null && height.target !== null) out.push({ id: 'height.target', layer: 'height', dir: null, distance: null, rateHz: null, pitchHz: height.target.hz, rough: 0 });
+        if (height !== null && height.target !== null) out.push({ id: 'height.target', layer: 'height', dir: height.target.dir ?? null, distance: null, rateHz: null, pitchHz: height.target.hz, rough: 0 });
         if (speed !== null && speed.tempoHz > 0) out.push({ id: 'speed.tick', layer: 'speed', dir: null, distance: null, rateHz: speed.tempoHz, pitchHz: speed.hz, rough: 0 });
         if (room !== null) out.push({ id: 'room.bed', layer: 'room', dir: null, distance: null, rateHz: null, pitchHz: room.hz, rough: 0 });
         for (const n of this.notes) out.push({ id: n.cue, layer: n.layer, dir: n.dir, distance: null, rateHz: null, pitchHz: n.hz, rough: 0 });
@@ -577,7 +616,10 @@ export class CuePlanner {
             roughHz: 0,
             beatHz: 0,
             beatDepth: 0,
-            trace: null
+            trace: null,
+            // lane s13-elev: the floor and the ceiling come from below and above (as in v0.13); with the direction on they
+            // carry the breath the HRTF needs to tell it
+            ...(this.elevation && (h.material === 'floor' || h.material === 'ceiling') ? { airDb: ELEVATION_AIR_DB } : {})
         };
     }
 
@@ -714,7 +756,24 @@ export class CuePlanner {
         const tones = heightTones(heightM, targetM, band, rule, theme.scale, this.prefsValue.heightPolarity, offset, this.pitch('height'));
         const position = this.steppedHeight ? Math.round(tones.position) : tones.position;
         const hz = this.steppedHeight ? noteHz(theme.scale, position) : tones.hz;
-        return { noteIndex: Math.round(tones.position), position, hz, heightM, rough: tones.rough, roughHz: p['roughHz'] as number, glideS: (p['glideMs'] as number) / 1000, timbre: theme.layers.height.timbre, target: tones.target };
+        const target = tones.target === null || !this.elevation ? tones.target : { ...tones.target, dir: this.targetDir(input, tones.target.heightM), airDb: ELEVATION_AIR_DB };
+        return { noteIndex: Math.round(tones.position), position, hz, heightM, rough: tones.rough, roughHz: p['roughHz'] as number, glideS: (p['glideMs'] as number) / 1000, timbre: theme.layers.height.timbre, target };
+    }
+
+    /**
+     * Lane s13-elev: where the target note comes from, listener frame: the gate's centre when the target is a gate, else
+     * the target height TARGET_AHEAD_M ahead of the craft along its heading (a band has no point of its own).
+     */
+    private targetDir(input: SonicFrameInput, targetM: number): Vec3 {
+        const s = input.sample;
+        const basis = listenerBasis(s, this.prefsValue.listenerFrame);
+        let to: Vec3;
+        if (input.target !== null && isGate(input.target)) to = sub(input.target.pos, s.pos);
+        else {
+            const yaw = (s.yawDeg * Math.PI) / 180;
+            to = [TARGET_AHEAD_M * Math.sin(yaw), input.floorY + targetM - s.pos[1], -TARGET_AHEAD_M * Math.cos(yaw)];
+        }
+        return length(to) > 1e-6 ? normalize(worldToListener(basis, to)) : FRONT;
     }
 
     /**
@@ -738,7 +797,11 @@ export class CuePlanner {
         if (cue === 'height.target') {
             const t = place(Math.round(base + 4));
             const x = place(Math.round(base + 4) - 2.5 * Math.max(0, 1 - u / 0.8) ** 2);
-            const target: TargetTone = { heightM: 4 * rule.metresPerStep, position: t, hz: noteHz(theme.scale, t), noteIndex: t, onScale: true, gainDb: rule.targetDb, periodS: rule.targetPeriodS, noteS: rule.targetNoteS };
+            const plain: TargetTone = { heightM: 4 * rule.metresPerStep, position: t, hz: noteHz(theme.scale, t), noteIndex: t, onScale: true, gainDb: rule.targetDb, periodS: rule.targetPeriodS, noteS: rule.targetNoteS };
+            // lane s13-elev: the note comes from where the target would be, TARGET_AHEAD_M ahead: above while the tone
+            // climbs to it (below with the polarity turned over), ahead once it is there
+            const up = this.prefsValue.heightPolarity === 'up-higher' ? 1 : -1;
+            const target: TargetTone = this.elevation ? { ...plain, dir: normalize([0, up * (t - x) * rule.metresPerStep, -TARGET_AHEAD_M]), airDb: ELEVATION_AIR_DB } : plain;
             return { ...common, noteIndex: Math.round(x), position: x, hz: x === t ? target.hz : noteHzAt(theme.scale, x), heightM: (x - base) * rule.metresPerStep, rough: 0, target };
         }
         const x = place(base + 4 * tri(u));
