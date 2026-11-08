@@ -19,9 +19,9 @@
 // and out of it, so the measurer can tell the target notes, the plain height tone and the out-of-band buzz apart.
 //
 // The free chime (lane s13-elev, owner's message 42): the open-way chime of a way above, then of a way below, played as
-// a lesson names it (repeat-cue from up, from down), the safety layer alone; with the up/down direction on (above and
-// below), off (both from ahead: v0.13) and each again with no HRTF panner (its dry twin), so the measurer can take the
-// HRTF's own response per elevation and the notes' pitch.
+// a lesson names it (repeat-cue from up, from down), the safety layer alone and its direct sound alone (no reverb
+// return); with the up/down direction on (above and below), off (both from ahead: v0.13) and each again with no HRTF
+// panner (its dry twin), so the measurer can take the HRTF's own response per elevation and the notes' pitch.
 import type { FlightSample, LessonLayers, SonicObject, SonicPrefs, SonicWorld, SpeechOut, Vec3 } from '../../src/contract';
 import { createSonicEngine, type EngineTestHooks, type FlyBySoundEngine, type SoloPart } from '../../src/audio';
 import { defaultPrefs } from '../../src/prefs/prefs';
@@ -372,7 +372,9 @@ export async function render(req: RenderRequest): Promise<RenderResult> {
         ...(req.variant === 'seed-2' ? { noiseSeed: 2 } : {}),
         ...(req.variant === 'motor-raw-60' ? { motorBus: 'raw' as const } : {}),
         ...(req.variant === 'target-steady' ? { targetTone: 'steady' as const } : {}),
-        ...(req.variant === 'dry' || req.variant === 'direction-off-dry' ? { bypassPanner: true } : {})
+        ...(req.variant === 'dry' || req.variant === 'direction-off-dry' ? { bypassPanner: true } : {}),
+        // the free chime's direct sound alone: the reverb return mixes every direction alike, with the panner or without
+        ...(req.scenario === 'free-chime' ? { reverb: false } : {})
     };
     const speech = new ClockSpeech(req.clips);
     const engine = createSonicEngine({

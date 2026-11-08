@@ -142,6 +142,11 @@ export interface EngineTestHooks {
     readonly targetTone?: 'note' | 'steady';
     /** told the audio time of every target note the engine places (the rig's truth) */
     readonly onTargetNote?: (t0: number, hz: number, noteS: number) => void;
+    /**
+     * false: the reverb return leaves the mix (lane s13-elev's elevation check: the direct sound alone, so a render over
+     * its dry twin is the HRTF's response; the return is the same with the panner and without it)
+     */
+    readonly reverb?: boolean;
 }
 
 export interface EngineOptions {
@@ -466,7 +471,7 @@ export class FlyBySoundEngine implements SonicEngine {
         reverbOut.gain.value = 0.25;
         reverbIn.connect(convolver);
         convolver.connect(reverbOut);
-        reverbOut.connect(output.master);
+        reverbOut.connect(this.hooks.reverb === false ? mute : output.master);
 
         const layers = {} as Record<LayerId, LayerBus>;
         for (const id of LAYER_IDS) {

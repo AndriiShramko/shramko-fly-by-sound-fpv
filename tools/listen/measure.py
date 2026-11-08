@@ -501,9 +501,9 @@ def hrtf_response(d, job, dry_job, k):
     (the same notes with no panner, both ears alike), so the cue's own spectrum and pitch drop out."""
     b, direction = chime_play(d, job, k)
     dry, _ = chime_play(d, dry_job, k)
-    ref = third_octaves(dry[:, 0], ELEV_BANDS_HZ)
     out = []
     for ear in range(2):
+        ref = third_octaves(dry[:, ear], ELEV_BANDS_HZ)
         pw = third_octaves(b[:, ear], ELEV_BANDS_HZ)
         out.append([10 * math.log10(max(pw[i], 1e-30) / max(ref[i], 1e-30)) for i in range(len(ELEV_BANDS_HZ))])
     elev = None if direction is None else round(math.degrees(math.asin(max(-1.0, min(1.0, direction[1])))), 1)
