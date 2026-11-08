@@ -100,8 +100,11 @@ the code, then fixed with a test and its control (section "Review fixes" below):
   than 8 m in front of the gate, flying away from it). The leg begins at the gate passed last (a later lap's first gate:
   the course's last); a course in any order keeps v0.13's rule. `test/direction.test.ts` (23 new, the Winter Garden track
   as a fixture); the lane's first rule kept as the control `testHooks.lineUp 'no-progress'`
-- [ ] F2 Review E2: the lines of the chime above and below hold with the setting off, and the setting's description
-  says what it does
+- [x] F2 Review E2: the lines of the chime above and below hold with the setting off (the way by its pitch; from above
+  or below only in the sentence that names the setting; the corridor's line by pitch alone), and the setting's
+  description says what off does and that the ceiling and the floor come from above and below either way; four lines in
+  four languages, each measured with its local voice into its fixture; `test/named-sounds.test.ts` with the lane's
+  texts before the review as its control (`test/fixtures/lines-s13-elev-0dd3cd9.json`)
 - [ ] F3 Review E4: "the key" held by a Node test, a key rule in the words check with v0.13's key lines as its control,
   the percent records for Polish and Russian
 - [ ] F4 Review E5: VL-6 and VL-2 hear the floor, the ceiling and the chime with their breaths
@@ -525,6 +528,50 @@ Winter Garden at 1 m/s 4 m, the start turned round); the leg from the gate befor
 fails); a course in any order judged by legs (it fails); progress never needed (9 fail: the Winter Garden and the eight
 starts). The review's suggestion "carried 2 s past the gate, never told" holds up to 2 m/s (4 m); at 3 m/s, 6 m past
 ring 4 and 11 m from ring 5, the pilot is told as v0.13 told him.
+
+### F2, the lines with the setting off (review E2)
+
+Tried first: with `heightDirection: false` the planner places the chime of a way above or below at `FREE_DIRS` (ahead)
+and the floor and the ceiling at the sampler's direction either way (`test/elevation.test.ts`, "the floor and the
+ceiling"); the glossary, the corridor's and tunnel-gaps' intro.3 said "from above" for both, and the setting's
+description named the floor and the ceiling among what it moves. It holds.
+
+The lines now (English; Spanish, Polish and Russian say the same):
+
+- Glossary (`cue.safety.free.glossary`): "A pair of quick notes, again and again, while the way ahead is blocked. Equal
+  notes from left or right: the way is there. Like your height tone in a climb: above. The other way: below. With Sound
+  from above and below on, from there too."
+- The corridor's intro.3: by pitch alone, so it stays short where the fast path first names the chime: "When something
+  blocks the way ahead, a pair of quick notes repeats. Equal notes come from the free side, left or right. Notes moving
+  like your height tone in a climb: the way is above. The other way: below."
+- Tunnel-gaps' intro.3 (then the plays from up and from down): "If the way is above, the chime moves like your height
+  tone in a climb. If it is below, the other way. With Sound from above and below on, it comes from there too."
+- The setting's description: "On: a way above or below an obstacle and the target height note also come from there,
+  with a soft hiss good headphones can place. Off: from ahead, told by their pitch alone. The ceiling and floor come
+  from above and below either way."
+
+Where the way is and where the sound comes from are worded apart in every language ("the way is above" against "from
+above"; Russian "проход вверху" against "сверху", Polish "górą" against "z góry", Spanish "arriba" against "de arriba"),
+so the test can tell them: every line that names the chime tells the way above by the climb words, says "from above or
+below" only in the sentence that names the setting by its own name (`menu.setting.height-direction`), and never "from
+ahead"; the glossary and tunnel-gaps name it; the description's sentence that begins with the off value says "from
+ahead", and the sentence that names the ceiling says "either way". The speech lint's rules held the wording (no `;`, at
+most 240 characters), and the glossary keeps "again and again" (`test/events.test.ts`, s13-worlds review M8).
+
+Lengths, measured with each language's local voice by the method of `test/fixtures/measure-tts.ps1` (unchanged lines
+measured again for the check: the fixtures' values to the millisecond), seconds (before the review):
+
+| Line | English, David | Spanish, Helena | Polish, Paulina | Russian, Irina |
+|---|---|---|---|---|
+| glossary | 18.425 (18.07) | 18.02 (17.895) | 18.83 (17.035) | 23.34 (20.91) |
+| corridor intro.3 | 15.375 (16.035) | 15.695 (15.005) | 16.405 (16.82) | 19.49 (20.73) |
+| tunnel-gaps intro.3 | 11.705 (10.23) | 12.005 (9.375) | 12.96 (10.335) | 15.54 (12.425) |
+| the setting's description | 16.215 (13.275) | 16.255 (14.675) | 16.65 (14.015) | 20.885 (17.85) |
+
+None is longer than the runner waits (twice the estimate and a second); lines longer than their estimate: English 269
+of 385 (267), Spanish 254 (253), Polish 343 (342), Russian 471. Controls: the lane's texts before the review (each of
+the 16 fails, a fixture in the test), and by hand the English glossary put back, the Spanish tunnel-gaps line without
+the setting's name, the Russian description without "в любом случае": each fails, then restored.
 
 ## Needs from the simulator
 

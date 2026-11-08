@@ -1,0 +1,29 @@
+{
+  "about": "The lines that place the open-way chime above or below, and the setting's description, as lane s13-elev had them at 0dd3cd9 (before its review E2): the control of test/named-sounds.test.ts, each failing the rule the shipped lines meet.",
+  "lines": {
+    "en": {
+      "cue.safety.free.glossary": "A pair of quick notes, again and again, while something blocks the way ahead. Equal notes from left or right: the way is there. From above, notes moving like your height tone in a climb: the way is above. From below, the other way: below.",
+      "lesson.corridor.intro.3": "When something blocks the way ahead, you hear a pair of quick notes again and again. They come from where the way goes on: left, right, above or below. Above, they move like your height tone in a climb, below the other way.",
+      "lesson.tunnel-gaps.intro.3": "If the way is above, the chime comes from above and moves like your height tone in a climb. If it is below, the chime comes from below and moves the other way.",
+      "menu.setting.height-direction-what": "The way above or below an obstacle, the target height note, the ceiling and the floor also come from above or below you. Their pitch tells it either way. With good headphones you may hear the direction too."
+    },
+    "es": {
+      "cue.safety.free.glossary": "Un par de notas rápidas, una y otra vez, mientras algo bloquea el paso. Iguales a la izquierda o a la derecha: el paso está ahí. Desde arriba, notas que se mueven como tu tono de altura al subir: paso arriba. Desde abajo, al revés: abajo.",
+      "lesson.corridor.intro.3": "Cuando algo bloquea el paso, oyes un par de notas rápidas una y otra vez. Vienen de donde sigue el camino: izquierda, derecha, arriba o abajo. Arriba se mueven como tu tono de altura al subir, abajo al revés.",
+      "lesson.tunnel-gaps.intro.3": "Si el paso está arriba, el repique viene de arriba y se mueve como tu tono de altura al subir. Si está abajo, viene de abajo y se mueve al revés.",
+      "menu.setting.height-direction-what": "El paso por encima o por debajo de un obstáculo, la nota de la altura objetivo, el techo y el suelo también suenan desde arriba o desde abajo. Su tono lo dice de todos modos. Con buenos auriculares quizá oigas también la dirección."
+    },
+    "pl": {
+      "cue.safety.free.glossary": "Para szybkich nut, raz za razem, gdy coś blokuje drogę. Równe z lewej albo z prawej: przejście jest z tej strony. Z góry nuty idące jak twój dźwięk wysokości przy wznoszeniu: przejście górą. Z dołu, w drugą stronę: dołem.",
+      "lesson.corridor.intro.3": "Gdy coś blokuje drogę przed tobą, słyszysz dwie szybkie nuty, raz za razem. Dochodzą stamtąd, gdzie droga biegnie dalej: z lewej, z prawej, z góry albo z dołu. Z góry idą jak twój dźwięk wysokości przy wznoszeniu, z dołu odwrotnie.",
+      "lesson.tunnel-gaps.intro.3": "Jeśli przejście jest górą, sygnał dochodzi z góry i idzie jak twój dźwięk wysokości przy wznoszeniu. Jeśli dołem, dochodzi z dołu i idzie w drugą stronę.",
+      "menu.setting.height-direction-what": "Przejście nad albo pod przeszkodą, dźwięk docelowej wysokości, sufit i podłoga dochodzą też z góry albo z dołu. Wysokość dźwięku i tak to mówi. W dobrych słuchawkach usłyszysz może także kierunek."
+    },
+    "ru": {
+      "cue.safety.free.glossary": "Пара быстрых нот, снова и снова, пока впереди препятствие. Одинаковые слева или справа: проход с той стороны. Сверху ноты идут так же, как твой тон высоты при подъёме: проход сверху. Снизу и наоборот: проход снизу.",
+      "lesson.corridor.intro.3": "Когда что-то загораживает путь впереди, ты слышишь пару быстрых нот, снова и снова. Они звучат оттуда, где путь продолжается: слева, справа, сверху или снизу. Сверху они идут как твой тон высоты при подъёме, снизу наоборот.",
+      "lesson.tunnel-gaps.intro.3": "Если проход сверху, звон звучит сверху и идёт так же, как твой тон высоты при подъёме. Если снизу, он звучит снизу и идёт наоборот.",
+      "menu.setting.height-direction-what": "Проход над или под препятствием, звук нужной высоты, потолок и пол звучат ещё и сверху или снизу. Высота тона и так об этом говорит. В хороших наушниках ты, может быть, услышишь и направление."
+    }
+  }
+}

@@ -364,9 +364,10 @@ describe('tunnels (M41-21)', () => {
         expect(text).toMatch(/chime comes from the free side/);
         // by its contour, as the glossary says (lane s13-sound, review m2): a way above moves like the height tone in a
         // climb, which is lower notes for a pilot whose height polarity is up-lower; "high" would be wrong for him. And
-        // since lane s13-elev (owner's message 42) from above or below too, never "from ahead"
-        expect(text).toMatch(/the way is above, the chime comes from above and moves like your height tone in a climb/);
-        expect(text).toMatch(/below, the chime comes from below and moves the other way/);
+        // since lane s13-elev (owner's message 42) from above or below too, with the setting on (its review E2: with it off
+        // the chime comes from ahead, so the direction is said with the setting's name), never "from ahead"
+        expect(text).toMatch(/the way is above, the chime moves like your height tone in a climb\. If it is below, the other way\./);
+        expect(text).toMatch(/With Sound from above and below on, it comes from there too\./);
         expect(text).not.toMatch(/high chime/i);
         expect(text).not.toMatch(/ahead if it goes up or down|from ahead/i);
     });

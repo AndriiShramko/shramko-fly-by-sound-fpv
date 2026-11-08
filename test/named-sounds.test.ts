@@ -7,6 +7,7 @@
 // the lesson's layers, and asking of every watched sound it heard: did this lesson's intro, or an earlier one, name it?
 // And a line that names a sound plays it: the open-way chime in the corridor and in tunnel-gaps, and what the
 // corridor's checkpoints sound like now (the stage figure; the reset after a touch), not the checkpoint chime.
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import type { CueId, LessonDef, Locale } from '../src/contract';
 import { LOCALES } from '../src/contract';
@@ -107,23 +108,56 @@ describe('a sound heard while flying is named where the pilot first hears it (re
         expect(pillar.intro.map((x) => x.key)).toEqual(['lesson.walls-pillar.intro.1', 'lesson.walls-pillar.intro.2', 'lesson.walls-pillar.intro.3', 'lesson.walls-pillar.goal.1']);
     });
 
-    it('the glossary and the corridor say the chime of a way above or below comes from above or below, in every language, never from ahead (lane s13-elev)', () => {
-        const WORDS: Readonly<Record<Locale, { readonly above: RegExp; readonly below: RegExp; readonly corridor: RegExp; readonly ahead: RegExp }>> = {
-            en: { above: /From above, notes moving like your height tone in a climb/, below: /From below, the other way/, corridor: /left, right, above or below/, ahead: /from ahead|ahead if it goes up or down/i },
-            es: { above: /Desde arriba, notas que se mueven como tu tono de altura al subir/, below: /Desde abajo, al rev/, corridor: /izquierda, derecha, arriba o abajo/, ahead: /de frente/i },
-            pl: { above: /Z góry nuty idące jak twój dźwięk wysokości przy wznoszeniu/, below: /Z dołu, w drugą stronę/, corridor: /z góry albo z dołu/, ahead: /z przodu/i },
-            ru: { above: /Сверху ноты идут/, below: /Снизу и наоборот/, corridor: /сверху или снизу/, ahead: /спереди/i }
-        };
+    // Review E2 of lane s13-elev: with SonicPrefs.heightDirection off the chime of a way above or below comes from ahead
+    // (v0.13's placement), with it on from above or below. So a line that names that chime holds either way: the way above
+    // is told by its pitch (moving like the height tone in a climb), and wherever the line says the chime comes from above
+    // or below, it says so in the sentence that names the setting by its own name; never from ahead. The setting's
+    // description says what off does, and that the ceiling and the floor come from above and below either way (they do:
+    // test/elevation.test.ts). Control: the lane's lines before the review (test/fixtures/lines-s13-elev-0dd3cd9.json)
+    // each fail it.
+    const CHIME_LINES = ['cue.safety.free.glossary', 'lesson.corridor.intro.3', 'lesson.tunnel-gaps.intro.3'] as const;
+    const DESCRIPTION = 'menu.setting.height-direction-what';
+    const WORDS: Readonly<Record<Locale, { readonly climb: RegExp; readonly fromAboveBelow: RegExp; readonly ahead: RegExp; readonly ceiling: RegExp; readonly eitherWay: RegExp }>> = {
+        en: { climb: /like your height tone in a climb/i, fromAboveBelow: /from above|from below|come from [^.]*above or below/i, ahead: /from ahead/i, ceiling: /ceiling/i, eitherWay: /either way/i },
+        es: { climb: /como tu tono de altura al subir/i, fromAboveBelow: /\b(de|desde) (arriba|abajo)\b|vienen? de[^.]*\b(arriba|abajo)\b/i, ahead: /de frente/i, ceiling: /techo/i, eitherWay: /de todos modos/i },
+        pl: { climb: /jak twój dźwięk wysokości przy wznoszeniu/i, fromAboveBelow: /z (góry|dołu)/i, ahead: /z przodu/i, ceiling: /sufit/i, eitherWay: /i tak/i },
+        ru: { climb: /как твой тон высоты при подъёме/i, fromAboveBelow: /сверху|снизу/i, ahead: /спереди/i, ceiling: /потолок/i, eitherWay: /в любом случае/i }
+    };
+    const sentences = (text: string): string[] => text.split(/(?<=[.!?])\s+/);
+    const named = (locale: Locale, sentence: string): boolean => sentence.toLocaleLowerCase(locale).includes((DICTS[locale]['menu.setting.height-direction'] as string).toLocaleLowerCase(locale));
+    /** what is wrong with a chime line, [] when nothing */
+    const chimeProblems = (locale: Locale, text: string): string[] => {
+        const w = WORDS[locale];
+        const out: string[] = [];
+        if (!w.climb.test(text)) out.push('no pitch for the way above');
+        if (w.ahead.test(text)) out.push('from ahead');
+        for (const s of sentences(text)) if (w.fromAboveBelow.test(s) && !named(locale, s)) out.push(`from above or below without the setting: "${s}"`);
+        return out;
+    };
+    /** what is wrong with the setting's description, [] when nothing */
+    const descriptionProblems = (locale: Locale, text: string): string[] => {
+        const w = WORDS[locale];
+        const off = (DICTS[locale]['menu.value.off'] as string).toLocaleLowerCase(locale);
+        const out: string[] = [];
+        if (!sentences(text).some((s) => s.toLocaleLowerCase(locale).startsWith(off) && w.ahead.test(s))) out.push('not what off does (from ahead)');
+        for (const s of sentences(text)) if (w.ceiling.test(s) && !w.eitherWay.test(s)) out.push(`the ceiling and the floor, not either way: "${s}"`);
+        return out;
+    };
+
+    it('the lines of the chime above and below hold with the setting on and off: the way by its pitch, from above or below only with the setting\'s name, never from ahead (review E2 of lane s13-elev)', () => {
         for (const locale of LOCALES) {
-            const glossary = DICTS[locale]['cue.safety.free.glossary'] as string;
-            const corridor = DICTS[locale]['lesson.corridor.intro.3'] as string;
-            const w = WORDS[locale];
-            expect(glossary, locale).toMatch(w.above);
-            expect(glossary, locale).toMatch(w.below);
-            expect(glossary, locale).not.toMatch(w.ahead);
-            expect(corridor, locale).toMatch(w.corridor);
-            // its first sentence says what blocks the way ahead; the rest must not place the way above or below there
-            expect(corridor.replace(/^[^.]*\./, ''), locale).not.toMatch(w.ahead);
+            for (const key of CHIME_LINES) expect(chimeProblems(locale, DICTS[locale][key] as string), `${locale} ${key}`).toEqual([]);
+            // the glossary and tunnel-gaps tell the direction too, with the setting's name; the corridor tells the pitch alone
+            for (const key of ['cue.safety.free.glossary', 'lesson.tunnel-gaps.intro.3']) expect(sentences(DICTS[locale][key] as string).some((s) => named(locale, s)), `${locale} ${key}`).toBe(true);
+            expect(descriptionProblems(locale, DICTS[locale][DESCRIPTION] as string), locale).toEqual([]);
+        }
+    });
+
+    it('control: the lane\'s lines before the review fail it, each of them in every language', () => {
+        const before = (JSON.parse(readFileSync(new URL('./fixtures/lines-s13-elev-0dd3cd9.json', import.meta.url), 'utf8')) as { lines: Record<Locale, Record<string, string>> }).lines;
+        for (const locale of LOCALES) {
+            for (const key of CHIME_LINES) expect(chimeProblems(locale, before[locale][key] as string), `${locale} ${key}`).not.toEqual([]);
+            expect(descriptionProblems(locale, before[locale][DESCRIPTION] as string), locale).not.toEqual([]);
         }
     });
 

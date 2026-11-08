@@ -169,7 +169,7 @@ describe('control: the v0.12 timing fails the same check (a line ends at the ear
         }
     }, 120000);
 
-    it('the fact as measured: 267 of the 385 English lines take the Windows voice longer than the estimate', () => {
+    it('the fact as measured: 269 of the 385 English lines take the Windows voice longer than the estimate', () => {
         const en = JSON.parse(readFileSync(new URL('../locales/en.json', import.meta.url), 'utf8')) as Record<string, string>;
         const keys = Object.keys(david);
         const longer = keys.filter((k) => (david[k] as number) > 0.7 + 0.065 * (MEASURED_TEXT[k] ?? (en[k] as string)).length);
@@ -191,19 +191,26 @@ describe('control: the v0.12 timing fails the same check (a line ends at the ear
         // Then its words for the chime above and below (from above or below, not from ahead): the glossary's line 18.07 s
         // (longer than its estimate, 16.17 s), the corridor's intro.3 again 16.035 s (longer than 15.195 s; its text before
         // was not), tunnel-gaps' intro.3 10.23 s (11.035 s) and walls-pillar's new intro.3 6.41 s (7.655 s): 385, 267 longer.
-        expect(longer.length).toBe(267);
+        // Its review E2 made the lines hold with the setting off (the way by its pitch, from above or below only with the
+        // setting's name), measured again the same way: the glossary's line 18.425 s (its estimate 16.04 s), the
+        // corridor's intro.3 15.375 s (14.09 s), tunnel-gaps' intro.3 11.705 s (11.23 s) and the setting's description
+        // 16.215 s (15.845 s), the last two not longer than their estimates before: 385, 269 longer.
+        expect(longer.length).toBe(269);
         // and under v0.12 the first sound of the check plays partly under the line before it
         const s = schedule('ears-headphones', { speech: measuredSpeech(david), runner: v012 });
         const first = s.plays.find((p) => p.kind !== 'one-off');
         expect(speechOverlapMs(s, first?.start ?? 0, first?.end ?? 0)).toBeGreaterThan(500);
     });
 
-    it('the fact as measured in the other languages: 253 of the 471 Spanish lines, 342 of the 471 Polish and all 471 Russian take their voice longer than the estimate (lane s13-elev E2-1)', () => {
+    it('the fact as measured in the other languages: 254 of the 471 Spanish lines, 343 of the 471 Polish and all 471 Russian take their voice longer than the estimate (lane s13-elev E2-1)', () => {
         // Each fixture holds every line of its language that has no parameters, measured on 2026-11-08 with the
         // voice's text as it is in locales/ (no line reworded since, so no MEASURED_TEXT here). None is longer than
         // the runner's fallback (twice the estimate and a second): the longest against its estimate is 1.59 times it
         // in Spanish, 1.50 in Polish and 1.84 in Russian, whose voice is the slowest (a median 1.30 times the estimate).
-        const longerThanEstimate: Readonly<Record<Exclude<Locale, 'en'>, number>> = { es: 253, pl: 342, ru: 471 };
+        // The four lines review E2 of the lane reworded (the glossary's chime, the corridor's and tunnel-gaps' intro.3,
+        // the setting's description) were measured again the same way; tunnel-gaps' intro.3 is now longer than its
+        // estimate in Spanish (12.005 s, 11.815 s) and Polish (12.96 s, 12.075 s): 253 and 342 before.
+        const longerThanEstimate: Readonly<Record<Exclude<Locale, 'en'>, number>> = { es: 254, pl: 343, ru: 471 };
         for (const locale of OTHER_LOCALES) {
             const dict = JSON.parse(readFileSync(new URL(`../locales/${locale}.json`, import.meta.url), 'utf8')) as Record<string, string>;
             const seconds = OTHER_VOICES[locale].seconds;
