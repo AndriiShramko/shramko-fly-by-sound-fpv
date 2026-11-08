@@ -1,7 +1,7 @@
 {
   "what": "Fly by Sound audio proofs: the real engine rendered offline in headless Chromium, each check also run on an engine broken on purpose (control), which must fail",
   "run": "pnpm proof:audio",
-  "date": "2026-11-08T17:18:09.124Z",
+  "date": "2026-11-08T18:29:54.045Z",
   "browser": "156.0.8078.80",
   "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36",
   "sampleRate": 48000,
@@ -136,7 +136,7 @@
       "shipped": {
         "ok": true,
         "measured": {
-          "peak": 0.50055,
+          "peak": 0.50081,
           "peakDbfs": -6.01,
           "ceilingDbfs": -6
         }
@@ -144,8 +144,8 @@
       "control": {
         "ok": false,
         "measured": {
-          "peak": 2.9672,
-          "peakDbfs": 9.45,
+          "peak": 3.19622,
+          "peakDbfs": 10.09,
           "ceilingDbfs": -6
         },
         "broken": "compressor and soft clipper removed"
@@ -250,13 +250,13 @@
     },
     {
       "name": "voice-budget",
-      "claim": "at most 8 moving voices sound at once when 15 ask for one, the hazards keep theirs, and the engine makes no more than 8 + 24 panners",
+      "claim": "at most 8 moving voices sound at once when 15 ask for one, the hazards keep theirs, and the engine makes no more than 8 + 24 panners and one for the target note",
       "shipped": {
         "ok": true,
         "measured": {
           "movingPeak": 8,
           "budget": 8,
-          "pannersMade": 32,
+          "pannersMade": 33,
           "hazardsKeptTheirVoices": true
         }
       },
@@ -265,7 +265,7 @@
         "measured": {
           "movingPeak": 15,
           "budget": 8,
-          "pannersMade": 40,
+          "pannersMade": 41,
           "hazardsKeptTheirVoices": true
         },
         "broken": "the budget raised to 16 moving voices"
