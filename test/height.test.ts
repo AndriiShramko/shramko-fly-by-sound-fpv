@@ -245,6 +245,11 @@ describe('the target tone', () => {
             expect(t.noteS, theme.id).toBeLessThanOrEqual(t.periodS / 3);
             expect(Math.abs(t.gainDb), theme.id).toBeLessThanOrEqual(3);
         }
+        // a theme with the longest note and the shortest period the schema allows: the note is held to a third of it
+        const soft = getBuiltinTheme('soft');
+        const tight: ThemeDef = { ...soft, layers: { ...soft.layers, height: { ...soft.layers.height, params: { ...soft.layers.height.params, targetNoteMs: 600, targetPeriodMs: 600 } } } };
+        const t = planAt(new CuePlanner({ theme: tight, layers: HEIGHT_ONLY([2, 3]) }), 2.5, null, null).target!;
+        expect(t.noteS).toBeCloseTo(0.2, 9);
     });
 });
 

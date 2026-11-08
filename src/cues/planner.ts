@@ -687,7 +687,9 @@ export class CuePlanner {
             bandSoftM: p['bandSoftM'] as number,
             targetDb: (p['targetDb'] as number | undefined) ?? 0,
             targetPeriodS: ((p['targetPeriodMs'] as number | undefined) ?? 1250) / 1000,
-            targetNoteS: ((p['targetNoteMs'] as number | undefined) ?? 280) / 1000
+            // a note never takes more than a third of its period, so the height tone is heard between two notes and the
+            // engine's swaps around them never run into each other (a theme of the Sound Lab may set any pair in range)
+            targetNoteS: Math.min((p['targetNoteMs'] as number | undefined) ?? 280, ((p['targetPeriodMs'] as number | undefined) ?? 1250) / 3) / 1000
         };
     }
 
