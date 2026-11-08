@@ -113,7 +113,7 @@ Checks on the last commit: `pnpm typecheck` clean; `pnpm test` 26 files, 674 tes
 languages, 425 keys) and the layout check (0 problems), run as tools through Vite's loader as `tools/run-tool.mjs`
 does (`node tools/run-tool.mjs locale-lint` and `check-layout` need the `main()` that s13-lessons adds to those
 tools; inside `pnpm test` they run as `test/locales.test.ts` and `test/layout.test.ts`); `pnpm proof:audio` 3 files,
-9 proofs, every broken control failing; `pnpm listen` 8 of 8 checks valid and passing, fresh for inputs fd752e0f7bf9.
+9 proofs, every broken control failing; `pnpm listen` 8 of 8 checks valid and passing, fresh for inputs ca2ea78c02fb.
 Trial merges: with s13-lessons see "Needs from other lanes"; with s13-worlds (fef8869) no conflict.
 
 Left open, with reasons:
@@ -502,12 +502,12 @@ lock directory; the driver has a default).
   lockfile); renders cached in `SHRAMKO_LISTEN_CACHE/renders/<hash>/`. Nothing changed and the last run passed:
   nothing runs.
 - The checks, each valid only when its control fails (final run after the review fixes, 2026-11-08, Chrome
-  156.0.8078.80, inputs fd752e0f7bf9):
+  156.0.8078.80, inputs ca2ea78c02fb):
 
 | Check | Measured | Control |
 |---|---|---|
 | VL-0a two renders the same | max difference 1.8e-7 (float32 rounding; limit 1e-6) | noise seed 2: 0.045 |
-| VL-0b stems sum to the pre-chain mix | residual -130.7 dB (limit -90) | a stem left out: -3.0 dB |
+| VL-0b stems sum to the pre-chain mix | residual -132.1 dB (limit -90) | a stem left out: -3.0 dB |
 | height pitch track continuous | largest change 3.7 cents per 10 ms in the climb (limit 25), 7.8 cents median behind the plan (the glide's smoothing) | v0.12 stepped tone: 118.7 cents |
 | hazard onset before impact | 2.475, 2.493, 2.475 s at 1, 3, 5 m/s (at least 2) | distance-only rule at 5 m/s: 1.18 s |
 | voice over the mix | soft 4.76, clear 4.66, race 4.64 LU (3 to 6) | volume 1: 11.3, 7.9, 10.4 LU |
