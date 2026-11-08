@@ -58,21 +58,28 @@ describe('the word errors of a transcript', () => {
 });
 
 describe('what a voice is known to say otherwise', () => {
-    it('is put back only in its own line and language', () => {
+    it('is put back only in its own line and language, and only where the line says those words', () => {
+        const ref = words('Fly by Sound', 'ru');
         const records = [{ locale: 'ru', key: 'app.name', said: 'Fly by', heard: 'F.L.Y.B.Y.', why: 'test' }] as const;
-        expect(putBack(words('F.L.Y.B.Y. Sound', 'ru'), 'ru', 'app.name', records)).toEqual(['fly', 'by', 'sound']);
-        expect(putBack(words('F.L.Y.B.Y. Sound', 'ru'), 'ru', 'menu.title', records)).toEqual(['f', 'l', 'y', 'b', 'y', 'sound']);
-        expect(putBack(words('F.L.Y.B.Y. Sound', 'pl'), 'pl', 'app.name', records)).toEqual(['f', 'l', 'y', 'b', 'y', 'sound']);
+        expect(putBack(words('F.L.Y.B.Y. Sound', 'ru'), ref, 'ru', 'app.name', records)).toEqual(['fly', 'by', 'sound']);
+        expect(putBack(words('F.L.Y.B.Y. Sound', 'ru'), ref, 'ru', 'menu.title', records)).toEqual(['f', 'l', 'y', 'b', 'y', 'sound']);
+        expect(putBack(words('F.L.Y.B.Y. Sound', 'pl'), ref, 'pl', 'app.name', records)).toEqual(['f', 'l', 'y', 'b', 'y', 'sound']);
         expect(score({ locale: 'ru', key: 'app.name', text: 'Fly by Sound' }, 'v', 'F.L.Y.B.Y. Sound', records).rate).toBe(0);
         expect(score({ locale: 'ru', key: 'app.name', text: 'Fly by Sound' }, 'v', 'F.L.Y.B.Y. Sound', []).rate).toBe(1);
+        // a habit of the voice ('*') is put back in any line of its language whose text has the words, and no other
+        const habit = [{ locale: 'en', key: '*', said: 'height tone', heard: 'high tone', why: 'test' }] as const;
+        expect(score({ locale: 'en', key: 'layer.height.name', text: 'Height tone' }, 'v', 'High tone.', habit).rate).toBe(0);
+        expect(score({ locale: 'en', key: 'x', text: 'A high tone' }, 'v', 'A high tone', habit).rate).toBe(0);
+        expect(score({ locale: 'en', key: 'x', text: 'A low tone' }, 'v', 'A high tone', habit).rate).toBeCloseTo(1 / 3, 6);
     });
 
-    it('names a line that exists, in words the line has', () => {
+    it('names a line that exists, in words the line has, and says why', () => {
+        const lines = packageLines();
         for (const h of HEARD) {
-            const text = DICTS[h.locale][h.key];
-            expect(text, `${h.locale} ${h.key}`).toBeDefined();
-            const line = packageLines().find((l) => l.locale === h.locale && l.key === h.key);
-            expect(words(line?.text ?? '', h.locale).join(' '), `${h.locale} ${h.key}`).toContain(words(h.said, h.locale).join(' '));
+            const said = words(h.said, h.locale).join(' ');
+            const mine = lines.filter((l) => l.locale === h.locale && (h.key === '*' || l.key === h.key));
+            expect(mine.length, `${h.locale} ${h.key}`).toBeGreaterThan(0);
+            expect(mine.some((l) => ` ${words(l.text, h.locale).join(' ')} `.includes(` ${said} `)), `${h.locale} ${h.key}: ${h.said}`).toBe(true);
             expect(h.why.length, `${h.locale} ${h.key}`).toBeGreaterThan(10);
         }
     });
@@ -99,3 +106,4 @@ describe('the lines of the check', () => {
         }
     });
 });
+

@@ -73,8 +73,11 @@ and below change with it. In the same lane: "wrong way" between gates, which the
   than its estimate (254, not 253), one Russian glossary line at 60 s (sounds under speech in ears-glossary), one
   Russian line missing from its fixture
 - [ ] E2-2 Round trip, in progress: the tool is in (`pnpm listen:words`: `tools/listen-words.ts`, `tools/listen/words.py`,
-  `test/words.test.ts`; faster-whisper 1.2.1 in the listener's environment, `tools/listen/requirements.txt`); the run,
-  the bounds and the lines over them next
+  `test/words.test.ts`; faster-whisper 1.2.1 in the listener's environment, `tools/listen/requirements.txt`). First
+  run (2104 lines, 2517 clips with the control): K's help lost the key's name in Spanish, Polish and Russian ("Pulsa
+  T para" heard "Púlsate para", "Pulsa G" "Pulsaje", "Naciśnij I, aby" "Naciśnij, aby", "Нажми T" "Нажмите", "Нажми U"
+  "Нажми её"), so the 17 lines of each that name a key now say "the key" first (la tecla, klawisz, клавишу); the
+  transcriber moved to `transcribe()` with timestamps (below). The second run, the records and the bounds next
 - [ ] E2-3 (the next agent's)
 - [ ] E2-4 (the next agent's)
 
@@ -268,6 +271,32 @@ written in the English fixture's form (UTF-8 without a byte order mark, two-spac
 
 So every lesson's timing holds in every language with its own voice (no sound under speech, every question after its
 sound), and the Russian voice, the slowest, makes the glossary lesson about a minute and a half longer than in English.
+
+### E2-2, the round trip (`pnpm listen:words`)
+
+How (`tools/listen-words.ts`, `tools/listen/words.py`):
+
+- Lines: all 526 keys of each locale. A line with parameters is said as a host says it: K's help with the simulator's
+  keys (T record, U send, I status, Z repeat, G glossary, R reset, N next; Enter, Escape), a lesson's title, a cue's
+  name, small numbers (`sampleParams`).
+- Voices: each language's desktop voice (David, Helena, Paulina, Irina; `tools/listen/tts/sapi-clips.ps1`, 48 kHz),
+  the clips kept in `<cache>/speech/sapi-<voice>/` by voice and text.
+- Whisper large-v3 (faster-whisper 1.2.1, CTranslate2 4.8.5, float16 on the GPU) through its own `transcribe()`, as the
+  design's speech probe ran it: in the line's own language, beam 5 at temperature 0, with timestamps, nothing carried
+  from clip to clip, no voice-activity filter; one voice and language at a time, each under the GPU lock (about 500
+  clips, 4 to 5 minutes), the lock left free for 25 s between them. A first run decoded 16 clips at a time without
+  timestamps (the same text as `transcribe()` one by one on 70 clips), but without timestamps Whisper stops early now
+  and then: David's "Each one leaves a single way past it: above, below, left or right." came back without its last
+  four words, which `transcribe()` with timestamps hears (and so does the clip's last 4 s alone). The model sits in
+  `<cache>/whisper/` (fetched at a pinned revision when missing); faster-whisper and its dependencies were added to the
+  listener's environment and to `tools/listen/requirements.txt`.
+- Word error rate per line: substitutions, deletions and insertions over the line's words, after normalising case and
+  punctuation (lower case, every character that is not a letter, a mark or a digit a space, apostrophes dropped, the
+  Russian yo as ye). Two words heard as one or one as two are no error ("Fly by" written "Flyby"); a number matches one
+  to three words of the transcript, because the voices say numbers in their own words (Polish "Bramka 2 z 5" is said
+  "Bramka druga z pięciu"), and costs one when nothing is heard for it.
+- Evidence: `evidence/listen/VL-4-words.json`, keyed by the hash of the locales, the code that fills the lines, the
+  clip maker, the transcriber and the driver; every line heard with an error is in it with its transcript.
 
 ## Needs from the simulator
 

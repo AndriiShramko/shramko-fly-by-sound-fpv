@@ -21,6 +21,7 @@ Shramko Fly by Sound: the sound engine, lessons and session format that let blin
 | `lessons/`, `themes/` | Lessons (28; `paths.json`: the full path and a fast path of 8) and themes as JSON. |
 | `tools/` | Report tool, layout check, locale lint (run through `node tools/run-tool.mjs`). |
 | `tools/listen.ts`, `tools/listen/`, `test-audio/page/listen*.ts` | The virtual listener's first rig: scripted flights rendered through the real engine, stems, truth, measurements (`measure.py`), clip maker. |
+| `tools/listen-words.ts`, `tools/listen/words.py` | The words check (`pnpm listen:words`): every line of the four locales said by the local Windows voice of its language, transcribed by Whisper large-v3, word error rate per line against one bound per language (`evidence/listen/VL-4-words.json`); `--sim` runs it on the simulator's Fly by Sound lines. |
 | `evidence/` | Audio proofs, demo check, and `evidence/listen/` (the rig's checks, keyed by the hash of their inputs). |
 | `demo/` | Stand-alone demo and Sound Lab. |
 | `test/`, `test-audio/` | Node tests; browser proofs in headless Chrome. |
@@ -50,4 +51,8 @@ pnpm typecheck
 pnpm test          # Node tests
 pnpm proof:audio   # headless Chrome; set GPU_LOCK to a lock directory if your machine shares the GPU
 pnpm listen        # the virtual listener's checks (needs SHRAMKO_LISTEN_PY; renders cached in SHRAMKO_LISTEN_CACHE)
+pnpm listen:words  # when a line changed: the words check (Windows voices of en-US, es-ES, pl-PL, ru-RU; Whisper on the GPU)
 ```
+
+A new or reworded line is measured with its language's voice into its length fixture (`test/fixtures/measure-tts.ps1`,
+`tts-<lang>-<voice>.json`) and heard again by `pnpm listen:words`.

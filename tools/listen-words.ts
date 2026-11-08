@@ -11,8 +11,8 @@
 // 2. Clips: each line said by its language's voice (VOICES) with tools/listen/tts/sapi-clips.ps1, kept in the cache by
 //    voice and text, as the rig keeps its speech clips (<cache>/speech/sapi-<voice>/).
 // 3. Transcripts: tools/listen/words.py in the listener's Python environment (SHRAMKO_LISTEN_PY), Whisper on the GPU,
-//    while this process holds the GPU lock (GPU_LOCK); kept in the cache by clip, language and transcriber
-//    (<cache>/words/).
+//    one voice and language at a time, each while this process holds the GPU lock (GPU_LOCK); kept in the cache by
+//    clip, language and transcriber (<cache>/words/).
 // 4. Word error rate per line (wordErrors), with the words a voice is known to say otherwise put back (HEARD); one
 //    bound per language (BOUNDS). The control: the Russian lines said by the English voice must fail the Russian bound.
 // 5. Evidence: evidence/listen/VL-4-words.json, keyed by the hash of every input. With nothing changed since the last
@@ -104,7 +104,8 @@ export function wordErrors(ref: readonly string[], hyp: readonly string[]): Word
 /**
  * A word a voice is known to say otherwise than the text (or that Whisper writes otherwise for a reason that is not the
  * line's), found by this check and recorded with why; the check puts the text's words back before it counts errors.
- * Only for a line whose text is right: a wrong text is fixed in locales/.
+ * Only for a line whose text is right: a wrong text is fixed in locales/. `key` '*' is every line of the language that
+ * has the words (a voice's habit); a record is used only where the line's text has its `said` words.
  */
 export interface Heard {
     readonly locale: Locale;
@@ -118,13 +119,19 @@ export interface Heard {
 
 export const HEARD: readonly Heard[] = [];
 
-/** The transcript's words with every recorded `heard` of this line replaced by what was `said`. */
-export function putBack(hyp: readonly string[], locale: Locale, key: string, records: readonly Heard[] = HEARD): string[] {
+const contains = (list: readonly string[], part: readonly string[]): number => {
+    for (let i = 0; i + part.length <= list.length && part.length > 0; i++) if (part.every((w, k) => list[i + k] === w)) return i;
+    return -1;
+};
+
+/** The transcript's words with every recorded `heard` of this line (whose text has the `said` words) replaced by them. */
+export function putBack(hyp: readonly string[], ref: readonly string[], locale: Locale, key: string, records: readonly Heard[] = HEARD): string[] {
     let out = [...hyp];
     for (const h of records) {
-        if (h.locale !== locale || h.key !== key) continue;
+        if (h.locale !== locale || (h.key !== key && h.key !== '*')) continue;
         const heard = words(h.heard, locale);
         const said = words(h.said, locale);
+        if (contains(ref, said) < 0) continue;
         for (let i = 0; i + heard.length <= out.length && heard.length > 0; i++) {
             if (heard.every((w, k) => out[i + k] === w)) {
                 out = [...out.slice(0, i), ...said, ...out.slice(i + heard.length)];
@@ -295,7 +302,7 @@ export function score(line: Line, voice: string, hyp: string, records: readonly 
     const ref = words(line.text, line.locale);
     const heard = words(hyp, line.locale);
     const raw = wordErrors(ref, heard);
-    const e = wordErrors(ref, putBack(heard, line.locale, line.key, records));
+    const e = wordErrors(ref, putBack(heard, ref, line.locale, line.key, records));
     return { ...line, voice, hyp, rawRate: raw.rate, rate: e.rate, errors: e.errors, words: e.words };
 }
 
@@ -416,30 +423,37 @@ async function transcribe(cache: string, py: string, lockPath: string, jobs: rea
         return { path, map };
     };
     const clipOf = (job: Job): string => basename(job.wav);
-    const missing = jobs.filter((j) => storeOf(j).map[clipOf(j)] === undefined);
-    if (missing.length > 0) {
-        const items = [...new Map(missing.map((j) => [`${voiceSlug(j.voice)}-${j.line.locale}/${clipOf(j)}`, { id: `${voiceSlug(j.voice)}-${j.line.locale}/${clipOf(j)}`, lang: j.line.locale, wav: j.wav }])).values()];
+    // the missing clips by store (a voice in a language), each store transcribed under a lock of its own, so that the
+    // GPU is free for others between them (a store is about 500 clips, 4 to 5 minutes)
+    const groups = new Map<string, Map<string, { readonly id: string; readonly lang: Locale; readonly wav: string }>>();
+    for (const j of jobs) {
+        const { path, map } = storeOf(j);
+        if (map[clipOf(j)] !== undefined) continue;
+        const group = groups.get(path) ?? new Map();
+        group.set(clipOf(j), { id: clipOf(j), lang: j.line.locale, wav: j.wav });
+        groups.set(path, group);
+    }
+    let first = true;
+    for (const [path, group] of groups) {
+        if (!first) await sleep(25_000);
+        first = false;
+        const items = [...group.values()];
         const itemsPath = join(dir, 'items.json');
         const outPath = join(dir, 'heard.json');
         writeFileSync(itemsPath, JSON.stringify(items));
-        log(`  transcribing ${items.length} clips with Whisper large-v3 (waiting for the GPU lock ${lockPath})`);
+        log(`  transcribing ${items.length} clips of ${basename(path, '.json')} with Whisper large-v3 (taking the GPU lock ${lockPath})`);
         const release = await takeLock(lockPath);
         try {
             const r = spawnSync(py, ['-X', 'utf8', join(ROOT, 'tools', 'listen', 'words.py'), '--items', itemsPath, '--model', join(cache, 'whisper', 'faster-whisper-large-v3-edaa852'), '--out', outPath], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
             if (r.status !== 0) throw new Error(`the transcriber failed: ${r.stderr || r.stdout}`);
-            log(r.stdout.trim().split('\n').slice(-1).join(''));
+            log(`  ${r.stdout.trim().split('\n').slice(-1).join('')}`);
         } finally {
             release();
         }
         const got = JSON.parse(readFileSync(outPath, 'utf8')) as { items: { id: string; hyp: string }[] };
-        for (const it of got.items) {
-            const [store, clip] = it.id.split('/') as [string, string];
-            const path = join(dir, `${store}.json`);
-            const map = stores.get(path) ?? {};
-            map[clip] = it.hyp;
-            stores.set(path, map);
-        }
-        for (const [path, map] of stores) writeFileSync(path, `${JSON.stringify(map, null, 1)}\n`);
+        const map = stores.get(path) as Record<string, string>;
+        for (const it of got.items) map[it.id] = it.hyp;
+        writeFileSync(path, `${JSON.stringify(map, null, 1)}\n`);
     }
     const heard = new Map<Job, string>();
     for (const j of jobs) {
