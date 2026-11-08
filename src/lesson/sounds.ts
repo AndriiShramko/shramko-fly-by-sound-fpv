@@ -16,17 +16,22 @@ export const REPEAT_PLAY_S = 2.5;
 /**
  * One play of each one-off sound (a ping, a note, a chime, the fanfare: src/cues/planner.ts plays them as notes),
  * s: how long its notes last in every built-in theme, rounded up (measured 2026-11-08: touch 0.08 to 0.12, reset
- * 0.34, gate note 0.20 to 0.32, lap 0.88 to 1.08, checkpoint 0.48, fanfare 1.19). The next play comes REPEAT_GAP_S
+ * 0.34, gate note 0.20 to 0.32, lap 0.88 to 1.08, checkpoint 0.48, fanfare 1.19; the event sounds of v0.13, the
+ * same in every theme: wrong way 0.63, wrong side 0.54, praise 0.46, stage 0.96). The next play comes REPEAT_GAP_S
  * after the slot, so about a second after the sound ends (review R2: one slot of 1.2 s left a ping 2.1 s of
- * silence). test/repeat-plays.test.ts holds this table to the planner in every theme.
+ * silence). test/repeat-plays.test.ts holds this table to the planner in every theme, calm or not, for every cue.
  */
 export const ONE_OFF_PLAY_S: Readonly<Record<CueId, number>> = {
     'safety.touch': 0.2,
     'safety.reset': 0.4,
+    'safety.wrong-way': 0.65,
+    'safety.wrong-side': 0.55,
     'target.note': 0.4,
     'target.lap': 1.1,
     'target.checkpoint': 0.5,
-    'target.fanfare': 1.2
+    'target.fanfare': 1.2,
+    'target.praise': 0.5,
+    'target.stage': 1.0
 };
 /** A narrated scene of module 0 lasts this long, s; a scene of the game a little less. */
 export const NARRATED_SCENE_S = 4;

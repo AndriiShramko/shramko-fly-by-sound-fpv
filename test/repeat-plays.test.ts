@@ -14,8 +14,10 @@
 // What this cannot show: how the plays sound at the ear (lane s13-sound's rig renders the audio) or how they feel.
 import { describe, expect, it } from 'vitest';
 import type { CueEvent, FlightSample, LessonDef } from '../src/contract';
-import { CuePlanner } from '../src/cues';
-import { createLessonRunner, getLesson, ONE_OFF_CUES, REPEAT_GAP_S, REPEAT_PLAYS, SHIPPED_LESSON_IDS } from '../src/lesson';
+import { CuePlanner, REPEAT_PLAY_RANGE_S } from '../src/cues';
+import { CUE_IDS } from '../src/i18n';
+import { createLessonRunner, getLesson, ONE_OFF_CUES, ONE_OFF_PLAY_S, REPEAT_GAP_S, REPEAT_PLAYS, SHIPPED_LESSON_IDS } from '../src/lesson';
+import { defaultPrefs } from '../src/prefs';
 import { BUILTIN_THEME_IDS, getBuiltinTheme, type BuiltinThemeId } from '../src/theme';
 
 const FRAME_MS = 20;
@@ -125,4 +127,33 @@ describe('the planner sounds every play of a named sound for as long as the runn
         expect(issues.some((x) => /2\.[5-7]\d s of silence before the next play/.test(x))).toBe(true);
         expect(playIssues(renderPlays('hover-height', 'soft', short)).length).toBeGreaterThan(0);
     }, 120000);
+});
+
+describe('the one-off play table (ONE_OFF_PLAY_S) is the planner\'s, for every cue, named by a lesson or not', () => {
+    it('every cue the planner plays as notes has a slot, never shorter than its notes and with its next play within 2 s of the last one, in every built-in theme, calm or not; a continuous cue has none', () => {
+        const [, longest] = REPEAT_PLAY_RANGE_S;
+        const issues: string[] = [];
+        for (const cue of CUE_IDS) {
+            for (const theme of BUILTIN_THEME_IDS) {
+                for (const calm of [false, true]) {
+                    const planner = new CuePlanner({ theme: getBuiltinTheme(theme), prefs: { ...defaultPrefs(), calm } });
+                    // the longest play the planner makes: a one-off cue's notes are never cut, a continuous cue gives none
+                    const notes = planner.cue({ kind: 'repeat-cue', cue, dir: null, index: 0, of: REPEAT_PLAYS, durS: longest }, 0);
+                    const slot = ONE_OFF_PLAY_S[cue];
+                    const where = `${cue}, ${theme}${calm ? ', calm' : ''}`;
+                    if (notes.length === 0) {
+                        if (slot !== undefined) issues.push(`${where}: a continuous cue in the one-off table`);
+                        continue;
+                    }
+                    const end = Math.max(...notes.map((n) => n.atS + n.durS));
+                    if (slot === undefined) issues.push(`${where}: notes end at ${end.toFixed(2)} s, no slot (a lesson naming it would give it ${REPEAT_PLAYS} plays of the continuous length)`);
+                    else if (slot < end) issues.push(`${where}: notes end at ${end.toFixed(2)} s, the slot is ${slot} s (the play is cut)`);
+                    else if (slot - end + REPEAT_GAP_S > 2) issues.push(`${where}: ${(slot - end + REPEAT_GAP_S).toFixed(2)} s of silence before the next play`);
+                }
+            }
+        }
+        expect(issues).toEqual([]);
+        // s13-sound's one-off cues are in the table with the lengths of its figures (0.63, 0.54, 0.46, 0.96 s)
+        for (const cue of ['safety.wrong-way', 'safety.wrong-side', 'target.praise', 'target.stage']) expect(ONE_OFF_CUES, cue).toContain(cue);
+    });
 });

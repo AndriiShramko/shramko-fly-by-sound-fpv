@@ -27,7 +27,12 @@ and the corridor's goal (s13-lessons' "For the lead's merge" item 2, review R5) 
   inside its slot by itself), its control failed (0 plays cut short, at least 30 wanted: the 0.9 s plays it asks
   for were not short any more), and `test/events.test.ts` failed (a fanfare given a 0.5 s play lasted 1.19 s). The
   test's header and the control's title now say so; nothing else changed.
-- [ ] 4c. `ONE_OFF_PLAY_S` gets the lengths of s13-sound's one-off cues
+- [x] 4c. `ONE_OFF_PLAY_S` (`src/lesson/sounds.ts`) gets s13-sound's one-off cues: `safety.wrong-way` 0.65 s,
+  `safety.wrong-side` 0.55, `target.praise` 0.5, `target.stage` 1.0 (their notes end at 0.63, 0.54, 0.46 and 0.96 s
+  in every built-in theme, calm or not). No lesson names them yet, so a new test in `test/repeat-plays.test.ts` holds
+  the whole table to the planner for every cue of `CUE_IDS`: a cue played as notes has a slot no shorter than its
+  notes and its next play within 2 s, a continuous cue has none. Before the four entries it failed on exactly those
+  four cues (24 cases: 3 themes, calm or not); with them it passes, and the full suite is 754 of 754.
 - [ ] 4d. The replay's verdict "recorded with an older build" (not FAIL), its negative control, `test/replay-v012.test.ts`
 - [ ] 4e. The lines of walls-hall and the corridor say what the knocks of v0.13 mean (four languages)
 - [ ] 4f. `docs/design/virtual-listener.md` section 14 without the build machine's folders
