@@ -1,9 +1,9 @@
 {
  "format": "shramko-listen-evidence/1",
- "key": "67e227c5d9adff93f5ac7e13c6b53da5f09e3cdd1ea8ad7320d23b57d4663b13",
+ "key": "418eab75ba5de7e0556c144cbdebaf6133b8d137d38e74fed4f9583d729a3a22",
  "inputs": {
-  "hash": "67e227c5d9adff93f5ac7e13c6b53da5f09e3cdd1ea8ad7320d23b57d4663b13",
-  "files": 112,
+  "hash": "418eab75ba5de7e0556c144cbdebaf6133b8d137d38e74fed4f9583d729a3a22",
+  "files": 125,
   "driver": 2,
   "measure": 2,
   "chrome": "156.0.8078.80",
@@ -15,7 +15,7 @@
    "pyloudnorm": "0.2.0"
   }
  },
- "date": "2026-11-08T14:33:29.301Z",
+ "date": "2026-11-08T15:38:45.244Z",
  "id": "VL-6-speech",
  "claim": "the voice (all its lines, at the engine's utterance volume, the Windows desktop voice) is 3 to 6 LU over the flight's mix, in every theme (control: the v0.12 utterance volume 1)",
  "thresholds": {

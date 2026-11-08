@@ -245,12 +245,23 @@ Steps 7 to 11, lane s13-worlds:
   typecheck was not clean from item g's commit (7a60194) to this one (04f1b9c): item g's new test compared
   `p.run.phase` with 'passed' after the loop had narrowed it (TS2367; vitest does not typecheck). Fixed in the next
   commit (the phase read through a function, as the other tests do); the typecheck is clean since.
-- [ ] 9. Full checks on the final code with fresh evidence
+- [x] 9. Full checks on the final code with fresh evidence, all passing (the code of a393b74; the commits after it hold
+  only evidence and documents, which no check is keyed by):
   - part 1 (a393b74): `pnpm typecheck` clean (three projects, 10.6 s); `pnpm test` 44 files, 1042 tests (17.1 s);
     `node tools/run-tool.mjs locale-lint` 0 problems (4 languages, 521 keys); `node tools/run-tool.mjs check-layout` 0
     problems; `GPU_LOCK=C:/dev/.gpu-lock pnpm proof:audio` 3 files, 9 proofs, 48.5 s (headless Chrome 156.0.8078.80;
     the five audio proofs pass and their broken controls fail, the demo's keyboard-only check passes; both evidence
     files rewritten: their dates, and the demo flight's turn 60 degrees, was 61)
+  - part 2: `pnpm listen` with `SHRAMKO_LISTEN_PY` (`tools/listen/requirements.txt`'s environment), `SHRAMKO_LISTEN_CACHE`
+    on the data disk and `GPU_LOCK`: 24 of 24 renders, 8 of 8 checks valid and passing, 88.7 s, fresh for inputs
+    418eab75ba5d (125 files; step 5's run was 67e227c5d9ad, 112 files); a second run says the evidence is fresh,
+    nothing to run. Its numbers are step 5's but VL-0a's (1.8e-7, was 2.4e-7): VL-0b residual -131.1 dB (a stem left
+    out: -3.0 dB); VL-pitch largest step 3.7 cents per 10 ms (v0.12's stepped tone 118.7); VL-onset 2.475, 2.493,
+    2.475 s at 1, 3, 5 m/s (distance only at 5 m/s: 1.18 s); VL-6-speech soft 4.76, clear 4.66, race 4.64 LU (volume
+    1: 11.26, 7.91, 10.39); VL-6-peak -6.99, -3.74, -6.26 dBTP (volume 1: -0.52, -0.51, -0.49); VL-2-motor worst 15.0
+    dB (Air65, shape; Pavo20 30.3, Meteor65 20.1, Pavo Pico 22.3, 5-inch 24.2; the motor 11.0 to 12.1 LU under the
+    cues, 14.05 for the 5-inch; raw motor at 60 %: shape 0.9 dB); VL-3-height in the band at most 1.1 % (2 to 70 Hz),
+    out of it a 43 % buzz (the steady pair of before review M2: 44 %).
 - [ ] 10. The lanes' notes as public dev notes (`docs/dev/`); no build-machine folder in `docs/`, README, AGENTS, llms
   - part 1, before step 9 (done): the four comments in `src/` and `test/` that named a lane's note now name its public
     path (`docs/dev/status-v0.13-lessons.md`, `status-v0.13-worlds.md`), so the code step 9 checks is the final code
