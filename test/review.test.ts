@@ -64,7 +64,7 @@ describe('review D2: a key the pilot presses cuts the speech in progress', () =>
         expect(phaseBetween).toBe(true);
         run.next(t);
         const after = says(run.takeActions());
-        expect(after[0]?.line.key).toBe('fly.attempt');
+        expect(after[0]?.line.key).toBe('fly.go'); // the attempt's number was said with its count ("Attempt 1. Counted 0 of 3.")
         expect(after[0]?.interrupt).toBe(true);
     });
 

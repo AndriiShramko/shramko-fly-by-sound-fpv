@@ -209,6 +209,9 @@ export const FREE_KEYS = [
     'status.recording-on',
     'status.recording-off',
     'status.lesson',
+    // the progress view as a line (LessonSession.statusLine): lesson k of n, step, attempt, count
+    'status.progress',
+    'status.progress-step',
     'status.none',
     'status.theme',
     // in flight
@@ -227,6 +230,8 @@ export const FREE_KEYS = [
     'fly.time',
     'fly.best-time',
     'fly.touches',
+    // after every attempt that does not pass the lesson
+    'fly.progress',
     // after failed attempts in a row: the offer to go on, and a lesson that does not block moving on
     'fly.offer-next',
     'fly.moving-on',

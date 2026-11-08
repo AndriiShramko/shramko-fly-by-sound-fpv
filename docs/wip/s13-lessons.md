@@ -7,7 +7,7 @@ from `main` 7d4b4b9. No push. Every step one commit with this Status in it.
 
 - [x] 1. Lane doc, facts of M41-8 and M41-9 reproduced in Node (`test/pass-rule.test.ts`, `test/lesson-schedule.test.ts`)
 - [x] 2. Pass rule: r counted attempts in total, the reason and the go-on offer after 3 failures in a row, lesson format 2
-- [ ] 3. Progress line after every attempt and the progress view (I, the host's panel)
+- [x] 3. Progress line after every attempt and the progress view (I, the host's panel)
 - [ ] 4. Navigation: next step, previous step, next lesson (skipped), previous lesson, repeat the task
 - [ ] 5. Every named sound three times with no speech over it; validator rule and schedule check
 - [ ] 6. Praise and stages (M41-11)
@@ -111,6 +111,20 @@ walls line) go through the same queue, so the fix (wait for the report) also wai
   at the median. Migration: `test/lessons.test.ts`.
 - Replays: a v0.12 recording (lesson version 1) replayed now is reported "lesson X is version 2 here, the session was
   flown with 1" (`test/replay.test.ts`); it does not verify, by design: the rules changed.
+
+### Step 3: progress always known (M41-7)
+
+- After every attempt that does not pass the lesson: "Attempt k. Counted m of r." (`fly.progress`); after the one that
+  passes, the pass line instead. Every attempt now starts with "Go." (the count line said its number).
+- The runner's script is a list of steps (`Block`s): a flying lesson has 2 (the task: title and intro lines; flying: the
+  attempts), a lesson without a world has its intro and one step per glossary sound, narrated scene, headphone trial or
+  game round (glossary 21, walls 6, shapes 4, headphones 4, game 9). Answers of module 0 are kept per question id, so a
+  step heard again replaces its answers.
+- `LessonSession.view(): LessonView` and `statusLine()` (exported pure `statusLine(view, title)`): lesson index on the
+  pilot's path (`RunnerOptions.path`, the full ladder when the lesson is not on it), step k of N and its kind, goal k of N,
+  attempt, counted m of r, failures in a row, whether the go-on offer was made, touches and the limit, phase, passed.
+  Spoken: `status.progress` "Lesson 6 of 21: Hold your height. Step 2 of 2. Attempt 4. Counted 2 of 3." or, before an
+  attempt and in module 0, `status.progress-step`. Tests: `test/progress.test.ts` (control: the v0.12 rule says no count).
 
 ## Needs from the simulator
 
