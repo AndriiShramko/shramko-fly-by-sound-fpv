@@ -1,17 +1,16 @@
-# Merge s13-merge: v0.13 lanes s13-lessons and s13-sound into one branch
+# Merge s13-merge: the v0.13 lanes s13-lessons, s13-sound and s13-worlds in one branch
 
-Branch `s13-merge`, worktree `<sound checkout>`, cut from `main` 7d4b4b9 (what the live simulator ships). It
-merges exactly two finished lanes, each reviewed once with every finding fixed:
+Branch `s13-merge`, worktree `<sound checkout>`, cut from `main` 7d4b4b9 (what the live simulator ShramkoGSFPV v0.12
+ships). It merges the three lanes of v0.13 of the sound package, each finished and reviewed once with every finding
+fixed:
 
-- s13-lessons at 14e00f0 (lane doc `docs/dev/status-v0.13-lessons.md`: "Final status", "For the lead's merge", "Needs from other
-  lanes");
-- s13-sound at 3c73658 (lane doc `docs/dev/status-v0.13-sound.md`: "Final status", "Needs from other lanes"), which contains
-  `vl-spec` at 3044c7c (the virtual listener's design and rig).
+- s13-lessons at 14e00f0 (its notes `docs/dev/status-v0.13-lessons.md`, review `review-v0.13-lessons.md`);
+- s13-sound at 3c73658, which contains `vl-spec` at 3044c7c, the virtual listener's design and rig (its notes
+  `docs/dev/status-v0.13-sound.md`, review `review-v0.13-sound.md`);
+- s13-worlds at 067278f (its notes `docs/dev/status-v0.13-worlds.md`, review `review-v0.13-worlds.md`).
 
-Lane s13-worlds was not merged in steps 1 to 6 (it was still fixing its review); it merges after them, in steps 7 to
-11, at 067278f (lane doc `docs/dev/status-v0.13-worlds.md`: "For the lead's merge", "Needs from other lanes", "Needs from the
-simulator", "Final status"; review `docs/dev/review-v0.13-worlds.md`), and the corridor's goal (s13-lessons' "For the
-lead's merge" item 2, review R5) is set then. No push, no deploy.
+Steps 1 to 6 merged the first two (b3b86de); s13-worlds was still fixing its review and merged after them, in steps 7
+to 11. No push, no deploy. The lanes' notes were `docs/wip/` until step 10 made them public dev notes.
 
 ## Status
 
@@ -160,23 +159,22 @@ Steps 7 to 11, lane s13-worlds:
 - [x] 8e. The glossary tells the open-way chime from the checkpoint chime (s13-worlds review M8). Both are two notes;
   what tells them apart is that the open way repeats its pair (every 0.6 s, 0.16 s notes) from the free side while
   something blocks the way, and the checkpoint sounds its two notes once, low to high. The lines said "Two quick notes"
-  and "A short double chime" (ru "Две быстрые ноты", "Короткий двойной звон"), the same thing in other words. Now:
-  `cue.safety.free.glossary` "A pair of quick notes, again and again, while something blocks the way ahead. ..." (es
-  "Un par de notas rápidas, una y otra vez, ...", pl "Para szybkich nut, raz za razem, ...", ru "Пара быстрых нот, снова
-  и снова, ..."; the rest of each line as it was), `cue.target.checkpoint.glossary` "One chime from low to high, only
-  once, when you reach a checkpoint." (es "Una campanilla de grave a agudo, una sola vez, ...", pl "Jeden dzwonek od
-  niskiego do wysokiego, tylko raz, ...", ru "Один перезвон снизу вверх, только раз, ..."). A new test in
-  `test/events.test.ts` checks the sounds (the open-way voice's period longer than its note; the checkpoint two notes,
-  the second higher) and the words in the four languages ("again and again" for the one, "only once" for the other,
-  never the other's); on the merged lines it failed ("en: expected 'Two quick notes ...' to match /again and
-  again/"). Found while reading the lines that name the open-way chime: tunnel-gaps' intro.3 (s13-worlds) said "A high
-  chime means the way is above it, a low one below", by register, which s13-sound's review m2 replaced by the contour
-  with the pilot's height polarity (for a pilot with 'up-lower' a way above sounds lower); it now says "If the chime
-  moves like your height tone in a climb, the way is above it. If it moves the other way, below." in the four
-  languages, as the glossary does, and `test/world-tunnels.test.ts` checks that wording (no "high chime"). The English
-  checkpoint line was measured as goal.1 was: 5.175 s, longer than its estimate (the old line, 3.295 s, was shorter),
-  so the schedule test's fact is 264 of 376 lines (was 263). Locale lint 0 problems (521 keys), layout 0, full suite
-  1032 of 1032. No person has read the new lines aloud in Spanish, Polish or Russian.
+  and "A short double chime" (and the same in the three other languages; the Russian words for the two were the
+  closest), the same thing in other words. Now `cue.safety.free.glossary` begins "A pair of quick notes, again and
+  again, while something blocks the way ahead." (the rest of the line as it was) and `cue.target.checkpoint.glossary` is
+  "One chime from low to high, only once, when you reach a checkpoint."; Spanish, Polish and Russian say the same with
+  their own words for "again and again" and "only once". A new test in `test/events.test.ts` checks the sounds (the
+  open-way voice's period longer than its note; the checkpoint two notes, the second higher) and the words in the four
+  languages ("again and again" for the one, "only once" for the other, never the other's); on the merged lines it failed
+  ("en: expected 'Two quick notes ...' to match /again and again/"). Found while reading the lines that name the
+  open-way chime: tunnel-gaps' intro.3 (s13-worlds) said "A high chime means the way is above it, a low one below", by
+  register, which s13-sound's review m2 replaced by the contour with the pilot's height polarity (for a pilot with
+  'up-lower' a way above sounds lower); it now says "If the chime moves like your height tone in a climb, the way is
+  above it. If it moves the other way, below." in the four languages, as the glossary does, and
+  `test/world-tunnels.test.ts` checks that wording (no "high chime"). The English checkpoint line was measured as goal.1
+  was: 5.175 s, longer than its estimate (the old line, 3.295 s, was shorter), so the schedule test's fact is 264 of 376
+  lines (was 263). Locale lint 0 problems (521 keys), layout 0, full suite 1032 of 1032. No person has read the new
+  lines aloud in Spanish, Polish or Russian.
 - [x] 8f. `ears-glossary` (the G key's dictionary, "you meet every sound you will hear while flying") names every cue
   id of `CUE_IDS`, 26 in the catalogue's order: s13-sound's `safety.free`, `safety.wrong-way`, `safety.wrong-side`,
   `height.target`, `target.praise` and `target.stage` beside the 20 of v0.12 (left open 1 of step 6). Their lines and
@@ -278,9 +276,108 @@ Steps 7 to 11, lane s13-worlds:
     path (`docs/dev/status-v0.13-lessons.md`, `status-v0.13-worlds.md`), so the code step 9 checks is the final code
     (the listener's evidence is keyed by every file of `src/`; the rest of step 10 touches only `docs/`, README,
     AGENTS.md and llms.txt, which no check's evidence is keyed by).
-- [ ] 11. Final status of the whole merge
+- [x] 11. Final status of the whole merge ("Final status" below; the status of steps 1 to 6 follows it as it was). In
+  the same commit: item 8e's test held its Russian words as Cyrillic letters, which the tests write as `\u` escapes;
+  they are escapes now (the test file only, nothing the proofs or the listener read), and this doc says the lines of the
+  other languages in English. On that tree: typecheck clean, `pnpm test` 44 files, 1042 tests, locale lint and layout 0
+  problems, the listener's evidence fresh (418eab75ba5d).
 
-## Final status (2026-11-08)
+## Final status (2026-11-08, the whole merge)
+
+Done, branch `s13-merge`, not pushed, nothing deployed; `main` (7d4b4b9) and the three lanes' branches are untouched.
+
+What merged: s13-lessons at 14e00f0 (5db2b1d, clean), s13-sound at 3c73658 with vl-spec at 3044c7c (9eb98d7, three
+conflicts) and s13-worlds at 067278f (4559896, seven conflicts). Every conflict and its resolution is in the two
+tables at the end ("Conflicts and their resolution", steps 3 and 7); every other file both sides changed merged by
+itself and was checked field by field (the contract as a union, the lesson files, the locales, the catalogue, the
+registrations, every lesson's `order` and `fastPath`).
+
+| Merge item | What | Commit |
+|---|---|---|
+| a | the silence control of `test/silence.test.ts` with v0.12's layers; the real check with both | aacabfd |
+| b | `test/repeat-plays.test.ts` passes; `durS` honoured, checked broken once | a329d4d |
+| c | `ONE_OFF_PLAY_S` for s13-sound's four event sounds, and a test of the whole table | aa3e789 |
+| d | the replay's verdict "recorded with an older build", its negative controls | 6dc1a44 |
+| e | walls-hall's and the corridor's lines for the knocks of v0.13, four languages | 543a5cb |
+| f | placeholders for the build machine's folders in `docs/design/virtual-listener.md` | 8eae637 |
+| 7 | merge s13-worlds; walls-hall's lines one text with its 1.5 m goal | 4559896 |
+| 8a | the corridor `[fly-distance 15, track-end]`, the six tunnels `[track-end]` | 51a84d8 |
+| 8b | `PASS_POINT_TOLERANCE_M`: a track point is crossed with a micrometre of tolerance | e3e1687 |
+| 8c | the tests that flew v0.12's numbers fly the worlds; no test flight through a wall | c5d3e85, e8db244 |
+| 8d | the corridor's `attemptLimitS` 350 s (v0.12's 2.8 s a metre), every limit twice the track at 1 m/s | f742f3d |
+| 8e | the open-way chime and the checkpoint chime told apart in the glossary; tunnel-gaps by contour | c851a23 |
+| 8f | `ears-glossary` names all 26 cue ids | bb20cb5 |
+| 8g | no wrong way from the truth bot; no "wrong side" at a new attempt's start (`JUMP_M`) | 7a60194, 520f21f |
+| 8h | rings-heights on the 0.5 m grid (5.4 m room, middle, floor, middle, ceiling, middle) | 4f51cc3 |
+| 8i | a recording that differs only in its world stays FAIL, and the code says why | ca76c66 |
+| 8j | CHANGELOG, README, llms.txt, AGENTS.md for v0.13 | 04f1b9c |
+| 9 | full checks with fresh evidence | 4796e5f, 49ca9ae |
+| 10 | the lanes' notes in `docs/dev/`, placeholders for the build machine's folders | a393b74, 9cdf984 |
+
+Checks on the final code (a393b74; the commits after it hold only evidence, documents and, in step 11, the escapes of
+one test's Russian words, after which the Node checks ran again with the same numbers and `pnpm listen` found its
+evidence fresh), all passing: `pnpm typecheck` clean (three projects); `pnpm test` 44 files,
+1042 tests (17.1 s; 1042 again after step 10); `node tools/run-tool.mjs locale-lint` 0 problems, 4 languages, 521
+keys; `node tools/run-tool.mjs check-layout` 0 problems; `GPU_LOCK=C:/dev/.gpu-lock pnpm proof:audio` 3 files, 9
+proofs, 48.5 s in headless Chrome 156.0.8078.80, every broken control failing; `pnpm listen` 24 renders, 8 of 8
+checks valid and passing for inputs 418eab75ba5d (125 files), 88.7 s. The listener's numbers:
+
+| Check | Measured | Control |
+|---|---|---|
+| VL-0a two renders the same | max difference 1.8e-7 (limit 1e-6) | noise seed 2: 0.045 |
+| VL-0b stems sum to the mix | residual -131.1 dB (limit -90) | a stem left out: -3.0 dB |
+| VL-pitch height track | largest step 3.7 cents per 10 ms (limit 25) | v0.12 stepped tone: 118.7 cents |
+| VL-onset hazard before impact | 2.475, 2.493, 2.475 s at 1, 3, 5 m/s (at least 2) | distance-only rule at 5 m/s: 1.18 s |
+| VL-6-speech voice over the mix | soft 4.76, clear 4.66, race 4.64 LU (3 to 6) | volume 1: 11.26, 7.91, 10.39 LU |
+| VL-6-peak engine and voice | -6.99, -3.74, -6.26 dBTP (at most -1) | volume 1: -0.52, -0.51, -0.49 |
+| VL-2-motor cues over the motor | worst 15.0 dB (Air65, shape); Pavo20 30.3, Meteor65 20.1, Pavo Pico 22.3, 5-inch 24.2 dB; motor 11.0 to 12.1 LU under the cues (micro), 14.05 (5-inch) | raw motor at 60 %: shape 0.9 dB |
+| VL-3-height band | in the band at most 1.1 % (2 to 70 Hz), out of it a 43 % buzz | steady pair: 44 % in the band |
+
+Found while merging s13-worlds, beyond the items as given (each in its item's entry above, with its test):
+
+- s13-lessons' runner placed the craft at the start for a new attempt without setting its last sample aside, so in
+  every ring and shape lesson the jump back from past the gate told "That gate was passed from the wrong side" at the
+  "Go." of attempts 2 and 3; and a replay with estimated speech saw the same jump a frame later (item 8g).
+- rings-heights' rings were off the lesson's 0.5 m grid, their target notes off the scale (item 8h).
+- tunnel-gaps told above and below by register, "a high chime", where the sound gives them by contour with the pilot's
+  height polarity (item 8e); walls-hall's goal line did not ask for a stop close to the wall (step 7).
+- Three passing tests of review R1 flew v0.12's offsets through the walls of the smaller rooms (item 8c, part 2), and
+  "the path flown goes back" returned the end of its flight instead of where the goal was met (item 8c).
+- The typecheck was not clean from 7a60194 to 04f1b9c (item 8g's test, TS2367); fixed in 520f21f.
+
+Left open, with the reason:
+
+1. Nothing of v0.13 has been heard by a person: the new and reworded lines (walls-hall's goal, the two glossary lines,
+   tunnel-gaps' intro.3), the sounds, the smaller rooms. English lines were measured with the Windows voice only; this
+   machine has no Spanish, Polish or Russian voice (s13-sound's M4). Three English lines s13-worlds reworded keep the
+   length measured for their old text (`MEASURED_TEXT`), as the merge note asked; the lines added in v0.13 have no
+   measured length (the fixture holds 376 of the 521 keys) and the schedule takes the estimate for them.
+2. rings-heights says "the second, steady tone is the height of the next ring" and, in the hint, "the steady one"; since
+   s13-sound's review M2 the target is a short note about once a second, the height tone giving way to it, so "steady"
+   means its pitch, not a second tone that holds. A rewording ("a short note, about once a second, gives the height of
+   the next ring") is a lesson text change for the lessons' owner, with s13-worlds' test of that phrase.
+3. tunnel-gaps' intro names the open-way chime but carries no `cues`, so the task does not play it three times as
+   every named sound is (M41-5); an intro cue from a side (`{ cue: 'safety.free', from: 'left' }`) is the lessons'
+   owner's to add (s13-worlds' "Needs from other lanes" 5).
+4. `LINE_UP_M` (8 m, s13-lessons' review R1, set for rings 14 m apart): in the rooms of v0.13 (gates 5 to 7 m apart)
+   it covers the whole gap in front of the gate that counts next, so flying back between two gates is never told. No
+   pilot has flown it; whether it should follow the spacing is a decision for the lessons' owner.
+5. The simulator, wave 2 (lane v13-host, with the gitlink move), by reference: s13-worlds' "Needs from the simulator" 1
+   (draw the room from `world.cavities`, in the same commit as the gitlink move, review M4), 3 and 4, and tunnel-long's
+   collider cost (lane v13-look); s13-lessons' "Needs from the simulator" 1 to 7 and its "Review R4" table; s13-sound's
+   "Needs from the simulator"; and from item d, the replay page reading `replayVerdict(check)`.
+6. s13-worlds' m6 (one long tunnel with one kind of obstacle; the owner asked for several) and m4's replay table of the
+   v0.12 lessons: the lead's to plan; corridor version 2 is unpublished and can grow.
+7. The lane notes keep their own words as written: a few of their lines run past 120 columns after the paths changed,
+   and four mentions in the sound lane's notes ask whether `docs/wip/` would be published (it was, here, as
+   `docs/dev/`).
+
+Of the list left open after step 6: item 1 (the glossary) is done (8f), 2 (the changelog) done (8j), 4 (a recording
+that differs only in its world) settled (8i), 3 and 5 stand (1 above); everything that waited for the s13-worlds merge
+is done: s13-lessons' R5 and its "Left open" 4 and 5 (8a, the world's track), s13-sound's items for s13-worlds (8h,
+the layers as merged, the corridor's and tunnel-gaps' lines), and the proofs and the listener again (step 9).
+
+## Status after steps 1 to 6 (2026-11-08, before s13-worlds), as it was
 
 Done, branch `s13-merge`, not pushed, nothing deployed. `main` (7d4b4b9) is untouched; s13-worlds is not merged.
 
@@ -397,7 +494,7 @@ each lane). Every other file both sides changed merged by itself and was checked
 | File | Resolution |
 |---|---|
 | `lessons/corridor.json` (cp-3's and cp-5's pose, cp-6) | s13-worlds' world, start and checkpoint positions, cp-3 and cp-5 at yaw 90 (both sides had it); s13-lessons' `stage` 1 to 4 on cp-2 to cp-5 and its intro `cues` (merged by git); s13-lessons' cp-6 moved to the world's `end` landmark, `[36, 1.25, -93]`, yaw 0 (read from the built world: its landmarks are start, the five `section-*` and `end`; its own track is 54 points, 125.2 m, the last at z = -91.75). `layers` s13-sound's, `goals` s13-worlds' 15 and 120 m (both merged by git) until item 8a. |
-| `locales/{en,es,pl,ru}.json` (walls-hall's title, intro.1, intro.2) | title and intro.1 s13-worlds' ("A small room", "You are in a small, empty room. ..."); intro.2 item 4e's ("Fly slowly toward a wall until you hear knocks, then stop."). Read as one text with the goal of 1.5 m, `goal.1` said only "stop before you touch it", which a stop 3 m away keeps and the goal fails: it is now "Fly to each wall and stop close to it without touching it." (es "... y para cerca de ella sin tocarla.", pl "... zatrzymaj się blisko niej, nie dotykając jej.", ru "... остановись близко к ней, не коснувшись её."). The other lines (intro.3, pass, retry, hint.1) say nothing that a 1.5 m stop or a small room contradicts. |
+| `locales/{en,es,pl,ru}.json` (walls-hall's title, intro.1, intro.2) | title and intro.1 s13-worlds' ("A small room", "You are in a small, empty room. ..."); intro.2 item 4e's ("Fly slowly toward a wall until you hear knocks, then stop."). Read as one text with the goal of 1.5 m, `goal.1` said only "stop before you touch it", which a stop 3 m away keeps and the goal fails: it is now "Fly to each wall and stop close to it without touching it.", and the same in Spanish, Polish and Russian ("stop close to it" in each). The other lines (intro.3, pass, retry, hint.1) say nothing that a 1.5 m stop or a small room contradicts. |
 | `test/lesson-schedule.test.ts` | the merged branch's test with s13-worlds' `MEASURED_TEXT` in the fact "263 of the 376 English lines take the Windows voice longer than the estimate": item e's three lines were measured again (262 -> 263), s13-worlds' three (module 4's name, walls-hall's title and intro.1) count with the text that was measured. walls-hall's new `goal.1` was measured the same way (`measure-tts.ps1`'s method, Microsoft David Desktop): 3.975 s (the old text 3.415 s again, as in the fixture; the retry 3.77, the old intro.1 8.64, the old title 1.64 and module 4's old name 1.36 as well), written to `test/fixtures/tts-en-david.json`; neither text is longer than the estimate, so the count stays 263 (262 without `MEASURED_TEXT`). |
 | `test/progress.test.ts` | s13-lessons' form (the title through the translator, no Cyrillic in the test) with the lesson count from the path, `lessonPaths().full.length`, in its three places; s13-worlds' rings-first and corridor flights from the world merged by git. |
 

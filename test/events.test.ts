@@ -93,7 +93,7 @@ describe('the event sounds', () => {
             en: { again: /again and again/, once: /only once/ },
             es: { again: /una y otra vez/, once: /una sola vez/ },
             pl: { again: /raz za razem/, once: /tylko raz/ },
-            ru: { again: /снова и снова/, once: /только раз/ }
+            ru: { again: /\u0441\u043d\u043e\u0432\u0430 \u0438 \u0441\u043d\u043e\u0432\u0430/, once: /\u0442\u043e\u043b\u044c\u043a\u043e \u0440\u0430\u0437/ }
         };
         for (const locale of LOCALES) {
             const openWay = DICTS[locale]['cue.safety.free.glossary'] as string;
