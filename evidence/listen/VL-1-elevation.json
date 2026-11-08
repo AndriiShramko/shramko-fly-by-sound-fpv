@@ -1,0 +1,184 @@
+{
+ "format": "shramko-listen-evidence/1",
+ "key": "a884a229c68dc03dc7272e5fdd4d08b09c23fba4dde64f42f4baafd7072f86e7",
+ "inputs": {
+  "hash": "a884a229c68dc03dc7272e5fdd4d08b09c23fba4dde64f42f4baafd7072f86e7",
+  "files": 125,
+  "driver": 3,
+  "measure": 3,
+  "chrome": "156.0.8078.80",
+  "tools": {
+   "python": "3.11.9",
+   "numpy": "2.4.6",
+   "scipy": "1.17.1",
+   "soundfile": "0.14.0",
+   "pyloudnorm": "0.2.0"
+  }
+ },
+ "date": "2026-11-08T18:35:42.949Z",
+ "id": "VL-1-elevation",
+ "claim": "the open-way chime of a way above and of a way below, rendered through Chrome's HRTF in headless Chrome as the engine plays it in a lesson: with the up/down direction on, the HRTF's response over 4 to 16 kHz (each render over its dry twin) differs by at least 1 dB rms between above, ahead and below, the chime carries energy up to 16 kHz, and its notes are the same as with the direction off (control: the direction off, both from ahead: no difference and no energy at 16 kHz)",
+ "thresholds": {
+  "elevationDiffDb": {
+   "value": 1,
+   "kind": "proposal"
+  },
+  "airTopBandDb": {
+   "value": -30,
+   "kind": "proposal"
+  },
+  "pitchSameCents": {
+   "value": 5,
+   "kind": "proposal"
+  }
+ },
+ "measured": {
+  "elevationDeg": {
+   "above": 30,
+   "below": -30,
+   "directionOff": [
+    0,
+    0
+   ]
+  },
+  "rmsDiffDb": {
+   "aboveVsAhead": 3.57,
+   "belowVsAhead": 3.05,
+   "aboveVsBelow": 4.94
+  },
+  "bandsHz": [
+   4000,
+   5040,
+   6350,
+   8000,
+   10079,
+   12699,
+   16000
+  ],
+  "responseDb": {
+   "above": [
+    [
+     -1.85,
+     -2.36,
+     -3.04,
+     -9.43,
+     -12.29,
+     -7.7,
+     -5.81
+    ],
+    [
+     -1.82,
+     -2.37,
+     -3.08,
+     -9.42,
+     -12.43,
+     -7.79,
+     -5.8
+    ]
+   ],
+   "below": [
+    [
+     -2.29,
+     -6.25,
+     -12.42,
+     -6.73,
+     -10,
+     -0.44,
+     -5.17
+    ],
+    [
+     -2.33,
+     -6.38,
+     -12.44,
+     -6.78,
+     -10.07,
+     -0.32,
+     -5.16
+    ]
+   ],
+   "aheadAboveChime": [
+    [
+     -0.97,
+     -1.88,
+     -9.88,
+     -12.26,
+     -11.08,
+     -2.38,
+     -3.5
+    ],
+    [
+     -0.9,
+     -1.88,
+     -9.89,
+     -12.12,
+     -11.16,
+     -2.72,
+     -3.41
+    ]
+   ],
+   "aheadBelowChime": [
+    [
+     -0.97,
+     -2.85,
+     -9.11,
+     -12.01,
+     -11.41,
+     -2.77,
+     -3.56
+    ],
+    [
+     -0.85,
+     -2.89,
+     -8.63,
+     -12.17,
+     -11.22,
+     -2.85,
+     -3.67
+    ]
+   ]
+  },
+  "top16kBandDb": {
+   "above": {
+    "on": -11.2,
+    "off": -58.4
+   },
+   "below": {
+    "on": -11.5,
+    "off": -57.6
+   }
+  },
+  "pitch": {
+   "above": {
+    "hops": 137,
+    "maxCents": 0.15,
+    "notesHz": [
+     1170,
+     1570
+    ]
+   },
+   "below": {
+    "hops": 146,
+    "maxCents": 0.15,
+    "notesHz": [
+     520,
+     660
+    ]
+   }
+  }
+ },
+ "controls": [
+  {
+   "name": "the direction off (SonicPrefs.heightDirection false): the chime above and the chime below both from ahead, no breath",
+   "measured": {
+    "rmsDiffDb": 0.57,
+    "top16kBandDb": {
+     "above": -58.4,
+     "below": -57.6
+    }
+   },
+   "ok": true
+  }
+ ],
+ "valid": true,
+ "pass": true
+}

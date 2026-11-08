@@ -1,11 +1,11 @@
 {
  "format": "shramko-listen-evidence/1",
- "key": "fa57e9492aa818950be44070e3c05f2a524feed95dd4bda6335f416eaab1f662",
+ "key": "a884a229c68dc03dc7272e5fdd4d08b09c23fba4dde64f42f4baafd7072f86e7",
  "inputs": {
-  "hash": "fa57e9492aa818950be44070e3c05f2a524feed95dd4bda6335f416eaab1f662",
+  "hash": "a884a229c68dc03dc7272e5fdd4d08b09c23fba4dde64f42f4baafd7072f86e7",
   "files": 125,
-  "driver": 2,
-  "measure": 2,
+  "driver": 3,
+  "measure": 3,
   "chrome": "156.0.8078.80",
   "tools": {
    "python": "3.11.9",
@@ -15,7 +15,7 @@
    "pyloudnorm": "0.2.0"
   }
  },
- "date": "2026-11-08T17:20:36.976Z",
+ "date": "2026-11-08T18:35:42.949Z",
  "id": "VL-3-height",
  "claim": "in a hover lesson's band the height layer neither wobbles nor buzzes at any distance from the target (envelope modulation at most 10 % between 2 and 70 Hz, in the plain height tone between target notes and in each note), so it cannot pass for the out-of-band buzz (\"too high or too low\") or the target hum's off-aim beat (2 to 7 Hz); out of the band it buzzes (at least 30 % at the theme's 38 Hz) (control: the first v0.13 design, a steady target tone 6 dB under the height tone, beats in the band)",
  "thresholds": {
@@ -46,9 +46,9 @@
     "heightM": 2.45,
     "inBand": true,
     "windows": 3,
-    "modDepth2to70Hz": 0.007,
+    "modDepth2to70Hz": 0.006,
     "byKind": {
-     "note": 0.007,
+     "note": 0.006,
      "tone": 0.002
     },
     "buzzDepth": 0
@@ -57,9 +57,9 @@
     "heightM": 2.4,
     "inBand": true,
     "windows": 3,
-    "modDepth2to70Hz": 0.008,
+    "modDepth2to70Hz": 0.007,
     "byKind": {
-     "note": 0.008,
+     "note": 0.007,
      "tone": 0.002
     },
     "buzzDepth": 0
@@ -68,9 +68,9 @@
     "heightM": 2.3,
     "inBand": true,
     "windows": 3,
-    "modDepth2to70Hz": 0.009,
+    "modDepth2to70Hz": 0.008,
     "byKind": {
-     "note": 0.009,
+     "note": 0.008,
      "tone": 0.002
     },
     "buzzDepth": 0
@@ -101,9 +101,9 @@
     "heightM": 2.7,
     "inBand": true,
     "windows": 3,
-    "modDepth2to70Hz": 0.01,
+    "modDepth2to70Hz": 0.009,
     "byKind": {
-     "note": 0.01,
+     "note": 0.009,
      "tone": 0.002
     },
     "buzzDepth": 0
@@ -112,9 +112,9 @@
     "heightM": 2.95,
     "inBand": true,
     "windows": 3,
-    "modDepth2to70Hz": 0.011,
+    "modDepth2to70Hz": 0.009,
     "byKind": {
-     "note": 0.011,
+     "note": 0.009,
      "tone": 0.002
     },
     "buzzDepth": 0.001

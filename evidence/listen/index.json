@@ -1,12 +1,12 @@
 {
  "format": "shramko-listen-index/1",
- "key": "fa57e9492aa818950be44070e3c05f2a524feed95dd4bda6335f416eaab1f662",
+ "key": "a884a229c68dc03dc7272e5fdd4d08b09c23fba4dde64f42f4baafd7072f86e7",
  "pass": true,
  "inputs": {
-  "hash": "fa57e9492aa818950be44070e3c05f2a524feed95dd4bda6335f416eaab1f662",
+  "hash": "a884a229c68dc03dc7272e5fdd4d08b09c23fba4dde64f42f4baafd7072f86e7",
   "files": 125,
-  "driver": 2,
-  "measure": 2,
+  "driver": 3,
+  "measure": 3,
   "chrome": "156.0.8078.80",
   "tools": {
    "python": "3.11.9",
@@ -16,7 +16,7 @@
    "pyloudnorm": "0.2.0"
   }
  },
- "date": "2026-11-08T17:20:36.976Z",
+ "date": "2026-11-08T18:35:42.949Z",
  "run": "pnpm listen",
  "checks": [
   {
@@ -66,6 +66,12 @@
    "valid": true,
    "pass": true,
    "file": "VL-3-height.json"
+  },
+  {
+   "id": "VL-1-elevation",
+   "valid": true,
+   "pass": true,
+   "file": "VL-1-elevation.json"
   }
  ]
 }
