@@ -1,20 +1,33 @@
 // M41-5 and M41-9: "the voice says press 1, press 2, but there is no sound". Each lesson is played by a
 // model host (src/lesson/schedule.ts) with a speech queue whose lines take as long as a voice says them:
-// the runner's own estimate, faster and slower voices, and the measured lengths of a real one
-// (test/fixtures/tts-en-david.json, the Windows voice Microsoft David at rate 1). The schedule says when
+// the runner's own estimate, faster and slower voices, and the measured lengths of real ones: the local
+// Windows voice of each language at rate 1 (test/fixtures/tts-en-david.json, Microsoft David; since lane
+// s13-elev E2-1 also tts-es-helena.json, tts-pl-paulina.json, tts-ru-irina.json). The schedule says when
 // each line was said and each sound played; checkSchedule asks what a pilot would ask. The engine ducks
 // every layer by 12 dB while a line is queued or spoken, so a sound under speech is a sound not heard.
 // What this cannot show: how loud a sound is at the ear, or whether a person notices it (the render
 // proofs of lane s13-sound measure the audio; how it feels is for people).
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import type { LessonDef } from '../src/contract';
+import type { LessonDef, Locale } from '../src/contract';
 import { CuePlanner } from '../src/cues';
 import { createLessonRunner, getLesson, REPEAT_PLAYS, SHIPPED_LESSON_IDS, validateLesson, type DemoScene, type Question } from '../src/lesson';
 import { checkSchedule, estimateSpeech, lessonSchedule, measuredSpeech, NAMED_SOUND_PLAYS, speechOverlapMs, type Schedule, type ScheduleOptions } from '../src/lesson/schedule';
 import { getBuiltinTheme } from '../src/theme';
 
-const david = (JSON.parse(readFileSync(new URL('./fixtures/tts-en-david.json', import.meta.url), 'utf8')) as { seconds: Record<string, number> }).seconds;
+const measuredFixture = (name: string): Record<string, number> => (JSON.parse(readFileSync(new URL(`./fixtures/${name}`, import.meta.url), 'utf8')) as { seconds: Record<string, number> }).seconds;
+const david = measuredFixture('tts-en-david.json');
+/**
+ * The other languages' local Windows voices (lane s13-elev E2-1), every line without parameters measured with
+ * test/fixtures/measure-tts.ps1 the way the English one was: Microsoft Helena Desktop (es-ES), Paulina Desktop (pl-PL)
+ * and Irina Desktop (ru-RU), SAPI rate 0.
+ */
+const OTHER_VOICES: Readonly<Record<Exclude<Locale, 'en'>, { readonly name: string; readonly seconds: Readonly<Record<string, number>> }>> = {
+    es: { name: 'Microsoft Helena', seconds: measuredFixture('tts-es-helena.json') },
+    pl: { name: 'Microsoft Paulina', seconds: measuredFixture('tts-pl-paulina.json') },
+    ru: { name: 'Microsoft Irina', seconds: measuredFixture('tts-ru-irina.json') }
+};
+const OTHER_LOCALES = ['es', 'pl', 'ru'] as const;
 /**
  * The English of lines measured above whose text changed since (lane s13-worlds, review M5 and m3: the first room is
  * small, module 4 holds the tunnels): a measured length belongs to the text that was measured.
@@ -74,6 +87,19 @@ describe('every named sound plays three times with no speech over it, and every 
         }
     }, 600000);
 
+    it('in Spanish, Polish and Russian too, each lesson in its language with that language\'s measured voice, answers early or late (lane s13-elev E2-1)', () => {
+        for (const locale of OTHER_LOCALES) {
+            const speech = measuredSpeech(OTHER_VOICES[locale].seconds);
+            for (const id of SHIPPED_LESSON_IDS) {
+                for (const answerTiming of ['after', 'early'] as const) {
+                    const s = schedule(id, { locale, speech, answerTiming });
+                    expect(checkSchedule(s, getLesson(id)).map((i) => i.detail), `${id}, ${locale} (${OTHER_VOICES[locale].name}), answers ${answerTiming}`).toEqual([]);
+                    if (getLesson(id).world.kind === 'none') expect(s.phase, `${id} ends in ${locale}`).toBe('passed');
+                }
+            }
+        }
+    }, 600000);
+
     it('plays each sound of a step three times, a second apart, and the step goes on a second after the last', () => {
         const s = schedule('ears-glossary', { speech: measuredSpeech(david) });
         const plays = s.plays.filter((p) => p.kind === 'repeat-cue' && p.step === 2);
@@ -113,6 +139,15 @@ describe('control: the v0.12 timing fails the same check (a line ends at the ear
         const slow = schedule('ears-headphones', { speech: estimateSpeech(1.4, 0.3), runner: v012 });
         const issues = checkSchedule(slow, getLesson('ears-headphones'));
         expect(issues.filter((i) => i.rule === 'question-without-sound').length).toBeGreaterThan(0);
+    }, 120000);
+
+    it('and with the measured voice of each other language, in its language (lane s13-elev E2-1)', () => {
+        for (const locale of OTHER_LOCALES) {
+            for (const id of ['ears-headphones', 'ears-glossary', 'ears-game']) {
+                const s = schedule(id, { locale, speech: measuredSpeech(OTHER_VOICES[locale].seconds), runner: v012 });
+                expect(rules(s, id), `${id}, ${locale}`).toContain('under-speech');
+            }
+        }
     }, 120000);
 
     it('the defect needs speech slower than the estimate: with a fast voice v0.12 overlaps nothing, but plays each sound once', () => {
@@ -161,6 +196,25 @@ describe('control: the v0.12 timing fails the same check (a line ends at the ear
         const s = schedule('ears-headphones', { speech: measuredSpeech(david), runner: v012 });
         const first = s.plays.find((p) => p.kind !== 'one-off');
         expect(speechOverlapMs(s, first?.start ?? 0, first?.end ?? 0)).toBeGreaterThan(500);
+    });
+
+    it('the fact as measured in the other languages: 253 of the 471 Spanish lines, 342 of the 471 Polish and all 471 Russian take their voice longer than the estimate (lane s13-elev E2-1)', () => {
+        // Each fixture holds every line of its language that has no parameters, measured on 2026-11-08 with the
+        // voice's text as it is in locales/ (no line reworded since, so no MEASURED_TEXT here). None is longer than
+        // the runner's fallback (twice the estimate and a second): the longest against its estimate is 1.59 times it
+        // in Spanish, 1.50 in Polish and 1.84 in Russian, whose voice is the slowest (a median 1.30 times the estimate).
+        const longerThanEstimate: Readonly<Record<Exclude<Locale, 'en'>, number>> = { es: 253, pl: 342, ru: 471 };
+        for (const locale of OTHER_LOCALES) {
+            const dict = JSON.parse(readFileSync(new URL(`../locales/${locale}.json`, import.meta.url), 'utf8')) as Record<string, string>;
+            const seconds = OTHER_VOICES[locale].seconds;
+            const plain = Object.keys(dict).filter((k) => !(dict[k] as string).includes('{'));
+            expect(Object.keys(seconds).sort(), `${locale}: every line without parameters is measured, and nothing else`).toEqual(plain.sort());
+            expect(plain.length, locale).toBe(471);
+            const estimate = (k: string): number => 0.7 + 0.065 * (dict[k] as string).length;
+            const longer = plain.filter((k) => (seconds[k] as number) > estimate(k));
+            expect(longer.length, `${locale}: lines longer than the estimate`).toBe(longerThanEstimate[locale]);
+            expect(plain.filter((k) => (seconds[k] as number) > 2 * estimate(k) + 1), `${locale}: lines longer than the runner waits`).toEqual([]);
+        }
     });
 });
 
@@ -238,5 +292,21 @@ describe('how long the ears lessons take now (measured voice, answers a second a
         expect(minutes['ears-headphones']).toBeLessThan(3);
         expect(minutes['ears-walls']).toBeLessThan(3);
         expect(minutes['ears-shapes']).toBeLessThan(2);
+    }, 120000);
+
+    it('and in the other languages, with their measured voices (lane s13-elev E2-1)', () => {
+        // measured 2026-11-08: the glossary 8.6 minutes in Spanish, 8.8 in Polish and 9.9 in Russian (Irina says the
+        // lines 1.3 times as slowly as the runner estimates); the game 6.9, 7.5 and 8.0; the other three as in English
+        // but for the Russian headphone check (2.2) and walls (2.1)
+        const glossaryUnder: Readonly<Record<Exclude<Locale, 'en'>, number>> = { es: 9.5, pl: 9.5, ru: 10.5 };
+        for (const locale of OTHER_LOCALES) {
+            const minutes: Record<string, number> = {};
+            for (const id of EARS) minutes[id] = Math.round(schedule(id, { locale, speech: measuredSpeech(OTHER_VOICES[locale].seconds) }).endT / 6000) / 10;
+            expect(minutes['ears-glossary'], locale).toBeLessThan(glossaryUnder[locale]);
+            expect(minutes['ears-game'], locale).toBeLessThan(10);
+            expect(minutes['ears-headphones'], locale).toBeLessThan(3);
+            expect(minutes['ears-walls'], locale).toBeLessThan(3);
+            expect(minutes['ears-shapes'], locale).toBeLessThan(2);
+        }
     }, 120000);
 });

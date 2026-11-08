@@ -62,7 +62,16 @@ and below change with it. In the same lane: "wrong way" between gates, which the
   layout check 0 problems, `pnpm proof:audio` 3 files 9 proofs, `pnpm listen` 9 of 9 checks valid and passing
   (inputs a884a229c68d)
 - [x] E1-7 This lane's E1 status final (below)
-- [ ] E2-1 (the next agent's; its task names it)
+- [x] E2-1 The other languages' lines measured (details below): every line without parameters of es, pl and ru (471
+  each) said by the local Windows voice of its language with `test/fixtures/measure-tts.ps1`, as the English ones were
+  (Microsoft Helena Desktop, Paulina Desktop, Irina Desktop; SAPI rate 0), one fixture each
+  (`test/fixtures/tts-es-helena.json`, `tts-pl-paulina.json`, `tts-ru-irina.json`). `test/lesson-schedule.test.ts`:
+  every shipped lesson in each language with its own measured voice, answers early or late: no sound under speech,
+  every question after its sound; the v0.12 timing fails with each voice; the fact, 253, 342 and 471 of the 471 lines
+  longer than the estimate, none longer than the runner waits, each fixture exactly the lines without parameters; the
+  ears lessons' length per language. Controls, each failing its test, then restored: one Spanish line measured longer
+  than its estimate (254, not 253), one Russian glossary line at 60 s (sounds under speech in ears-glossary), one
+  Russian line missing from its fixture
 - [ ] E2-2 (the next agent's)
 - [ ] E2-3 (the next agent's)
 - [ ] E2-4 (the next agent's)
@@ -233,6 +242,30 @@ Left open, with reasons:
   headphones may differ (design section 13). The adapters of VL-1 (the panel in the rig) are the design's step 11.
 - The corridor's intro.3 says the four sides in one line now (16 s with the local voice).
 - E2-1 to E2-4: the next agent's.
+
+## E2: the lines in Spanish, Polish and Russian, said by real voices
+
+The owner wants the Spanish, Polish and Russian lines checked with real voices (v0.13's merge left them heard by no one:
+this machine had no local voice of those languages). The lead installed Windows' own voices of es-ES, pl-PL and ru-RU.
+Listed from the registry on 2026-11-08 (read only): desktop SAPI voices (what `System.Speech` and the clip makers use)
+David and Zira (en-US), Helena (es-ES), Paulina (pl-PL), Irina (ru-RU); OneCore voices (Chrome lists these too) David,
+Mark, Zira, Helena, Laura, Pablo, Adam, Paulina, Irina, Pavel.
+
+### E2-1, the lengths
+
+`test/fixtures/measure-tts.ps1` with `-Locale locales/<lang>.json -Voice "Microsoft <name> Desktop"`, its output
+written in the English fixture's form (UTF-8 without a byte order mark, two-space JSON). Every line without parameters,
+471 per language (the English fixture holds 385 of its 471: the lines added since it was made take the estimate).
+
+| | Spanish, Helena | Polish, Paulina | Russian, Irina | English, David (for reference) |
+|---|---|---|---|---|
+| lines longer than the runner's estimate (0.7 s and 65 ms a character) | 253 of 471 | 342 of 471 | 471 of 471 | 267 of 385 |
+| measured over estimated, median (largest) | 1.01 (1.59) | 1.09 (1.50) | 1.30 (1.84) | 1.07 (1.45) |
+| lines longer than the runner waits (twice the estimate and a second) | 0 | 0 | 0 | 0 |
+| ears-glossary, ears-game, ears-headphones (minutes, answers a second after each question) | 8.6, 6.9, 1.9 | 8.8, 7.5, 1.9 | 9.9, 8.0, 2.2 | 8.4, 6.9, 1.9 |
+
+So every lesson's timing holds in every language with its own voice (no sound under speech, every question after its
+sound), and the Russian voice, the slowest, makes the glossary lesson about a minute and a half longer than in English.
 
 ## Needs from the simulator
 
