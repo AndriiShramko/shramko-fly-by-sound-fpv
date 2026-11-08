@@ -7,10 +7,11 @@ import type { FlightSample, MaterialClass, SectorId, SonicObject, SonicWorld, Ve
 import { SECTORS } from '../src/contract';
 import { CuePlanner, distanceCode, hazardDistanceCode, isUrgent, pulsePeriodMs, URGENT_DISTANCE_M, type VoicePlan } from '../src/cues';
 import { getLesson, SHIPPED_LESSON_IDS } from '../src/lesson';
-import { ALWAYS_HEARD_M, createSceneSampler, DEFAULT_SAMPLER_CONFIG, ONSET_TTC_S, pathMissM, SECTOR_AXES, type SamplerOptions } from '../src/sense';
+import { ALWAYS_HEARD_M, createSceneSampler, DEFAULT_SAMPLER_CONFIG, ONSET_TTC_S, pathMissM, pathObjects, SECTOR_AXES, type CollisionCourse, type SamplerOptions } from '../src/sense';
 import { getBuiltinTheme } from '../src/theme';
 import { yawQuat } from '../src/util/vec';
 import { createAnalyticWorld, makeSpec } from '../src/world';
+import { block, boxTunnel } from './helpers/boxes';
 
 const BODY = DEFAULT_SAMPLER_CONFIG.bodyRadiusM;
 const soft = getBuiltinTheme('soft');
@@ -170,12 +171,149 @@ describe('objects: a time to contact only on a collision course', () => {
         expect(hit).toBeGreaterThan(0);
     });
 
+    it('the path rays: the soonest hit of each object on the straight path, walls left to the sectors, none when still', () => {
+        const world = boxTunnel([block(-10, 10, 0, 8, -40, -38)], { min: [-10, 0, -60], max: [10, 8, 20] });
+        const hits = pathObjects({ pos: [0, 4, -18], vel: [0, 0, -4] }, world, BODY, 40, 0.2);
+        expect([...hits.keys()]).toEqual(['block']);
+        expect(hits.get('block')!.ttcS).toBeCloseTo((20 - BODY) / 4, 6);
+        expect(pathObjects({ pos: [0, 4, -18], vel: [0, 0, 4] }, world, BODY, 40, 0.2).size).toBe(0); // the wall behind has no object id
+        expect(pathObjects({ pos: [0, 4, -18], vel: [0, 0, -0.1] }, world, BODY, 40, 0.2).size).toBe(0);
+    });
+
     it('pathMissM: the closest approach of the straight path to a point', () => {
         expect(pathMissM([0, 0, -10], [0, 0, -5])).toBeCloseTo(0, 9);
         expect(pathMissM([1.5, 0, 0], [0, 0, -5])).toBeCloseTo(1.5, 9);
         expect(pathMissM([1, 0, -10], [0, 0, -5])).toBeCloseTo(1, 9);
         expect(pathMissM([0, 0, 10], [0, 0, -5])).toBeCloseTo(10, 9); // behind: full distance
         expect(pathMissM([3, 4, 0], [0, 0, 0])).toBeCloseTo(5, 9); // not moving
+    });
+});
+
+// Review B1: the first v0.13 filter kept an object's time to contact only when the path passed within the hull plus
+// 0.3 m of the point a sector ray found. For a box face or a pillar the path meets the object elsewhere, so a gentle
+// sink, a little drift or a pillar between two sector rays were heard late (down to 0.4 s before contact).
+describe('objects on the path are heard by their time to contact, at any angle to the sector rays', () => {
+    const DT = 1 / 60;
+
+    /**
+     * Flies the straight line p0 + vel t at 60 frames a second, the nose at `yawDeg`; returns the true time to contact
+     * (`contactS`, from the frame's position) at the first frame with a hazard on `objectId`, or null when none comes
+     * before contact.
+     */
+    function objectOnset(world: SonicWorld, objectId: string, p0: Vec3, vel: Vec3, contactS: (pos: Vec3) => number | null, course: CollisionCourse, yawDeg = 0): number | null {
+        const sampler = createSceneSampler({ collisionCourse: course });
+        for (let k = 0; k < 60 * 30; k++) {
+            const pos: Vec3 = [p0[0] + vel[0] * k * DT, p0[1] + vel[1] * k * DT, p0[2] + vel[2] * k * DT];
+            const left = contactS(pos);
+            if (left === null || left <= 0) return null;
+            const sample: FlightSample = { ...flight(pos, vel, k * DT * 1000), quat: yawQuat(yawDeg), yawDeg };
+            if (sampler.sample(sample, world).hazards.some((h) => h.objectId === objectId)) return left;
+        }
+        return null;
+    }
+
+    // a box across a hall 20 m wide and 8 m high; its face at z = -38, the craft 22 m before it
+    const FACE_Z = -38;
+    const boxHall = boxTunnel([block(-10, 10, 0, 8, -40, FACE_Z)], { min: [-10, 0, -60], max: [10, 8, 20] });
+    const boxPath = (speed: number, deg: number, how: 'sink' | 'drift'): { p0: Vec3; vel: Vec3 } => {
+        const a = (deg * Math.PI) / 180;
+        const across = speed * Math.sin(a);
+        return { p0: [how === 'drift' ? -3 : 0, how === 'sink' ? 6 : 4, FACE_Z + 22], vel: [how === 'drift' ? across : 0, how === 'sink' ? -across : 0, -speed * Math.cos(a)] };
+    };
+    const faceContact = (vel: Vec3) => (pos: Vec3): number => (pos[2] - BODY - FACE_Z) / -vel[2];
+
+    it.each([3, 5])('a box face 2, 5 and 10 degrees off the sector rays at %s m/s, sinking or drifting: heard at least 2 s before contact', (speed) => {
+        for (const deg of [2, 5, 10]) {
+            for (const how of ['sink', 'drift'] as const) {
+                const { p0, vel } = boxPath(speed, deg, how);
+                const at = objectOnset(boxHall, 'block', p0, vel, faceContact(vel), 'path-rays');
+                expect(at, `${deg} deg ${how}`).not.toBeNull();
+                expect(at!, `${deg} deg ${how}`).toBeGreaterThanOrEqual(2);
+                expect(at!, `${deg} deg ${how}`).toBeLessThanOrEqual(ONSET_TTC_S + 0.05);
+            }
+        }
+    });
+
+    it('control: the first v0.13 rule (the hit point) hears the same face late once the path is 5 degrees or more off a ray', () => {
+        for (const speed of [3, 5]) {
+            for (const deg of [5, 10]) {
+                const { p0, vel } = boxPath(speed, deg, 'sink');
+                const at = objectOnset(boxHall, 'block', p0, vel, faceContact(vel), 'hit-point');
+                expect(at === null || at < 2, `${speed} m/s ${deg} deg: ${String(at)}`).toBe(true);
+            }
+        }
+    });
+
+    // walls-pillar's pillar: radius 0.5 m, its axis at x = 0, z = 7 (the lesson's world)
+    const lessonWorld = getLesson('walls-pillar').world;
+    const pillarWorld = createAnalyticWorld(lessonWorld.kind === 'analytic' ? lessonWorld.spec : makeSpec('pillars', { layout: 'single', aheadM: 15 }, 0));
+    const pillar = pillarWorld.objects().find((o) => o.shape.kind === 'pillar') as SonicObject;
+    const R = (pillar.shape as { radius: number }).radius;
+    /** Time until the hull touches the pillar flying straight on, or null when the line passes it. */
+    const pillarContact = (vel: Vec3) => (pos: Vec3): number | null => {
+        const dx = pos[0] - pillar.pos[0], dz = pos[2] - pillar.pos[2];
+        const a = vel[0] * vel[0] + vel[2] * vel[2];
+        const b = 2 * (dx * vel[0] + dz * vel[2]);
+        const c = dx * dx + dz * dz - (R + BODY) ** 2;
+        const disc = b * b - 4 * a * c;
+        if (disc < 0) return null;
+        const t = (-b - Math.sqrt(disc)) / (2 * a);
+        return t >= 0 ? t : null;
+    };
+    /** A line at `speed` that passes `missM` from the pillar's axis at its closest, `deg` degrees to the hall's axis, 25 m before it. */
+    const pillarPath = (speed: number, missM: number, deg: number): { p0: Vec3; vel: Vec3 } => {
+        const a = (deg * Math.PI) / 180;
+        const dir: Vec3 = [Math.sin(a), 0, -Math.cos(a)];
+        const normal: Vec3 = [Math.cos(a), 0, Math.sin(a)];
+        const p0: Vec3 = [pillar.pos[0] + missM * normal[0] - 22 * dir[0], 2, pillar.pos[2] + missM * normal[2] - 22 * dir[2]];
+        return { p0, vel: [dir[0] * speed, 0, dir[2] * speed] };
+    };
+
+    it('the 0.5 m pillar, the path 0, 0.3 and 0.5 m off its axis, straight or at 10 degrees, at 3 and 5 m/s: heard at least 2 s before contact', () => {
+        expect(R).toBe(0.5);
+        for (const speed of [3, 5]) {
+            for (const miss of [0, 0.3, 0.5]) {
+                for (const deg of [0, 10]) {
+                    const { p0, vel } = pillarPath(speed, miss, deg);
+                    const at = objectOnset(pillarWorld, pillar.id, p0, vel, pillarContact(vel), 'path-rays');
+                    expect(at, `${speed} m/s, ${miss} m off, ${deg} deg`).not.toBeNull();
+                    expect(at!, `${speed} m/s, ${miss} m off, ${deg} deg`).toBeGreaterThanOrEqual(2);
+                }
+            }
+        }
+    });
+
+    it('the pillar straight ahead with the nose 5 or 10 degrees off the path (between two sector rays): heard at least 2 s before contact', () => {
+        for (const yaw of [5, 10, -5]) {
+            const { p0, vel } = pillarPath(3, 0, 0);
+            const at = objectOnset(pillarWorld, pillar.id, p0, vel, pillarContact(vel), 'path-rays', yaw);
+            expect(at, `yaw ${yaw}`).not.toBeNull();
+            expect(at!, `yaw ${yaw}`).toBeGreaterThanOrEqual(2);
+        }
+    });
+
+    it('controls: the hit-point rule and no rule at all (v0.12) hear the pillar late when the path is 0.5 m off its axis or the nose is 5 degrees off', () => {
+        const off = pillarPath(3, 0.5, 0);
+        for (const course of ['hit-point', 'none'] as const) {
+            const at = objectOnset(pillarWorld, pillar.id, off.p0, off.vel, pillarContact(off.vel), course);
+            expect(at === null || at < 2, `${course}, 0.5 m off: ${String(at)}`).toBe(true);
+            const ahead = pillarPath(3, 0, 0);
+            const at2 = objectOnset(pillarWorld, pillar.id, ahead.p0, ahead.vel, pillarContact(ahead.vel), course, 5);
+            expect(at2 === null || at2 < 2, `${course}, nose 5 deg off: ${String(at2)}`).toBe(true);
+        }
+    });
+
+    it('a path that passes the pillar by more than the hull gives it no time to contact: heard only within 0.8 m', () => {
+        const { p0, vel } = pillarPath(3, R + BODY + 0.25, 0);
+        const sampler = createSceneSampler();
+        let nearest = Infinity;
+        for (let k = 0; k < 60 * 10; k++) {
+            const pos: Vec3 = [p0[0] + vel[0] * k * DT, p0[1], p0[2] + vel[2] * k * DT];
+            const h = sampler.sample(flight(pos, vel, k * DT * 1000), pillarWorld).hazards.find((x) => x.objectId === pillar.id);
+            if (h !== undefined) nearest = Math.min(nearest, h.distance);
+            if (h !== undefined) expect(h.distance, `frame ${k}`).toBeLessThanOrEqual(ALWAYS_HEARD_M + 0.01);
+        }
+        expect(nearest).toBeLessThan(ALWAYS_HEARD_M);
     });
 });
 

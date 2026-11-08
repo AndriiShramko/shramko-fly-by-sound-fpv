@@ -37,6 +37,23 @@ Shared event kinds (plan, "Lanes"): the runner emits the cue events `wrong-way`,
   proof passing and every broken control failing; `pnpm listen` 7 of 7 checks valid and passing, fresh for inputs
   61b845a05094; the v0.12 recordings replay as recorded with an older build (`test/replay-v012.test.ts`)
 
+Fixes after the review (`docs/wip/s13-sound-review.md`), one commit per fix or small group:
+
+- [x] B1 objects by the craft's path: five rays along the velocity decide the collision course and give an object
+  between two sector rays its time to contact (`src/sense/sampler.ts` `pathObjects`, `collisionCourse`); box faces and
+  the walls-pillar pillar heard 2.48 to 2.50 s before contact at every angle tried (`test/ttc.test.ts`, 8 new tests)
+- [ ] B2 the five shared cue events with s13-lessons' fields
+- [ ] M1 the open way in narrow tunnels
+- [ ] M2 the target height without a beat that sounds like "out of band" or "off aim"
+- [ ] M3 the motor calibrated on the default craft and the micro presets
+- [ ] M4 the voice the owner's Chrome speaks
+- [ ] M5, M6, m4, m7 what the simulator, the lead and s13-lessons must do, in this doc
+- [ ] m1, m2 the open-way chime on gates and its above and below
+- [ ] m3 the pilot's motor level
+- [ ] m5 the new lines in their languages
+- [ ] m6, m8 stale statements, build-machine folders
+- [ ] The full checks again, the final status
+
 ## Final status (2026-11-08)
 
 Done, with commits (branch `s13-sound`, not pushed):
@@ -214,12 +231,30 @@ Left open, with reasons:
   (5 %) at 1, 3 and 5 m/s; control: the v0.12 rules give a 1.3 times slower rhythm and 6 dB less level at 5 m/s.
 - Urgent (the other layers 9 dB down): time to contact under 1.5 s, or within 0.4 m (was 1 m), so a narrow tunnel
   whose walls are 0.7 m away does not keep every other layer ducked.
-- Objects (rings, pillars, bars): a time to contact counts only when the straight path passes within the hull plus
-  0.3 m of the point the ray found (`pathMissM`). Without it, flying through a ring made its tube look like a wall
-  closing in 0.7 s in one frame; every side sector came on, and the 300 ms hold then voiced the far hall walls they
-  saw next. That frame-sized flash also broke the replay check of the recorded rings-course flight (94.1 % of the
-  frames agreed, under the 95 % rule) because a 30 Hz replay never sees it; with the filter the recorded flights
-  replay again. Walls, floor and ceiling (no object id) keep the time to their plane along its normal.
+- Objects (rings, pillars, bars, boxes), as fixed after the review (B1): five rays along the velocity (the centre
+  line and four lines at the hull's edge, `pathObjects`) find what the craft would hit flying straight on. A sector
+  ray's hit on an object keeps its time to contact only when one of them meets the same object, and each object they
+  meet is also a reading of the sector it lies in, with its time along the path. Without any rule, flying through a
+  ring made its tube look like a wall closing in 0.7 s in one frame; every side sector came on, and the 300 ms hold
+  then voiced the far hall walls they saw next; that frame-sized flash also broke the replay check of the recorded
+  rings-course flight (94.1 % of the frames agreed, under the 95 % rule). Through a ring's opening the path rays pass,
+  so the ring test and the recorded flights replay as before. The first rule (the path within the hull plus 0.3 m of
+  the point a sector ray found, now the control 'hit-point') heard wide objects late. Measured (60 Hz frames, time
+  to contact at the first frame with a hazard on the object; shipped, 'hit-point', 'none' = no rule as v0.12):
+
+  | Object, speed, path | shipped | hit-point | none |
+  |---|---|---|---|
+  | box face across a 20 m hall, 3 m/s, sinking 2, 5, 10 deg | 2.50, 2.49, 2.49 s | 2.50, 1.57, 0.77 s | 2.50, 2.49, 2.49 s |
+  | same, 5 m/s | 2.50, 2.49, 2.49 s | 2.38, 0.94, 0.46 s | 2.50, 2.49, 2.49 s |
+  | walls-pillar's pillar (0.5 m), 3 m/s, path 0, 0.3, 0.5 m off its axis | 2.49, 2.49, 2.48 s | 2.49, 1.60, 0.41 s | 2.49, 1.60, 0.78 s |
+  | same, the path at 10 deg to the hall | 2.49, 2.49, 2.48 s | 0.64, 0.77, 0.83 s | 0.64, 1.14, 1.49 s |
+  | same, 5 m/s, straight, 0, 0.3, 0.5 m off | 2.49, 2.49, 2.48 s | 2.49, 1.59, 0.24 s | 2.49, 1.59, 0.48 s |
+  | the pillar straight ahead, the nose 5 and 10 deg off the path, 3 m/s | 2.49, 2.49 s | 1.19, 0.64 s | 1.19, 0.64 s |
+
+  The last rows are the ray fan's resolution (20 degrees between sector rays): without the path's own reading a thin
+  pillar is seen only once it is wide enough to meet a sector ray. A path that passes the pillar by more than the hull
+  gives it no time to contact; it is heard within 0.8 m only. Walls, floor and ceiling (no object id) keep the time
+  to their plane along its normal. Cost: five more rays a frame while moving.
 
 ### Step 4, free way (M41-14)
 

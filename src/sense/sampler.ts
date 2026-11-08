@@ -21,6 +21,12 @@
 //     turns on when its time to contact drops under 2.5 s (fast flight hears far walls early), a slow
 //     craft does not hear far walls, and within 0.8 m of the hull everything is heard (enterDistM 0.8
 //     in every sector; v0.12 had 1.5 to 6 m, so a wall ahead sounded from 6 m at any speed)
+//   - objects (a ring's tube, a pillar, a bar, a box in a tunnel) by the craft's straight path (v0.13
+//     review B1): five rays along the velocity, the centre line and four lines at the hull's edge, find
+//     what the craft would hit flying straight on. A sector ray's hit on an object keeps its time to
+//     contact only when one of those rays meets the same object (through a ring's opening they pass, so
+//     its tube stays quiet); and each object they meet is also a reading of the sector it lies in, with
+//     the time along the path, so a pillar between two sector rays is heard by its time to contact too
 //   - a hazard turns on at risk >= 1 at once (danger first, no debounce) and turns off only when the
 //     risk has fallen under releaseRatio AND holdMs have passed since it last reached 1
 //   - ranking uses risk x a priority weight per sector (ahead outranks behind); a voice that is
@@ -28,7 +34,7 @@
 //   - never more than 3 voices (contract: LessonLayers.hazardVoices is 3 or fewer)
 import type { FlightSample, RayHit, SectorId, SonicWorld, Vec3 } from '../contract';
 import { SECTORS } from '../contract';
-import { dot, length, scale, sub } from '../util/vec';
+import { add, cross, dot, length, normalize, scale, sub } from '../util/vec';
 import { listenerBasis, listenerToWorld, sectorRays, SECTOR_AXES, worldToListener } from './frame';
 import type { Hazard, ListenerFrame, SceneSample, SectorReading } from './types';
 
@@ -58,7 +64,19 @@ export interface SamplerConfig {
     readonly weight: Readonly<Record<SectorId, number>>;
     /** closing slower than this counts as not closing, m/s */
     readonly minClosingMps: number;
+    /**
+     * When an object hit keeps its time to contact (v0.13 review B1): 'path-rays' (shipped) when one of the
+     * five rays along the craft's path meets that object, each object they meet also being a reading of its
+     * own sector; the other two are the negative controls of the tests: 'hit-point' (the first v0.13 rule,
+     * the path passing within the hull plus OBJECT_CLEARANCE_M of the point a sector ray found) and 'none'
+     * (every object hit keeps its time, as v0.12)
+     */
+    readonly collisionCourse: CollisionCourse;
 }
+
+/** How the sampler tells that the craft is on a collision course with an object (SamplerConfig.collisionCourse). */
+export type CollisionCourse = 'path-rays' | 'hit-point' | 'none';
+const COLLISION_COURSES: readonly CollisionCourse[] = ['path-rays', 'hit-point', 'none'];
 
 export type SamplerOptions = Partial<Omit<SamplerConfig, 'enterDistM' | 'weight'>> & {
     readonly enterDistM?: Partial<Record<SectorId, number>>;
@@ -104,7 +122,8 @@ export const DEFAULT_SAMPLER_CONFIG: SamplerConfig = {
         down: 0.7,
         back: 0.6
     },
-    minClosingMps: 0.2
+    minClosingMps: 0.2,
+    collisionCourse: 'path-rays'
 };
 
 export class SamplerConfigError extends Error {
@@ -136,7 +155,8 @@ export function resolveSamplerConfig(options: SamplerOptions = {}): SamplerConfi
         holdMs: options.holdMs ?? base.holdMs,
         stickiness: options.stickiness ?? base.stickiness,
         weight: { ...base.weight, ...options.weight },
-        minClosingMps: options.minClosingMps ?? base.minClosingMps
+        minClosingMps: options.minClosingMps ?? base.minClosingMps,
+        collisionCourse: options.collisionCourse ?? base.collisionCourse
     };
     between('rangeM', cfg.rangeM, 1, 500);
     between('spreadDeg', cfg.spreadDeg, 0, 60);
@@ -147,6 +167,7 @@ export function resolveSamplerConfig(options: SamplerOptions = {}): SamplerConfi
     between('holdMs', cfg.holdMs, 0, 10000);
     between('stickiness', cfg.stickiness, 1, 10);
     between('minClosingMps', cfg.minClosingMps, 0, 50);
+    if (!COLLISION_COURSES.includes(cfg.collisionCourse)) throw new SamplerConfigError(`collisionCourse must be one of ${COLLISION_COURSES.join(', ')}, got ${String(cfg.collisionCourse)}`);
     for (const id of SECTORS) {
         between(`enterDistM.${id}`, cfg.enterDistM[id], 0.05, 200);
         between(`weight.${id}`, cfg.weight[id], 0.01, 100);
@@ -174,12 +195,77 @@ const SLANT_MIN = 0.05;
 /** Below this the distance or the time is treated as this, so the risk stays finite. */
 const FLOOR = 0.05;
 
-/** How far beyond the hull the craft's straight path may pass a point on an object and still be on a collision course with it, m. */
+/**
+ * The first v0.13 rule ('hit-point', now a control): how far beyond the hull the craft's straight path may pass
+ * the point a sector ray found on an object and still be on a collision course with it, m. Wrong for anything
+ * wider than a ring's tube: the path meets a box face or a pillar elsewhere (review B1).
+ */
 export const OBJECT_CLEARANCE_M = 0.3;
+
+/** What one of the path rays found: the object, the time along the path, the hull distance to the point, its direction (world). */
+export interface PathHit {
+    readonly hit: RayHit;
+    readonly ttcS: number;
+    readonly distance: number;
+    readonly worldDir: Vec3;
+}
+
+/**
+ * The objects the craft's straight path meets within `range` (v0.13 review B1): five rays along the velocity,
+ * from the centre and from four points on the hull's edge across the path. Per object id the soonest of
+ * them: the time is the hull's travel to the hit along the path (the centre line's hit less the radius,
+ * an edge line's hit as it is) over the speed. Walls, the floor and the ceiling (no object id) are left to the
+ * sectors, whose time along the surface normal is exact for a plane. Empty below `minClosingMps`.
+ */
+export function pathObjects(flight: Pick<FlightSample, 'pos' | 'vel'>, world: SonicWorld, bodyRadiusM: number, range: number, minClosingMps: number): Map<string, PathHit> {
+    const out = new Map<string, PathHit>();
+    const speed = length(flight.vel);
+    if (!(speed >= minClosingMps) || !(speed > 0)) return out;
+    const u = scale(flight.vel, 1 / speed);
+    const across = normalize(cross(u, Math.abs(u[1]) < 0.9 ? [0, 1, 0] : [1, 0, 0]));
+    const other = cross(u, across);
+    const r = bodyRadiusM;
+    const starts: readonly Vec3[] = [flight.pos, add(flight.pos, scale(across, r)), add(flight.pos, scale(across, -r)), add(flight.pos, scale(other, r)), add(flight.pos, scale(other, -r))];
+    starts.forEach((from, k) => {
+        const hit = world.castRay(from, u, range);
+        if (hit === null || hit.objectId === null) return;
+        const travel = k === 0 ? Math.max(0, hit.distance - r) : hit.distance;
+        const ttcS = travel / speed;
+        const prev = out.get(hit.objectId);
+        if (prev !== undefined && prev.ttcS <= ttcS) return;
+        const toHit = sub(hit.point, flight.pos);
+        const len = length(toHit);
+        out.set(hit.objectId, { hit, ttcS, distance: Math.max(0, len - r), worldDir: len > 1e-6 ? scale(toHit, 1 / len) : u });
+    });
+    return out;
+}
+
+/** One sector's readings while its rays are looked at: the nearest, the soonest, the fastest, the most threatening. */
+interface SectorAcc {
+    minDistance: number;
+    minTtc: number | null;
+    maxClosing: number;
+    primary: { readonly hit: RayHit; readonly dir: Vec3; readonly risk: number; readonly distance: number } | null;
+}
+
+/** The sector whose axis is nearest to a listener-frame direction (its index in SECTORS). */
+function sectorOf(dirListener: Vec3): number {
+    let best = 0;
+    let bestDot = -Infinity;
+    SECTORS.forEach((id, i) => {
+        const d = dot(SECTOR_AXES[id], dirListener);
+        if (d > bestDot) {
+            bestDot = d;
+            best = i;
+        }
+    });
+    return best;
+}
 
 /**
  * How far the craft's straight path (from its centre, along `vel`) passes from a point `toPoint` away, m:
- * the distance at the closest approach, never looking back (a point behind counts its full distance).
+ * the distance at the closest approach, never looking back (a point behind counts its full distance). The
+ * 'hit-point' control's rule.
  */
 export function pathMissM(toPoint: Vec3, vel: Vec3): number {
     const v2 = dot(vel, vel);
@@ -215,13 +301,26 @@ export function createSceneSampler(options: SamplerOptions = {}): SceneSampler {
     const sample = (flight: FlightSample, world: SonicWorld | null, frame: ListenerFrame = 'heading'): SceneSample => {
         const basis = listenerBasis(flight, frame);
         const readings: SectorReading[] = [];
+        // what the straight path meets (review B1), and the sector each of those objects lies in
+        const course = world !== null && config.collisionCourse === 'path-rays' ? pathObjects(flight, world, config.bodyRadiusM, castRange, config.minClosingMps) : new Map<string, PathHit>();
+        const injected: PathHit[][] = SECTORS.map(() => []);
+        for (const ph of course.values()) (injected[sectorOf(worldToListener(basis, ph.worldDir))] as PathHit[]).push(ph);
+        const speed = length(flight.vel);
 
         for (let i = 0; i < n; i++) {
             const id = SECTORS[i] as SectorId;
-            let minDistance = Infinity;
-            let minTtc: number | null = null;
-            let maxClosing = 0;
-            let primary: { hit: RayHit; dir: Vec3; risk: number; distance: number } | null = null;
+            const acc: SectorAcc = { minDistance: Infinity, minTtc: null, maxClosing: 0, primary: null };
+            const consider = (hit: RayHit, worldDir: Vec3, distance: number, ttc: number | null, closing: number): void => {
+                const risk = riskOf(distance, ttc, config.enterDistM[id], config.enterTtcS);
+                if (distance < acc.minDistance) acc.minDistance = distance;
+                if (ttc !== null && (acc.minTtc === null || ttc < acc.minTtc)) acc.minTtc = ttc;
+                if (closing > acc.maxClosing) acc.maxClosing = closing;
+                // equal risks (a wall seen by all three rays) differ only by the tracer's hit tolerance
+                // (0.2 mm, about 1e-7 of the risk here): within 1e-4 the nearest ray wins
+                const p = acc.primary;
+                const tie = p !== null && Math.abs(risk - p.risk) <= 1e-4 * Math.max(risk, p.risk);
+                if (p === null || (!tie && risk > p.risk) || (tie && distance < p.distance)) acc.primary = { hit, dir: worldDir, risk, distance };
+            };
             if (world !== null) {
                 for (const ray of rays[id]) {
                     const worldRay = listenerToWorld(basis, ray);
@@ -247,34 +346,34 @@ export function createSceneSampler(options: SamplerOptions = {}): SceneSampler {
                     // by the front-left one whose side ray sees it 25 degrees off its normal
                     const facing = hit.normal === null ? 1 : Math.max(0, -dot(worldRay, hit.normal));
                     let ttc = closing >= config.minClosingMps && facing > SLANT_MIN ? reach / closing / (facing * facing) : null;
-                    // an object (a ring's tube, a pillar, a bar) is curved and small: the time to its surface along the
-                    // normal says nothing when the craft's straight path passes beside the point the ray found, as when
-                    // it flies through a ring and the side rays meet the tube (v0.13: such a frame raised every side
-                    // sector at once, and the hold kept them on for 300 ms, voicing the far walls they saw next)
-                    if (ttc !== null && hit.objectId !== null && pathMissM(toHit, flight.vel) > config.bodyRadiusM + OBJECT_CLEARANCE_M) ttc = null;
-                    const risk = riskOf(distance, ttc, config.enterDistM[id], config.enterTtcS);
-                    if (distance < minDistance) minDistance = distance;
-                    if (ttc !== null && (minTtc === null || ttc < minTtc)) minTtc = ttc;
-                    if (closing > maxClosing) maxClosing = closing;
-                    // equal risks (a wall seen by all three rays) differ only by the tracer's hit tolerance
-                    // (0.2 mm, about 1e-7 of the risk here): within 1e-4 the nearest ray wins
-                    const tie = primary !== null && Math.abs(risk - primary.risk) <= 1e-4 * Math.max(risk, primary.risk);
-                    if (primary === null || (!tie && risk > primary.risk) || (tie && distance < primary.distance)) primary = { hit, dir: worldDir, risk, distance };
+                    // an object (a ring's tube, a pillar, a bar, a box) has a time to contact only when the craft is on a
+                    // collision course with it: when one of the path rays meets it (review B1). Flying through a ring,
+                    // the side rays meet the tube and the path does not (v0.13 before the filter: such a frame raised
+                    // every side sector at once, and the hold kept them on for 300 ms, voicing the far walls they saw next)
+                    if (ttc !== null && hit.objectId !== null) {
+                        if (config.collisionCourse === 'path-rays' && !course.has(hit.objectId)) ttc = null;
+                        else if (config.collisionCourse === 'hit-point' && pathMissM(toHit, flight.vel) > config.bodyRadiusM + OBJECT_CLEARANCE_M) ttc = null;
+                    }
+                    consider(hit, worldDir, distance, ttc, closing);
                 }
+                // an object the path meets is a reading of its own sector, with its time along the path: a pillar
+                // between two sector rays (20 degrees apart) is heard by its time to contact as well
+                for (const ph of injected[i] as PathHit[]) consider(ph.hit, ph.worldDir, ph.distance, ph.ttcS, speed);
             }
+            const primary = acc.primary;
             if (primary === null) {
                 readings.push({ sector: id, distance: config.rangeM, hit: false, dir: SECTOR_AXES[id], material: null, objectId: null, closingMps: 0, ttcS: null });
                 continue;
             }
             readings.push({
                 sector: id,
-                distance: minDistance,
+                distance: acc.minDistance,
                 hit: true,
                 dir: worldToListener(basis, primary.dir),
                 material: primary.hit.material,
                 objectId: primary.hit.objectId,
-                closingMps: maxClosing,
-                ttcS: minTtc
+                closingMps: acc.maxClosing,
+                ttcS: acc.minTtc
             });
         }
 
