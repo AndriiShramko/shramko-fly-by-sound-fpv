@@ -289,6 +289,12 @@ export const RESPAWN_BEFORE_M = 1;
 export const START_SLACK_M = 1;
 /** A point of the world's checkpoint list is passed by crossing its plane forward this close to it, m. */
 export const PASS_POINT_M = 4;
+/**
+ * A point's plane counts as crossed from this far before it, m: a micrometre, so a craft that stops on the last point of
+ * a track is not left a rounding error short of it (the truth bot stopped 1e-12 m short in tunnel-long, and a 'track-end'
+ * attempt never ended). No pilot is that exact, so it changes nothing in flight.
+ */
+export const PASS_POINT_TOLERANCE_M = 1e-6;
 /** A gate's back side is told at most this often, s (a craft that hovers on the plane would cross it to and fro). */
 export const WRONG_SIDE_EVERY_S = 3;
 /** The praise lines of a counted attempt (keys praise.1 .. praise.PRAISE_LINES). */
@@ -937,7 +943,7 @@ class Runner implements LessonSession {
             const p = track.points[i] as TrackPoint;
             const before = dot(sub(prev.pos, p.pos), p.dir);
             const after = dot(sub(s.pos, p.pos), p.dir);
-            if (!(before < 0 && after >= 0) || dist3(s.pos, p.pos) > PASS_POINT_M) continue;
+            if (!(before < -PASS_POINT_TOLERANCE_M && after >= -PASS_POINT_TOLERANCE_M) || dist3(s.pos, p.pos) > PASS_POINT_M) continue;
             this.passed(p.id, null);
             if (p.stage !== undefined) this.stagePassed(p.stage);
         }

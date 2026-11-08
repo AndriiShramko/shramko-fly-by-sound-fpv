@@ -97,7 +97,13 @@ Steps 7 to 11, lane s13-worlds:
   obstacle and corner, at the end of the track); with the goals as merged (fly-distance) the same seven failed in step
   7's run ("expected [ 'fly-distance' ] to deeply equal [ 'track-end' ]"). `test/world-tunnels.test.ts`' truth bot in
   tunnel-long now fails (FF: the attempt never ends), which is item b.
-- [ ] 8b. `passWorldPoints` takes a point as passed with a micrometre of tolerance
+- [x] 8b. `passWorldPoints` (`src/lesson/runner.ts`, s13-worlds' "Needs from other lanes" 7): a point of the world's
+  track is passed when `before < -PASS_POINT_TOLERANCE_M && after >= -PASS_POINT_TOLERANCE_M`, the new constant 1e-6 m
+  (the truth bot stops on the last point and can be left 1e-12 m short of it in tunnel-long, so a `track-end` attempt
+  never ended). Broken on purpose once (the constant 0, the rule as merged), then restored: 3 tests fail
+  (`test/world-tunnels.test.ts`, the truth bot in tunnel-long, FF; `test/pass-rule.test.ts`, the truth bot in exactly r
+  attempts and the pilot who fails every other attempt); with 1e-6 they pass, with `test/world-track-end.test.ts` and
+  `test/track.test.ts` (133 tests in the four files).
 - [ ] 8c. Stale tests take their positions from the worlds; s13-sound's two; the v0.12 replays with item d's verdict
 - [ ] 8d. The corridor's `attemptLimitS` for its 126 m track; every tunnel's limit at 1 m/s
 - [ ] 8e. The open-way chime and the checkpoint chime with different words in the glossary, four languages
