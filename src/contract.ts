@@ -273,7 +273,11 @@ export interface SonicPrefs {
     /** speechSynthesis rate, 0.5 to 2 */
     readonly speechRate: number;
     readonly captions: boolean;
-    /** the simulator's motor sound in this mode (off by default: it masks cues) */
+    /**
+     * the simulator's motor sound in this mode: on by default since v0.13 (M41-16; v0.12 had it off because it
+     * masked the cues), played through the engine's motor bus (motorInput): low-passed, under the cues, ducked
+     * under speech
+     */
     readonly motorSound: boolean;
     readonly path: 'full' | 'fast';
     /** listener frame: 'heading' (default, tilt ignored) or the full body attitude */
@@ -589,8 +593,15 @@ export interface SonicEngine {
     activeCues(): readonly ActiveCue[];
     /** every spoken line, for captions and events.jsonl */
     onSpeech: ((line: SpeechLine, text: string) => void) | null;
-    /** an AudioNode before the limiter for other sounds (the simulator's motor sound); null before start */
+    /** an AudioNode before the limiter for other sounds, as they are; null before start */
     readonly auxInput: object | null;
+    /**
+     * v0.13 (lane s13-sound, M41-16): the AudioNode for the simulator's motor sound. It low-passes the motor,
+     * evens out its level and sets it about 10 dB under the cues, ducks it under speech and under an urgent
+     * hazard, and is silent while SonicPrefs.motorSound is off. Null before start; absent on an older engine
+     * (connect to auxInput then).
+     */
+    readonly motorInput?: object | null;
 }
 
 /**

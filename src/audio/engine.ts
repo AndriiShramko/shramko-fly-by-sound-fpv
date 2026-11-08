@@ -7,6 +7,7 @@
 //   static voices (24)  one-off notes from a fixed direction (touch ping), HRTF panner -> layer bus
 //   centre              height tone and its target tone, speed ticks, room bed and drone, gate notes, chimes
 //   layer buses         theme gain + pilot gain -> duck (speech, urgent hazard) -> master
+//   motor bus           the simulator's motor (motorInput) -> low-pass -> leveller -> level -> duck -> master (M41-16)
 //   reverb              synthetic warm hall, return follows the room's openness
 //   output              master -> compressor -> soft clipper at the ceiling -> fade -> destination
 //
@@ -19,7 +20,7 @@
 import type { ActiveCue, AudioContextLike, CueEvent, LayerId, LessonLayers, Locale, SonicEngine, SonicFrameInput, SonicPrefs, SpeechLine, SpeechOut, ThemeDef, Timbre } from '../contract';
 import { LAYER_IDS } from '../contract';
 import { CuePlanner, duckDb, layerGainDb, tracePosition, type FramePlan, type HeightPlan, type NotePlan, type VoicePlan } from '../cues/planner';
-import { clamp, dbToGain, pannerDirection } from '../cues/rules';
+import { clamp, compressorMakeupDb, dbToGain, pannerDirection, URGENT_DUCK_DB } from '../cues/rules';
 import { createPulseTrain, duePulses, LOOKAHEAD_S, type PulseTrain } from '../cues/schedule';
 import { shapeAccents } from '../cues/shape';
 import { MAX_MOVING_VOICES, MAX_STATIC_VOICES } from '../cues/voices';
@@ -53,6 +54,19 @@ const REVERB_RETURN = 1.1;
 /** The open-way chime's upper note: this much after the lower one (a quick two-note figure, not a chord), s, and this much softer. */
 const HARMONY_DELAY_S = 0.07;
 const HARMONY_GAIN = 0.8;
+// The motor bus (M41-16): the simulator's motor sound under the cues. Its cutoff keeps the rotor's note and the
+// low prop wash and takes out the hiss over 2 kHz, where the cues' direction lives; the leveller holds a motor
+// played at any volume of the simulator's slider within a few dB, so one level sits it under the cues; it
+// ducks under speech by the theme's duckDb and under an urgent hazard as the other layers do.
+/** Low-pass cutoff of the motor, Hz (second order). */
+export const MOTOR_LOWPASS_HZ = 1500;
+/** The leveller: threshold, knee and ratio of the motor's compressor (its make-up gain is taken back out). */
+export const MOTOR_LEVELLER = { thresholdDb: -50, kneeDb: 6, ratio: 4, attackS: 0.03, releaseS: 0.3 } as const;
+/**
+ * Gain after the leveller, dB: puts the simulator's motor (its default volume, 15 %) about 10 dB under the
+ * cue mix of a flying lesson. Calibrated by the virtual listener's rig (test-audio/listen, evidence/listen).
+ */
+export const MOTOR_LEVEL_DB = 10;
 /** The engine's own wake-up, ms: keeps rhythms placed between frames. */
 const PUMP_MS = 25;
 /** With no frame for this long, the engine plans on from the last one (previews, menus), s. */
@@ -155,6 +169,7 @@ interface Graph {
     readonly moving: MovingSlot[];
     readonly statics: StaticSlot[];
     readonly aux: GainNode;
+    readonly motor: { readonly input: GainNode; readonly gate: GainNode; readonly duck: GainNode; duckTarget: number };
     // height: the glide (through the roughness) and the steady target tone (not roughened)
     readonly heightRough: Roughness;
     readonly heightOut: GainNode;
@@ -231,6 +246,11 @@ export class FlyBySoundEngine implements SonicEngine {
 
     get auxInput(): object | null {
         return this.g === null ? null : this.g.aux;
+    }
+
+    /** The node for the simulator's motor sound (M41-16): low-passed, levelled, under the cues, ducked; silent while motorSound is off. */
+    get motorInput(): object | null {
+        return this.g === null ? null : this.g.motor.input;
     }
 
     get locale(): Locale {
@@ -450,6 +470,31 @@ export class FlyBySoundEngine implements SonicEngine {
         const aux = ctx.createGain();
         aux.connect(output.master);
 
+        // the motor bus
+        const motorIn = ctx.createGain();
+        const motorLp = ctx.createBiquadFilter();
+        motorLp.type = 'lowpass';
+        motorLp.frequency.value = MOTOR_LOWPASS_HZ;
+        motorLp.Q.value = Math.SQRT1_2;
+        const leveller = ctx.createDynamicsCompressor();
+        leveller.threshold.value = MOTOR_LEVELLER.thresholdDb;
+        leveller.knee.value = MOTOR_LEVELLER.kneeDb;
+        leveller.ratio.value = MOTOR_LEVELLER.ratio;
+        leveller.attack.value = MOTOR_LEVELLER.attackS;
+        leveller.release.value = MOTOR_LEVELLER.releaseS;
+        const motorLevel = ctx.createGain();
+        motorLevel.gain.value = dbToGain(MOTOR_LEVEL_DB - compressorMakeupDb(MOTOR_LEVELLER.thresholdDb, MOTOR_LEVELLER.kneeDb, MOTOR_LEVELLER.ratio));
+        const motorGate = ctx.createGain();
+        motorGate.gain.value = this.planner.prefs.motorSound ? 1 : 0;
+        const motorDuck = ctx.createGain();
+        motorIn.connect(motorLp);
+        motorLp.connect(leveller);
+        leveller.connect(motorLevel);
+        motorLevel.connect(motorGate);
+        motorGate.connect(motorDuck);
+        motorDuck.connect(output.master);
+        const motor = { input: motorIn, gate: motorGate, duck: motorDuck, duckTarget: 1 };
+
         // height: tone -> roughness -> out
         const heightRough = new Roughness(ctx, now);
         const heightOut = ctx.createGain();
@@ -496,6 +541,7 @@ export class FlyBySoundEngine implements SonicEngine {
             moving,
             statics,
             aux,
+            motor,
             heightRough,
             heightOut,
             heightTone: null,
@@ -521,6 +567,7 @@ export class FlyBySoundEngine implements SonicEngine {
             this.g.layers[id].dry.gain.setTargetAtTime(gain, at, 0.05);
             this.g.layers[id].wet.gain.setTargetAtTime(gain, at, 0.05);
         }
+        this.g.motor.gate.gain.setTargetAtTime(prefs.motorSound ? 1 : 0, at, 0.05);
     }
 
     private applyDucks(): void {
@@ -535,6 +582,16 @@ export class FlyBySoundEngine implements SonicEngine {
             bus.duckDry.gain.setTargetAtTime(target, at, tc);
             bus.duckWet.gain.setTargetAtTime(target, at, tc);
             bus.duckTarget = target;
+        }
+        // the motor ducks as any layer but the safety layer does
+        const m = this.g.motor;
+        const speaking = this.speakingCount > 0;
+        const urgent = this.lastPlan?.urgent ?? false;
+        const motorDb = Math.min(speaking ? -this.planner.theme.duckDb : 0, urgent ? -URGENT_DUCK_DB : 0);
+        const mt = dbToGain(motorDb);
+        if (Math.abs(mt - m.duckTarget) >= 1e-6) {
+            m.duck.gain.setTargetAtTime(mt, at, mt < m.duckTarget ? 0.02 : 0.15);
+            m.duckTarget = mt;
         }
     }
 

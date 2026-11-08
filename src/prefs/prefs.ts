@@ -28,7 +28,7 @@ export function defaultPrefs(): SonicPrefs {
         selfVoice: true,
         speechRate: 1,
         captions: true,
-        motorSound: false,
+        motorSound: true,
         path: 'full',
         listenerFrame: 'heading',
         heightTarget: true
@@ -96,21 +96,32 @@ export function validatePrefs(input: unknown): Validation<SonicPrefs> {
  * Lenient, for a value read back from storage: a missing field takes its default (an older version
  * did not have it), a field with a bad value takes its default and is reported, an unknown key is
  * dropped and reported. A value that is not preferences at all, or of another format version,
- * gives the defaults. Never throws.
+ * gives the defaults. Never throws. One migration (v0.13): a document saved before v0.13 (it has no
+ * `heightTarget`) with `motorSound` false gets true, because false was v0.12's default and the
+ * simulator saved the whole document at any change; `motorSound` true stays, and every value saved
+ * from v0.13 on is kept as it is.
  */
-export function readPrefs(input: unknown): { prefs: SonicPrefs; issues: Issue[] } {
+export function readPrefs(stored: unknown): { prefs: SonicPrefs; issues: Issue[] } {
     const defaults = defaultPrefs();
     const issues: Issue[] = [];
-    if (!isRecord(input)) {
-        if (input !== undefined && input !== null) issues.push({ path: '', message: 'is not a preferences object; defaults are used' });
+    if (!isRecord(stored)) {
+        if (stored !== undefined && stored !== null) issues.push({ path: '', message: 'is not a preferences object; defaults are used' });
         return { prefs: defaults, issues };
     }
+    let input: Record<string, unknown> = stored;
     if (input.format !== undefined && input.format !== FORMATS.prefs) {
         issues.push({ path: 'format', message: `is ${JSON.stringify(input.format)}, this engine reads '${FORMATS.prefs}'; defaults are used` });
         return { prefs: defaults, issues };
     }
     const out: Record<string, unknown> = { ...defaults };
     for (const key of Object.keys(input)) if (!(KEYS as readonly string[]).includes(key)) issues.push({ path: key, message: 'is not a known key; dropped' });
+    // a document written before v0.13 has no heightTarget, and its motorSound false is v0.12's default (the simulator
+    // saves the whole document at any change), not a choice: the motor is on in v0.13 (M41-16). true stays true.
+    const beforeV013 = !('heightTarget' in input);
+    if (beforeV013 && input['motorSound'] === false) {
+        issues.push({ path: 'motorSound', message: 'false was the default before v0.13; the motor sound is on now (a choice saved from v0.13 on is kept)' });
+        input = { ...input, motorSound: true };
+    }
     for (const key of KEYS) {
         if (key === 'format' || input[key] === undefined) continue;
         const c = new Collector();

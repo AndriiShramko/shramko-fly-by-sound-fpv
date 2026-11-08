@@ -25,7 +25,8 @@ Shared event kinds (plan, "Lanes"): the runner emits the cue events `wrong-way`,
   `test/freeway.test.ts`, 14 tests on box tunnels, `test/helpers/boxes.ts`)
 - [x] 5 Event sounds (M41-15, M41-11, M41-5): wrong-way, wrong-side, praise, stage, repeat-cue (contract
   `CueEvent`, planner; `test/events.test.ts`, 14 tests)
-- [ ] 6 Motor (M41-16): on by default, under the cues, ducked under speech
+- [x] 6 Motor (M41-16): on by default, under the cues, ducked under speech (engine motor bus, prefs default and
+  migration, `test/prefs.test.ts`; the level is measured and calibrated by the rig in step 9)
 - [ ] 7 Never silence (M41-10), the planner's part
 - [ ] 8 Speech level (M41-17): speech 3 to 6 LU over the mix, true peak at most -1 dBTP
 - [ ] 9 The first measuring rig of the virtual listener (VL-0, part of VL-2 and VL-6)
@@ -200,9 +201,31 @@ Shared event kinds (plan, "Lanes"): the runner emits the cue events `wrong-way`,
   pulses). ONE event is ONE play: for M41-5 the runner emits three 'repeat-cue' events with onsets at least 1 s apart
   (each play is over by 0.9 s). An unknown cue id plays nothing.
 
+### Step 6, motor (M41-16)
+
+- `SonicPrefs.motorSound` is true by default. The setting stays (`menu.setting.motor`).
+- v0.12 saved prefs: the simulator saves the whole document at any change, so a v0.12 document holds
+  `motorSound: false` (the v0.12 default) whether or not the pilot ever touched the motor. `readPrefs` (the lenient
+  reader the simulator loads with) therefore turns `false` into `true` for a document saved before v0.13 (it has no
+  `heightTarget` key, which every v0.13 document has) and reports it as an issue; `true` stays `true`. The one choice
+  that is lost: a v0.12 pilot who turned the motor on and then off again gets it on once. From the first v0.13 save
+  every value is kept. The prefs format stays `shramko-sonic-prefs/1`; the strict `validatePrefs` (session manifests)
+  never changes a recorded value, so v0.12 packages read as before.
+- Engine motor bus (`motorInput`, new optional member of `SonicEngine`): input, 2nd-order low-pass at 1.5 kHz
+  (the rotor's note and the low wash stay, the hiss over 2 kHz where the cues' direction lives goes), a leveller
+  (compressor at -50 dB, ratio 4, knee 6 dB, its make-up gain taken back out) so a motor played at any position of the
+  simulator's volume slider stays within a few dB, `MOTOR_LEVEL_DB` after it, a gate that is shut while
+  `motorSound` is off, and a duck like the layers': 12 dB under speech (theme `duckDb`), 9 dB under an urgent hazard.
+  `auxInput` is unchanged: a raw input before the limiter.
+
 ## Needs from the simulator
 
-(Filled step by step.)
+- M41-16, motor (`apps/fly/src/app/builtin/sound.ts:112-121`, `startOnEngine`): connect the motor sound to
+  `ctx.sonic.engine.motorInput` instead of `auxInput` (fall back to `auxInput` when `motorInput` is undefined: an
+  older package). Its `context` is the engine's AudioContext, as `auxInput`'s. `enabled()` (`sound.ts:84`) already
+  reads `prefs.motorSound`, which is now true by default; nothing else changes there. `apps/fly/src/sonic/audio.ts:16`
+  `PageEngine`: add `'motorInput'` to the Pick. The bench tests that hold the old default
+  (`tools/bench/test/sonic-audio.test.ts:177` and `:428`, `motorSound` false) must expect true.
 
 ## Needs from other lanes
 
