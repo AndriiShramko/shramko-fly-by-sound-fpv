@@ -203,7 +203,7 @@ export const FREE_DIRS: Readonly<Record<FreeSide, Vec3>> = {
     up: [0, 0, -1],
     down: [0, 0, -1]
 };
-/** How many scale steps the open-way chime moves for a way above (and down for a way below). */
+/** How many scale steps above the side chime's note a way above starts (and a way below ends below it). */
 export const FREE_ELEVATION_STEPS = 3;
 /** Default direction of a preview, listener frame. */
 const FRONT: Vec3 = [0, 0, -1];
@@ -485,15 +485,21 @@ export class CuePlanner {
         return null;
     }
 
-    /** The open-way chime from a side: a two-note chime on the scale, high for a way above, low for one below (polarity respected). */
+    /**
+     * The open-way chime from a side (review m2): two quick notes on the scale whose contour tells the way with no
+     * note to compare against: two equal notes from the left or the right; from ahead a rising pair for a way above
+     * (starting three steps over the side's note) and a falling pair for one below (ending three steps under it),
+     * turned over with the polarity as the height tone is.
+     */
     private freeVoice(side: FreeSide, key: string, priority: number): Omit<VoicePlan, 'slot'> {
         const theme = this.effectiveTheme;
         const p = theme.layers.safety.params as Record<string, number>;
-        const sign = this.prefsValue.heightPolarity === 'up-higher' ? 1 : -1;
-        const lift = side === 'up' ? sign * FREE_ELEVATION_STEPS : side === 'down' ? -sign * FREE_ELEVATION_STEPS : 0;
+        const toward = side === 'up' ? 1 : side === 'down' ? -1 : 0;
+        const move = this.prefsValue.heightPolarity === 'up-higher' ? toward : -toward;
         const base = (p['freeStep'] as number | undefined) ?? 13;
-        const lo = note(theme.scale, base, this.pitch('safety'), lift);
-        const hi = note(theme.scale, lo.index, 2);
+        const start = move > 0 ? FREE_ELEVATION_STEPS : move < 0 ? 2 - FREE_ELEVATION_STEPS : 0;
+        const lo = note(theme.scale, base, this.pitch('safety'), start);
+        const hi = note(theme.scale, lo.index, 2 * move);
         const period = ((p['freePeriodMs'] as number | undefined) ?? 600) / 1000;
         return {
             key,
@@ -517,7 +523,7 @@ export class CuePlanner {
             beatHz: 0,
             beatDepth: 0,
             trace: null,
-            harmonyHz: hi.index === lo.index ? null : hi.hz
+            harmonyHz: hi.hz
         };
     }
 

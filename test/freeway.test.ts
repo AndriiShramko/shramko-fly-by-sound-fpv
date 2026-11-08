@@ -106,23 +106,39 @@ describe('the chime: left and right by direction, above and below by pitch', () 
         }
     });
 
-    it('is higher for a way above and lower for one below, turned over with the polarity; every note on the scale', () => {
+    it('tells the way by its contour (review m2): equal notes from a side, rising for a way above, falling for one below, turned over with the polarity; every note on the scale', () => {
+        // the contour: how the second note goes from the first (+1 up, -1 down, 0 equal)
+        const contour = (v: VoicePlan): number => Math.sign((v.harmonyHz as number) - v.hz);
         for (const id of BUILTIN_THEME_IDS) {
             const theme = getBuiltinTheme(id);
-            const side = at('left', defaultPrefs(), id).hz;
-            expect(at('right', defaultPrefs(), id).hz).toBe(side);
-            expect(at('up', defaultPrefs(), id).hz).toBeGreaterThan(side);
-            expect(at('down', defaultPrefs(), id).hz).toBeLessThan(side);
+            const side = at('left', defaultPrefs(), id);
+            expect(at('right', defaultPrefs(), id).hz).toBe(side.hz);
+            expect(contour(side)).toBe(0);
+            expect(contour(at('right', defaultPrefs(), id))).toBe(0);
+            expect(contour(at('up', defaultPrefs(), id))).toBe(1);
+            expect(contour(at('down', defaultPrefs(), id))).toBe(-1);
+            // and the register agrees: a way above sounds over the side's note, a way below under it
+            expect(at('up', defaultPrefs(), id).hz).toBeGreaterThan(side.hz);
+            expect(at('down', defaultPrefs(), id).harmonyHz as number).toBeLessThan(side.hz);
             const flipped = { ...defaultPrefs(), heightPolarity: 'up-lower' as const };
-            expect(at('up', flipped, id).hz).toBeLessThan(side);
-            expect(at('down', flipped, id).hz).toBeGreaterThan(side);
+            expect(contour(at('up', flipped, id))).toBe(-1);
+            expect(contour(at('down', flipped, id))).toBe(1);
+            expect(contour(at('left', flipped, id))).toBe(0);
             for (const s of ['left', 'up', 'down'] as const) {
                 const v = at(s, defaultPrefs(), id);
                 expect(isInScale(theme.scale, v.hz)).toBe(true);
                 expect(isInScale(theme.scale, v.harmonyHz as number)).toBe(true);
-                expect(v.harmonyHz as number).toBeGreaterThan(v.hz);
             }
         }
+    });
+
+    it('control: the first figure (the same rising pair everywhere, only its register moved) has one contour for all four sides', () => {
+        // what review m2 found: above and below differed only by register, which needs the side's note to compare
+        const first = (side: FreeSide): number => (side === 'up' ? 3 : side === 'down' ? -3 : 0);
+        const contours = new Set((['left', 'right', 'up', 'down'] as const).map((s) => Math.sign(first(s) + 2 - first(s))));
+        expect(contours.size).toBe(1);
+        const shipped = new Set((['left', 'up', 'down'] as const).map((s) => Math.sign((at(s).harmonyHz as number) - at(s).hz)));
+        expect(shipped.size).toBe(3);
     });
 
     it('repeats at the theme period (slower in calm) and keeps the hazard voices: they outrank it', () => {
