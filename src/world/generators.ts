@@ -60,7 +60,11 @@ export const GENERATOR_VERSIONS: Readonly<Record<WorldGenerator, readonly number
     WORLD_GENERATORS.map((g) => [g, Object.keys(VERSIONS[g]).map(Number).sort((a, b) => a - b)])
 ) as unknown as Readonly<Record<WorldGenerator, readonly number[]>>;
 
-/** The newest version of each generator: what a new lesson should name. */
+/**
+ * The newest version of each generator: what a new lesson should name. For the corridor that is version 2, the
+ * tunnels (layouts tunnel, gaps, long); a corridor with version 1's layouts (full, straight, obstacle, bends, jogs)
+ * names version 1, which keeps them.
+ */
 export const NEWEST_VERSION: Readonly<Record<WorldGenerator, number>> = Object.fromEntries(
     WORLD_GENERATORS.map((g) => [g, Math.max(...(GENERATOR_VERSIONS[g] as number[]))])
 ) as unknown as Readonly<Record<WorldGenerator, number>>;
