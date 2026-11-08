@@ -177,6 +177,22 @@ describe('locale files', () => {
             expect(same, locale).toEqual(['app.name']);
         }
     });
+
+    // Lane s13-elev E2-2, its review E4: in Spanish, Polish and Russian every line that names a key says "the key" right
+    // before its name (the lint's key-word rule); control: v0.13's lines that name a key (16c01a1,
+    // tools/listen/key-lines-v013.json), which the local voices said with the key lost, each fail it
+    it('say "the key" right before a key\'s name in Spanish, Polish and Russian: all 17 lines of each, v0.13\'s 17 failing', () => {
+        const v013 = (JSON.parse(readFileSync(new URL('../tools/listen/key-lines-v013.json', import.meta.url), 'utf8')) as { lines: Record<'es' | 'pl' | 'ru', Record<string, string>> }).lines;
+        for (const locale of ['es', 'pl', 'ru'] as const) {
+            const named = Object.keys(DICTS[locale]).filter((k) => /\{(key|skip)\}/.test(DICTS[locale][k] as string));
+            expect(named.length, locale).toBe(17);
+            expect(Object.keys(v013[locale]).sort(), locale).toEqual([...named].sort());
+            for (const k of named) expect(lintDict(locale, { [k]: DICTS[locale][k] as string }, DICTS.en).map((p) => p.rule), `${locale} ${k}`).not.toContain('key-word');
+            for (const [k, text] of Object.entries(v013[locale])) expect(lintDict(locale, { [k]: text }, DICTS.en).map((p) => p.rule), `v0.13 ${locale} ${k}: ${text}`).toContain('key-word');
+        }
+        // English needs no such word: "Press T" is heard right
+        expect(lintDict('en', { 'help.record': 'Press {key} to start or stop recording.' }, DICTS.en).map((p) => p.rule)).not.toContain('key-word');
+    });
 });
 
 describe('the parity and lint rules refuse bad dictionaries (negative controls)', () => {

@@ -1,0 +1,63 @@
+{
+  "about": "The lines of v0.13 (main 16c01a1) that name a key, in Spanish, Polish and Russian, before lane s13-elev's E2-2 had them say the key as a key (la tecla, klawisz, клавишу): said by the local voices, the key's name ran into the verb or was lost. The control of the key rule of the words check (tools/listen-words.ts) and of the speech lint's key-word rule (tools/locale-lint.ts).",
+  "commit": "16c01a1",
+  "lines": {
+    "es": {
+      "glossary.again": "Pulsa {key} para volver a oír los sonidos.",
+      "help.record": "Pulsa {key} para empezar o parar la grabación.",
+      "help.send": "Pulsa {key} para enviar el vuelo al autor.",
+      "help.status": "Pulsa {key} para oír dónde estás.",
+      "help.repeat": "Pulsa {key} para oír otra vez la última frase.",
+      "help.glossary": "Pulsa {key} para abrir el glosario de sonidos.",
+      "help.reset": "Pulsa {key} para volver al último punto de control. Mantenla pulsada para empezar la lección de nuevo.",
+      "help.next": "Pulsa {key} para pasar al siguiente paso.",
+      "rec.ask": "¿Puedo grabar este vuelo y tu voz? La grabación se queda en este dispositivo hasta que la envíes. Pulsa {key} para decir que sí.",
+      "rec.recover": "Un vuelo anterior no se terminó. Pulsa {key} para conservarlo.",
+      "send.ask": "Pulsa {key} para enviar este vuelo al autor.",
+      "send.confirm": "¿Estás de acuerdo en enviar la grabación, con tu voz, al autor? Pulsa {key} para aceptar.",
+      "fly.offer-next": "Pulsa {key} para pasar a la siguiente lección.",
+      "survey.howto": "Responde con una tecla numérica. Pulsa {skip} para saltar una pregunta.",
+      "survey.howto-voice": "Responde con una tecla numérica o di el número. Pulsa {skip} para saltar una pregunta.",
+      "survey.repeat-hint": "Pulsa {key} para oír la pregunta otra vez.",
+      "survey.open-howto": "Di tu respuesta en voz alta. Pulsa {key} cuando termines."
+    },
+    "pl": {
+      "glossary.again": "Naciśnij {key}, aby ponownie posłuchać dźwięków.",
+      "help.record": "Naciśnij {key}, aby zacząć lub zatrzymać nagrywanie.",
+      "help.send": "Naciśnij {key}, aby wysłać lot autorowi.",
+      "help.status": "Naciśnij {key}, aby usłyszeć, gdzie jesteś.",
+      "help.repeat": "Naciśnij {key}, aby usłyszeć ostatnie zdanie jeszcze raz.",
+      "help.glossary": "Naciśnij {key}, aby otworzyć słownik dźwięków.",
+      "help.reset": "Naciśnij {key}, aby wrócić do ostatniego punktu kontrolnego. Przytrzymaj, aby zacząć lekcję od nowa.",
+      "help.next": "Naciśnij {key}, aby przejść do następnego kroku.",
+      "rec.ask": "Czy mogę nagrać ten lot i twój głos? Nagranie zostaje na tym urządzeniu, dopóki go nie wyślesz. Naciśnij {key}, aby się zgodzić.",
+      "rec.recover": "Poprzedni lot nie został dokończony. Naciśnij {key}, aby go zachować.",
+      "send.ask": "Naciśnij {key}, aby wysłać ten lot autorowi.",
+      "send.confirm": "Czy zgadzasz się wysłać autorowi nagranie wraz ze swoim głosem? Naciśnij {key}, aby się zgodzić.",
+      "fly.offer-next": "Aby przejść do następnej lekcji, naciśnij {key}.",
+      "survey.howto": "Odpowiadaj klawiszem z cyfrą. Naciśnij {skip}, aby pominąć pytanie.",
+      "survey.howto-voice": "Odpowiadaj klawiszem z cyfrą albo powiedz cyfrę. Naciśnij {skip}, aby pominąć pytanie.",
+      "survey.repeat-hint": "Naciśnij {key}, aby usłyszeć pytanie jeszcze raz.",
+      "survey.open-howto": "Powiedz odpowiedź na głos. Naciśnij {key}, gdy skończysz."
+    },
+    "ru": {
+      "glossary.again": "Нажми {key}, чтобы снова послушать звуки.",
+      "help.record": "Нажми {key}, чтобы начать или остановить запись.",
+      "help.send": "Нажми {key}, чтобы отправить полёт автору.",
+      "help.status": "Нажми {key}, чтобы услышать, где ты.",
+      "help.repeat": "Нажми {key}, чтобы ещё раз услышать последнюю фразу.",
+      "help.glossary": "Нажми {key}, чтобы открыть словарь звуков.",
+      "help.reset": "Нажми {key}, чтобы вернуться к последней контрольной точке. Удерживай, чтобы начать урок заново.",
+      "help.next": "Нажми {key}, чтобы перейти к следующему шагу.",
+      "rec.ask": "Можно записать этот полёт и твой голос? Запись останется на этом устройстве, пока ты её не отправишь. Нажми {key}, чтобы согласиться.",
+      "rec.recover": "Предыдущий полёт не был закончен. Нажми {key}, чтобы сохранить его.",
+      "send.ask": "Нажми {key}, чтобы отправить этот полёт автору.",
+      "send.confirm": "Отправить автору запись вместе с твоим голосом? Нажми {key}, чтобы подтвердить.",
+      "fly.offer-next": "Чтобы перейти к следующему уроку, нажми {key}.",
+      "survey.howto": "Отвечай цифровой клавишей. Нажми {skip}, чтобы пропустить вопрос.",
+      "survey.howto-voice": "Отвечай цифровой клавишей или назови цифру. Нажми {skip}, чтобы пропустить вопрос.",
+      "survey.repeat-hint": "Нажми {key}, чтобы ещё раз услышать вопрос.",
+      "survey.open-howto": "Скажи ответ вслух. Нажми {key}, когда закончишь."
+    }
+  }
+}

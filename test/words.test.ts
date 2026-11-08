@@ -5,7 +5,7 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { LOCALES, type Locale } from '../src/contract';
 import { DICTS } from '../src/i18n';
-import { BOUNDS, CONTROL, CONTROL_MIN_SHARE, HEARD, isNumber, KEY_OF, packageLines, putBack, score, VOICES, wordErrors, words } from '../tools/listen-words';
+import { BOUNDS, CONTROL, CONTROL_MIN_SHARE, HEARD, isNumber, KEY_CONTROL_LOCALES, KEY_OF, keyHeard, packageLines, putBack, score, v013KeyLines, VOICES, wordErrors, words } from '../tools/listen-words';
 
 describe('the words of a line and of a transcript', () => {
     it('are compared without case and punctuation', () => {
@@ -100,6 +100,36 @@ describe('the lines of the check', () => {
         expect(lines.find((l) => l.locale === 'pl' && l.key === 'fly.gate')?.text).toBe('Bramka 2 z 5.');
     });
 
+    it('know the key a line names (review E4 of lane s13-elev): 17 lines a language, the key of the simulator or Escape', () => {
+        const lines = packageLines();
+        for (const locale of LOCALES) {
+            const keyed = lines.filter((l) => l.locale === locale && l.keyName !== undefined);
+            expect(keyed.length, locale).toBe(17);
+            for (const l of keyed) expect(words(l.text, locale).join(' '), `${locale} ${l.key}`).toContain(words(l.keyName as string, locale).join(' '));
+        }
+        expect(lines.find((l) => l.locale === 'ru' && l.key === 'help.send')?.keyName).toBe('U');
+        expect(lines.find((l) => l.locale === 'pl' && l.key === 'survey.howto')?.keyName).toBe('Escape');
+        expect(lines.find((l) => l.locale === 'es' && l.key === 'fly.go')?.keyName).toBeUndefined();
+        // the control's lines: v0.13's 17 a language in Spanish, Polish and Russian, filled the same way
+        const v013 = v013KeyLines();
+        expect(v013).toHaveLength(17 * KEY_CONTROL_LOCALES.length);
+        expect(v013.every((l) => l.keyName !== undefined && !l.text.includes('{'))).toBe(true);
+        expect(v013.find((l) => l.locale === 'es' && l.key === 'help.record')?.text).toBe('Pulsa T para empezar o parar la grabación.');
+    });
+
+    it('hear the key when its name is a word of its own in the transcript, and only then', () => {
+        const es = { locale: 'es', keyName: 'T' } as const;
+        expect(keyHeard(es, 'Pulsa la tecla T para empezar o parar la grabación.')).toBe(true);
+        expect(keyHeard(es, 'Púlsate para empezar o parar la grabación.')).toBe(false);
+        expect(keyHeard({ locale: 'ru', keyName: 'U' }, 'Нажми её, чтобы отправить полёт автору')).toBe(false);
+        expect(keyHeard({ locale: 'ru', keyName: 'U' }, 'Нажми клавишу U, чтобы отправить полёт автору')).toBe(true);
+        expect(keyHeard({ locale: 'pl', keyName: 'I' }, 'Naciśnij, aby usłyszeć, gdzie jesteś.')).toBe(false);
+        expect(keyHeard({ locale: 'ru', keyName: 'Escape' }, 'Нажми клавишу Escape, чтобы пропустить вопрос.')).toBe(true);
+        expect(keyHeard({ locale: 'en', keyName: 'Enter' }, 'Press enter when you are done.')).toBe(true);
+        // a line that names no key has nothing to lose
+        expect(keyHeard({ locale: 'en' }, 'Go.')).toBe(true);
+    });
+
     it('have one bound per language, a word error rate under one', () => {
         for (const locale of LOCALES) {
             expect(BOUNDS[locale], locale).toBeGreaterThanOrEqual(0);
@@ -115,14 +145,29 @@ describe('the last run of the words check (evidence/listen/VL-4-words.json)', ()
         readonly text: string;
         readonly heard: string;
         readonly rate: number;
+        readonly keyName?: string;
+        readonly keyHeard?: boolean;
     }
     interface Language {
         readonly lines: number;
         readonly bound: number;
         readonly over: readonly string[];
         readonly voice: string;
+        readonly keys: { readonly lines: number; readonly lost: readonly string[] };
     }
-    const ev = JSON.parse(readFileSync(new URL('../evidence/listen/VL-4-words.json', import.meta.url), 'utf8')) as { valid: boolean; pass: boolean; languages: Record<Locale, Language>; control: { locale: string; voice: string; share: number; fails: boolean }; rows: Row[] };
+    interface Lost {
+        readonly key: string;
+        readonly text: string;
+        readonly heard: string;
+    }
+    const ev = JSON.parse(readFileSync(new URL('../evidence/listen/VL-4-words.json', import.meta.url), 'utf8')) as {
+        valid: boolean;
+        pass: boolean;
+        languages: Record<Locale, Language>;
+        control: { locale: string; voice: string; share: number; fails: boolean };
+        keyControl: { lines: number; lost: Record<string, Lost[]>; fails: boolean };
+        rows: Row[];
+    };
 
     it('heard every line of every language with its own voice, each within its language\'s bound, the bounds those of the check', () => {
         expect(ev.valid).toBe(true);
@@ -150,5 +195,30 @@ describe('the last run of the words check (evidence/listen/VL-4-words.json)', ()
         expect(ev.control.voice).toBe(CONTROL.voice);
         expect(ev.control.fails).toBe(true);
         expect(ev.control.share).toBeGreaterThanOrEqual(CONTROL_MIN_SHARE);
+    });
+
+    it("heard every line that names a key with the key's name as a word of its own, in every language; checked again here (review E4 of lane s13-elev)", () => {
+        for (const locale of LOCALES) {
+            expect(ev.languages[locale].keys.lines, locale).toBe(17);
+            expect(ev.languages[locale].keys.lost, locale).toEqual([]);
+            const keyed = ev.rows.filter((r) => r.locale === locale && r.keyName !== undefined);
+            expect(keyed.length, locale).toBe(17);
+            for (const r of keyed) expect(keyHeard({ locale, keyName: r.keyName as string }, r.heard), `${locale} ${r.key}: "${r.heard}"`).toBe(true);
+        }
+    });
+
+    it("control: v0.13's lines that name a key, said by their voices, lose a key in each of Spanish, Polish and Russian; checked again here", () => {
+        expect(ev.keyControl.lines).toBe(17 * KEY_CONTROL_LOCALES.length);
+        expect(ev.keyControl.fails).toBe(true);
+        const lines = v013KeyLines();
+        for (const locale of KEY_CONTROL_LOCALES) {
+            const lost = ev.keyControl.lost[locale] ?? [];
+            expect(lost.length, locale).toBeGreaterThan(0);
+            for (const l of lost) {
+                const line = lines.find((x) => x.locale === locale && x.key === l.key);
+                expect(line?.text, `${locale} ${l.key}`).toBe(l.text);
+                expect(keyHeard({ locale, keyName: line?.keyName as string }, l.heard), `${locale} ${l.key}: "${l.heard}"`).toBe(false);
+            }
+        }
     });
 });

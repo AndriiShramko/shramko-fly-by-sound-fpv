@@ -15,6 +15,9 @@
 //    clip, language and transcriber (<cache>/words/).
 // 4. Word error rate per line (wordErrors), with the words a voice is known to say otherwise put back (HEARD); one
 //    bound per language (BOUNDS). The control: the Russian lines said by the English voice must fail the Russian bound.
+//    And the key rule (review E4 of the lane): a line that names a key is heard with the key's name as a word of its
+//    own (keyHeard), whatever its rate; its control: v0.13's lines that name a key (tools/listen/key-lines-v013.json),
+//    said by their voices, lose a key in each of Spanish, Polish and Russian.
 // 5. Evidence: evidence/listen/VL-4-words.json, keyed by the hash of every input. With nothing changed since the last
 //    passing run, nothing runs again (--force runs it anyway).
 //
@@ -29,7 +32,7 @@ import { DICTS, messageArguments } from '../src/i18n';
 import { createTranslator, type Translator } from '../src/i18n/translator';
 
 /** Bump when the lines, the scoring or the evidence's layout change in a way the hashed files do not show. */
-export const WORDS_VERSION = 1;
+export const WORDS_VERSION = 2;
 
 // ------------------------------------------------------------------ words
 
@@ -153,6 +156,7 @@ export const HEARD: readonly Heard[] = [
     { locale: 'pl', key: '*', said: 'sześcianu', heard: 'szeisianu', why: 'the same word heard, but misspelt' },
     { locale: 'pl', key: '*', said: 'sześcianu', heard: 'sześianu', why: 'the same word heard, but misspelt' },
     { locale: 'pl', key: '*', said: 'dron', heard: 'dran', why: 'the voice says dron with an open o that Whisper writes as a, in every line with the word' },
+    { locale: 'pl', key: '*', said: '20 procent', heard: '20%', why: 'Whisper writes the percent sign' },
     { locale: 'pl', key: 'app.name', said: 'Fly by', heard: 'Flajby', why: 'the name alone: Paulina says Fly the Polish way, flaj, and Whisper joins the two words' },
     { locale: 'pl', key: 'cue.shape.pillar.name', said: 'Słup', heard: 'Swoop', why: ONE_WORD },
     { locale: 'pl', key: 'menu.main.quit', said: 'Wyjdź', heard: 'Wyjęć', why: ONE_WORD },
@@ -166,6 +170,7 @@ export const HEARD: readonly Heard[] = [
     { locale: 'ru', key: '*', said: 'гул', heard: 'гол', why: 'the hum (гул) is heard as a goal (гол), in 12 of the 13 lines with the word' },
     { locale: 'ru', key: '*', said: 'гулом', heard: 'голым', why: 'the same habit as with гул' },
     { locale: 'ru', key: '*', said: 'препятствие', heard: 'препятствия', why: 'unstressed, the endings -ие and -ия sound the same' },
+    { locale: 'ru', key: '*', said: '20 процентов', heard: '20%', why: 'Whisper writes the percent sign' },
     { locale: 'ru', key: '*', said: 'держись середины', heard: 'держись с середины', why: 'the сь of держись runs into середины and Whisper writes a с between them' },
     { locale: 'ru', key: '*', said: 'коснёшься стены', heard: 'кознёшь со стены', why: 'коснёшься (you touch) before стены is heard as кознёшь со' },
     { locale: 'ru', key: 'app.name', said: 'Fly by', heard: 'F.L.Y.B.Y.', why: 'Irina spells Fly by letter by letter (in the menu\'s welcome it comes out as flui bui)' },
@@ -274,6 +279,16 @@ export interface Line {
     readonly key: string;
     /** what the voice is given and the transcript is compared with */
     readonly text: string;
+    /** the key's name the line says, when it names a key ({key}, {skip}): it must be heard as a word of its own */
+    readonly keyName?: string;
+}
+
+/** The name of the key a line says (its {key} or {skip} as sampleParams fills it), or undefined when it names none. */
+export function keyNameOf(key: string, template: string): string | undefined {
+    const names = messageArguments(template).map((a) => a.name);
+    if (names.includes('key')) return KEY_OF[key] ?? 'K';
+    if (names.includes('skip')) return 'Escape';
+    return undefined;
 }
 
 /** Every line of the four locales as a host says it. */
@@ -283,9 +298,35 @@ export function packageLines(): Line[] {
         const tr = createTranslator(locale, DICTS, (p) => {
             throw new Error(`${p.locale} ${p.key}: ${p.message}`);
         });
-        for (const [key, template] of Object.entries(DICTS[locale])) out.push({ locale, key, text: tr.say(key, sampleParams(key, template, tr)) });
+        for (const [key, template] of Object.entries(DICTS[locale])) {
+            const keyName = keyNameOf(key, template);
+            out.push({ locale, key, text: tr.say(key, sampleParams(key, template, tr)), ...(keyName === undefined ? {} : { keyName }) });
+        }
     }
     return out;
+}
+
+/**
+ * The key rule's control (review E4 of lane s13-elev): v0.13's lines that name a key in Spanish, Polish and Russian
+ * (16c01a1, tools/listen/key-lines-v013.json), said as a host says them. Said by the local voices, the key's name ran
+ * into the verb or was lost in some of each language, so the key rule must find a lost key in each.
+ */
+export function v013KeyLines(): Line[] {
+    const file = JSON.parse(readFileSync(join(ROOT, 'tools', 'listen', 'key-lines-v013.json'), 'utf8')) as { lines: Record<string, Record<string, string>> };
+    const out: Line[] = [];
+    for (const [locale, lines] of Object.entries(file.lines)) {
+        for (const [key, template] of Object.entries(lines)) {
+            const keyName = keyNameOf(key, template) as string;
+            out.push({ locale: locale as Locale, key, text: template.replace(/\{(key|skip)\}/g, keyName), keyName });
+        }
+    }
+    return out;
+}
+
+/** Whether the transcript has the key's name as a word (or words) of its own: "Pulsa la tecla T para", not "Púlsate para". */
+export function keyHeard(line: Pick<Line, 'locale' | 'keyName'>, hyp: string): boolean {
+    if (line.keyName === undefined) return true;
+    return contains(words(hyp, line.locale), words(line.keyName, line.locale)) >= 0;
 }
 
 /** The simulator's Fly by Sound files (under its packages/i18n/locales). */
@@ -366,6 +407,8 @@ export interface Scored extends Line {
     readonly rate: number;
     readonly errors: number;
     readonly words: number;
+    /** a line that names a key: whether the key's name was heard as a word of its own (keyHeard); else true */
+    readonly keyHeard: boolean;
 }
 
 export function score(line: Line, voice: string, hyp: string, records: readonly Heard[] = HEARD): Scored {
@@ -373,7 +416,7 @@ export function score(line: Line, voice: string, hyp: string, records: readonly 
     const heard = words(hyp, line.locale);
     const raw = wordErrors(ref, heard);
     const e = wordErrors(ref, putBack(heard, ref, line.locale, line.key, records));
-    return { ...line, voice, hyp, rawRate: raw.rate, rate: e.rate, errors: e.errors, words: e.words };
+    return { ...line, voice, hyp, rawRate: raw.rate, rate: e.rate, errors: e.errors, words: e.words, keyHeard: keyHeard(line, hyp) };
 }
 
 export interface LanguageSummary {
@@ -387,12 +430,15 @@ export interface LanguageSummary {
     readonly maxRate: number;
     /** lines over the bound */
     readonly over: readonly string[];
+    /** the lines that name a key, and those heard without the key's name as a word of its own */
+    readonly keys: { readonly lines: number; readonly lost: readonly string[] };
     readonly heard: readonly Heard[];
 }
 
 export function summarise(rows: readonly Scored[], locale: Locale, bound: number, records: readonly Heard[] = HEARD): LanguageSummary {
     const mine = rows.filter((r) => r.locale === locale);
     const rate = (x: number): number => Math.round(x * 10000) / 10000;
+    const keyed = mine.filter((r) => r.keyName !== undefined);
     return {
         voice: mine[0]?.voice ?? VOICES[locale],
         lines: mine.length,
@@ -402,17 +448,21 @@ export function summarise(rows: readonly Scored[], locale: Locale, bound: number
         meanRate: rate(mine.reduce((s, r) => s + r.rate, 0) / Math.max(mine.length, 1)),
         maxRate: rate(Math.max(0, ...mine.map((r) => r.rate))),
         over: mine.filter((r) => r.rate > bound).map((r) => r.key),
+        keys: { lines: keyed.length, lost: keyed.filter((r) => !r.keyHeard).map((r) => r.key) },
         heard: records.filter((h) => h.locale === locale)
     };
 }
+
+/** The languages whose v0.13 key lines the key control holds; it is valid when the key rule finds a lost key in each. */
+export const KEY_CONTROL_LOCALES: readonly Locale[] = ['es', 'pl', 'ru'];
 
 // ------------------------------------------------------------------ files, clips, transcripts
 
 const ROOT = process.cwd();
 const sha256 = (data: string | Buffer): string => createHash('sha256').update(data).digest('hex');
 
-/** Every input of the check: the lines (locales and the code that fills them), the clip maker, the transcriber, this driver. */
-const HASHED = ['locales', 'src/i18n', 'src/contract.ts', 'tools/listen-words.ts', 'tools/listen/words.py', 'tools/listen/tts/sapi-clips.ps1', 'tools/listen/requirements.txt'];
+/** Every input of the check: the lines (locales and the code that fills them), the clip maker, the transcriber, this driver, the key control's lines. */
+const HASHED = ['locales', 'src/i18n', 'src/contract.ts', 'tools/listen-words.ts', 'tools/listen/words.py', 'tools/listen/tts/sapi-clips.ps1', 'tools/listen/requirements.txt', 'tools/listen/key-lines-v013.json'];
 
 function filesUnder(path: string): string[] {
     const abs = join(ROOT, path);
@@ -558,7 +608,7 @@ async function roundTrip(lines: readonly Line[], extra: readonly { readonly line
 // ------------------------------------------------------------------ the command
 
 const round = (x: number): number => Math.round(x * 10000) / 10000;
-const rowOut = (r: Scored): Record<string, unknown> => ({ locale: r.locale, key: r.key, text: r.text, heard: r.hyp, rawRate: round(r.rawRate), rate: round(r.rate) });
+const rowOut = (r: Scored): Record<string, unknown> => ({ locale: r.locale, key: r.key, text: r.text, heard: r.hyp, rawRate: round(r.rawRate), rate: round(r.rate), ...(r.keyName === undefined ? {} : { keyName: r.keyName, keyHeard: r.keyHeard }) });
 
 export async function main(argv: readonly string[]): Promise<number> {
     const out = (s: string): void => {
@@ -604,38 +654,46 @@ export async function main(argv: readonly string[]): Promise<number> {
     }
     const lines = packageLines();
     const control = lines.filter((l) => l.locale === CONTROL.locale).map((line) => ({ line, voice: CONTROL.voice }));
-    out(`listen-words: ${lines.length} lines in ${LOCALES.length} languages, and the control (${control.length} ${CONTROL.locale} lines by ${CONTROL.voice})`);
-    const { rows, extraRows, decode, tools } = await roundTrip(lines, control, out);
+    const keyLines = v013KeyLines().map((line) => ({ line, voice: VOICES[line.locale] }));
+    out(`listen-words: ${lines.length} lines in ${LOCALES.length} languages, the control (${control.length} ${CONTROL.locale} lines by ${CONTROL.voice}) and the key control (${keyLines.length} lines of v0.13 that name a key)`);
+    const { rows, extraRows: extra, decode, tools } = await roundTrip(lines, [...control, ...keyLines], out);
+    const extraRows = extra.slice(0, control.length);
+    const keyRows = extra.slice(control.length);
     const languages = Object.fromEntries(LOCALES.map((l) => [l, summarise(rows, l, BOUNDS[l])])) as Record<Locale, LanguageSummary>;
     const ctlOver = extraRows.filter((r) => r.rate > BOUNDS[CONTROL.locale]).length;
     const ctlRates = extraRows.map((r) => r.rate).sort((a, b) => a - b);
     const controlOut = { locale: CONTROL.locale, voice: CONTROL.voice, lines: extraRows.length, overBound: ctlOver, share: round(ctlOver / Math.max(extraRows.length, 1)), medianRate: round(ctlRates[Math.floor(ctlRates.length / 2)] ?? 0), fails: ctlOver / Math.max(extraRows.length, 1) >= CONTROL_MIN_SHARE };
+    const keyLost = Object.fromEntries(KEY_CONTROL_LOCALES.map((l) => [l, keyRows.filter((r) => r.locale === l && !r.keyHeard).map((r) => ({ key: r.key, text: r.text, heard: r.hyp, rate: round(r.rate) }))]));
+    const keyControlOut = { lines: keyRows.length, source: 'tools/listen/key-lines-v013.json', lost: keyLost, fails: KEY_CONTROL_LOCALES.every((l) => (keyLost[l] ?? []).length > 0) };
     const complete = LOCALES.every((l) => languages[l].lines === Object.keys(DICTS[l]).length);
-    const valid = complete && controlOut.fails;
-    const pass = valid && LOCALES.every((l) => languages[l].over.length === 0);
+    const valid = complete && controlOut.fails && keyControlOut.fails;
+    const pass = valid && LOCALES.every((l) => languages[l].over.length === 0 && languages[l].keys.lost.length === 0);
     const evidence = {
         format: 'shramko-listen-evidence/1',
         key: inputs.hash,
         inputs: { hash: inputs.hash, files: inputs.files, version: WORDS_VERSION, voices: VOICES, decode, tools },
         date: new Date().toISOString(),
         id: 'VL-4-words',
-        claim: 'every line of the four locales, said by the local Windows voice of its language and transcribed by Whisper large-v3, has a word error rate (case and punctuation normalised) at most its language\'s bound; the Russian lines said by the English voice fail it',
+        claim: 'every line of the four locales, said by the local Windows voice of its language and transcribed by Whisper large-v3, has a word error rate (case and punctuation normalised) at most its language\'s bound, and every line that names a key is heard with the key\'s name as a word of its own; the Russian lines said by the English voice fail the bound, and v0.13\'s lines that name a key, said by their voices, lose a key in each of Spanish, Polish and Russian',
         run: 'pnpm listen:words',
         valid,
         pass,
         normalised: 'lower case; the letter yo as ye; apostrophes dropped; every other character that is not a letter, a mark or a digit a space. Two words of the line heard as one, or one as two, are no error; a word with a digit is a number and matches one to three words of the transcript; a recorded word a voice says otherwise (heard) is put back before counting',
         languages,
         control: controlOut,
-        rows: rows.filter((r) => r.rawRate > 0).map(rowOut)
+        keyControl: keyControlOut,
+        // every line heard with an error, and every line that names a key (so the key rule can be checked again)
+        rows: rows.filter((r) => r.rawRate > 0 || r.keyName !== undefined).map(rowOut)
     };
     mkdirSync(join(ROOT, 'evidence', 'listen'), { recursive: true });
     writeFileSync(evidencePath, `${JSON.stringify(evidence, null, 1)}\n`);
     for (const l of LOCALES) {
         const s = languages[l];
-        out(`  ${l} ${s.voice}: ${s.lines} lines (${s.words} words), ${s.exact} heard exactly, mean ${s.meanRate}, max ${s.maxRate}, ${s.over.length} over the bound ${s.bound}`);
-        for (const r of rows.filter((x) => x.locale === l && x.rate > BOUNDS[l])) out(`    ${r.key} (${round(r.rate)}): "${r.text}" heard "${r.hyp}"`);
+        out(`  ${l} ${s.voice}: ${s.lines} lines (${s.words} words), ${s.exact} heard exactly, mean ${s.meanRate}, max ${s.maxRate}, ${s.over.length} over the bound ${s.bound}; ${s.keys.lines - s.keys.lost.length} of ${s.keys.lines} lines that name a key heard with it`);
+        for (const r of rows.filter((x) => x.locale === l && (x.rate > BOUNDS[l] || !x.keyHeard))) out(`    ${r.key} (${round(r.rate)}${r.keyHeard ? '' : `, the key ${r.keyName ?? ''} lost`}): "${r.text}" heard "${r.hyp}"`);
     }
     out(`  control, the ${CONTROL.locale} lines by ${CONTROL.voice}: ${controlOut.overBound} of ${controlOut.lines} over the ${CONTROL.locale} bound, median rate ${controlOut.medianRate}`);
+    out(`  key control, v0.13's ${keyControlOut.lines} lines that name a key: the key lost in ${KEY_CONTROL_LOCALES.map((l) => `${(keyLost[l] ?? []).length} ${l}`).join(', ')}`);
     out(`listen-words: ${pass ? 'PASS' : valid ? 'FAIL' : 'INVALID'}; evidence in evidence/listen/VL-4-words.json`);
     return pass ? 0 : 1;
 }

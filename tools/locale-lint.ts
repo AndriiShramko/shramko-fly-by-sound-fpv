@@ -39,6 +39,17 @@ export const ALLOWED_LATIN_RU: ReadonlySet<string> = new Set([
     'D'
 ]);
 
+/**
+ * The words that name a key as a key, right before a key's name (`{key}`, `{skip}`), by language (lane s13-elev E2-2,
+ * its review E4): said by the local voices, a key's letter right after the verb ran into it or was lost ("Pulsa T para"
+ * heard as "Púlsate para", "Нажми U" as "Нажми её"), so Spanish, Polish and Russian say "press the key T". English
+ * "Press T" is heard right and needs none.
+ */
+export const KEY_WORDS: Readonly<Partial<Record<Locale, string>>> = { es: 'la tecla', pl: 'klawisz', ru: 'клавишу' };
+
+/** The arguments that are a key's name. */
+export const KEY_ARGUMENTS: readonly string[] = ['key', 'skip'];
+
 /** Keys whose text is the same in every language on purpose (the product name). */
 export const SAME_AS_ENGLISH_OK: ReadonlySet<string> = new Set(['app.name']);
 
@@ -109,6 +120,15 @@ export function lintDict(locale: Locale, dict: Dict, english: Dict): LocaleProbl
 
         if (locale !== 'en' && !SAME_AS_ENGLISH_OK.has(key) && text.length > 3 && english[key] === text) {
             add('copied-english', 'the text is the English one, unchanged');
+        }
+
+        const keyWord = KEY_WORDS[locale];
+        if (keyWord !== undefined) {
+            for (const m of text.matchAll(/\{(\w+)\}/g)) {
+                if (!KEY_ARGUMENTS.includes(m[1] as string)) continue;
+                const before = text.slice(0, m.index).toLocaleLowerCase(locale);
+                if (!before.endsWith(`${keyWord} `)) add('key-word', `{${m[1] as string}} without "${keyWord}" right before it: a voice runs a key's name into the verb or loses it`);
+            }
         }
     }
     return problems;

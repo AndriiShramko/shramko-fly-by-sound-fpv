@@ -106,7 +106,8 @@ the code, then fixed with a test and its control (section "Review fixes" below):
   four languages, each measured with its local voice into its fixture; `test/named-sounds.test.ts` with the lane's
   texts before the review as its control (`test/fixtures/lines-s13-elev-0dd3cd9.json`)
 - [ ] F3 Review E4: "the key" held by a Node test, a key rule in the words check with v0.13's key lines as its control,
-  the percent records for Polish and Russian
+  the percent records for Polish and Russian (part 1 committed: the lint's key-word rule and its test, the key rule,
+  the records; the words check's run and its evidence next)
 - [ ] F4 Review E5: VL-6 and VL-2 hear the floor, the ceiling and the chime with their breaths
 - [ ] F5 Review E6: the target note's two timings measured, with their controls
 - [ ] F6 Review E7: rings-course in the numbers
