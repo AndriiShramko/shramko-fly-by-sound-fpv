@@ -192,9 +192,13 @@ describe('tunnels (M41-21)', () => {
         const list = w.checkpoints as WorldCheckpoint[];
         let length = 0;
         for (let i = 1; i < list.length; i++) length += Math.hypot(list[i]!.pos[0] - list[i - 1]!.pos[0], list[i]!.pos[1] - list[i - 1]!.pos[1], list[i]!.pos[2] - list[i - 1]!.pos[2]);
-        const metres = (l.goals[0] as { metres: number }).metres;
-        expect(metres).toBeLessThan(length);
-        expect(metres).toBeGreaterThan(length - 4);
+        // the goal ends with the track: merged with lane s13-lessons, their goal 'track-end' (test/world-track-end.test.ts);
+        // until then 'fly-distance' of the track's length less under 4 m
+        const goal = l.goals.at(-1) as { kind: string; metres?: number };
+        if (goal.kind === 'fly-distance') {
+            expect(goal.metres).toBeLessThan(length);
+            expect(goal.metres).toBeGreaterThan(length - 4);
+        } else expect(goal.kind).toBe('track-end');
         // the lesson's own checkpoints stand on the track
         for (const cp of l.checkpoints) expect(Math.min(...list.map((c) => Math.hypot(c.pos[0] - cp.at[0], c.pos[1] - cp.at[1], c.pos[2] - cp.at[2]))), cp.id).toBeLessThan(0.01);
     });

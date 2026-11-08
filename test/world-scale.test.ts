@@ -157,17 +157,23 @@ describe('rooms at the scale of a micro drone (M41-18)', () => {
         for (let i = 1; i < track.length; i++) length += Math.hypot(track[i]!.pos[0] - track[i - 1]!.pos[0], track[i]!.pos[1] - track[i - 1]!.pos[1], track[i]!.pos[2] - track[i - 1]!.pos[2]);
         expect(goals[0]).toBe(w.resolved['straightM']);
         const onLastStretch = (metres: number): boolean => metres < length - 4 + 1e-9 && metres > length - 6;
-        expect(onLastStretch(goals.at(-1) as number), `${goals.at(-1)} of ${length.toFixed(2)} m`).toBe(true);
         // control: the goals as they were (15 and 100, read as 115 of the 126 m) pass at 100 m, 26 m before the end
         expect(onLastStretch(100)).toBe(false);
-        // and the truth bot is counted there, on the last 6 m of the track, past every pillar but the last (the robust end
-        // is lane s13-lessons' goal 'track-end' at the merge: test/world-track-end.test.ts)
+        const last = c.goals.at(-1) as Goal;
+        if (last.kind !== 'fly-distance') {
+            // merged with lane s13-lessons the corridor ends on their goal 'track-end' (flown in test/world-track-end.test.ts)
+            expect(last.kind as string).toBe('track-end');
+            return;
+        }
+        expect(onLastStretch(last.metres), `${last.metres} of ${length.toFixed(2)} m`).toBe(true);
+        // and the truth bot is counted there, on the last 6 m of the track, past every pillar but the last
         const p = new ScriptedPilot(c);
         const counted: { at: number | null } = { at: null };
         const step = p.tick.bind(p);
         p.tick = () => {
+            const pos = p.pos; // the sample this tick gives the runner
             step();
-            if (counted.at === null && p.of('lesson').some((e) => e.what === 'attempt-pass')) counted.at = alongTrack(track, p.pos);
+            if (counted.at === null && p.of('lesson').some((e) => e.what === 'attempt-pass')) counted.at = alongTrack(track, pos);
         };
         playLesson(p, () => 'truth', 1);
         const at = counted.at ?? -1;
