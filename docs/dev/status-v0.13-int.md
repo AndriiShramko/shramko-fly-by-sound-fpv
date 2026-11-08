@@ -12,8 +12,15 @@ needs from the package. Not pushed; the lead merges it to `main` after gh_preche
   and a rule in AGENTS.md.
 - [x] I2. The words check on the simulator's Fly by Sound lines after the simulator's rewording (its key lines, its
   Russian register, the mode's name in Russian and Polish): before and after, per language.
-- [ ] I3. The checks on the branch's head: typecheck, tests, locale lint, layout, the audio proofs (the engine changed),
+- [x] I3. The checks on the branch's head: typecheck, tests, locale lint, layout, the audio proofs (the engine changed),
   `pnpm listen` (the engine's files changed, so its evidence is keyed again).
+  - `pnpm typecheck` clean; `pnpm test` 50 files, 1172 tests (1167 at s13-elev's end, 5 new); locale lint 0 problems in 4
+    languages (526 keys); layout check 0 problems.
+  - `pnpm proof:audio` with the GPU lock: 3 files, 9 tests: the audio page's 8 proofs (`engine-reset` new), each passing on
+    the engine as shipped and failing on its broken control, and the demo's keyboard checks (2985f8c).
+  - `pnpm listen`: 9 of 9 valid and passing, the evidence keyed again (d0f4d5a92ed7: the inputs changed with I1's engine,
+    planner and contract); every measured number the same as s13-elev's last run (only the keys, hashes and dates of the
+    evidence changed): the reset is called by hosts only and changes no flight the rig renders.
 
 ## I1, the reset
 
