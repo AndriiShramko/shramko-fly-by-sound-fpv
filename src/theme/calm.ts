@@ -30,6 +30,7 @@ export const CALM_PRESET: ThemePreset = {
         { layer: 'safety', param: 'ildBoostDb', op: 'mul', by: 0.6 },
         { layer: 'safety', param: 'lowpassNearHz', op: 'mul', by: 0.6 },
         { layer: 'safety', param: 'lowpassFarHz', op: 'mul', by: 0.7 },
+        { layer: 'safety', param: 'freePeriodMs', op: 'mul', by: 1.3 },
         { layer: 'height', param: 'roughDepth', op: 'mul', by: 0.5 },
         // a quieter target tone, so its beating against the height tone is shallower (M41-12)
         { layer: 'height', param: 'targetDb', op: 'add', by: -4 },

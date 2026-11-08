@@ -50,6 +50,9 @@ const DRONE_GAIN = 0.1;
 const CENTRE_SEND = 0.12;
 /** How strongly the room's openness feeds the reverb return. */
 const REVERB_RETURN = 1.1;
+/** The open-way chime's upper note: this much after the lower one (a quick two-note figure, not a chord), s, and this much softer. */
+const HARMONY_DELAY_S = 0.07;
+const HARMONY_GAIN = 0.8;
 /** The engine's own wake-up, ms: keeps rhythms placed between frames. */
 const PUMP_MS = 25;
 /** With no frame for this long, the engine plans on from the last one (previews, menus), s. */
@@ -725,6 +728,8 @@ export class FlyBySoundEngine implements SonicEngine {
                 const gain = v.layer === 'target' ? HUM_GAIN : PULSE_GAIN;
                 for (const t0 of duePulses(slot.train, now, horizon, period)) {
                     playNote(g.kit, slot.input, { timbre: v.timbre, hz: v.hz, t0, durS: v.noteS, gain, cents: v.dopplerCents, beatHz: v.beatHz, beatDepth: v.beatDepth, maxS: Math.max(0.9 * period, 0.03) });
+                    // the open-way chime: its upper note with every pulse, a little softer
+                    if (v.harmonyHz !== undefined && v.harmonyHz !== null) playNote(g.kit, slot.input, { timbre: v.timbre, hz: v.harmonyHz, t0: t0 + HARMONY_DELAY_S, durS: v.noteS, gain: gain * HARMONY_GAIN, maxS: Math.max(0.9 * period - HARMONY_DELAY_S, 0.03) });
                 }
             }
             if (v.trace !== null) {

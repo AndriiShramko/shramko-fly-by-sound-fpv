@@ -33,6 +33,8 @@
       "gainDb": -4,
       "params": {
         "distFarM": 10,
+        "freePeriodMs": 600,
+        "freeStep": 13,
         "ildBoostDb": 8,
         "lowpassFarHz": 5000,
         "lowpassNearHz": 16000,

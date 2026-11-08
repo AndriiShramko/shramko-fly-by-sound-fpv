@@ -21,7 +21,8 @@ Shared event kinds (plan, "Lanes"): the runner emits the cue events `wrong-way`,
   `test/height.test.ts`, 15 tests); `pnpm proof:audio` after it: see step 10
 - [x] 3 Time to contact (M41-13): hazards by time to contact, quiet far walls when slow, always heard within 0.8 m
   (`src/sense/sampler.ts`, `src/cues/rules.ts`, `test/ttc.test.ts`, 22 tests)
-- [ ] 4 Free way (M41-14): the open-way chime from the free side
+- [x] 4 Free way (M41-14): the open-way chime from the free side (`src/sense/freeway.ts`, planner, engine;
+  `test/freeway.test.ts`, 14 tests on box tunnels, `test/helpers/boxes.ts`)
 - [ ] 5 Event sounds (M41-15, M41-11, M41-5): wrong-way, wrong-side, praise, stage, repeat-cue
 - [ ] 6 Motor (M41-16): on by default, under the cues, ducked under speech
 - [ ] 7 Never silence (M41-10), the planner's part
@@ -154,6 +155,29 @@ Shared event kinds (plan, "Lanes"): the runner emits the cue events `wrong-way`,
   saw next. That frame-sized flash also broke the replay check of the recorded rings-course flight (94.1 % of the
   frames agreed, under the 95 % rule) because a 30 Hz replay never sees it; with the filter the recorded flights
   replay again. Walls, floor and ceiling (no object id) keep the time to their plane along its normal.
+
+### Step 4, free way (M41-14)
+
+- Trigger: one ray straight along the nose; something closing on it in under 3 s (`FREE_TTC_S`). Not the front
+  sector: its side rays see a side wall the craft drifts toward, which the first version took for "an obstacle
+  ahead" (and then said "free on the right" inside the left gap). A dead end gives the trigger and no free side.
+- Search (`findFreeWay`): a point 0.25 m past the obstacle's front, 0.7, 1.2 or 1.8 m to the left, right, above or
+  below the craft's line (nearest first; at one offset the side already sounding first, then the side of the drift,
+  then left, right, up, down). A side is free when the straight line there is clear (hull included) and the passage
+  past the front stays free for 1.5 m at its middle and 0.2 m to either side (a 0.35 m slot is no way). At most 4 rays
+  a probe, 12 probes, only while the trigger holds.
+- The chime (`safety.free`, safety layer, priority 90: under every hazard, over the target): a quick two-note figure on
+  the scale (the note and two steps up, 70 ms apart), every `safety.freePeriodMs` (600 ms; calm x 1.3), at -4 dB in the
+  safety bus. Left and right: from 60 degrees to that side. Above and below: from straight ahead, the figure three
+  steps higher (above) or lower (below) than the side chime's `safety.freeStep` (note 13, G5 in the shipped scale),
+  turned over with the polarity like the height tone; no HRTF elevation is relied on. Held 400 ms past the last
+  frame that found it, so it does not stutter at the obstacle's edge. Active cue `safety.free:<side>`, and
+  `FramePlan.freeWay` (side, offset, distance, time) for the host's panel (M41-25). The glossary preview with no
+  direction plays the four sides in turn.
+- Measured on box tunnels (3 x 3 m, an obstacle leaving 1.2 m free on one side): each gap gives its side and no other;
+  control: a closed tunnel gives no chime while the obstacle's knocks sound; control: a gap on the left gives no
+  right chime from 36 starts (three lateral positions, three heights, four drifts). What it cannot show: whether a
+  pilot takes a high two-note figure from ahead for "over" without training (the glossary line says it).
 
 ## Needs from the simulator
 

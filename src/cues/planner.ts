@@ -9,6 +9,7 @@
 import type { ActiveCue, CueEvent, CueId, FlightSample, LayerId, LessonLayers, MaterialClass, ObjectShape, Quat, SonicFrameInput, SonicObject, SonicPrefs, SonicWorld, ThemeDef, Timbre, Vec3 } from '../contract';
 import { LAYER_IDS } from '../contract';
 import { defaultPrefs } from '../prefs/prefs';
+import { findFreeWay, type FreeSide, type FreeWay } from '../sense/freeway';
 import { createSceneSampler, type SamplerOptions, type SceneSampler } from '../sense/sampler';
 import { headingBasis, listenerBasis, worldToListener, type Basis } from '../sense/frame';
 import type { Hazard, SceneSample } from '../sense/types';
@@ -85,6 +86,8 @@ export interface VoicePlan {
     readonly beatHz: number;
     readonly beatDepth: number;
     readonly trace: TracePlan | null;
+    /** a second note played with every pulse (the open-way chime's upper note), Hz; null for none */
+    readonly harmonyHz?: number | null;
 }
 
 /**
@@ -161,6 +164,8 @@ export interface FramePlan {
     /** a hazard is urgent: the safety layer ducks the others */
     readonly urgent: boolean;
     readonly cues: readonly ActiveCue[];
+    /** the free way beside an obstacle ahead, while the open-way chime sounds (M41-14), else null */
+    readonly freeWay: FreeWay | null;
 }
 
 // ------------------------------------------------------------------ constants
@@ -173,6 +178,17 @@ export const AIM_BY_VELOCITY_MPS = 1;
 export const GATE_MELODY_BASE = 5;
 /** How long a preview plays, s. */
 export const PREVIEW_S = 3;
+/** The open-way chime goes on this long after the obstacle ahead was last closer than its trigger time, ms. */
+export const FREE_HOLD_MS = 400;
+/** Where the open-way chime comes from, listener frame: 60 degrees left or right; up and down from ahead (pitch says which). */
+export const FREE_DIRS: Readonly<Record<FreeSide, Vec3>> = {
+    left: [-Math.sin(Math.PI / 3), 0, -Math.cos(Math.PI / 3)],
+    right: [Math.sin(Math.PI / 3), 0, -Math.cos(Math.PI / 3)],
+    up: [0, 0, -1],
+    down: [0, 0, -1]
+};
+/** How many scale steps the open-way chime moves for a way above (and down for a way below). */
+export const FREE_ELEVATION_STEPS = 3;
 /** Default direction of a preview, listener frame. */
 const FRONT: Vec3 = [0, 0, -1];
 
@@ -293,6 +309,10 @@ export class CuePlanner {
     private previewCount = 0;
     private noteCount = 0;
     private lastT = 0;
+    /** the open-way chime: the side sounding, and the page time it stops if not renewed */
+    private freeSide: FreeSide | null = null;
+    private freeUntil = 0;
+    private freeLast: FreeWay | null = null;
     /** the height mapping's alignment for the current world and band (height.ts alignOffset) */
     private align: { readonly world: SonicWorld | null; readonly band: LessonLayers['heightBandM']; readonly floorY: number; readonly metresPerStep: number; readonly offset: number } | null = null;
 
@@ -344,6 +364,9 @@ export class CuePlanner {
         this.notes = [];
         this.staticSlots.fill(null);
         this.align = null;
+        this.freeSide = null;
+        this.freeUntil = 0;
+        this.freeLast = null;
     }
 
     private pitch(layer: LayerId): number {
@@ -363,8 +386,11 @@ export class CuePlanner {
         const velL = worldToListener(basis, s.vel);
 
         const requests: Omit<VoicePlan, 'slot'>[] = [];
+        let freeWay: FreeWay | null = null;
         if (this.on.has('safety')) {
             for (const h of scene.hazards) requests.push(this.hazardVoice(h, velL, `safety:${h.sector}`, PRIORITY.hazard - h.rank));
+            freeWay = this.freeWayNow(input, frame);
+            if (freeWay !== null) requests.push(this.freeVoice(freeWay.side, `free:${freeWay.side}`, PRIORITY.free));
         }
         if (this.on.has('target') && input.target !== null) requests.push(this.targetVoice(input.target, s, basis));
         if (this.on.has('shape')) {
@@ -406,14 +432,67 @@ export class CuePlanner {
             if (n !== null && n !== undefined && n.endT <= t) this.staticSlots[i] = null;
         }
         const cues = this.cues(voices, height, speed, room);
-        return { t, scene, voices, dropped: alloc.dropped, height, speed, room, urgent, cues };
+        return { t, scene, voices, dropped: alloc.dropped, height, speed, room, urgent, cues, freeWay };
+    }
+
+    /** The free way now, with a short hold so the chime does not stutter as the probes pass the obstacle's edge. */
+    private freeWayNow(input: SonicFrameInput, frame: SonicPrefs['listenerFrame']): FreeWay | null {
+        const t = input.sample.t;
+        if (this.freeUntil > t + FREE_HOLD_MS) this.freeUntil = t; // the clock went back (a seek)
+        const found = findFreeWay(input.sample, input.world, frame, { bodyRadiusM: this.sampler.config.bodyRadiusM, prefer: this.freeSide });
+        if (found !== null) {
+            this.freeSide = found.side;
+            this.freeUntil = t + FREE_HOLD_MS;
+            this.freeLast = found;
+            return found;
+        }
+        if (this.freeSide !== null && t < this.freeUntil) return this.freeLast;
+        this.freeSide = null;
+        this.freeLast = null;
+        return null;
+    }
+
+    /** The open-way chime from a side: a two-note chime on the scale, high for a way above, low for one below (polarity respected). */
+    private freeVoice(side: FreeSide, key: string, priority: number): Omit<VoicePlan, 'slot'> {
+        const theme = this.effectiveTheme;
+        const p = theme.layers.safety.params as Record<string, number>;
+        const sign = this.prefsValue.heightPolarity === 'up-higher' ? 1 : -1;
+        const lift = side === 'up' ? sign * FREE_ELEVATION_STEPS : side === 'down' ? -sign * FREE_ELEVATION_STEPS : 0;
+        const base = (p['freeStep'] as number | undefined) ?? 13;
+        const lo = note(theme.scale, base, this.pitch('safety'), lift);
+        const hi = note(theme.scale, lo.index, 2);
+        const period = ((p['freePeriodMs'] as number | undefined) ?? 600) / 1000;
+        return {
+            key,
+            cue: 'safety.free',
+            layer: 'safety',
+            priority,
+            dir: FREE_DIRS[side],
+            distance: 1,
+            timbre: NOTE_TIMBRE[theme.layers.target.timbre],
+            noteIndex: lo.index,
+            hz: lo.hz,
+            periodS: period,
+            noteS: 0.16,
+            gainDb: -4,
+            lowpassHz: 12000,
+            reverbSend: 0.12,
+            ildDb: 0,
+            dopplerCents: 0,
+            rough: 0,
+            roughHz: 0,
+            beatHz: 0,
+            beatDepth: 0,
+            trace: null,
+            harmonyHz: hi.index === lo.index ? null : hi.hz
+        };
     }
 
     private cues(voices: readonly VoicePlan[], height: HeightPlan | null, speed: SpeedPlan | null, room: RoomPlan | null): ActiveCue[] {
         const out: ActiveCue[] = [];
         for (const v of voices) {
             out.push({
-                id: v.key.startsWith('safety:') ? `${v.cue}:${v.key.slice(7)}` : v.key.startsWith('preview:') ? `${v.cue}:preview` : v.cue,
+                id: v.key.startsWith('safety:') ? `${v.cue}:${v.key.slice(7)}` : v.key.startsWith('free:') ? `${v.cue}:${v.key.slice(5)}` : v.key.startsWith('preview:') ? `${v.cue}:preview` : v.cue,
                 layer: v.layer,
                 dir: v.dir,
                 distance: v.distance,
@@ -643,6 +722,12 @@ export class CuePlanner {
         const priority = PRIORITY.preview;
         const [layer] = p.cue.split('.') as [string];
         if (layer === 'safety') {
+            if (p.cue === 'safety.free') {
+                // from the side the preview names (up and down by its height); with no direction, all four in turn
+                const still = Math.hypot(p.dir[0], p.dir[1], p.dir[2]) < 1e-9;
+                const side: FreeSide = still ? (['left', 'right', 'up', 'down'] as const)[Math.min(3, Math.floor(u * 4))] : p.dir[1] > 0.5 ? 'up' : p.dir[1] < -0.5 ? 'down' : p.dir[0] < 0 ? 'left' : 'right';
+                return this.freeVoice(side, `${key}:${side}`, priority);
+            }
             const material = p.cue.slice(7) as MaterialClass;
             if (!(material in MATERIAL_DIR)) return null;
             // an approach from 8 m to 0.8 m at an even 3 m/s of closing: the pulses quicken as in flight
@@ -749,7 +834,8 @@ export class CuePlanner {
                 const event = oneOff[e.cue];
                 if (event !== undefined) return this.cue(event, t).map((n) => ({ ...n, cue: e.cue }));
                 const material = e.cue.startsWith('safety.') ? (e.cue.slice(7) as MaterialClass) : null;
-                const fallback = material !== null && material in MATERIAL_DIR ? MATERIAL_DIR[material] : FRONT;
+                // the open-way chime with no direction plays all four sides in turn: a zero vector says so
+                const fallback: Vec3 = e.cue === 'safety.free' ? [0, 0, 0] : material !== null && material in MATERIAL_DIR ? MATERIAL_DIR[material] : FRONT;
                 this.previews.push({ key: `preview:${++this.previewCount}`, cue: e.cue, dir: dir ?? fallback, t0: t, durS: PREVIEW_S });
                 return [];
             }

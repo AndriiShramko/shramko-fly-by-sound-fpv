@@ -8,6 +8,8 @@
     "cue.safety.ceiling.glossary": "A light puff of air from above. It speeds up when you climb toward the ceiling.",
     "cue.safety.obstacle.name": "Obstacle",
     "cue.safety.obstacle.glossary": "A bright metal tick from the direction of a pillar or a bar. Steer away from it.",
+    "cue.safety.free.name": "Open way",
+    "cue.safety.free.glossary": "A quick two-note chime when something is in the way ahead. It comes from the open side, left or right. A high chime means the way is above, a low one below.",
     "cue.safety.touch.name": "Touch",
     "cue.safety.touch.glossary": "One short ping when you bump into something. A bump is soft: nothing breaks.",
     "cue.safety.reset.name": "Re-centre",

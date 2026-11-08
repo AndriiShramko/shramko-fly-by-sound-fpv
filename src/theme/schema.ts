@@ -45,7 +45,9 @@ export const LAYER_PARAMS: Readonly<Record<LayerId, Readonly<Record<string, Para
         pitchWallStep: note(7, 'note of a wall pulse'),
         pitchFloorStep: note(0, 'note of a floor pulse'),
         pitchCeilingStep: note(12, 'note of a ceiling pulse'),
-        pitchObstacleStep: note(9, 'note of an obstacle pulse')
+        pitchObstacleStep: note(9, 'note of an obstacle pulse'),
+        freeStep: added(note(13, 'note of the open-way chime from the left or the right; three steps higher for a way above, three lower for a way below')),
+        freePeriodMs: added(p(250, 2000, 600, 'time between two open-way chimes, ms'))
     },
     height: {
         baseStep: note(3, 'note of the height tone at the floor'),

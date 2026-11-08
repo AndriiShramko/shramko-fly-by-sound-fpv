@@ -8,6 +8,8 @@
     "cue.safety.ceiling.glossary": "Lekki powiew powietrza z góry. Przyspiesza, gdy wznosisz się w stronę sufitu.",
     "cue.safety.obstacle.name": "Przeszkoda",
     "cue.safety.obstacle.glossary": "Jasne, metaliczne stuknięcie z kierunku słupa albo belki. Skręć w drugą stronę.",
+    "cue.safety.free.name": "Wolna droga",
+    "cue.safety.free.glossary": "Krótki dwutonowy sygnał, gdy coś stoi na drodze. Dobiega z wolnej strony, z lewej albo z prawej. Wysoki oznacza przejście górą, a niski dołem.",
     "cue.safety.touch.name": "Dotknięcie",
     "cue.safety.touch.glossary": "Jedno krótkie piknięcie, gdy w coś uderzysz. Uderzenie jest miękkie: nic się nie psuje.",
     "cue.safety.reset.name": "Powrót na miejsce",

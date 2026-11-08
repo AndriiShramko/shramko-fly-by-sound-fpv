@@ -12,6 +12,8 @@ export const PRIORITY = {
     /** hazard of rank r has HAZARD - r */
     hazard: 100,
     touch: 95,
+    /** the open-way chime beside an obstacle ahead (M41-14) */
+    free: 90,
     target: 80,
     gateNote: 75,
     shape: 60,

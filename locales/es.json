@@ -8,6 +8,8 @@
     "cue.safety.ceiling.glossary": "Un soplo ligero de aire desde arriba. Se acelera cuando subes hacia el techo.",
     "cue.safety.obstacle.name": "Obstáculo",
     "cue.safety.obstacle.glossary": "Un tic metálico y brillante desde donde hay un pilar o una barra. Desvíate de él.",
+    "cue.safety.free.name": "Paso libre",
+    "cue.safety.free.glossary": "Un breve repique de dos notas cuando hay algo delante. Suena del lado libre, a la izquierda o a la derecha. Si suena agudo, el paso está arriba, y si suena grave, abajo.",
     "cue.safety.touch.name": "Contacto",
     "cue.safety.touch.glossary": "Un solo pitido corto cuando chocas con algo. El choque es suave: no se rompe nada.",
     "cue.safety.reset.name": "Recentrado",

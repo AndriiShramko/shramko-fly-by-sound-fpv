@@ -25,6 +25,7 @@ export const CUE_IDS = [
     'safety.floor',
     'safety.ceiling',
     'safety.obstacle',
+    'safety.free',
     'safety.touch',
     'safety.reset',
     'height.tone',
