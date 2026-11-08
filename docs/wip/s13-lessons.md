@@ -10,7 +10,7 @@ from `main` 7d4b4b9. No push. Every step one commit with this Status in it.
 - [x] 3. Progress line after every attempt and the progress view (I, the host's panel)
 - [x] 4. Navigation: next step, previous step, next lesson (skipped), previous lesson, repeat the task
 - [x] 5. Every named sound three times with no speech over it; validator rule and schedule check
-- [ ] 6. Praise and stages (M41-11)
+- [x] 6. Praise and stages (M41-11)
 - [ ] 7. Direction: wrong way, wrong side (M41-15)
 - [ ] 8. Respawn near the crash (M41-20, runner side)
 - [ ] 9. Never silence between attempts (M41-10, runner side)
@@ -178,6 +178,27 @@ walls line) go through the same queue, so the fix (wait for the report) also wai
 - Length now (measured voice, right answers): headphones 1.8 min (v0.12: 1.4), glossary 6.5 (4.2), walls 1.9 (0.9),
   shapes 1.3 (0.7), game 6.9 (5.4); a flying lesson's task 0.2 to 1.1 min. N skips a step at any time.
 
+### Step 6: praise and stages (M41-11)
+
+- A counted attempt that does not yet pass the lesson: the cue event `{ kind: 'praise' }` and a short line from a pool of
+  8 (`praise.1` .. `praise.8`, at most 16 characters, never the same twice in a row), or "Better than last time!"
+  (`praise.better`) when the attempt's score improved by at least 5 % on the last counted one of the sitting: the share
+  in the height band, the mean miss of the gates' centres, the distance of the stop, else the attempt's time on the
+  goals' clock. A timed course says its time instead. Then "Attempt k. Counted m of r.".
+- The pass: the fanfare, the lesson's own pass line, then "Lesson passed. Next, a bit harder: <title>" with the next lesson
+  on the pilot's path (`fly.lesson-passed`, `RunnerOptions.path`), or "That was the last lesson." (`fly.last-lesson`).
+- Stages: a lesson checkpoint may carry `stage: k` (format 2; stages count up along the list, validated). Crossing it
+  gives the cue event `{ kind: 'stage', index: k }` and "Stage k passed." (`fly.stage`) in place of the checkpoint chime.
+  The corridor's cp-2 to cp-5 end stages 1 to 4. A world's checkpoint list may carry stages too (step 7).
+- Placeholders in `src/cues/planner.ts` (two cases): praise sounds as the checkpoint chime, stage as the lap chime.
+- Tests (`test/praise.test.ts`): pool lines distinct and short in four languages, two praises in a row differ; "better"
+  after 85 % then 100 % in the band and after a faster turn (controls: the same score, a worse one: no "better"); the pass
+  lines with the next lesson on the full and the fast path, the last lesson; the corridor flown to its end says stages
+  1 to 4 (control: the same corridor without stages says none and chimes).
+- Found: the shipped corridor is passed at 240 m flown (its second fly-distance goal), during its fourth section, so its
+  last section (bends with pillars) and stage 4 are never flown in a passing attempt. The goals are not in my ownership
+  table; for the lead or lane s13-worlds: end the corridor at its last checkpoint (or raise the goal to its length, 335 m).
+
 ## Needs from the simulator
 
 All in `C:/dev/gsfpv-v03/apps/fly/src/sonic/` (read only here; lane v13-host):
@@ -208,6 +229,8 @@ Lane s13-sound (`src/cues/*`, `src/audio/*`):
    replace it with your design. The runner sends the next play 1 s after one ends and nothing over speech.
 2. `src/audio/engine.ts` 757 starts a preview at once (it plans the frame inside `cue()`); do the same for `repeat-cue`, or
    the first play starts with the next frame (up to a frame late).
-3. Z while flying plays the task's named sounds (for example the height tone) while the live layers go on: a `repeat-cue`
+3. `praise` and `stage` (contract `CueEvent`): my placeholders play the checkpoint chime and the lap chime; design them
+   (the praise is said with a line at the same time; the stage comes over the flight).
+4. Z while flying plays the task's named sounds (for example the height tone) while the live layers go on: a `repeat-cue`
    of `height.tone` replaces the live height plan for its length (the planner's preview rule). Decide whether the live
    layers duck under a repeat-cue in flight, or the preview layers sound beside them.

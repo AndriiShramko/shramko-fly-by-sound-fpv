@@ -260,7 +260,7 @@ describe('the demo host', () => {
         const kinds = host.events.map((e) => (e.kind === 'lesson' ? e.what : e.kind === 'goal' ? `goal ${e.what}` : e.kind));
         expect(kinds).toContain('goal met');
         expect(kinds).toContain('attempt-pass');
-        expect(f.cues.some((c) => c.kind === 'checkpoint')).toBe(true);
+        expect(f.cues.some((c) => c.kind === 'praise')).toBe(true); // a counted attempt is praised
     }, 60000);
 
     it('asks module 0 questions through the page and takes the digit as the answer', async () => {

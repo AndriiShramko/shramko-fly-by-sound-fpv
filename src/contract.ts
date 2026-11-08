@@ -360,6 +360,8 @@ export interface Checkpoint {
     /** reached when the craft's centre comes within radiusM of this point */
     readonly at: Vec3;
     readonly radiusM: number;
+    /** lesson format 2: this checkpoint ends stage `stage` of the course ("Stage 2 passed"); stages count up along the list */
+    readonly stage?: number;
 }
 
 /** A line of a lesson's intro (format 2): `cues` are the sounds it names, each played three times after the line. */
@@ -546,7 +548,11 @@ export type CueEvent =
      * step names, `durS` long; the runner sends one per play, about a second apart, with no speech over them.
      * `dir` is listener frame, or null for the cue's own default.
      */
-    | { readonly kind: 'repeat-cue'; readonly cue: CueId; readonly dir: Vec3 | null; readonly index: number; readonly of: number; readonly durS: number };
+    | { readonly kind: 'repeat-cue'; readonly cue: CueId; readonly dir: Vec3 | null; readonly index: number; readonly of: number; readonly durS: number }
+    /** v0.13 (M41-11): a counted attempt, said with a short praise line */
+    | { readonly kind: 'praise' }
+    /** v0.13 (M41-11): stage `index` of a long course passed (a checkpoint that ends a stage), said "Stage k passed" */
+    | { readonly kind: 'stage'; readonly index: number };
 
 /** A cue sounding now: what the recording stores and the captions may show. */
 export interface ActiveCue {

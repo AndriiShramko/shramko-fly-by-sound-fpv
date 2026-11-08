@@ -308,12 +308,14 @@ function passRule(c: Collector, v: unknown, path: string, format: 1 | 2): PassRu
 function checkpoint(c: Collector, v: unknown, path: string): Checkpoint | undefined {
     const r = c.record(v, path);
     if (r === null) return undefined;
-    c.keys(r, path, ['id', 'pose', 'at', 'radiusM']);
+    c.keys(r, path, ['id', 'pose', 'at', 'radiusM', 'stage'], ['id', 'pose', 'at', 'radiusM']);
     const id = c.string(r.id, joinPath(path, 'id'), { min: 1, max: 40, pattern: OBJECT_ID });
     const p = pose(c, r.pose, joinPath(path, 'pose'));
     const at = c.vec3(r.at, joinPath(path, 'at'));
     const radiusM = c.number(r.radiusM, joinPath(path, 'radiusM'), { min: 0.2, max: 50 });
-    return id === undefined || p === undefined || at === undefined || radiusM === undefined ? undefined : { id, pose: p, at, radiusM };
+    const stage = r.stage === undefined ? undefined : c.number(r.stage, joinPath(path, 'stage'), { integer: true, min: 1, max: 50 });
+    if (id === undefined || p === undefined || at === undefined || radiusM === undefined || (r.stage !== undefined && stage === undefined)) return undefined;
+    return stage === undefined ? { id, pose: p, at, radiusM } : { id, pose: p, at, radiusM, stage };
 }
 
 const TOP = ['format', 'id', 'version', 'module', 'order', 'fastPath', 'title', 'intro', 'world', 'start', 'assists', 'layers', 'goals', 'pass', 'checkpoints', 'attemptLimitS', 'speech'] as const;
@@ -371,6 +373,8 @@ export function validateLesson(input: unknown): Validation<LessonDef> {
                 if (cp !== undefined) out.push(cp);
             });
             if (new Set(out.map((x) => x.id)).size !== out.length) c.add('checkpoints', 'must not repeat a checkpoint id');
+            const stages = out.flatMap((x) => (x.stage === undefined ? [] : [x.stage]));
+            if (!stages.every((st, i) => i === 0 || st > (stages[i - 1] as number))) c.add('checkpoints', 'stages must count up along the list');
             if (out.length === arr.length) checkpoints = out;
         }
     }

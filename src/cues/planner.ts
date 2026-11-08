@@ -213,6 +213,11 @@ export function eventCue(e: CueEvent): CueId {
         case 'preview':
         case 'repeat-cue':
             return e.cue;
+        // lane s13-lessons placeholders until lane s13-sound designs them
+        case 'praise':
+            return 'target.checkpoint';
+        case 'stage':
+            return 'target.lap';
     }
 }
 
@@ -684,6 +689,11 @@ export class CuePlanner {
                 push('target.fanfare', 'target', PRIORITY.chime, 0.39, bright, base, 0.8, -14, null);
                 break;
             }
+            // lane s13-lessons placeholders until lane s13-sound designs them: a praise sounds as a checkpoint chime, a stage as the lap chime
+            case 'praise':
+                return this.cue({ kind: 'checkpoint' }, t).map((n) => ({ ...n, cue: 'target.checkpoint' }));
+            case 'stage':
+                return this.cue({ kind: 'lap' }, t);
             // lane s13-lessons placeholder until lane s13-sound designs it: a play of a named sound sounds as its preview, for its length
             case 'repeat-cue':
             case 'preview': {

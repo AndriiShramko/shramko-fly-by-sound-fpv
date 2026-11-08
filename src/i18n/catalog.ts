@@ -234,6 +234,19 @@ export const FREE_KEYS = [
     'fly.touches',
     // after every attempt that does not pass the lesson
     'fly.progress',
+    // a stage of a long course, the pass and what comes next, the praise of a counted attempt (a pool and "better")
+    'fly.stage',
+    'fly.lesson-passed',
+    'fly.last-lesson',
+    'praise.1',
+    'praise.2',
+    'praise.3',
+    'praise.4',
+    'praise.5',
+    'praise.6',
+    'praise.7',
+    'praise.8',
+    'praise.better',
     // after failed attempts in a row: the offer to go on, and a lesson that does not block moving on
     'fly.offer-next',
     'fly.moving-on',

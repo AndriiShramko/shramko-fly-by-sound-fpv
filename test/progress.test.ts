@@ -42,7 +42,8 @@ describe('the progress line after every attempt (M41-7)', () => {
             { n: 3, counted: 2, required: 3 }
         ]);
         const keys = p.said();
-        expect(keys.at(-1)).toBe('lesson.rings-first.pass');
+        // after the last attempt: the pass line and what comes next, no count
+        expect(keys.slice(-2)).toEqual(['lesson.rings-first.pass', 'fly.lesson-passed']);
         expect(keys.lastIndexOf('fly.progress')).toBeLessThan(keys.lastIndexOf('lesson.rings-first.pass'));
         // the line itself, in every language
         for (const locale of ['en', 'es', 'pl', 'ru'] as const) expect(createTranslator(locale, DICTS).text({ key: 'fly.progress', params: { n: 2, counted: 1, required: 3 } })).toMatch(/2.*1.*3/);

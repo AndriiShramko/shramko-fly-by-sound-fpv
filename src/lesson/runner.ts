@@ -41,14 +41,21 @@
 // "Attempt k. Counted m of r."; after `pass.attempts` failures in a row he hears why and, in a blocking
 // lesson, that N goes on to the next lesson; a lesson that does not block (the game, the shapes, free
 // flight) moves on by itself then, so it never holds anyone back.
+//
+// Praise (M41-11). A counted attempt that does not yet pass the lesson is praised in a short line from a
+// pool (never the same twice in a row), or "Better than last time!" when its score really improved (by at
+// least BETTER_SHARE: the share in the height band, the miss of the gates' centres, the stop's distance, or
+// else the attempt's time); with it the cue event 'praise'. The pass is the fanfare, the lesson's own pass
+// line and "Lesson passed. Next, a bit harder: <the next lesson on the pilot's path>". A checkpoint that
+// ends a stage gives the cue event 'stage' and "Stage k passed".
 import type { Checkpoint, CueEvent, CueId, FlightSample, Goal, LessonDef, LessonProgress, LessonRunner, Locale, MaterialClass, Pose, SessionEvent, SonicFrameInput, SonicObject, SonicWorld, SpeechLine, Vec3 } from '../contract';
 import { DICTS } from '../i18n/dicts';
 import { createTranslator, type Dicts, type Translator } from '../i18n/translator';
 import { createRng } from '../util/rng';
 import { distance as dist3, yawQuat } from '../util/vec';
 import { createAnalyticWorld, makeSpec, type AnalyticWorldInfo } from '../world/analytic-world';
-import { createTracker, type GoalTracker, type Outcome } from './goals';
-import { lessonPaths } from './library';
+import { createTracker, type GoalScore, type GoalTracker, type Outcome } from './goals';
+import { lessonAfter, lessonPaths } from './library';
 import { APPROACHES, GAME_SCENE_S, isGlossary, NARRATED_SCENE_S, playS, REPEAT_GAP_S, REPEAT_PLAYS, SHAPE_ORDER } from './sounds';
 
 // ------------------------------------------------------------------ host interface
@@ -215,6 +222,10 @@ export const ASK_TIMEOUT_S = 20;
 export const BETWEEN_S = 1.5;
 /** v0.12 (testHooks.speechWait only): a preview was given this long, s. */
 export const PREVIEW_WAIT_S = 3.3;
+/** The praise lines of a counted attempt (keys praise.1 .. praise.PRAISE_LINES). */
+export const PRAISE_LINES = 8;
+/** A score counts as better than the last counted attempt's when it improved by this share of it. */
+export const BETTER_SHARE = 0.05;
 /** Share of right answers that meets 'name-cues' (spec: names cues at 90 %). */
 export const NAME_SHARE = 0.9;
 /** Share of right answers that meets 'locate'. */
@@ -311,6 +322,10 @@ class Runner implements LessonSession {
     /** set while the pilot's own key (N, an answer) is being handled: the first line said after it interrupts the speech in progress */
     private interruptNext = false;
     private earsAnswers = new Map<string, EarsAnswer>();
+    /** the scores of the goals met in this attempt, and the score of the last counted attempt of this sitting */
+    private goalScores: GoalScore[] = [];
+    private lastScore: GoalScore | null = null;
+    private lastPraise = -1;
     // progress
     /** attempts and counted attempts of this lesson version, earlier sessions included */
     private attemptsDone: number;
@@ -651,6 +666,7 @@ class Runner implements LessonSession {
         this.lastCheckpoint = null;
         this.reached.clear();
         this.earsAnswers = new Map();
+        this.goalScores = [];
         this.listening = false;
         this.pausedMs = 0;
         this.phaseValue = 'flying';
@@ -720,7 +736,11 @@ class Runner implements LessonSession {
             if (d < 3) this.pathM += d; // a longer jump is a reset, not flight
         }
         this.advance(t);
-        if (this.phaseValue === 'flying' && !this.ears && !this.listening) this.fly(this.goalClock(sample), this.goalClock(prev ?? sample), t);
+        if (this.phaseValue === 'flying' && !this.ears && !this.listening) {
+            this.fly(this.goalClock(sample), this.goalClock(prev ?? sample), t);
+            // what an attempt that just ended says goes out with this frame
+            this.advance(t);
+        }
         this.afterScript(t);
         return this.drain();
     }
@@ -743,7 +763,8 @@ class Runner implements LessonSession {
             this.reached.add(cp.id);
             this.lastCheckpoint = cp;
             this.emit({ t, kind: 'checkpoint', id: cp.id });
-            if (this.lesson.checkpoints.indexOf(cp) > 0) this.actions.push({ kind: 'cue', event: { kind: 'checkpoint' } });
+            if (cp.stage !== undefined) this.stagePassed(cp.stage);
+            else if (this.lesson.checkpoints.indexOf(cp) > 0) this.actions.push({ kind: 'cue', event: { kind: 'checkpoint' } });
         }
         this.evaluateGoals(s, prev, t);
     }
@@ -759,6 +780,8 @@ class Runner implements LessonSession {
                 this.endAttempt(false, t, this.whyMissed(false));
                 return;
             }
+            const score = this.tracker.score();
+            if (score !== null) this.goalScores.push(score);
             this.goalIndex++;
             if (this.goalIndex >= this.lesson.goals.length) {
                 this.endAttempt(true, t);
@@ -771,6 +794,12 @@ class Runner implements LessonSession {
             this.emit({ t, kind: 'goal', index: this.goalIndex, what: 'missed' });
             this.endAttempt(false, t, this.whyMissed(true));
         }
+    }
+
+    /** A checkpoint that ends a stage: the stage cue and "Stage k passed", said over the flight (it does not wait for other lines). */
+    private stagePassed(stage: number): void {
+        this.actions.push({ kind: 'cue', event: { kind: 'stage', index: stage } });
+        this.actions.push({ kind: 'say', line: { key: 'fly.stage', params: { n: stage } }, interrupt: false });
     }
 
     /** A sample on the goals' clock: the time the attempt waited for a repeat (Z) is left out. */
@@ -847,8 +876,8 @@ class Runner implements LessonSession {
         this.phaseValue = 'between';
         this.script.length = 0;
         if (ok) {
-            if (!this.ears) this.actions.push({ kind: 'cue', event: { kind: 'checkpoint' } });
-            this.push({ kind: 'say', lines: [progress] });
+            this.actions.push({ kind: 'cue', event: { kind: 'praise' } });
+            this.push({ kind: 'say', lines: [this.praise(t), progress] });
         } else if (offerNow) {
             this.offered = true;
             this.push({ kind: 'say', lines: [progress, ...reasons, { key: 'fly.offer-next', params: { key: this.key('next') } }] });
@@ -858,6 +887,32 @@ class Runner implements LessonSession {
             this.push({ kind: 'say', lines: [progress, this.lesson.speech.retry, ...hint] });
         }
         this.push({ kind: 'wait', s: BETWEEN_S });
+    }
+
+    /**
+     * The praise of a counted attempt: "Better than last time!" when its score improved by BETTER_SHARE on the last
+     * counted attempt of this sitting, else a line of the pool, never the one said last. A timed course says its time instead.
+     */
+    private praise(t: number): SpeechLine {
+        const timed = this.lesson.goals.some((g) => g.kind === 'timed-course');
+        const score: GoalScore = this.goalScores.at(-1) ?? { value: t - this.pausedMs - this.attemptT0, better: 'lower' };
+        const last = this.lastScore;
+        this.lastScore = score;
+        if (!timed && last !== null && last.better === score.better) {
+            const better = score.better === 'lower' ? score.value < last.value * (1 - BETTER_SHARE) : score.value > last.value * (1 + BETTER_SHARE);
+            if (better) return { key: 'praise.better' };
+        }
+        // the pool, in an order of its own for each lesson and attempt, never the same line twice in a row
+        let k = (this.attemptNo * 5 + this.counted * 3 + (this.o.seed ?? 0)) % PRAISE_LINES;
+        if (k === this.lastPraise) k = (k + 1) % PRAISE_LINES;
+        this.lastPraise = k;
+        return { key: `praise.${k + 1}` };
+    }
+
+    /** What the pass says comes next: the next lesson on the pilot's path, or that this was the last. */
+    private nextLine(): SpeechLine {
+        const next = lessonAfter(this.lesson.id, this.o.path ?? 'full');
+        return next === null ? { key: 'fly.last-lesson' } : { key: 'fly.lesson-passed', params: { title: this.text(next.title) } };
     }
 
     /** A timed course: the time of a counted attempt, and whether it is the best one. */
@@ -882,6 +937,7 @@ class Runner implements LessonSession {
         this.current = null;
         this.actions.push({ kind: 'cue', event: { kind: 'fanfare' } });
         this.actions.push({ kind: 'say', line: this.lesson.speech.pass, interrupt: false });
+        this.actions.push({ kind: 'say', line: this.nextLine(), interrupt: false });
     }
 
     /** A lesson that does not block ends after `attempts` failures in a row: it never holds anyone back. */
