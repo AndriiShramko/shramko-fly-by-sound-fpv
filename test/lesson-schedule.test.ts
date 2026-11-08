@@ -134,11 +134,11 @@ describe('control: the v0.12 timing fails the same check (a line ends at the ear
         }
     }, 120000);
 
-    it('the fact as measured: 265 of the 380 English lines take the Windows voice longer than the estimate', () => {
+    it('the fact as measured: 265 of the 382 English lines take the Windows voice longer than the estimate', () => {
         const en = JSON.parse(readFileSync(new URL('../locales/en.json', import.meta.url), 'utf8')) as Record<string, string>;
         const keys = Object.keys(david);
         const longer = keys.filter((k) => (david[k] as number) > 0.7 + 0.065 * (MEASURED_TEXT[k] ?? (en[k] as string)).length);
-        expect(keys.length).toBe(380);
+        expect(keys.length).toBe(382);
         // 262 until merge s13-merge reworded walls-hall's intro.2 and hint.1 and the corridor's intro.2 (review m4 of
         // lane s13-sound); those three were measured again with the same voice and method (walls-hall's intro.1, not
         // changed then, measured 8.64 s again, as in the fixture). walls-hall's goal.1, reworded at the s13-worlds merge
@@ -151,7 +151,8 @@ describe('control: the v0.12 timing fails the same check (a line ends at the ear
         // 7.395 s), rings-heights' intro.2 7.34 s and hint.1 5.62 s (shorter than theirs). Then review M3 and m1 made the
         // corridor's intro.3 the open-way chime's line (11.455 s, shorter than its estimate of 11.685 s; the checkpoint line
         // it replaced, 6.755 s, was 0.01 s longer than its own) and its intro.4 the stages and the reset (9.64 s, longer
-        // than 9.02 s): 380 lines, 265 longer.
+        // than 9.02 s): 380 lines, 265 longer. Lane s13-elev added the setting of up and down by direction, measured the
+        // same way: its name 2.33 s (its estimate 2.39 s) and its description 13.275 s (14.09 s): 382 lines, 265 longer.
         expect(longer.length).toBe(265);
         // and under v0.12 the first sound of the check plays partly under the line before it
         const s = schedule('ears-headphones', { speech: measuredSpeech(david), runner: v012 });

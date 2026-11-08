@@ -352,6 +352,8 @@
     "menu.setting.motor": "Motor sound",
     "menu.setting.height-target": "Target height note",
     "menu.setting.motor-level": "Motor volume",
+    "menu.setting.height-direction": "Sound from above and below",
+    "menu.setting.height-direction-what": "The way above or below an obstacle, the target height note, the ceiling and the floor also come from above or below you. Their pitch tells it either way. With good headphones you may hear the direction too.",
     "menu.value.on": "on",
     "menu.value.off": "off",
     "menu.value.up-higher": "up is a higher tone",

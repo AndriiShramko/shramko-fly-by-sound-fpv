@@ -352,6 +352,8 @@
     "menu.setting.motor": "Dźwięk silnika",
     "menu.setting.height-target": "Dźwięk docelowej wysokości",
     "menu.setting.motor-level": "Głośność silnika",
+    "menu.setting.height-direction": "Dźwięk z góry i z dołu",
+    "menu.setting.height-direction-what": "Przejście nad albo pod przeszkodą, dźwięk docelowej wysokości, sufit i podłoga dochodzą też z góry albo z dołu. Wysokość dźwięku i tak to mówi. W dobrych słuchawkach usłyszysz może także kierunek.",
     "menu.value.on": "włączone",
     "menu.value.off": "wyłączone",
     "menu.value.up-higher": "w górę to wyższy dźwięk",

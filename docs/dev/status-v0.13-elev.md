@@ -30,8 +30,13 @@ and below change with it. In the same lane: "wrong way" between gates, which the
   before, each with a breath of air from 4 to 16 kHz; pitch, intervals, rhythm and levels unchanged
   (`test/elevation.test.ts`, 36 tests; decisions below). The setting is read as `SonicPrefs.heightDirection` (absent or
   true: on); with it off every frame of the seven flights is v0.13's exactly
-- [ ] E1-3 The setting (on by default) that gives back v0.13's placement exactly; its label and spoken description in
-  four languages
+- [x] E1-3 The setting: `SonicPrefs.heightDirection` (optional; absent or true: on, the default; false: v0.13's placement
+  exactly), validated and read like `heightTarget` (a v0.13 document without it reads as on, with no issue); its label
+  `menu.setting.height-direction` ("Sound from above and below") and spoken description
+  `menu.setting.height-direction-what` in en, es, pl, ru, the English measured (2.33 s and 13.28 s with the local
+  voice, `test/fixtures/tts-en-david.json`); `test/prefs.test.ts`. Control: the default broken to false fails 7 tests
+  (the defaults, the setting's own test, the chime and target directions in `test/elevation.test.ts`, the freeway
+  test)
 - [ ] E1-4 Words: the glossary and the lesson lines say "from above or below"; tunnel-gaps intro.3 plays the chime
   above and below; walls-pillar names its chime
 - [ ] E1-5 Wrong way between gates: the line-up distance scaled with the lesson's gate spacing (control: the 8 m rule)
@@ -112,3 +117,8 @@ one exception).
   frame) and `middleM` (how far beside the craft's line); `engine.plan.height.target.dir` is where the target note comes
   from, and the active cue `height.target` carries that direction (it had none). Nothing in the host has to change for
   the sound itself.
+- The mode's spoken settings (M41-3, M41-4; wave 2 W13, beside `heightTarget` and `motorGainDb`): offer
+  `heightDirection`, on and off (`menu.value.on`, `menu.value.off`), named by `menu.setting.height-direction` ("Sound
+  from above and below") and explained by `menu.setting.height-direction-what` when the pilot lands on it (as
+  `menu.setting.calm-what` explains calm mode), saved through `setup.update()` with the whole document. Nothing else:
+  the engine reads it from the prefs it is given.

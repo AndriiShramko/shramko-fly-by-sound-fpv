@@ -27,7 +27,7 @@ function set(obj: unknown, key: string, value: unknown): unknown {
 describe('the defaults', () => {
     const d = defaultPrefs();
 
-    it('are what the spec says: soft theme, not calm, up is higher, the app speaks, captions on, the motor on (v0.13, M41-16) at its calibrated level, the full path, the heading frame, the target tone on', () => {
+    it('are what the spec says: soft theme, not calm, up is higher, the app speaks, captions on, the motor on (v0.13, M41-16) at its calibrated level, the full path, the heading frame, the target tone on, up and down by direction too (lane s13-elev)', () => {
         expect(d).toEqual({
             format: FORMATS.prefs,
             theme: 'soft',
@@ -42,8 +42,26 @@ describe('the defaults', () => {
             path: 'full',
             listenerFrame: 'heading',
             heightTarget: true,
-            motorGainDb: 0
+            motorGainDb: 0,
+            heightDirection: true
         });
+    });
+
+    it("up and down by direction (lane s13-elev, owner's message 42): on by default, optional (a document without it is valid and reads as on), a bad one refused", () => {
+        expect(validatePrefs({ ...d, heightDirection: false }).ok).toBe(true);
+        const { heightDirection: _gone, ...without } = d;
+        expect(validatePrefs(without).ok).toBe(true);
+        // a document saved by v0.13 (it has heightTarget and no heightDirection): on, with no issue
+        const v013 = readPrefs(without);
+        expect(v013.prefs.heightDirection).toBe(true);
+        expect(v013.issues).toEqual([]);
+        // the pilot's off is kept
+        expect(readPrefs({ ...d, heightDirection: false }).prefs.heightDirection).toBe(false);
+        expect(validatePrefs({ ...d, heightDirection: 'on' }).ok).toBe(false);
+        const bad = readPrefs({ ...d, heightDirection: 1 });
+        expect(bad.prefs.heightDirection).toBe(true);
+        expect(bad.issues.map((i) => i.path)).toEqual(['heightDirection']);
+        expect(updatePrefs(d, { heightDirection: false }).ok).toBe(true);
     });
 
     it("the pilot's motor level (review m3): -24 to 6 dB, optional (a document without it is valid), a bad one refused", () => {

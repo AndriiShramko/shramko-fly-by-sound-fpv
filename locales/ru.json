@@ -352,6 +352,8 @@
     "menu.setting.motor": "Звук моторов",
     "menu.setting.height-target": "Звук нужной высоты",
     "menu.setting.motor-level": "Громкость моторов",
+    "menu.setting.height-direction": "Звук сверху и снизу",
+    "menu.setting.height-direction-what": "Проход над или под препятствием, звук нужной высоты, потолок и пол звучат ещё и сверху или снизу. Высота тона и так об этом говорит. В хороших наушниках ты, может быть, услышишь и направление.",
     "menu.value.on": "включено",
     "menu.value.off": "выключено",
     "menu.value.up-higher": "вверх это более высокий тон",
