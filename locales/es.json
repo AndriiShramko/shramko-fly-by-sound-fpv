@@ -357,6 +357,7 @@
     "fly.wrong-side": "Esa puerta la pasaste por el lado equivocado. Vuelve y crúzala de frente.",
     "fly.lesson-passed": "Lección superada. La siguiente, un poco más difícil: {title}.",
     "fly.last-lesson": "Lección superada. Era la última lección.",
+    "fly.back-to": "Lección superada. Volvemos a la lección: {title}.",
     "praise.1": "¡Bien!",
     "praise.2": "Muy bien.",
     "praise.3": "Bravo.",

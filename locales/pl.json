@@ -357,6 +357,7 @@
     "fly.wrong-side": "Bramka przeleciana od tyłu. Wróć i przeleć ją od przodu.",
     "fly.lesson-passed": "Lekcja zaliczona. Dalej trochę trudniej: {title}.",
     "fly.last-lesson": "Lekcja zaliczona. To była ostatnia lekcja.",
+    "fly.back-to": "Lekcja zaliczona. Wracamy do lekcji: {title}.",
     "praise.1": "Świetnie!",
     "praise.2": "Dobrze.",
     "praise.3": "Brawo.",

@@ -241,6 +241,7 @@ export const FREE_KEYS = [
     'fly.wrong-side',
     'fly.lesson-passed',
     'fly.last-lesson',
+    'fly.back-to',
     'praise.1',
     'praise.2',
     'praise.3',

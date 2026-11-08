@@ -5,14 +5,15 @@
 // drains with takeActions() and carries out.
 //
 // The host loop:
-//   const run = createLessonRunner(lesson, { locale, objects, start, path });
+//   const run = createLessonRunner(lesson, { locale, objects, start, path, returnTo });
 //   run.begin(t)                                  // the task, then the first attempt
 //   every frame: events = run.step(sample, world); actions = run.takeActions();
 //                engine.update(run.demoFrame(t) ?? { sample, world, target: run.target(), floorY })
 //   say actions: engine.say(line), then run.spoken(t) when the speech queue is empty
 //   digits / voice: run.answer(value, via, t)    R: run.reset('checkpoint' | 'start', t)
 //   N: run.next(t)   B: run.previous(t)   Z: run.repeat(t)   menu: run.nextLesson(t), run.previousLesson(t)
-//   a 'go' action: open the lesson after (or before) this one on the pilot's path (lessonAfter, lessonBefore)
+//   a 'go' action: the lesson G left first (returnTo), else the lesson after (or before) this one on the
+//                  pilot's path (lessonAfter, lessonBefore), else the start screen
 //   I: run.view() and run.statusLine()            (what the host draws and says: lesson k of n, step, attempt, count)
 //
 // Steps. A lesson is a short list of steps the pilot can tell apart and move between. A flying lesson
@@ -22,7 +23,9 @@
 // from the last step (flying, or the last sound), to the next lesson, marking this one skipped unless
 // it was passed; B moves one step back and, from step 1, to the previous lesson (B while flying drops
 // the attempt, uncounted, for the task); Z gives the step again from its first line (while flying the
-// task is said again and the attempt waits, its clock stopped, then goes on).
+// task is said again and the attempt waits, its clock stopped, then goes on). A lesson opened with G from
+// another one (RunnerOptions.returnTo, the glossary) is a detour: its ways out lead back there, and
+// leaving it forward does not mark it skipped (review R3).
 //
 // Sounds and speech (M41-5, M41-9). A spoken step is over when the host reports its speech queue empty
 // (spoken(t)), not when the runner thinks the lines should have been said: a voice slower than the
@@ -73,7 +76,7 @@ import { createRng } from '../util/rng';
 import { distance as dist3, dot, normalize, sub, yawQuat } from '../util/vec';
 import { createAnalyticWorld, makeSpec, type AnalyticWorldInfo } from '../world/analytic-world';
 import { BODY_RADIUS_M, createTracker, toLocal, type GoalScore, type GoalTracker, type Outcome } from './goals';
-import { lessonAfter, lessonPaths } from './library';
+import { getLesson, isShippedLesson, lessonAfter, lessonPaths } from './library';
 import { APPROACHES, GAME_SCENE_S, isGlossary, NARRATED_SCENE_S, playS, REPEAT_GAP_S, REPEAT_PLAYS, SHAPE_ORDER } from './sounds';
 import { lessonTrack, yawOf, type LessonTrack, type TrackPoint } from './track';
 import { headingBasis, worldToListener } from '../sense/frame';
@@ -110,8 +113,10 @@ export type RunnerAction =
     /** module 0: while a scene is set, feed the engine with demoFrame(t) instead of the craft; `play`: which play of the scene (a named sound plays three times) */
     | { readonly kind: 'scene'; readonly scene: DemoScene | null; readonly play?: { readonly index: number; readonly of: number } }
     /**
-     * the pilot leaves this lesson: open the next one on the pilot's path (lessonAfter) or the previous one
-     * (lessonBefore), the start screen at either end. The runner is done after it (a lesson event 'leave').
+     * the pilot leaves this lesson. 'next': the way back to the lesson left with G first (RunnerOptions.returnTo),
+     * else the next lesson on the pilot's path (lessonAfter), else the start screen: the simulator host's advance().
+     * 'previous': the way back first too, else the lesson before (lessonBefore), else the start screen. The runner is
+     * done after it (a lesson event 'leave').
      */
     | { readonly kind: 'go'; readonly to: 'next' | 'previous' };
 
@@ -209,6 +214,12 @@ export interface RunnerOptions {
     readonly speechRate?: number;
     /** the names of the host's keys, as the lines say them ("Press N to go on"); default N, B, Z */
     readonly keys?: { readonly next?: string; readonly previous?: string; readonly repeat?: string };
+    /**
+     * The lesson the pilot left with G (the sound glossary opened from another lesson): this one is a detour. Its
+     * 'go' actions lead back there (the host's way back, review R3), leaving it forward does not mark it skipped,
+     * and its pass says "Back to <that lesson>" instead of the next lesson on the path. Null or absent: none.
+     */
+    readonly returnTo?: string | null;
     /** for the negative controls of the tests only: each one brings back a rule of v0.12 that a check must catch */
     readonly testHooks?: RunnerTestHooks;
 }
@@ -442,6 +453,11 @@ class Runner implements LessonSession {
 
     private get ears(): boolean {
         return this.lesson.world.kind === 'none';
+    }
+
+    /** opened with G from another lesson, which the pilot goes back to (RunnerOptions.returnTo) */
+    private get detour(): boolean {
+        return (this.o.returnTo ?? null) !== null;
     }
 
     // -------------------------------------------------------------- plumbing
@@ -1061,8 +1077,10 @@ class Runner implements LessonSession {
         return { key: `praise.${k + 1}` };
     }
 
-    /** What the pass says comes next: the next lesson on the pilot's path, or that this was the last. */
+    /** What the pass says comes next: the lesson G left (a detour), the next lesson on the pilot's path, or that this was the last. */
     private nextLine(): SpeechLine {
+        const back = this.o.returnTo ?? null;
+        if (back !== null && isShippedLesson(back)) return { key: 'fly.back-to', params: { title: this.text(getLesson(back).title) } };
         const next = lessonAfter(this.lesson.id, this.o.path ?? 'full');
         return next === null ? { key: 'fly.last-lesson' } : { key: 'fly.lesson-passed', params: { title: this.text(next.title) } };
     }
@@ -1495,7 +1513,8 @@ class Runner implements LessonSession {
         this.abandonQuestion(t);
         this.stopCurrent();
         this.script.length = 0;
-        if (to === 'next' && !this.passedValue) this.skippedValue = true;
+        // a detour (G) left forward was heard, not skipped: the ladder's state of the lesson stays as it was
+        if (to === 'next' && !this.passedValue && !this.detour) this.skippedValue = true;
         this.listening = false;
         this.lessonEvent('leave', t);
         this.left = true;

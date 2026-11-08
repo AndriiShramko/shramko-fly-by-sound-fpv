@@ -20,7 +20,7 @@ Review fixes (`docs/wip/s13-lessons-review.md`, one commit per fix or small grou
 
 - [x] R1 wrong way in a course: judged against the gate that counts next, not the track
 - [x] R2 shared cue events: payloads that take lane s13-sound's, the play length checked against the planner
-- [ ] R3 G's way back: 'go next' is the host's advance(), a lesson opened by G is not marked skipped
+- [x] R3 G's way back: 'go next' is the host's advance(), a lesson opened by G is not marked skipped
 - [ ] R4 the simulator's tests the gitlink move breaks, listed
 - [ ] R5 the corridor ends at its end: a goal 'track-end'
 - [ ] R6 to R15 minors
@@ -342,15 +342,33 @@ walls line) go through the same queue, so the fix (wait for the report) also wai
   it stands) fail it: 30 or more plays sound in 36 % of their slot, 2.6 s of silence between plays; the per-cue table's
   predecessor (one 1.2 s slot) failed it with the ping. What it cannot show: how a play sounds at the ear.
 
+### Review R3: the way back of a lesson opened with G
+
+- `RunnerOptions.returnTo` (the lesson G left): the lesson is a detour. Leaving it forward (N from its last step, the
+  menu's next lesson) does not mark it skipped (it was heard; the ladder's state of the glossary stays as it was), and
+  its pass says "Lesson passed. Back to the lesson: <title>" (`fly.back-to`, four languages) instead of the next lesson on
+  the path, which the host would not open. The 'go' action is specified as the host's `advance()` (next) and the way
+  back, else `lessonBefore` (previous): "Needs from the simulator" item 2. B on a detour goes back too, not to the
+  lesson before the glossary on the ladder: the pilot came from the lesson he left, and B means back.
+- Tests (`test/navigation.test.ts`): N through the glossary with `returnTo` leaves it neither passed nor skipped, heard
+  to its end its pass says the way back with the left lesson's title; controls: the same glossary on the ladder is
+  marked skipped, and its pass names the next lesson on the path (ears-walls). Each rule broken on its own fails its test.
+
 ## Needs from the simulator
 
 All in `C:/dev/gsfpv-v03/apps/fly/src/sonic/` (read only here; lane v13-host):
 
 1. `lessons.ts` 183-190, `createLessonRunner(lesson, { ... })`: also pass `path: this.p.path()` (the view's lesson index
-   and, step 6, the next lesson's title) and `keys: { next: 'N', previous: 'B', repeat: 'Z' }` (the names the lines say).
-2. `lessons.ts` 308-329, `act()`: a new action `{ kind: 'go', to }`: save the progress, then open
-   `lessonAfter(id, path)` or `lessonBefore(id, path)`, or `showMenu()` when it is null. Until then the host ignores it
-   and the pilot stays in a lesson that no longer moves.
+   and, step 6, the next lesson's title), `keys: { next: 'N', previous: 'B', repeat: 'Z' }` (the names the lines say) and
+   `returnTo: o.returnTo ?? null` (the lesson G left: the glossary's pass then says "Back to the lesson: <title>" and N
+   through it does not mark it skipped; review R3).
+2. `lessons.ts` 308-329, `act()`: a new action `{ kind: 'go', to }` (review R3). 'next': `void this.advance()`, as after a
+   pass (the way back to the lesson G left first, then the next lesson on the path, the full ladder's off it, then the
+   menu; `open()` saves the progress first). 'previous': the way back first too (`returnTo`, then cleared), else
+   `lessonBefore(id, path)`, else `showMenu()`. Built as `lessonAfter` instead, the host would go on along the path from a
+   glossary entered by G, the regression of the v0.12 review I3. After a 'go' the runner is inert: keep `checkPassed()`
+   from calling `advance()` a second time (the runner may be in phase 'passed' when N is pressed). Until then the host
+   ignores 'go' and the pilot stays in a lesson that no longer moves (N in any flying lesson is a dead end).
 3. Keys, each recorded as a `key` event with its `REPLAY_KEY_ACTIONS` value before the call, like N and R today
    (`bridge.ts` 341-364): B -> `runner.previous(t)` ('previous'); Z -> `runner.repeat(t)` ('repeat') instead of the bridge's
    last line again (`lessons.ts` 392-395, `bridge.ts` 425-429); the Escape menu's Next lesson and Previous lesson ->

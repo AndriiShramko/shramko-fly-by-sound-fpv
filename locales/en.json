@@ -357,6 +357,7 @@
     "fly.wrong-side": "That gate was passed from the wrong side. Go back and fly it from the front.",
     "fly.lesson-passed": "Lesson passed. Next, a bit harder: {title}.",
     "fly.last-lesson": "Lesson passed. That was the last lesson.",
+    "fly.back-to": "Lesson passed. Back to the lesson: {title}.",
     "praise.1": "Nice!",
     "praise.2": "Good.",
     "praise.3": "Well done.",

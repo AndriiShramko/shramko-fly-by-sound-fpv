@@ -221,6 +221,38 @@ describe('a lesson of module 0: the intro, then one step per sound', () => {
     });
 });
 
+describe('a lesson opened with G from another one: a detour back to it (review R3)', () => {
+    const title = (id: string): string => getLesson(id).title.key;
+
+    it('N through the glossary to its end leaves it as heard, not skipped; control: the same glossary on the ladder is marked skipped', () => {
+        for (const returnTo of ['rings-line', null]) {
+            const p = new ScriptedPilot(getLesson('ears-glossary'), returnTo === null ? {} : { returnTo });
+            p.begin();
+            for (let k = 0; k < 40 && gos(p.actions).length === 0; k++) p.press((run, t) => run.next(t));
+            expect(gos(p.actions), String(returnTo)).toEqual(['next']);
+            expect(p.run.progress(), String(returnTo)).toMatchObject({ passed: false, skipped: returnTo === null });
+            expect(p.run.view().skipped).toBe(returnTo === null);
+        }
+    });
+
+    it('heard to its end, the pass says the way back to the lesson G left; control: on the ladder it names the next lesson on the path', () => {
+        const passLine = (o: { returnTo?: string }): Say['line'] | undefined => {
+            const p = new ScriptedPilot(getLesson('ears-glossary'), o);
+            p.begin();
+            p.until(() => p.run.phase === 'passed', 900);
+            expect(p.run.phase).toBe('passed');
+            return says(p.actions).at(-1)?.line;
+        };
+        const back = passLine({ returnTo: 'rings-line' });
+        expect(back?.key).toBe('fly.back-to');
+        expect(back?.params?.['title']).toBe(new ScriptedPilot(getLesson('rings-line')).run.statusLine().params?.['title']);
+        const ladder = passLine({});
+        expect(ladder?.key).toBe('fly.lesson-passed');
+        expect(lessonAfter('ears-glossary', 'full')?.title.key).toBe(title('ears-walls'));
+        expect(ladder?.params?.['title']).toBe(new ScriptedPilot(getLesson('ears-walls')).run.statusLine().params?.['title']);
+    }, 120000);
+});
+
 describe('where a go action leads', () => {
     it('the lesson after and before on the pilot\'s path, the full ladder off it, null at the ends', () => {
         const { full, fast } = lessonPaths();
