@@ -1,10 +1,10 @@
 {
  "format": "shramko-listen-evidence/1",
- "key": "00c1d278316c508c422139692b6ccbe1301ae72ab04522bfd0cda9a25dd4919c",
+ "key": "217fe5790a331569925db6f8a1a578002adb5bbe40980be4cc126ca625db73bc",
  "inputs": {
-  "hash": "00c1d278316c508c422139692b6ccbe1301ae72ab04522bfd0cda9a25dd4919c",
-  "files": 14,
-  "version": 1,
+  "hash": "217fe5790a331569925db6f8a1a578002adb5bbe40980be4cc126ca625db73bc",
+  "files": 15,
+  "version": 2,
   "voices": {
    "en": "Microsoft David Desktop",
    "es": "Microsoft Helena Desktop",
@@ -32,9 +32,9 @@
    "numpy": "2.4.6"
   }
  },
- "date": "2026-11-08T19:54:55.093Z",
+ "date": "2026-11-08T21:39:35.609Z",
  "id": "VL-4-words",
- "claim": "every line of the four locales, said by the local Windows voice of its language and transcribed by Whisper large-v3, has a word error rate (case and punctuation normalised) at most its language's bound; the Russian lines said by the English voice fail it",
+ "claim": "every line of the four locales, said by the local Windows voice of its language and transcribed by Whisper large-v3, has a word error rate (case and punctuation normalised) at most its language's bound, and every line that names a key is heard with the key's name as a word of its own; the Russian lines said by the English voice fail the bound, and v0.13's lines that name a key, said by their voices, lose a key in each of Spanish, Polish and Russian",
  "run": "pnpm listen:words",
  "valid": true,
  "pass": true,
@@ -43,12 +43,16 @@
   "en": {
    "voice": "Microsoft David Desktop",
    "lines": 526,
-   "words": 4022,
+   "words": 4026,
    "bound": 0.2,
-   "exact": 520,
+   "exact": 519,
    "meanRate": 0.0011,
    "maxRate": 0.1667,
    "over": [],
+   "keys": {
+    "lines": 17,
+    "lost": []
+   },
    "heard": [
     {
      "locale": "en",
@@ -167,12 +171,16 @@
   "es": {
    "voice": "Microsoft Helena Desktop",
    "lines": 526,
-   "words": 4071,
+   "words": 4073,
    "bound": 0.2,
    "exact": 512,
    "meanRate": 0.0026,
    "maxRate": 0.2,
    "over": [],
+   "keys": {
+    "lines": 17,
+    "lost": []
+   },
    "heard": [
     {
      "locale": "es",
@@ -221,12 +229,16 @@
   "pl": {
    "voice": "Microsoft Paulina Desktop",
    "lines": 526,
-   "words": 3448,
+   "words": 3456,
    "bound": 0.2,
-   "exact": 514,
-   "meanRate": 0.0031,
+   "exact": 516,
+   "meanRate": 0.0025,
    "maxRate": 0.2,
    "over": [],
+   "keys": {
+    "lines": 17,
+    "lost": []
+   },
    "heard": [
     {
      "locale": "pl",
@@ -279,6 +291,13 @@
     },
     {
      "locale": "pl",
+     "key": "*",
+     "said": "20 procent",
+     "heard": "20%",
+     "why": "Whisper writes the percent sign"
+    },
+    {
+     "locale": "pl",
      "key": "app.name",
      "said": "Fly by",
      "heard": "Flajby",
@@ -310,12 +329,16 @@
   "ru": {
    "voice": "Microsoft Irina Desktop",
    "lines": 526,
-   "words": 3283,
+   "words": 3287,
    "bound": 0.2,
-   "exact": 509,
-   "meanRate": 0.004,
+   "exact": 510,
+   "meanRate": 0.0033,
    "maxRate": 0.2,
    "over": [],
+   "keys": {
+    "lines": 17,
+    "lost": []
+   },
    "heard": [
     {
      "locale": "ru",
@@ -372,6 +395,13 @@
      "said": "препятствие",
      "heard": "препятствия",
      "why": "unstressed, the endings -ие and -ия sound the same"
+    },
+    {
+     "locale": "ru",
+     "key": "*",
+     "said": "20 процентов",
+     "heard": "20%",
+     "why": "Whisper writes the percent sign"
     },
     {
      "locale": "ru",
@@ -490,13 +520,98 @@
   "medianRate": 1,
   "fails": true
  },
+ "keyControl": {
+  "lines": 51,
+  "source": "tools/listen/key-lines-v013.json",
+  "lost": {
+   "es": [
+    {
+     "key": "help.record",
+     "text": "Pulsa T para empezar o parar la grabación.",
+     "heard": "Púlsate para empezar o parar la grabación.",
+     "rate": 0.25
+    },
+    {
+     "key": "help.glossary",
+     "text": "Pulsa G para abrir el glosario de sonidos.",
+     "heard": "Pulsaje para abrir el glosario de sonidos.",
+     "rate": 0.25
+    },
+    {
+     "key": "rec.ask",
+     "text": "¿Puedo grabar este vuelo y tu voz? La grabación se queda en este dispositivo hasta que la envíes. Pulsa T para decir que sí.",
+     "heard": "Puedo grabar este vuelo y tu voz. La grabación se queda en este dispositivo hasta que la envíes. Púlsate para decir que sí.",
+     "rate": 0.0833
+    },
+    {
+     "key": "rec.recover",
+     "text": "Un vuelo anterior no se terminó. Pulsa T para conservarlo.",
+     "heard": "Un vuelo anterior no se terminó. Púlsate para conservarlo.",
+     "rate": 0.2
+    }
+   ],
+   "pl": [
+    {
+     "key": "help.status",
+     "text": "Naciśnij I, aby usłyszeć, gdzie jesteś.",
+     "heard": "Naciśnij, aby usłyszeć, gdzie jesteś.",
+     "rate": 0.1667
+    }
+   ],
+   "ru": [
+    {
+     "key": "help.record",
+     "text": "Нажми T, чтобы начать или остановить запись.",
+     "heard": "Нажмите, чтобы начать или остановить запись.",
+     "rate": 0.2857
+    },
+    {
+     "key": "help.send",
+     "text": "Нажми U, чтобы отправить полёт автору.",
+     "heard": "Нажми её, чтобы отправить полёт автору",
+     "rate": 0.1667
+    },
+    {
+     "key": "help.status",
+     "text": "Нажми I, чтобы услышать, где ты.",
+     "heard": "Нажми Ай, чтобы услышать, где ты.",
+     "rate": 0.1667
+    },
+    {
+     "key": "rec.ask",
+     "text": "Можно записать этот полёт и твой голос? Запись останется на этом устройстве, пока ты её не отправишь. Нажми T, чтобы согласиться.",
+     "heard": "Можно записать этот полёт и твой голос Запись останется на этом устройстве, пока ты её не отправишь Нажмите, чтобы согласиться",
+     "rate": 0.0952
+    },
+    {
+     "key": "rec.recover",
+     "text": "Предыдущий полёт не был закончен. Нажми T, чтобы сохранить его.",
+     "heard": "Предыдущий полёт не был закончен Нажмите, чтобы сохранить его",
+     "rate": 0.2
+    },
+    {
+     "key": "send.ask",
+     "text": "Нажми U, чтобы отправить этот полёт автору.",
+     "heard": "Нажми её, чтобы отправить этот полёт автору",
+     "rate": 0.1429
+    },
+    {
+     "key": "send.confirm",
+     "text": "Отправить автору запись вместе с твоим голосом? Нажми U, чтобы подтвердить.",
+     "heard": "Отправить автору запись вместе с твоим голосом Нажми её, чтобы подтвердить",
+     "rate": 0.0909
+    }
+   ]
+  },
+  "fails": true
+ },
  "rows": [
   {
    "locale": "en",
    "key": "cue.safety.free.glossary",
-   "text": "A pair of quick notes, again and again, while something blocks the way ahead. Equal notes from left or right: the way is there. From above, notes moving like your height tone in a climb: the way is above. From below, the other way: below.",
-   "heard": "A pair of quick notes, again and again, while something blocks the way ahead. Equal notes from left or right, the way is there. From above, notes moving like your high tone in a climb, the way is above. From below, the other way, below.",
-   "rawRate": 0.0222,
+   "text": "A pair of quick notes, again and again, while the way ahead is blocked. Equal notes from left or right: the way is there. Like your height tone in a climb: above. The other way: below. With Sound from above and below on, from there too.",
+   "heard": "A pair of quick notes, again and again, while the way ahead is blocked. Equal notes from left or right, the way is there. Like your high tone in a climb, above. The other way, below. With sound from above and below on, from there too.",
+   "rawRate": 0.0217,
    "rate": 0
   },
   {
@@ -614,17 +729,17 @@
   {
    "locale": "en",
    "key": "lesson.corridor.intro.3",
-   "text": "When something blocks the way ahead, you hear a pair of quick notes again and again. They come from where the way goes on: left, right, above or below. Above, they move like your height tone in a climb, below the other way.",
-   "heard": "When something blocks the way ahead, you hear a pair of quick notes again and again. They come from where the way goes on, left, right, above or below. Above, they move like your high tone in a climb, below the other way.",
-   "rawRate": 0.0233,
+   "text": "When something blocks the way ahead, a pair of quick notes repeats. Equal notes come from the free side, left or right. Notes moving like your height tone in a climb: the way is above. The other way: below.",
+   "heard": "When something blocks the way ahead, a pair of quick notes repeats. Equal notes come from the free side, left or right. Notes moving like your high tone in a climb, the way is above. The other way, below.",
+   "rawRate": 0.0256,
    "rate": 0
   },
   {
    "locale": "en",
    "key": "lesson.tunnel-gaps.intro.3",
-   "text": "If the way is above, the chime comes from above and moves like your height tone in a climb. If it is below, the chime comes from below and moves the other way.",
-   "heard": "If the way is above, the chime comes from above and moves like your high tone in a climb. If it is below, the chime comes from below and moves the other way.",
-   "rawRate": 0.0303,
+   "text": "If the way is above, the chime moves like your height tone in a climb. If it is below, the other way. With Sound from above and below on, it comes from there too.",
+   "heard": "If the way is above, the chime moves like your high tone in a climb. If it is below, the other way. With sound from above and below on, it comes from there too.",
+   "rawRate": 0.0294,
    "rate": 0
   },
   {
@@ -634,6 +749,16 @@
    "heard": "Now there are 2 or 3 rings in a row, and then some with a turn.",
    "rawRate": 0.125,
    "rate": 0.125
+  },
+  {
+   "locale": "en",
+   "key": "glossary.again",
+   "text": "Press Z to hear the sounds again.",
+   "heard": "Press Z to hear the sounds again.",
+   "rawRate": 0,
+   "rate": 0,
+   "keyName": "Z",
+   "keyHeard": true
   },
   {
    "locale": "en",
@@ -693,6 +818,124 @@
   },
   {
    "locale": "en",
+   "key": "menu.setting.height-direction-what",
+   "text": "On: a way above or below an obstacle and the target height note also come from there, with a soft hiss good headphones can place. Off: from ahead, told by their pitch alone. The ceiling and floor come from above and below either way.",
+   "heard": "On, away above or below an obstacle and the target height note also come from there, with the soft hiss good headphones can place. Off, from ahead, told by their pitch alone. The ceiling and floor come from above and below either way.",
+   "rawRate": 0.0227,
+   "rate": 0.0227
+  },
+  {
+   "locale": "en",
+   "key": "help.record",
+   "text": "Press T to start or stop recording.",
+   "heard": "Press T to start or stop recording.",
+   "rawRate": 0,
+   "rate": 0,
+   "keyName": "T",
+   "keyHeard": true
+  },
+  {
+   "locale": "en",
+   "key": "help.send",
+   "text": "Press U to send the flight to the author.",
+   "heard": "Press U to send the flight to the author.",
+   "rawRate": 0,
+   "rate": 0,
+   "keyName": "U",
+   "keyHeard": true
+  },
+  {
+   "locale": "en",
+   "key": "help.status",
+   "text": "Press I to hear where you are.",
+   "heard": "Press I to hear where you are.",
+   "rawRate": 0,
+   "rate": 0,
+   "keyName": "I",
+   "keyHeard": true
+  },
+  {
+   "locale": "en",
+   "key": "help.repeat",
+   "text": "Press Z to hear the last line again.",
+   "heard": "Press Z to hear the last line again.",
+   "rawRate": 0,
+   "rate": 0,
+   "keyName": "Z",
+   "keyHeard": true
+  },
+  {
+   "locale": "en",
+   "key": "help.glossary",
+   "text": "Press G to open the sound glossary.",
+   "heard": "Press G to open the sound glossary.",
+   "rawRate": 0,
+   "rate": 0,
+   "keyName": "G",
+   "keyHeard": true
+  },
+  {
+   "locale": "en",
+   "key": "help.reset",
+   "text": "Press R to go back to the last checkpoint. Hold it to start the lesson again.",
+   "heard": "Press R to go back to the last checkpoint. Hold it to start the lesson again.",
+   "rawRate": 0,
+   "rate": 0,
+   "keyName": "R",
+   "keyHeard": true
+  },
+  {
+   "locale": "en",
+   "key": "help.next",
+   "text": "Press N to go to the next step.",
+   "heard": "Press N to go to the next step.",
+   "rawRate": 0,
+   "rate": 0,
+   "keyName": "N",
+   "keyHeard": true
+  },
+  {
+   "locale": "en",
+   "key": "rec.ask",
+   "text": "May I record this flight and your voice? The recording stays on this device until you send it. Press T to say yes.",
+   "heard": "May I record this flight and your voice? The recording stays on this device until you send it? Press T to say yes.",
+   "rawRate": 0,
+   "rate": 0,
+   "keyName": "T",
+   "keyHeard": true
+  },
+  {
+   "locale": "en",
+   "key": "rec.recover",
+   "text": "An earlier flight was not finished. Press T to keep it.",
+   "heard": "An earlier flight was not finished. Press T to keep it.",
+   "rawRate": 0,
+   "rate": 0,
+   "keyName": "T",
+   "keyHeard": true
+  },
+  {
+   "locale": "en",
+   "key": "send.ask",
+   "text": "Press U to send this flight to the author.",
+   "heard": "Press U to send this flight to the author.",
+   "rawRate": 0,
+   "rate": 0,
+   "keyName": "U",
+   "keyHeard": true
+  },
+  {
+   "locale": "en",
+   "key": "send.confirm",
+   "text": "Do you agree to send the recording, with your voice, to the author? Press U to agree.",
+   "heard": "Do you agree to send the recording, with your voice, to the author? Press U to agree.",
+   "rawRate": 0,
+   "rate": 0,
+   "keyName": "U",
+   "keyHeard": true
+  },
+  {
+   "locale": "en",
    "key": "status.lesson",
    "text": "Lesson: Hold your height. Attempt 2.",
    "heard": "Hold your height. Attempt 2.",
@@ -722,6 +965,16 @@
    "heard": "Stage 2 Pest",
    "rawRate": 0.3333,
    "rate": 0
+  },
+  {
+   "locale": "en",
+   "key": "fly.offer-next",
+   "text": "Press N to go on to the next lesson.",
+   "heard": "Press N to go on to the next lesson.",
+   "rawRate": 0,
+   "rate": 0,
+   "keyName": "N",
+   "keyHeard": true
   },
   {
    "locale": "en",
@@ -778,6 +1031,46 @@
    "heard": "Gay too was missed.",
    "rawRate": 0.25,
    "rate": 0
+  },
+  {
+   "locale": "en",
+   "key": "survey.howto",
+   "text": "Answer with a number key. Press Escape to skip a question.",
+   "heard": "Answer with a number key. Press escape to skip a question.",
+   "rawRate": 0,
+   "rate": 0,
+   "keyName": "Escape",
+   "keyHeard": true
+  },
+  {
+   "locale": "en",
+   "key": "survey.howto-voice",
+   "text": "Answer with a number key, or say the number. Press Escape to skip a question.",
+   "heard": "Answer with a number key, or say the number. Press escape to skip a question.",
+   "rawRate": 0,
+   "rate": 0,
+   "keyName": "Escape",
+   "keyHeard": true
+  },
+  {
+   "locale": "en",
+   "key": "survey.repeat-hint",
+   "text": "Press Z to hear the question again.",
+   "heard": "Press Z to hear the question again.",
+   "rawRate": 0,
+   "rate": 0,
+   "keyName": "Z",
+   "keyHeard": true
+  },
+  {
+   "locale": "en",
+   "key": "survey.open-howto",
+   "text": "Say your answer out loud. Press Enter when you are done.",
+   "heard": "Say your answer out loud. Press enter when you are done.",
+   "rawRate": 0,
+   "rate": 0,
+   "keyName": "Enter",
+   "keyHeard": true
   },
   {
    "locale": "es",
@@ -917,6 +1210,16 @@
   },
   {
    "locale": "es",
+   "key": "glossary.again",
+   "text": "Pulsa la tecla Z para volver a oír los sonidos.",
+   "heard": "Pulsa la tecla Z para volver a oír los sonidos.",
+   "rawRate": 0,
+   "rate": 0,
+   "keyName": "Z",
+   "keyHeard": true
+  },
+  {
+   "locale": "es",
    "key": "headphones.trial",
    "text": "Sonido 2 de 5.",
    "heard": "Sonido 2D5",
@@ -957,11 +1260,123 @@
   },
   {
    "locale": "es",
+   "key": "help.record",
+   "text": "Pulsa la tecla T para empezar o parar la grabación.",
+   "heard": "Pulsa la tecla T para empezar o parar la grabación.",
+   "rawRate": 0,
+   "rate": 0,
+   "keyName": "T",
+   "keyHeard": true
+  },
+  {
+   "locale": "es",
+   "key": "help.send",
+   "text": "Pulsa la tecla U para enviar el vuelo al autor.",
+   "heard": "Pulsa la tecla U para enviar el vuelo al autor.",
+   "rawRate": 0,
+   "rate": 0,
+   "keyName": "U",
+   "keyHeard": true
+  },
+  {
+   "locale": "es",
+   "key": "help.status",
+   "text": "Pulsa la tecla I para oír dónde estás.",
+   "heard": "Pulsa la tecla I para oír dónde estás.",
+   "rawRate": 0,
+   "rate": 0,
+   "keyName": "I",
+   "keyHeard": true
+  },
+  {
+   "locale": "es",
+   "key": "help.repeat",
+   "text": "Pulsa la tecla Z para oír otra vez la última frase.",
+   "heard": "Pulsa la tecla Z para oír otra vez la última frase.",
+   "rawRate": 0,
+   "rate": 0,
+   "keyName": "Z",
+   "keyHeard": true
+  },
+  {
+   "locale": "es",
+   "key": "help.glossary",
+   "text": "Pulsa la tecla G para abrir el glosario de sonidos.",
+   "heard": "Pulsa la tecla G para abrir el glosario de sonidos.",
+   "rawRate": 0,
+   "rate": 0,
+   "keyName": "G",
+   "keyHeard": true
+  },
+  {
+   "locale": "es",
    "key": "help.reset",
    "text": "Pulsa la tecla R para volver al último punto de control. Mantenla pulsada para empezar la lección de nuevo.",
    "heard": "Pulsa la tecla R para volver al último punto de control. Manténla pulsada para empezar la lección de nuevo.",
    "rawRate": 0.0526,
-   "rate": 0.0526
+   "rate": 0.0526,
+   "keyName": "R",
+   "keyHeard": true
+  },
+  {
+   "locale": "es",
+   "key": "help.next",
+   "text": "Pulsa la tecla N para pasar al siguiente paso.",
+   "heard": "Pulsa la tecla N para pasar al siguiente paso.",
+   "rawRate": 0,
+   "rate": 0,
+   "keyName": "N",
+   "keyHeard": true
+  },
+  {
+   "locale": "es",
+   "key": "rec.ask",
+   "text": "¿Puedo grabar este vuelo y tu voz? La grabación se queda en este dispositivo hasta que la envíes. Pulsa la tecla T para decir que sí.",
+   "heard": "Puedo grabar este vuelo y tu voz. La grabación se queda en este dispositivo hasta que la envíes. Pulsa la tecla T para decir que sí.",
+   "rawRate": 0,
+   "rate": 0,
+   "keyName": "T",
+   "keyHeard": true
+  },
+  {
+   "locale": "es",
+   "key": "rec.recover",
+   "text": "Un vuelo anterior no se terminó. Pulsa la tecla T para conservarlo.",
+   "heard": "Un vuelo anterior no se terminó. Pulsa la tecla T para conservarlo.",
+   "rawRate": 0,
+   "rate": 0,
+   "keyName": "T",
+   "keyHeard": true
+  },
+  {
+   "locale": "es",
+   "key": "send.ask",
+   "text": "Pulsa la tecla U para enviar este vuelo al autor.",
+   "heard": "Pulsa la tecla U para enviar este vuelo al autor.",
+   "rawRate": 0,
+   "rate": 0,
+   "keyName": "U",
+   "keyHeard": true
+  },
+  {
+   "locale": "es",
+   "key": "send.confirm",
+   "text": "¿Estás de acuerdo en enviar la grabación, con tu voz, al autor? Pulsa la tecla U para aceptar.",
+   "heard": "Estás de acuerdo en enviar la grabación, con tu voz, al autor. Pulsa la tecla U para aceptar.",
+   "rawRate": 0,
+   "rate": 0,
+   "keyName": "U",
+   "keyHeard": true
+  },
+  {
+   "locale": "es",
+   "key": "fly.offer-next",
+   "text": "Pulsa la tecla N para pasar a la siguiente lección.",
+   "heard": "Pulsa la tecla N para pasar a la siguiente lección.",
+   "rawRate": 0,
+   "rate": 0,
+   "keyName": "N",
+   "keyHeard": true
   },
   {
    "locale": "es",
@@ -978,6 +1393,46 @@
    "heard": "demasiado bajo el 20% del tiempo.",
    "rawRate": 0.25,
    "rate": 0
+  },
+  {
+   "locale": "es",
+   "key": "survey.howto",
+   "text": "Responde con una tecla numérica. Pulsa la tecla Escape para saltar una pregunta.",
+   "heard": "Responde con una tecla numérica. Pulsa la tecla Escape para saltar una pregunta.",
+   "rawRate": 0,
+   "rate": 0,
+   "keyName": "Escape",
+   "keyHeard": true
+  },
+  {
+   "locale": "es",
+   "key": "survey.howto-voice",
+   "text": "Responde con una tecla numérica o di el número. Pulsa la tecla Escape para saltar una pregunta.",
+   "heard": "Responde con una tecla numérica o di el número. Pulsa la tecla Escape para saltar una pregunta.",
+   "rawRate": 0,
+   "rate": 0,
+   "keyName": "Escape",
+   "keyHeard": true
+  },
+  {
+   "locale": "es",
+   "key": "survey.repeat-hint",
+   "text": "Pulsa la tecla Z para oír la pregunta otra vez.",
+   "heard": "Pulsa la tecla Z para oír la pregunta otra vez.",
+   "rawRate": 0,
+   "rate": 0,
+   "keyName": "Z",
+   "keyHeard": true
+  },
+  {
+   "locale": "es",
+   "key": "survey.open-howto",
+   "text": "Di tu respuesta en voz alta. Pulsa la tecla Enter cuando termines.",
+   "heard": "Di tu respuesta en voz alta. Pulsa la tecla Enter cuando termines.",
+   "rawRate": 0,
+   "rate": 0,
+   "keyName": "Enter",
+   "keyHeard": true
   },
   {
    "locale": "es",
@@ -1165,6 +1620,16 @@
   },
   {
    "locale": "pl",
+   "key": "glossary.again",
+   "text": "Naciśnij klawisz Z, aby ponownie posłuchać dźwięków.",
+   "heard": "Naciśnij klawisz Z, aby ponownie posłuchać dźwięków.",
+   "rawRate": 0,
+   "rate": 0,
+   "keyName": "Z",
+   "keyHeard": true
+  },
+  {
+   "locale": "pl",
    "key": "headphones.os-spatial",
    "text": "Wyłącz Windows Sonic, Atmos i inne efekty przestrzenne. Zmieniają dźwięk.",
    "heard": "Wyłącz Windows Sonic, Atmes i inne efekty przestrzenne. Zmieniają dźwięk.",
@@ -1178,6 +1643,116 @@
    "heard": "Wyjęć.",
    "rawRate": 1,
    "rate": 0
+  },
+  {
+   "locale": "pl",
+   "key": "help.record",
+   "text": "Naciśnij klawisz T, aby zacząć lub zatrzymać nagrywanie.",
+   "heard": "Naciśnij klawisz T, aby zacząć lub zatrzymać nagrywanie.",
+   "rawRate": 0,
+   "rate": 0,
+   "keyName": "T",
+   "keyHeard": true
+  },
+  {
+   "locale": "pl",
+   "key": "help.send",
+   "text": "Naciśnij klawisz U, aby wysłać lot autorowi.",
+   "heard": "Naciśnij klawisz U, aby wysłać lot autorowi.",
+   "rawRate": 0,
+   "rate": 0,
+   "keyName": "U",
+   "keyHeard": true
+  },
+  {
+   "locale": "pl",
+   "key": "help.status",
+   "text": "Naciśnij klawisz I, aby usłyszeć, gdzie jesteś.",
+   "heard": "Naciśnij klawisz I, aby usłyszeć, gdzie jesteś.",
+   "rawRate": 0,
+   "rate": 0,
+   "keyName": "I",
+   "keyHeard": true
+  },
+  {
+   "locale": "pl",
+   "key": "help.repeat",
+   "text": "Naciśnij klawisz Z, aby usłyszeć ostatnie zdanie jeszcze raz.",
+   "heard": "Naciśnij klawisz Z, aby usłyszeć ostatnie zdanie jeszcze raz.",
+   "rawRate": 0,
+   "rate": 0,
+   "keyName": "Z",
+   "keyHeard": true
+  },
+  {
+   "locale": "pl",
+   "key": "help.glossary",
+   "text": "Naciśnij klawisz G, aby otworzyć słownik dźwięków.",
+   "heard": "Naciśnij klawisz G, aby otworzyć słownik dźwięków.",
+   "rawRate": 0,
+   "rate": 0,
+   "keyName": "G",
+   "keyHeard": true
+  },
+  {
+   "locale": "pl",
+   "key": "help.reset",
+   "text": "Naciśnij klawisz R, aby wrócić do ostatniego punktu kontrolnego. Przytrzymaj, aby zacząć lekcję od nowa.",
+   "heard": "Naciśnij klawisz R, aby wrócić do ostatniego punktu kontrolnego. Przytrzymaj, aby zacząć lekcję od nowa.",
+   "rawRate": 0,
+   "rate": 0,
+   "keyName": "R",
+   "keyHeard": true
+  },
+  {
+   "locale": "pl",
+   "key": "help.next",
+   "text": "Naciśnij klawisz N, aby przejść do następnego kroku.",
+   "heard": "Naciśnij klawisz N, aby przejść do następnego kroku.",
+   "rawRate": 0,
+   "rate": 0,
+   "keyName": "N",
+   "keyHeard": true
+  },
+  {
+   "locale": "pl",
+   "key": "rec.ask",
+   "text": "Czy mogę nagrać ten lot i twój głos? Nagranie zostaje na tym urządzeniu, dopóki go nie wyślesz. Naciśnij klawisz T, aby się zgodzić.",
+   "heard": "Czy mogę nagrać ten lot i Twój głos? Nagranie zostaje na tym urządzeniu, dopóki go nie wyślesz. Naciśnij klawisz T, aby się zgodzić.",
+   "rawRate": 0,
+   "rate": 0,
+   "keyName": "T",
+   "keyHeard": true
+  },
+  {
+   "locale": "pl",
+   "key": "rec.recover",
+   "text": "Poprzedni lot nie został dokończony. Naciśnij klawisz T, aby go zachować.",
+   "heard": "Poprzedni lot nie został dokończony. Naciśnij klawisz T, aby go zachować.",
+   "rawRate": 0,
+   "rate": 0,
+   "keyName": "T",
+   "keyHeard": true
+  },
+  {
+   "locale": "pl",
+   "key": "send.ask",
+   "text": "Naciśnij klawisz U, aby wysłać ten lot autorowi.",
+   "heard": "Naciśnij klawisz U, aby wysłać ten lot autorowi.",
+   "rawRate": 0,
+   "rate": 0,
+   "keyName": "U",
+   "keyHeard": true
+  },
+  {
+   "locale": "pl",
+   "key": "send.confirm",
+   "text": "Czy zgadzasz się wysłać autorowi nagranie wraz ze swoim głosem? Naciśnij klawisz U, aby się zgodzić.",
+   "heard": "Czy zgadzasz się wysłać autorowi nagranie wraz ze swoim głosem? Naciśnij klawisz U, aby się zgodzić.",
+   "rawRate": 0,
+   "rate": 0,
+   "keyName": "U",
+   "keyHeard": true
   },
   {
    "locale": "pl",
@@ -1205,11 +1780,21 @@
   },
   {
    "locale": "pl",
+   "key": "fly.offer-next",
+   "text": "Aby przejść do następnej lekcji, naciśnij klawisz N.",
+   "heard": "Aby przejść do następnej lekcji, naciśnij klawisz N.",
+   "rawRate": 0,
+   "rate": 0,
+   "keyName": "N",
+   "keyHeard": true
+  },
+  {
+   "locale": "pl",
    "key": "reason.height-high",
    "text": "Za wysoko przez 20 procent czasu.",
    "heard": "Za wysoko przez 20% czasu.",
    "rawRate": 0.1667,
-   "rate": 0.1667
+   "rate": 0
   },
   {
    "locale": "pl",
@@ -1217,7 +1802,7 @@
    "text": "Za nisko przez 20 procent czasu.",
    "heard": "Za nisko przez 20% czasu.",
    "rawRate": 0.1667,
-   "rate": 0.1667
+   "rate": 0
   },
   {
    "locale": "pl",
@@ -1226,6 +1811,46 @@
    "heard": "Przelekony 3 z 5 metrów.",
    "rawRate": 0.2,
    "rate": 0.2
+  },
+  {
+   "locale": "pl",
+   "key": "survey.howto",
+   "text": "Odpowiadaj klawiszem z cyfrą. Naciśnij klawisz Escape, aby pominąć pytanie.",
+   "heard": "Odpowiadaj klawiszem z cyfrą. Naciśnij klawisz Escape, aby pominąć pytanie.",
+   "rawRate": 0,
+   "rate": 0,
+   "keyName": "Escape",
+   "keyHeard": true
+  },
+  {
+   "locale": "pl",
+   "key": "survey.howto-voice",
+   "text": "Odpowiadaj klawiszem z cyfrą albo powiedz cyfrę. Naciśnij klawisz Escape, aby pominąć pytanie.",
+   "heard": "Odpowiadaj klawiszem z cyfrą albo powiedz cyfrę. Naciśnij klawisz Escape, aby pominąć pytanie.",
+   "rawRate": 0,
+   "rate": 0,
+   "keyName": "Escape",
+   "keyHeard": true
+  },
+  {
+   "locale": "pl",
+   "key": "survey.repeat-hint",
+   "text": "Naciśnij klawisz Z, aby usłyszeć pytanie jeszcze raz.",
+   "heard": "Naciśnij klawisz Z, aby usłyszeć pytanie jeszcze raz.",
+   "rawRate": 0,
+   "rate": 0,
+   "keyName": "Z",
+   "keyHeard": true
+  },
+  {
+   "locale": "pl",
+   "key": "survey.open-howto",
+   "text": "Powiedz odpowiedź na głos. Naciśnij klawisz Enter, gdy skończysz.",
+   "heard": "Powiedz odpowiedź na głos. Naciśnij klawisz Enter, gdy skończysz.",
+   "rawRate": 0,
+   "rate": 0,
+   "keyName": "Enter",
+   "keyHeard": true
   },
   {
    "locale": "pl",
@@ -1249,14 +1874,6 @@
    "text": "Препятствие",
    "heard": "Препятствия",
    "rawRate": 1,
-   "rate": 0
-  },
-  {
-   "locale": "ru",
-   "key": "cue.safety.free.glossary",
-   "text": "Пара быстрых нот, снова и снова, пока впереди препятствие. Одинаковые слева или справа: проход с той стороны. Сверху ноты идут так же, как твой тон высоты при подъёме: проход сверху. Снизу и наоборот: проход снизу.",
-   "heard": "Пара быстрых нот, снова и снова, пока впереди препятствия Одинаковые слева или справа, проход с той стороны Сверху ноты идут так же, как твой тон высоты при подъёме, проход сверху Снизу и наоборот, проход снизу",
-   "rawRate": 0.0286,
    "rate": 0
   },
   {
@@ -1442,6 +2059,14 @@
    "heard": "Держись с середины Если стук слышен с одной стороны, тебя сносит кто из тени Отодвинь от неё",
    "rawRate": 0.3125,
    "rate": 0
+  },
+  {
+   "locale": "ru",
+   "key": "lesson.corridor.intro.3",
+   "text": "Когда путь впереди загорожен, повторяется пара быстрых нот. Одинаковые звучат со свободной стороны, слева или справа. Ноты идут так же, как твой тон высоты при подъёме: проход вверху. Наоборот: внизу.",
+   "heard": "Когда путь впереди загрожен, повторяется пара быстрых нот Одинаковые звучат со свободной стороны, слева или справа Ноты идут так же, как твой тон высоты при подъеме, проход вверху Наоборот, внизу",
+   "rawRate": 0.0333,
+   "rate": 0.0333
   },
   {
    "locale": "ru",
@@ -1669,6 +2294,16 @@
   },
   {
    "locale": "ru",
+   "key": "glossary.again",
+   "text": "Нажми клавишу Z, чтобы снова послушать звуки.",
+   "heard": "Нажми клавишу Z, чтобы снова послушать звуки",
+   "rawRate": 0,
+   "rate": 0,
+   "keyName": "Z",
+   "keyHeard": true
+  },
+  {
+   "locale": "ru",
    "key": "menu.welcome",
    "text": "Добро пожаловать в Fly by Sound. Двигайся по меню стрелками или стиком. Нажми Enter или первую кнопку, чтобы выбрать. Нажми Escape, чтобы вернуться.",
    "heard": "Добро пожаловать в FLUI BUI SOUND Двигайся по меню стрелками или стиком Нажми Enter или первую кнопку, чтобы выбрать Нажми Escape, чтобы вернуться",
@@ -1690,6 +2325,116 @@
    "heard": "ТИШИ",
    "rawRate": 1,
    "rate": 0
+  },
+  {
+   "locale": "ru",
+   "key": "help.record",
+   "text": "Нажми клавишу T, чтобы начать или остановить запись.",
+   "heard": "Нажми клавишу T, чтобы начать или остановить запись",
+   "rawRate": 0,
+   "rate": 0,
+   "keyName": "T",
+   "keyHeard": true
+  },
+  {
+   "locale": "ru",
+   "key": "help.send",
+   "text": "Нажми клавишу U, чтобы отправить полёт автору.",
+   "heard": "Нажми клавишу U, чтобы отправить полёт автору",
+   "rawRate": 0,
+   "rate": 0,
+   "keyName": "U",
+   "keyHeard": true
+  },
+  {
+   "locale": "ru",
+   "key": "help.status",
+   "text": "Нажми клавишу I, чтобы услышать, где ты.",
+   "heard": "Нажми клавишу I, чтобы услышать, где ты",
+   "rawRate": 0,
+   "rate": 0,
+   "keyName": "I",
+   "keyHeard": true
+  },
+  {
+   "locale": "ru",
+   "key": "help.repeat",
+   "text": "Нажми клавишу Z, чтобы ещё раз услышать последнюю фразу.",
+   "heard": "Нажми клавишу Z, чтобы ещё раз услышать последнюю фразу",
+   "rawRate": 0,
+   "rate": 0,
+   "keyName": "Z",
+   "keyHeard": true
+  },
+  {
+   "locale": "ru",
+   "key": "help.glossary",
+   "text": "Нажми клавишу G, чтобы открыть словарь звуков.",
+   "heard": "Нажми клавишу G, чтобы открыть словарь звуков",
+   "rawRate": 0,
+   "rate": 0,
+   "keyName": "G",
+   "keyHeard": true
+  },
+  {
+   "locale": "ru",
+   "key": "help.reset",
+   "text": "Нажми клавишу R, чтобы вернуться к последней контрольной точке. Удерживай, чтобы начать урок заново.",
+   "heard": "Нажми клавишу R, чтобы вернуться к последней контрольной точке Удерживай, чтобы начать урок заново",
+   "rawRate": 0,
+   "rate": 0,
+   "keyName": "R",
+   "keyHeard": true
+  },
+  {
+   "locale": "ru",
+   "key": "help.next",
+   "text": "Нажми клавишу N, чтобы перейти к следующему шагу.",
+   "heard": "Нажми клавишу N, чтобы перейти к следующему шагу",
+   "rawRate": 0,
+   "rate": 0,
+   "keyName": "N",
+   "keyHeard": true
+  },
+  {
+   "locale": "ru",
+   "key": "rec.ask",
+   "text": "Можно записать этот полёт и твой голос? Запись останется на этом устройстве, пока ты её не отправишь. Нажми клавишу T, чтобы согласиться.",
+   "heard": "Можно записать этот полёт и твой голос Запись останется на этом устройстве, пока ты её не отправишь Нажми клавишу T, чтобы согласиться",
+   "rawRate": 0,
+   "rate": 0,
+   "keyName": "T",
+   "keyHeard": true
+  },
+  {
+   "locale": "ru",
+   "key": "rec.recover",
+   "text": "Предыдущий полёт не был закончен. Нажми клавишу T, чтобы сохранить его.",
+   "heard": "Предыдущий полёт не был закончен Нажми клавишу T, чтобы сохранить его",
+   "rawRate": 0,
+   "rate": 0,
+   "keyName": "T",
+   "keyHeard": true
+  },
+  {
+   "locale": "ru",
+   "key": "send.ask",
+   "text": "Нажми клавишу U, чтобы отправить этот полёт автору.",
+   "heard": "Нажми клавишу U, чтобы отправить этот полёт автору",
+   "rawRate": 0,
+   "rate": 0,
+   "keyName": "U",
+   "keyHeard": true
+  },
+  {
+   "locale": "ru",
+   "key": "send.confirm",
+   "text": "Отправить автору запись вместе с твоим голосом? Нажми клавишу U, чтобы подтвердить.",
+   "heard": "Отправить автору запись вместе с твоим голосом Нажми клавишу U, чтобы подтвердить",
+   "rawRate": 0,
+   "rate": 0,
+   "keyName": "U",
+   "keyHeard": true
   },
   {
    "locale": "ru",
@@ -1725,11 +2470,21 @@
   },
   {
    "locale": "ru",
+   "key": "fly.offer-next",
+   "text": "Чтобы перейти к следующему уроку, нажми клавишу N.",
+   "heard": "Чтобы перейти к следующему уроку, нажми клавишу N",
+   "rawRate": 0,
+   "rate": 0,
+   "keyName": "N",
+   "keyHeard": true
+  },
+  {
+   "locale": "ru",
    "key": "reason.height-high",
    "text": "Слишком высоко 20 процентов времени.",
    "heard": "Слишком высоко 20% времени",
    "rawRate": 0.2,
-   "rate": 0.2
+   "rate": 0
   },
   {
    "locale": "ru",
@@ -1737,7 +2492,7 @@
    "text": "Слишком низко 20 процентов времени.",
    "heard": "Слишком низко 20% времени",
    "rawRate": 0.2,
-   "rate": 0.2
+   "rate": 0
   },
   {
    "locale": "ru",
@@ -1746,6 +2501,46 @@
    "heard": "Пролете на 3 из 5 метров.",
    "rawRate": 0.2,
    "rate": 0.2
+  },
+  {
+   "locale": "ru",
+   "key": "survey.howto",
+   "text": "Отвечай цифровой клавишей. Нажми клавишу Escape, чтобы пропустить вопрос.",
+   "heard": "Отвечай цифровой клавишей. Нажми клавишу Escape, чтобы пропустить вопрос.",
+   "rawRate": 0,
+   "rate": 0,
+   "keyName": "Escape",
+   "keyHeard": true
+  },
+  {
+   "locale": "ru",
+   "key": "survey.howto-voice",
+   "text": "Отвечай цифровой клавишей или назови цифру. Нажми клавишу Escape, чтобы пропустить вопрос.",
+   "heard": "Отвечай цифровой клавишей или назови цифру Нажми клавишу Escape, чтобы пропустить вопрос",
+   "rawRate": 0,
+   "rate": 0,
+   "keyName": "Escape",
+   "keyHeard": true
+  },
+  {
+   "locale": "ru",
+   "key": "survey.repeat-hint",
+   "text": "Нажми клавишу Z, чтобы ещё раз услышать вопрос.",
+   "heard": "Нажми клавишу Z, чтобы ещё раз услышать вопрос",
+   "rawRate": 0,
+   "rate": 0,
+   "keyName": "Z",
+   "keyHeard": true
+  },
+  {
+   "locale": "ru",
+   "key": "survey.open-howto",
+   "text": "Скажи ответ вслух. Нажми клавишу Enter, когда закончишь.",
+   "heard": "Скажи ответ вслух Нажми клавишу Enter, когда закончишь",
+   "rawRate": 0,
+   "rate": 0,
+   "keyName": "Enter",
+   "keyHeard": true
   },
   {
    "locale": "ru",

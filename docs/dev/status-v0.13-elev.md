@@ -105,9 +105,11 @@ the code, then fixed with a test and its control (section "Review fixes" below):
   description says what off does and that the ceiling and the floor come from above and below either way; four lines in
   four languages, each measured with its local voice into its fixture; `test/named-sounds.test.ts` with the lane's
   texts before the review as its control (`test/fixtures/lines-s13-elev-0dd3cd9.json`)
-- [ ] F3 Review E4: "the key" held by a Node test, a key rule in the words check with v0.13's key lines as its control,
-  the percent records for Polish and Russian (part 1 committed: the lint's key-word rule and its test, the key rule,
-  the records; the words check's run and its evidence next)
+- [x] F3 Review E4: "the key" held by the speech lint (rule `key-word`, `test/locales.test.ts`: all 17 lines a language
+  have it; v0.13's 17 each fail it), a key rule in the words check (a line that names a key is heard with the key's
+  name as a word of its own; its control, v0.13's key lines said by their voices, loses the key in 4 Spanish, 1 Polish
+  and 7 Russian lines), the percent records for Polish and Russian; `pnpm listen:words` PASS (217fe5790a33), the
+  English, Spanish, Polish and Russian lines that name a key all heard with it
 - [ ] F4 Review E5: VL-6 and VL-2 hear the floor, the ceiling and the chime with their breaths
 - [ ] F5 Review E6: the target note's two timings measured, with their controls
 - [ ] F6 Review E7: rings-course in the numbers
@@ -573,6 +575,40 @@ None is longer than the runner waits (twice the estimate and a second); lines lo
 of 385 (267), Spanish 254 (253), Polish 343 (342), Russian 471. Controls: the lane's texts before the review (each of
 the 16 fails, a fixture in the test), and by hand the English glossary put back, the Spanish tunnel-gaps line without
 the setting's name, the Russian description without "в любом случае": each fails, then restored.
+
+### F3, the key's name (review E4)
+
+Tried first: the Spanish `help.record` put back to v0.13's "Pulsa {key} para..." passed all 1162 tests and the locale
+lint. It holds.
+
+- The speech lint (`tools/locale-lint.ts`, `KEY_WORDS`): in Spanish, Polish and Russian a key's name (`{key}`,
+  `{skip}`) has "la tecla", "klawisz", "клавишу" right before it (rule `key-word`). `test/locales.test.ts`: the 17 lines
+  of each language that name a key meet it; v0.13's 17 a language (16c01a1, `tools/listen/key-lines-v013.json`) each
+  fail it. By hand, the Spanish `help.record` without "la tecla": the lint and two tests fail, restored. English needs
+  no such word ("Press T" is heard right).
+- The words check (`tools/listen-words.ts`, `keyHeard`): a line that names a key is heard with the key's name as a
+  word of its own (the transcript has "T", "Escape", "Enter" as words), whatever its rate, in every language; the
+  evidence keeps every such line's transcript, and `test/words.test.ts` checks the rule on it again. Its control:
+  v0.13's key lines said by their own voices must lose a key in each of Spanish, Polish and Russian, or the check is
+  not valid. The bound alone let these through: Spanish `rec.ask` with "Púlsate" for "Pulsa T" is at 0.08.
+- Records for Whisper's percent sign in Polish ("20 procent") and Russian ("20 процентов"), as English and Spanish had:
+  `reason.height-high` and `reason.height-low` were at the bound for the sign alone.
+
+The run (`pnpm listen:words`, evidence 217fe5790a33, words version 2): PASS. Every line of each language within 0.2;
+lines heard exactly: English 519, Spanish 512, Polish 516, Russian 510 of 526; the lines that name a key: 17 of 17 in
+each language heard with the key. Control, the Russian lines by David: 525 of 526 over the bound, median rate 1. Key
+control, v0.13's 51 key lines: the key lost in 4 Spanish lines ("Pulsa T para" heard "Púlsate para" in `help.record`,
+`rec.ask`, `rec.recover`; "Pulsa G" as "Pulsaje"), 1 Polish ("Naciśnij I, aby" as "Naciśnij, aby") and 7 Russian
+("Нажми T" as "Нажмите" three times, "Нажми U" as "Нажми её" three times, "Нажми I" as "Нажми Ай"). The four reworded
+lines of F2 were heard with at most one word otherwise (English "a soft hiss" as "the soft hiss", Russian "загорожен" as
+"загрожен"); English "height tone" is heard "high tone" as recorded.
+
+What the bound still lets through (the review's examples, not changed: a word for a native speaker): Russian
+`fly.progress` "Засчитано" heard "Защита на" (0.17), Polish `lesson.shapes-cube.intro.3` "zapytam cię" as "zapytamy
+rykcie" (0.18). The design's VL-4 asks at most 2 % of a lesson's words: counted on this run over each lesson's own lines
+(`lesson.<id>.*`), nine are over it by one to three words: English rings-line (3.4 %), Spanish rings-first (4.2 %),
+move-speed (3.1 %) and ears-game (2.7 %), Polish move-speed (3.3 %), shapes-cube (3.2 %) and ears-headphones (3.1 %),
+Russian shapes-square (2.9 %) and move-stop (2.1 %). The check's bound is per line; a lesson bound is open.
 
 ## Needs from the simulator
 
