@@ -4,7 +4,7 @@ Use this when a person asks their AI agent to "let me try flying a drone by soun
 
 ## A. Try it
 
-1. In the simulator: open <https://gsfpv.flyreelstudio.eu> in desktop Chrome or Edge. The sound mode arrives with the simulator's next release; until then use step 2.
+1. In the simulator: open <https://gsfpv.flyreelstudio.eu/en/sound/> in desktop Chrome or Edge (also `/es/`, `/pl/`, `/ru/`) and press Start. Ordinary pages of the simulator do not load the sound mode.
 2. Stand-alone demo (Node 22+, pnpm 11):
 
    ```bash

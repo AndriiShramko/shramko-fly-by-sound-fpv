@@ -2,7 +2,7 @@
 
 **Fly an FPV drone by ear.** An open-source spatial-audio engine, step-by-step lessons and a flight-and-voice recorder that let **blind and low-vision pilots** learn to fly a drone in the free browser FPV simulator [ShramkoGSFPV](https://github.com/AndriiShramko/ShramkoGSFPV), and let sighted pilots train their ears. Walls, obstacles, gates and the way ahead become 3D sound on ordinary stereo headphones (HRTF), with music instead of noise and a voice that names things.
 
-**Simulator:** [gsfpv.flyreelstudio.eu](https://gsfpv.flyreelstudio.eu), free, in the browser. The sound mode reaches the live simulator with its next release; today you can run the [stand-alone demo](#try-it) on your computer.
+**Simulator:** [gsfpv.flyreelstudio.eu](https://gsfpv.flyreelstudio.eu), free, in the browser. **Fly by Sound is live there:** start at [gsfpv.flyreelstudio.eu/en/sound/](https://gsfpv.flyreelstudio.eu/en/sound/) (also in [Spanish](https://gsfpv.flyreelstudio.eu/es/sound/), [Polish](https://gsfpv.flyreelstudio.eu/pl/sound/) and [Russian](https://gsfpv.flyreelstudio.eu/ru/sound/)), or run the [stand-alone demo](#try-it) on your computer.
 
 It is a game people choose to play. Nothing here claims therapy or medical benefit, and it is not a mobility aid. Dependency-free TypeScript under the MIT licence; all sound is synthesised in the browser with Web Audio, with no sample files. No network at runtime, no keys, no personal data.
 

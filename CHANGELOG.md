@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Live in the simulator: ShramkoGSFPV v0.12 (2026-11-08) ships this engine as its submodule at 1eea4d5; the mode starts at https://gsfpv.flyreelstudio.eu/en/sound/ (es, pl, ru too). Ordinary pages of the simulator load none of it.
 - Spoken lines asked for by the simulator's recorder: `survey.howto` no longer tells the pilot to say the number (that works only with speech recognition on, now `survey.howto-voice`); new `survey.mic-on` (the microphone stays on during the questions), `send.none` (nothing to send) and `send.cancelled` (not sent, the flight stays on the device). English, Spanish, Polish and Russian.
 
 ## 0.1.0-rc1 — 2026-11-07 (tag `stage1-rc1`)

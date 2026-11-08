@@ -15,6 +15,7 @@
 
 ## Docs
 
+- [Fly by Sound in the simulator](https://gsfpv.flyreelstudio.eu/en/sound/): the live start page of the mode (also /es/, /pl/, /ru/)
 - [README](https://github.com/AndriiShramko/shramko-fly-by-sound-fpv#readme): overview, demo, how it fits with the simulator
 - [Stage 1 specification](https://github.com/AndriiShramko/shramko-fly-by-sound-fpv/blob/main/docs/design/stage-1-spec.md): the sound language, curriculum, session format and delivery
 - [Research: spatial audio on headphones](https://github.com/AndriiShramko/shramko-fly-by-sound-fpv/blob/main/docs/research/01-spatial-audio-on-headphones.md): HRTF versus Ambisonics orders, elevation, distance, latency, loudness
