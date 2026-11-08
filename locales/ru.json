@@ -373,7 +373,7 @@
     "reason.height-never-high": "Всё время слишком высоко.",
     "reason.height-high": "Слишком высоко {percent, plural, one {# процент} few {# процента} many {# процентов} other {# процента}} времени.",
     "reason.height-low": "Слишком низко {percent, plural, one {# процент} few {# процента} many {# процентов} other {# процента}} времени.",
-    "reason.turn-hold": "Звук был впереди, но поворот продолжился. Останавливайся, когда звук посередине.",
+    "reason.turn-hold": "Звук был впереди. Останавливай поворот, когда он посередине.",
     "reason.turn-behind": "Звук был сзади. Поворачивайся, пока он не окажется впереди.",
     "reason.turn-left": "Звук остался слева, на {degrees, plural, one {# градус} few {# градуса} many {# градусов} other {# градуса}}.",
     "reason.turn-right": "Звук остался справа, на {degrees, plural, one {# градус} few {# градуса} many {# градусов} other {# градуса}}.",

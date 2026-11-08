@@ -151,3 +151,13 @@ export function checkLayout(root: string): LayoutProblem[] {
 
     return problems;
 }
+
+/** `node tools/run-tool.mjs check-layout`: the layout rules of the repository (test/layout.test.ts). Exit code 0 when they hold. */
+export async function main(_argv: readonly string[] = []): Promise<number> {
+    const { fileURLToPath } = await import('node:url');
+    const root = join(fileURLToPath(new URL('.', import.meta.url)), '..');
+    const problems = checkLayout(root);
+    for (const p of problems) process.stdout.write(`${p.file}: ${p.rule}: ${p.detail}\n`);
+    process.stdout.write(`layout check: ${problems.length} problem${problems.length === 1 ? '' : 's'}\n`);
+    return problems.length === 0 ? 0 : 1;
+}

@@ -157,3 +157,16 @@ export function checkParity(dicts: Readonly<Record<Locale, Dict>>, expectedKeys:
     }
     return problems;
 }
+
+/**
+ * `node tools/run-tool.mjs locale-lint`: the parity of the four locale files with the catalogue, and the speech lint of
+ * each language (the same checks as test/locales.test.ts). Prints every problem; exit code 0 when there is none.
+ */
+export async function main(_argv: readonly string[] = []): Promise<number> {
+    const { DICTS } = await import('../src/i18n/dicts');
+    const { requiredKeys } = await import('../src/i18n/catalog');
+    const problems = [...checkParity(DICTS, requiredKeys()), ...LOCALES.flatMap((l) => lintDict(l, DICTS[l], DICTS.en))];
+    for (const p of problems) process.stdout.write(`${p.locale} ${p.key || '(file)'}: ${p.rule}: ${p.detail}\n`);
+    process.stdout.write(`locale lint: ${problems.length} problem${problems.length === 1 ? '' : 's'} in ${LOCALES.length} languages, ${requiredKeys().length} keys\n`);
+    return problems.length === 0 ? 0 : 1;
+}
