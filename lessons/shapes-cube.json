@@ -28,6 +28,9 @@
   "id": "shapes-cube",
   "intro": [
     {
+      "cues": [
+        "shape.cube"
+      ],
       "key": "lesson.shapes-cube.intro.1"
     },
     {

@@ -24,6 +24,14 @@
 // the attempt, uncounted, for the task); Z gives the step again from its first line (while flying the
 // task is said again and the attempt waits, its clock stopped, then goes on).
 //
+// Sounds and speech (M41-5, M41-9). A spoken step is over when the host reports its speech queue empty
+// (spoken(t)), not when the runner thinks the lines should have been said: a voice slower than the
+// runner's estimate made v0.12 play the sounds under the speech (docs/wip/s13-lessons.md F2). A sound a
+// step names (in an intro line's `cues`, the glossary, the narrated scenes, the headphone trials, the
+// game's rounds) waits for that silence and then plays REPEAT_PLAYS times, REPEAT_GAP_S apart, as
+// 'repeat-cue' events (a scene: the scene shown that many times). A host that never reports the end of
+// speech is waited for no longer than twice the runner's estimate and a second per line.
+//
 // An attempt of a lesson without a world is a script: narrated scenes, the headphone check, the
 // glossary, the game "what is it, where is it, is it moving". An attempt of a flying lesson tracks its
 // goals in order (goals.ts). An attempt counts when every goal is met with at most `pass.maxTouches`
@@ -41,6 +49,7 @@ import { distance as dist3, yawQuat } from '../util/vec';
 import { createAnalyticWorld, makeSpec, type AnalyticWorldInfo } from '../world/analytic-world';
 import { createTracker, type GoalTracker, type Outcome } from './goals';
 import { lessonPaths } from './library';
+import { APPROACHES, GAME_SCENE_S, isGlossary, NARRATED_SCENE_S, playS, REPEAT_GAP_S, REPEAT_PLAYS, SHAPE_ORDER } from './sounds';
 
 // ------------------------------------------------------------------ host interface
 
@@ -71,8 +80,8 @@ export type RunnerAction =
     | { readonly kind: 'place'; readonly pose: Pose; readonly to: 'start' | 'checkpoint' }
     /** digits are expected now (the host may show them; the question's lines come as 'say' actions) */
     | { readonly kind: 'ask'; readonly question: Question }
-    /** module 0: while a scene is set, feed the engine with demoFrame(t) instead of the craft */
-    | { readonly kind: 'scene'; readonly scene: DemoScene | null }
+    /** module 0: while a scene is set, feed the engine with demoFrame(t) instead of the craft; `play`: which play of the scene (a named sound plays three times) */
+    | { readonly kind: 'scene'; readonly scene: DemoScene | null; readonly play?: { readonly index: number; readonly of: number } }
     /**
      * the pilot leaves this lesson: open the next one on the pilot's path (lessonAfter) or the previous one
      * (lessonBefore), the start screen at either end. The runner is done after it (a lesson event 'leave').
@@ -118,6 +127,8 @@ export interface LessonView {
     readonly skipped: boolean;
     /** Z while flying: the task is being said again and the attempt waits */
     readonly listening: boolean;
+    /** a sound the step is playing now (a named sound plays three times): its cue, which play and of how many; null otherwise */
+    readonly playing: { readonly cue: CueId; readonly index: number; readonly of: number } | null;
 }
 
 export interface LessonSession extends LessonRunner {
@@ -167,6 +178,8 @@ export interface RunnerOptions {
     readonly seed?: number;
     /** the pilot's path (SonicPrefs.path): where the lesson stands on it and what comes after; default 'full' */
     readonly path?: 'full' | 'fast';
+    /** the pilot's speech rate (SonicPrefs.speechRate): how long a host that never reports the end of speech is waited for */
+    readonly speechRate?: number;
     /** the names of the host's keys, as the lines say them ("Press N to go on"); default N, B, Z */
     readonly keys?: { readonly next?: string; readonly previous?: string; readonly repeat?: string };
     /** for the negative controls of the tests only: each one brings back a rule of v0.12 that a check must catch */
@@ -180,6 +193,11 @@ export interface RunnerTestHooks {
      * blocks in a row, a block that can no longer pass starts again from zero; no reason and no offer to go on.
      */
     readonly passRule?: V012PassRule;
+    /**
+     * 'v012': the timing of v0.12: a spoken step ends at the earlier of the host's report and the runner's estimate,
+     * a sound or a scene starts at once and plays once (the cause of "press 1, press 2, but no sound").
+     */
+    readonly speechWait?: 'v012';
 }
 
 /** A lesson's pass rule as v0.12 shipped it (format 1). */
@@ -195,9 +213,7 @@ export interface V012PassRule {
 export const ASK_TIMEOUT_S = 20;
 /** Pause between attempts, s. */
 export const BETWEEN_S = 1.5;
-/** A scene of module 0 lasts this long, s. */
-export const SCENE_S = 5;
-/** A cue preview (glossary, headphone check) is given this long, s. */
+/** v0.12 (testHooks.speechWait only): a preview was given this long, s. */
 export const PREVIEW_WAIT_S = 3.3;
 /** Share of right answers that meets 'name-cues' (spec: names cues at 90 %). */
 export const NAME_SHARE = 0.9;
@@ -217,26 +233,14 @@ const SIDES: readonly { readonly dir: Vec3; readonly sector: 'left' | 'right' | 
     { dir: [0, 0, 1], sector: 'back' }
 ];
 
-/** Where each wall-like cue comes from in the narrated scenes of ears-walls (spec: front, left, right, above, below). */
-const APPROACHES: Readonly<Record<string, readonly { readonly dir: Vec3; readonly sector: string }[]>> = {
-    'safety.wall': [
-        { dir: [0, 0, -1], sector: 'front' },
-        { dir: [-1, 0, 0], sector: 'left' },
-        { dir: [1, 0, 0], sector: 'right' }
-    ],
-    'safety.ceiling': [{ dir: [0, 1, 0], sector: 'up' }],
-    'safety.floor': [{ dir: [0, -1, 0], sector: 'down' }],
-    'safety.obstacle': [{ dir: [Math.SQRT1_2, 0, -Math.SQRT1_2], sector: 'front-right' }]
-};
-
-const SHAPE_ORDER: readonly CueId[] = ['shape.ring', 'shape.square', 'shape.cube', 'shape.pillar'];
-
 // ------------------------------------------------------------------ the script
 
 type Step =
     | { readonly kind: 'say'; readonly lines: readonly SpeechLine[]; readonly interrupt?: boolean }
     | { readonly kind: 'cue'; readonly event: CueEvent; readonly waitS: number }
-    | { readonly kind: 'scene'; readonly scene: DemoScene }
+    /** a sound the step names: once the speech is over, `plays` plays REPEAT_GAP_S apart */
+    | { readonly kind: 'sound'; readonly cue: CueId; readonly dir: Vec3 | null; readonly plays: number }
+    | { readonly kind: 'scene'; readonly scene: DemoScene; readonly plays: number }
     | { readonly kind: 'ask'; readonly question: Question; readonly onAnswer: (value: number | null, t: number) => void }
     | { readonly kind: 'wait'; readonly s: number }
     | { readonly kind: 'do'; readonly run: (t: number) => void };
@@ -250,9 +254,17 @@ interface Block {
 interface Running {
     readonly step: Step;
     readonly t0: number;
-    /** say: the lines were handed out and the host has not yet reported the queue empty */
     answered: boolean;
-    spoken: boolean;
+    /** say, ask: the batch of lines the step handed to the host's speech queue */
+    batch: number;
+    /** v0.12 timing: the host reported its queue empty while this step was current */
+    spokenSeen: boolean;
+    /** ask: when its lines had been said (its time to answer runs from here) */
+    askSpokenAt: number | null;
+    /** sound, scene: when the plays began (after the speech), how many have begun, and the end of the one going on */
+    playT0: number | null;
+    played: number;
+    playEnd: number;
 }
 
 type Phase = LessonRunner['phase'];
@@ -279,6 +291,10 @@ class Runner implements LessonSession {
     private began = false;
     private prev: FlightSample | null = null;
     private worldRef: SonicWorld | null = null;
+    // speech: batches of lines handed to the host, the last one it has said, and when the lines handed must be over at the latest
+    private handed = 0;
+    private spokenUpTo = 0;
+    private speechDeadline = 0;
     // steps: the task or the intro first, then (module 0) one per sound, scene, trial or round
     private blocks: Block[] = [];
     private blockIndex = 0;
@@ -438,13 +454,13 @@ class Runner implements LessonSession {
             if (this.current === null) {
                 const step = this.script.shift();
                 if (step === undefined) return;
-                this.current = { step, t0: t, answered: false, spoken: false };
-                this.startStep(step, t);
+                this.current = { step, t0: t, answered: false, batch: 0, spokenSeen: false, askSpokenAt: null, playT0: null, played: 0, playEnd: 0 };
+                this.startStep(this.current, t);
             }
             const c = this.current;
             if (!this.stepDone(c, t)) return;
             this.current = null;
-            if (c.step.kind === 'scene') {
+            if (this.scene !== null) {
                 this.scene = null;
                 this.actions.push({ kind: 'scene', scene: null });
             }
@@ -456,22 +472,47 @@ class Runner implements LessonSession {
         }
     }
 
-    private startStep(step: Step, t: number): void {
+    private get v012(): boolean {
+        return this.hooks.speechWait === 'v012';
+    }
+
+    /** How long the host may take to say a line before the runner stops waiting for its report, ms: twice the estimate and a second. */
+    private fallbackMs(line: SpeechLine): number {
+        const rate = Math.min(Math.max(this.o.speechRate ?? 1, 0.25), 4);
+        return 2000 * ((0.7 + this.text(line).length * 0.065) / rate) + 1000;
+    }
+
+    /** Hands lines to the host's speech queue; the first one interrupts what is being said when the pilot's key asked for it. */
+    private sayLines(lines: readonly SpeechLine[], interrupt: boolean, t: number): number {
+        lines.forEach((line, i) => this.actions.push({ kind: 'say', line, interrupt: i === 0 && interrupt }));
+        let ms = 0;
+        for (const l of lines) ms += this.fallbackMs(l);
+        this.speechDeadline = (interrupt ? t : Math.max(t, this.speechDeadline)) + ms;
+        return ++this.handed;
+    }
+
+    /** Lines were handed that the host has not reported said (and the longest wait for them has not run out). */
+    private speaking(t: number): boolean {
+        return this.spokenUpTo < this.handed && t < this.speechDeadline;
+    }
+
+    private startStep(c: Running, t: number): void {
+        const step = c.step;
         switch (step.kind) {
             case 'say':
                 // a key the pilot just pressed cuts the speech still going with the first line of what follows
-                step.lines.forEach((line, i) => this.actions.push({ kind: 'say', line, interrupt: i === 0 && (step.interrupt ?? this.interruptNext) }));
+                c.batch = this.sayLines(step.lines, step.interrupt ?? this.interruptNext, t);
                 this.interruptNext = false;
                 break;
             case 'cue':
                 this.actions.push({ kind: 'cue', event: step.event });
                 break;
+            case 'sound':
             case 'scene':
-                this.scene = { scene: step.scene, t0: t };
-                this.actions.push({ kind: 'scene', scene: step.scene });
+                // played in stepDone, once the speech is over (v0.12: at once)
                 break;
             case 'ask':
-                step.question.lines.forEach((line, i) => this.actions.push({ kind: 'say', line, interrupt: i === 0 && this.interruptNext }));
+                c.batch = this.sayLines(step.question.lines, this.interruptNext, t);
                 this.interruptNext = false;
                 this.actions.push({ kind: 'ask', question: step.question });
                 break;
@@ -483,17 +524,62 @@ class Runner implements LessonSession {
         }
     }
 
+    /** One play of a sound or a scene begins. */
+    private play(c: Running, t: number): void {
+        const step = c.step;
+        c.played++;
+        if (step.kind === 'sound') {
+            const durS = playS(step.cue);
+            if (this.v012) {
+                // v0.12: one preview (the planner plays 3 s of it), the next step 3.3 s after it began
+                c.playEnd = t + (PREVIEW_WAIT_S - 0.3) * 1000;
+                this.actions.push({ kind: 'cue', event: { kind: 'preview', cue: step.cue, dir: step.dir } });
+                return;
+            }
+            c.playEnd = t + durS * 1000;
+            this.actions.push({ kind: 'cue', event: { kind: 'repeat-cue', cue: step.cue, dir: step.dir, index: c.played, of: step.plays, durS } });
+        } else if (step.kind === 'scene') {
+            c.playEnd = t + step.scene.durS * 1000;
+            this.scene = { scene: step.scene, t0: t };
+            this.actions.push({ kind: 'scene', scene: step.scene, play: { index: c.played, of: step.plays } });
+        }
+    }
+
     private stepDone(c: Running, t: number): boolean {
         const age = (t - c.t0) / 1000;
         switch (c.step.kind) {
             case 'say':
-                return c.spoken || age >= this.sayS(c.step.lines);
+                if (this.v012) return c.spokenSeen || age >= this.sayS(c.step.lines);
+                return this.spokenUpTo >= c.batch || t >= this.speechDeadline;
             case 'cue':
                 return age >= c.step.waitS;
-            case 'scene':
-                return age >= c.step.scene.durS;
+            case 'sound':
+            case 'scene': {
+                const plays = this.v012 ? 1 : c.step.plays;
+                if (c.playT0 === null) {
+                    if (!this.v012 && this.speaking(t)) return false;
+                    c.playT0 = t;
+                    this.play(c, t);
+                }
+                // a play ends, then the gap; the next play, or the step is over after the gap of the last one
+                if (this.scene !== null && t >= c.playEnd) {
+                    this.scene = null;
+                    this.actions.push({ kind: 'scene', scene: null });
+                }
+                const gapMs = this.v012 ? (c.step.kind === 'sound' ? 300 : 0) : REPEAT_GAP_S * 1000;
+                if (t < c.playEnd + gapMs) return false;
+                if (c.played < plays) {
+                    this.play(c, t);
+                    return false;
+                }
+                return true;
+            }
             case 'ask':
-                return c.answered || age >= this.sayS(c.step.question.lines) + ASK_TIMEOUT_S;
+                if (c.answered) return true;
+                if (this.v012) return age >= this.sayS(c.step.question.lines) + ASK_TIMEOUT_S;
+                // the time to answer runs from the end of the question's lines
+                if (c.askSpokenAt === null && (this.spokenUpTo >= c.batch || t >= this.speechDeadline)) c.askSpokenAt = t;
+                return c.askSpokenAt !== null && t - c.askSpokenAt >= ASK_TIMEOUT_S * 1000;
             case 'wait':
                 return age >= c.step.s;
             case 'do':
@@ -503,7 +589,10 @@ class Runner implements LessonSession {
 
     spoken(t: number): readonly SessionEvent[] {
         this.t = Math.max(this.t, t);
-        if (this.current !== null && this.current.step.kind === 'say') this.current.spoken = true;
+        // every line handed so far has been said (the host's queue ran empty)
+        this.spokenUpTo = this.handed;
+        this.speechDeadline = t;
+        if (this.current !== null) this.current.spokenSeen = true;
         this.advance(t);
         this.afterScript(t);
         return this.drain();
@@ -525,9 +614,19 @@ class Runner implements LessonSession {
         return this.drain();
     }
 
-    /** Step 1: the task of a flying lesson, or the intro of a lesson without a world. */
+    /** Step 1: the task of a flying lesson, or the intro of a lesson without a world: the lines, each named sound three times after its line. */
     private introBlock(): Block {
-        return { kind: this.ears ? 'intro' : 'task', steps: [{ kind: 'say', lines: [this.lesson.title, ...this.lesson.intro] }] };
+        const steps: Step[] = [];
+        let lines: SpeechLine[] = [this.lesson.title];
+        for (const l of this.lesson.intro) {
+            lines.push(l.params === undefined ? { key: l.key } : { key: l.key, params: l.params });
+            if (l.cues === undefined || l.cues.length === 0) continue;
+            steps.push({ kind: 'say', lines });
+            lines = [];
+            for (const cue of l.cues) steps.push({ kind: 'sound', cue, dir: null, plays: REPEAT_PLAYS });
+        }
+        if (lines.length > 0) steps.push({ kind: 'say', lines });
+        return { kind: this.ears ? 'intro' : 'task', steps };
     }
 
     private startPose(attempt: number): Pose {
@@ -887,7 +986,7 @@ class Runner implements LessonSession {
                 kind: 'sound' as const,
                 steps: [
                     { kind: 'say', lines: [{ key: i === 0 ? 'glossary.intro' : 'glossary.next' }, { key: `cue.${cue}.name` }, { key: `cue.${cue}.glossary` }] },
-                    { kind: 'cue', event: { kind: 'preview', cue, dir: null }, waitS: PREVIEW_WAIT_S },
+                    { kind: 'sound', cue, dir: null, plays: REPEAT_PLAYS },
                     ...(i === cues.length - 1 ? [{ kind: 'say', lines: [{ key: 'glossary.done' }] } as Step] : [])
                 ]
             }));
@@ -900,7 +999,7 @@ class Runner implements LessonSession {
                     kind: 'scene',
                     steps: [
                         { kind: 'say', lines: [{ key: 'narrate.coming', params: { name: this.cueName(cue) } }, { key: `dir.${w.sector}` }] },
-                        { kind: 'scene', scene: { cue, dir: w.dir, moving: true, durS: SCENE_S } }
+                        { kind: 'scene', scene: { cue, dir: w.dir, moving: true, durS: NARRATED_SCENE_S }, plays: REPEAT_PLAYS }
                     ]
                 });
             }
@@ -921,7 +1020,7 @@ class Runner implements LessonSession {
             // every trial begins with a line, so a key that moves here cuts what was being said (N, B, Z)
             const trial: SpeechLine = { key: 'headphones.trial', params: { n: i + 1, total: trials } };
             steps.push({ kind: 'say', lines: i === 0 ? [{ key: 'headphones.intro' }, { key: 'headphones.wired' }, { key: 'headphones.os-spatial' }, trial] : [trial] });
-            steps.push({ kind: 'cue', event: { kind: 'preview', cue: 'target.hum', dir: side.dir }, waitS: PREVIEW_WAIT_S });
+            steps.push({ kind: 'sound', cue: 'target.hum', dir: side.dir, plays: REPEAT_PLAYS });
             steps.push({
                 kind: 'ask',
                 question: { id, lines: [{ key: lateral ? 'headphones.q-side' : 'headphones.q-front-back' }], options: 3, skippable: true },
@@ -948,11 +1047,11 @@ class Runner implements LessonSession {
             const cue = options[cueIndex] as CueId;
             const side = SIDES[rng.int(0, SIDES.length - 1)] as (typeof SIDES)[number];
             const moving = rng.next() < 0.5;
-            const scene: DemoScene = { cue, dir: side.dir, moving, durS: SCENE_S - 1 };
+            const scene: DemoScene = { cue, dir: side.dir, moving, durS: GAME_SCENE_S };
             const id = `${this.lesson.id}:${this.attemptNo}:${r + 1}`;
             const feedback = (value: number | null, right: boolean, replay: boolean): Step[] =>
-                value === null ? [] : right ? [{ kind: 'say', lines: [{ key: 'quiz.right' }] }] : [{ kind: 'say', lines: [{ key: 'quiz.wrong' }] }, ...(replay ? [{ kind: 'scene', scene } as Step] : [])];
-            const steps: Step[] = [{ kind: 'say', lines: r === 0 ? [{ key: 'quiz.howto' }, { key: 'quiz.intro' }] : [{ key: 'quiz.intro' }] }, { kind: 'scene', scene }];
+                value === null ? [] : right ? [{ kind: 'say', lines: [{ key: 'quiz.right' }] }] : [{ kind: 'say', lines: [{ key: 'quiz.wrong' }] }, ...(replay ? [{ kind: 'scene', scene, plays: 1 } as Step] : [])];
+            const steps: Step[] = [{ kind: 'say', lines: r === 0 ? [{ key: 'quiz.howto' }, { key: 'quiz.intro' }] : [{ key: 'quiz.intro' }] }, { kind: 'scene', scene, plays: REPEAT_PLAYS }];
             if (r < names.trials) {
                 steps.push({
                     kind: 'ask',
@@ -1259,8 +1358,15 @@ class Runner implements LessonSession {
             phase: this.phaseValue,
             passed: this.passedValue,
             skipped: this.skippedValue,
-            listening: this.listening
+            listening: this.listening,
+            playing: this.playing()
         };
+    }
+
+    private playing(): LessonView['playing'] {
+        const c = this.current;
+        if (c === null || c.playT0 === null || (c.step.kind !== 'sound' && c.step.kind !== 'scene') || this.t >= c.playEnd) return null;
+        return { cue: c.step.kind === 'sound' ? c.step.cue : c.step.scene.cue, index: c.played, of: this.v012 ? 1 : c.step.plays };
     }
 
     statusLine(): SpeechLine {
@@ -1285,11 +1391,6 @@ class Runner implements LessonSession {
         if (this.scene === null) return null;
         return demoFrame(this.scene.scene, (t - this.scene.t0) / 1000, t, this.sceneWorlds);
     }
-}
-
-/** The glossary names sounds of every kind; the narrated lessons only walls and shapes. */
-function isGlossary(cues: readonly CueId[]): boolean {
-    return !cues.every((c) => c in APPROACHES || SHAPE_ORDER.includes(c));
 }
 
 /**

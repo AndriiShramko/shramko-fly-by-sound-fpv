@@ -74,9 +74,16 @@
       "key": "lesson.corridor.intro.1"
     },
     {
+      "cues": [
+        "safety.wall"
+      ],
       "key": "lesson.corridor.intro.2"
     },
     {
+      "cues": [
+        "target.checkpoint",
+        "safety.reset"
+      ],
       "key": "lesson.corridor.intro.3"
     },
     {

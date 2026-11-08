@@ -13,7 +13,8 @@ type Say = Extract<RunnerAction, { kind: 'say' }>;
 const actionsSince = (p: ScriptedPilot, from: number): RunnerAction[] => p.actions.slice(from);
 const says = (actions: readonly RunnerAction[]): Say[] => actions.filter((a): a is Say => a.kind === 'say');
 const gos = (actions: readonly RunnerAction[]): string[] => actions.flatMap((a) => (a.kind === 'go' ? [a.to] : []));
-const previews = (actions: readonly RunnerAction[]): string[] => actions.flatMap((a) => (a.kind === 'cue' && a.event.kind === 'preview' ? [(a.event as Extract<CueEvent, { kind: 'preview' }>).cue] : []));
+/** the sounds a step played (one entry per play) */
+const previews = (actions: readonly RunnerAction[]): string[] => actions.flatMap((a) => (a.kind === 'cue' && (a.event.kind === 'preview' || a.event.kind === 'repeat-cue') ? [(a.event as Extract<CueEvent, { kind: 'repeat-cue' }>).cue] : []));
 
 /** a pilot whose lines are said but never reported done: the runner stays in the step it is in until a key moves it */
 function slowSpeech(id: string): ScriptedPilot {
@@ -83,7 +84,8 @@ describe('a flying lesson: the task (step 1) and flying (step 2)', () => {
         p.hold(3);
         let from = p.actions.length;
         p.press((run, t) => run.repeat(t));
-        expect(says(actionsSince(p, from)).map((a) => a.line.key)).toEqual(['lesson.hover-height.title', 'lesson.hover-height.intro.1', 'lesson.hover-height.intro.2', 'lesson.hover-height.goal.1']);
+        // the lines up to the one that names the sounds; the sounds come after them, then the goal line
+        expect(says(actionsSince(p, from)).map((a) => a.line.key)).toEqual(['lesson.hover-height.title', 'lesson.hover-height.intro.1', 'lesson.hover-height.intro.2']);
         expect(says(actionsSince(p, from))[0]?.interrupt).toBe(true);
         expect(p.run.view().step).toBe(1);
         // fly out of the band until the attempt runs out of time, then Z in the pause
@@ -92,7 +94,8 @@ describe('a flying lesson: the task (step 1) and flying (step 2)', () => {
         from = p.actions.length;
         p.press((run, t) => run.repeat(t));
         expect(says(actionsSince(p, from))[0]).toMatchObject({ line: { key: 'lesson.hover-height.title' }, interrupt: true });
-        p.until(() => p.run.phase === 'flying', 60);
+        // no end of speech is reported here: the runner waits for each line at most twice its estimate, then the sounds play
+        p.until(() => p.run.phase === 'flying', 200);
         expect(p.run.attempt).toBe(2);
     }, 60000);
 
@@ -100,7 +103,7 @@ describe('a flying lesson: the task (step 1) and flying (step 2)', () => {
         const lesson = getLesson('hover-height');
         const p = new ScriptedPilot(lesson);
         p.begin();
-        p.until(() => p.run.phase === 'flying', 10);
+        p.until(() => p.run.phase === 'flying', 60);
         p.flyTo([0, 2.5, 0]);
         p.hold(15);
         // 15 s of the 20 s in the band; Z, and the task is said (the pilot here speaks at once, the runner waits for the lines' estimate)
@@ -117,9 +120,9 @@ describe('a flying lesson: the task (step 1) and flying (step 2)', () => {
         p.press((run, t) => run.repeat(t));
         expect(p.run.view()).toMatchObject({ step: 2, listening: true, phase: 'flying' });
         expect(says(actionsSince(p, from))[0]).toMatchObject({ line: { key: 'lesson.hover-height.title' }, interrupt: true });
-        // 30 s of listening, far out of the band: no goal is met or missed meanwhile
+        // about a minute of listening (no end of speech is reported: the lines' longest wait), far out of the band: no goal is met or missed meanwhile
         p.flyTo([0, 5, 0]);
-        p.until(() => !p.run.view().listening, 60);
+        p.until(() => !p.run.view().listening, 120);
         expect(p.of('goal')).toEqual([]);
         expect(says(p.actions).map((a) => a.line.key)).toContain('fly.go-on');
         slow.take = keep;
@@ -200,8 +203,8 @@ describe('a lesson of module 0: the intro, then one step per sound', () => {
         expect(p.run.view().step).toBe(3);
         expect(says(actionsSince(p, from)).map((a) => a.line.key)).toEqual(['glossary.next', `cue.${cue}.name`, `cue.${cue}.glossary`]);
         expect(says(actionsSince(p, from))[0]?.interrupt).toBe(true);
-        p.until(() => previews(actionsSince(p, from)).length > 0, 30);
-        expect(previews(actionsSince(p, from))).toEqual([cue]);
+        p.until(() => previews(actionsSince(p, from)).length >= 3, 60);
+        expect(previews(actionsSince(p, from))).toEqual([cue, cue, cue]);
     });
 
     it('N during a question records it skipped and the next trial begins with its own line, cutting the question', () => {

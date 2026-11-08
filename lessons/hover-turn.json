@@ -22,6 +22,9 @@
   "id": "hover-turn",
   "intro": [
     {
+      "cues": [
+        "target.hum"
+      ],
       "key": "lesson.hover-turn.intro.1"
     },
     {

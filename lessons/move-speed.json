@@ -27,6 +27,9 @@
   "id": "move-speed",
   "intro": [
     {
+      "cues": [
+        "speed.tick"
+      ],
       "key": "lesson.move-speed.intro.1"
     },
     {

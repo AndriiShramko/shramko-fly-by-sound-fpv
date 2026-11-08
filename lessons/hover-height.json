@@ -26,6 +26,10 @@
       "key": "lesson.hover-height.intro.1"
     },
     {
+      "cues": [
+        "height.tone",
+        "height.rough"
+      ],
       "key": "lesson.hover-height.intro.2"
     },
     {

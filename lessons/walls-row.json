@@ -24,6 +24,9 @@
       "key": "lesson.walls-row.intro.1"
     },
     {
+      "cues": [
+        "safety.obstacle"
+      ],
       "key": "lesson.walls-row.intro.2"
     },
     {

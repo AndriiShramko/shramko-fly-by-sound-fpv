@@ -362,6 +362,11 @@ export interface Checkpoint {
     readonly radiusM: number;
 }
 
+/** A line of a lesson's intro (format 2): `cues` are the sounds it names, each played three times after the line. */
+export interface IntroLine extends SpeechLine {
+    readonly cues?: readonly CueId[];
+}
+
 /** A lesson is data (spec section 3). Every lesson can be opened directly; the ladder only recommends. */
 export interface LessonDef {
     readonly format: (typeof FORMATS)['lesson'];
@@ -374,7 +379,7 @@ export interface LessonDef {
     /** part of the short path of about six lessons */
     readonly fastPath: boolean;
     readonly title: SpeechLine;
-    readonly intro: readonly SpeechLine[];
+    readonly intro: readonly IntroLine[];
     readonly world: LessonWorldRef;
     readonly start: Pose;
     readonly assists: LessonAssists;
@@ -535,7 +540,13 @@ export type CueEvent =
     | { readonly kind: 'checkpoint' }
     | { readonly kind: 'reset' }
     | { readonly kind: 'fanfare' }
-    | { readonly kind: 'preview'; readonly cue: CueId; readonly dir: Vec3 | null };
+    | { readonly kind: 'preview'; readonly cue: CueId; readonly dir: Vec3 | null }
+    /**
+     * v0.13 (M41-5, emitted by the lesson runner, sounded by the cue planner): play `index` of `of` of a sound a
+     * step names, `durS` long; the runner sends one per play, about a second apart, with no speech over them.
+     * `dir` is listener frame, or null for the cue's own default.
+     */
+    | { readonly kind: 'repeat-cue'; readonly cue: CueId; readonly dir: Vec3 | null; readonly index: number; readonly of: number; readonly durS: number };
 
 /** A cue sounding now: what the recording stores and the captions may show. */
 export interface ActiveCue {

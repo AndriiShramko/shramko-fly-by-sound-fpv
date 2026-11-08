@@ -9,7 +9,7 @@ from `main` 7d4b4b9. No push. Every step one commit with this Status in it.
 - [x] 2. Pass rule: r counted attempts in total, the reason and the go-on offer after 3 failures in a row, lesson format 2
 - [x] 3. Progress line after every attempt and the progress view (I, the host's panel)
 - [x] 4. Navigation: next step, previous step, next lesson (skipped), previous lesson, repeat the task
-- [ ] 5. Every named sound three times with no speech over it; validator rule and schedule check
+- [x] 5. Every named sound three times with no speech over it; validator rule and schedule check
 - [ ] 6. Praise and stages (M41-11)
 - [ ] 7. Direction: wrong way, wrong side (M41-15)
 - [ ] 8. Respawn near the crash (M41-20, runner side)
@@ -148,6 +148,36 @@ walls line) go through the same queue, so the fix (wait for the report) also wai
   names. Tests: `test/navigation.test.ts` (every move, N and B exactly one step, a glossary flown with N, B, Z and the menu
   replays to the same events; control: without the key events it does not), `test/demo.test.ts`.
 
+### Step 5: every named sound three times, no speech over it (M41-5, M41-9)
+
+- The runner now waits for the host's report: a spoken step is over when `spoken(t)` says the queue ran empty (a host
+  that never reports is waited for at most twice the estimate and a second per line, scaled by `RunnerOptions.speechRate`).
+  A sound waits for that silence, then plays 3 times, 1 s apart, and the step goes on 1 s after the last play
+  (`src/lesson/sounds.ts`: `REPEAT_PLAYS`, `REPEAT_GAP_S`, 2.5 s a play, 1.2 s for a one-off sound). A question's 20 s to
+  answer run from the end of its lines.
+- Sounds a step names: intro lines name their sounds in a new field `cues` (lesson format 2; `IntroLine` in the contract)
+  and each plays three times after its line (hover-height: the height tone, then the buzzing tone; walls-hall: wall,
+  floor, ceiling, touch; 14 flying lessons name sounds); the glossary plays each cue three times; the headphone trial its
+  hum from the side three times before the question; the narrated scenes and the game's scenes run three times (4 s and
+  3.5 s each; the game's replay after a wrong answer once).
+- Each play is a cue event `{ kind: 'repeat-cue', cue, dir, index, of, durS }` (contract, the kind the plan fixes); a scene
+  play is the scene action with `play: { index, of }`; `view().playing` says which sound plays now, for the host's panel.
+  `src/cues/planner.ts` got a two-line placeholder (a repeat-cue sounds as the cue's preview for `durS`) so the package
+  compiles; lane s13-sound owns how it sounds.
+- The check (`checkSchedule` in `src/lesson/schedule.ts`): no sound under speech (more than 50 ms), every question has an
+  audible sound of its step before its lines, every named sound plays three times in its step, every scene can be heard
+  with the lesson's layers. The validator (`src/lesson/validate.ts`) refuses a module-0 lesson whose layers cannot sound
+  one of its scenes (for example ears-shapes without the shape layer, ears-walls with no hazard voice).
+- Tests (`test/lesson-schedule.test.ts`): every shipped lesson (ears lessons whole, the task of each flying lesson) with 5
+  voices (0.6 x the estimate, the estimate, the measured Windows voice, 1.4 x with 0.3 s to start each line, 2 x with
+  0.6 s) and answers early or late: no issue. The planner sounds the scene's cue in at least 90 % of every scene's frames.
+  Controls: the v0.12 timing (`testHooks.speechWait: 'v012'`) with the measured voice puts sounds under speech in the
+  headphone check, the glossary and the game, and with a slower voice the first question of the check comes with no
+  sound heard; with a fast voice v0.12 overlaps nothing but plays each sound once (the defect needs speech slower than
+  the estimate); a scene with its layer off sounds in 0 % of its frames and the loader refuses the lesson.
+- Length now (measured voice, right answers): headphones 1.8 min (v0.12: 1.4), glossary 6.5 (4.2), walls 1.9 (0.9),
+  shapes 1.3 (0.7), game 6.9 (5.4); a flying lesson's task 0.2 to 1.1 min. N skips a step at any time.
+
 ## Needs from the simulator
 
 All in `C:/dev/gsfpv-v03/apps/fly/src/sonic/` (read only here; lane v13-host):
@@ -171,4 +201,13 @@ All in `C:/dev/gsfpv-v03/apps/fly/src/sonic/` (read only here; lane v13-host):
 
 ## Needs from other lanes
 
-(filled in steps 5, 7 and 9)
+Lane s13-sound (`src/cues/*`, `src/audio/*`):
+
+1. `repeat-cue` (contract `CueEvent`): sound play `index` of `of` of `cue` for `durS` seconds from `dir` (listener frame, or
+   the cue's default when null). My placeholder in `src/cues/planner.ts` plays it as the cue's preview with that length;
+   replace it with your design. The runner sends the next play 1 s after one ends and nothing over speech.
+2. `src/audio/engine.ts` 757 starts a preview at once (it plans the frame inside `cue()`); do the same for `repeat-cue`, or
+   the first play starts with the next frame (up to a frame late).
+3. Z while flying plays the task's named sounds (for example the height tone) while the live layers go on: a `repeat-cue`
+   of `height.tone` replaces the live height plan for its length (the planner's preview rule). Decide whether the live
+   layers duck under a repeat-cue in flight, or the preview layers sound beside them.

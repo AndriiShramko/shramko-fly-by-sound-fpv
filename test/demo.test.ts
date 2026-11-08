@@ -205,15 +205,22 @@ async function run(host: DemoHost, t: number, seconds: number, sticks: Sticks = 
 }
 
 describe('the demo host', () => {
-    it('opens a lesson: layers set, the intro said line by line, the attempt starts when the speech queue runs empty', async () => {
+    it('opens a lesson: layers set, the task said line by line with each named sound three times after its line, the attempt starts when the speech queue runs empty', async () => {
         const f = fakeEngine(true);
         const host = new DemoHost({ engine: f.engine, locale: 'en' });
         host.open('hover-height', 0);
         expect(f.layers).toEqual([getLesson('hover-height').layers]);
-        expect(f.said).toEqual(['lesson.hover-height.title', 'lesson.hover-height.intro.1', 'lesson.hover-height.intro.2', 'lesson.hover-height.goal.1']);
+        expect(f.said).toEqual(['lesson.hover-height.title', 'lesson.hover-height.intro.1', 'lesson.hover-height.intro.2']);
         expect(host.state().phase).toBe('intro');
         let t = await run(host, 0, 1);
         expect(host.state().phase).toBe('intro'); // the lines are still being spoken
+        expect(f.cues).toEqual([]); // no sound under them
+        f.finishLines();
+        t = await run(host, t, 0.1);
+        expect(f.cues.map((c) => c.kind)).toEqual(['repeat-cue']); // the height tone, its first play
+        t = await run(host, t, 22);
+        expect(f.cues.filter((c) => c.kind === 'repeat-cue')).toHaveLength(6);
+        expect(f.said.at(-1)).toBe('lesson.hover-height.goal.1');
         f.finishLines();
         t = await run(host, t, 0.1);
         expect(host.state().phase).toBe('flying');
@@ -243,6 +250,8 @@ describe('the demo host', () => {
         const host = new DemoHost({ engine: f.engine, locale: 'en' });
         host.open('hover-height', 0);
         let t = await run(host, 0, 1);
+        // the task: its lines (said at once here) and its two sounds, three times each
+        for (let i = 0; i < 60 && host.state().phase !== 'flying'; i++) t = await run(host, t, 0.5);
         expect(host.state().phase).toBe('flying');
         const band = getLesson('hover-height').layers.heightBandM as readonly [number, number];
         for (let i = 0; i < 60 * 10 && host.state().heightM < (band[0] + band[1]) / 2; i++) t = await run(host, t, 1 / 60, stick({ throttle: 1 }));
@@ -260,7 +269,7 @@ describe('the demo host', () => {
         const host = new DemoHost({ engine: f.engine, locale: 'en', ui: { ask: (q) => void asked.push(q) } });
         host.open('ears-headphones', 0);
         let t = await run(host, 0, 1);
-        host.next(); // skip the intro
+        host.next(); // the speech is instant here, so the first trial already began: N goes on to the second
         for (let i = 0; i < 60 * 20 && !host.state().asking; i++) t = await run(host, t, 0.25);
         expect(host.state().asking).toBe(true);
         expect(asked.at(-1)?.options).toBe(3);
@@ -268,8 +277,8 @@ describe('the demo host', () => {
         expect(host.state().asking).toBe(false);
         expect(asked.at(-1)).toBeNull();
         expect(host.events.some((e) => e.kind === 'answer' && e.value === 1 && e.via === 'key')).toBe(true);
-        // the engine heard a preview of the sound the question is about
-        expect(f.cues.some((c) => c.kind === 'preview')).toBe(true);
+        // the engine heard the sound the question is about, three times
+        expect(f.cues.filter((c) => c.kind === 'repeat-cue').length).toBeGreaterThanOrEqual(3);
         // the craft stays where it is in module 0
         expect(host.state().pos).toEqual(getLesson('ears-headphones').start.pos);
         host.answer(2); // no question is open now: ignored
@@ -285,6 +294,11 @@ describe('the demo host', () => {
         await settle();
         await settle();
         expect(host.lesson?.id).toBe('hover-turn');
+        // the second lesson goes on: the hum its first line names, three times, then its other lines
+        let t = await run(host, 10, 12);
+        expect(f.said.at(-1)).toBe('lesson.hover-turn.goal.1');
+        f.finishLines();
+        t = await run(host, t, 0.1);
         expect(host.state().phase).toBe('flying');
         expect(host.events.length).toBeGreaterThan(events);
         host.leave();

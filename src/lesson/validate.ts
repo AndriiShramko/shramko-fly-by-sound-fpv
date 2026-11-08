@@ -3,11 +3,12 @@
 // code, so the loader is strict: unknown and missing keys are refused, every number has a range,
 // every spoken line must be a key of the locale catalogue, a lesson without a world asks only
 // questions, and a lesson with a world flies.
-import type { Checkpoint, Goal, LessonAssists, LessonDef, LessonLayers, LessonWorldRef, PassRule, Pose, SpeechLine } from '../contract';
+import type { Checkpoint, Goal, IntroLine, LessonAssists, LessonDef, LessonLayers, LessonWorldRef, PassRule, Pose, SpeechLine } from '../contract';
 import { FORMATS, LAYER_IDS, MODULES, WORLD_GENERATORS } from '../contract';
 import { CUE_IDS, requiredKeys } from '../i18n/catalog';
 import { canonicalPretty } from '../util/canonical';
 import { Collector, joinPath, type Validation } from '../util/check';
+import { sceneCues, sceneSilentReason } from './sounds';
 
 export const LESSON_ID = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 const OBJECT_ID = /^[A-Za-z0-9][A-Za-z0-9._-]{0,39}$/;
@@ -39,6 +40,23 @@ function speechLine(c: Collector, v: unknown, path: string): SpeechLine | undefi
     }
     if (key === undefined) return undefined;
     return params === undefined ? { key } : { key, params };
+}
+
+/** An intro line (format 2): a speech line, and the cues it names (each played three times after it). */
+function introLine(c: Collector, v: unknown, path: string): IntroLine | undefined {
+    const r = c.record(v, path);
+    if (r === null) return undefined;
+    if (r.cues === undefined) return speechLine(c, v, path);
+    const { cues: raw, ...rest } = r;
+    const line = speechLine(c, rest, path);
+    const cues = c.array(raw, joinPath(path, 'cues'), { min: 1, max: 4 });
+    if (cues === null) return undefined;
+    if (!cues.every((x) => typeof x === 'string' && (CUE_IDS as readonly string[]).includes(x))) {
+        c.add(joinPath(path, 'cues'), 'must list cue ids of src/i18n/catalog.ts CUE_IDS');
+        return undefined;
+    }
+    if (new Set(cues).size !== cues.length) c.add(joinPath(path, 'cues'), 'must not repeat a cue');
+    return line === undefined ? undefined : { ...line, cues: cues as string[] };
 }
 
 function lines(c: Collector, v: unknown, path: string, min: number, max: number): SpeechLine[] | undefined {
@@ -314,7 +332,18 @@ export function validateLesson(input: unknown): Validation<LessonDef> {
     const order = c.number(r.order, 'order', { integer: true, min: 0, max: 999 });
     const fastPath = c.boolean(r.fastPath, 'fastPath');
     const title = r.title === undefined ? undefined : speechLine(c, r.title, 'title');
-    const intro = r.intro === undefined ? undefined : lines(c, r.intro, 'intro', 1, 12);
+    let intro: IntroLine[] | undefined;
+    if (r.intro !== undefined) {
+        const arr = c.array(r.intro, 'intro', { min: 1, max: 12 });
+        if (arr !== null) {
+            const out: IntroLine[] = [];
+            arr.forEach((x, i) => {
+                const l = introLine(c, x, joinPath('intro', i));
+                if (l !== undefined) out.push(l);
+            });
+            if (out.length === arr.length) intro = out;
+        }
+    }
     const w = r.world === undefined ? undefined : world(c, r.world, 'world');
     const start = r.start === undefined ? undefined : pose(c, r.start, 'start');
     const a = r.assists === undefined ? undefined : assists(c, r.assists, 'assists');
@@ -362,6 +391,13 @@ export function validateLesson(input: unknown): Validation<LessonDef> {
         if (w.kind === 'none' && asks !== goals.length) c.add('goals', "a lesson without a world (module 0, the ears) can only have 'name-cues' and 'locate' goals");
         if (w.kind !== 'none' && asks > 0) c.add('goals', "'name-cues' and 'locate' goals belong to a lesson without a world");
         if (module !== undefined && (module === 0) !== (w.kind === 'none')) c.add('world', 'module 0 (the ears) and only module 0 runs without a world');
+        // M41-9: a scene of module 0 is heard through the lesson's own layers (a preview sounds whatever is on), so every scene must have its layer on
+        if (w.kind === 'none' && l !== undefined && c.ok) {
+            for (const cue of sceneCues({ world: w, goals })) {
+                const why = sceneSilentReason(cue, l);
+                if (why !== null) c.add('layers', `${why}: it would play without a sound`);
+            }
+        }
     }
 
     if (!c.ok) return c.result(undefined as never);

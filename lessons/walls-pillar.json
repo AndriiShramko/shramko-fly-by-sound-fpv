@@ -21,6 +21,9 @@
   "id": "walls-pillar",
   "intro": [
     {
+      "cues": [
+        "safety.obstacle"
+      ],
       "key": "lesson.walls-pillar.intro.1"
     },
     {

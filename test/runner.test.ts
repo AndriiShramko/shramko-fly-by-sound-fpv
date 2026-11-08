@@ -53,9 +53,11 @@ class Pilot {
         }
     }
 
+    /** Begins the lesson; a flying lesson's task (its lines, each named sound three times) goes by before the first attempt. */
     begin(): void {
         this.events.push(...this.run.begin(this.t));
         this.take();
+        if (this.lesson.world.kind !== 'none') this.until(() => this.run.phase !== 'intro', 120);
     }
 
     sample(): FlightSample {

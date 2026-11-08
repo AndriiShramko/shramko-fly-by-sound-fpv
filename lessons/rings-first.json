@@ -24,12 +24,21 @@
   "id": "rings-first",
   "intro": [
     {
+      "cues": [
+        "target.hum"
+      ],
       "key": "lesson.rings-first.intro.1"
     },
     {
+      "cues": [
+        "target.off"
+      ],
       "key": "lesson.rings-first.intro.2"
     },
     {
+      "cues": [
+        "target.note"
+      ],
       "key": "lesson.rings-first.intro.3"
     },
     {

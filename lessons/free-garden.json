@@ -24,6 +24,9 @@
       "key": "lesson.free-garden.intro.1"
     },
     {
+      "cues": [
+        "target.hum"
+      ],
       "key": "lesson.free-garden.intro.2"
     },
     {

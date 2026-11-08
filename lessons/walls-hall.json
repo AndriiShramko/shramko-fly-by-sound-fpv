@@ -22,12 +22,20 @@
   "id": "walls-hall",
   "intro": [
     {
+      "cues": [
+        "safety.wall",
+        "safety.floor",
+        "safety.ceiling"
+      ],
       "key": "lesson.walls-hall.intro.1"
     },
     {
       "key": "lesson.walls-hall.intro.2"
     },
     {
+      "cues": [
+        "safety.touch"
+      ],
       "key": "lesson.walls-hall.intro.3"
     },
     {

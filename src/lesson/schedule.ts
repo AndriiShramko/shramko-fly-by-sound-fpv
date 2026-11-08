@@ -16,6 +16,7 @@ import { DICTS } from '../i18n/dicts';
 import { createTranslator } from '../i18n/translator';
 import { yawQuat } from '../util/vec';
 import { createLessonRunner, type DemoScene, type LessonSession, type Question, type RunnerAction, type RunnerOptions } from './runner';
+import { REPEAT_PLAYS, sceneSilentReason } from './sounds';
 
 /** How long a line takes to say, s. */
 export type SpeechModel = (text: string, line: SpeechLine) => number;
@@ -75,6 +76,9 @@ export interface Play {
     /** 1-based play of a repeated sound, and how many plays it has; null for a single play */
     readonly index: number | null;
     readonly of: number | null;
+    /** the lesson's step (view().step) and attempt when it began */
+    readonly step: number;
+    readonly attempt: number;
 }
 
 export interface Asked {
@@ -86,6 +90,8 @@ export interface Asked {
     readonly linesStart: number | null;
     readonly linesEnd: number | null;
     readonly answeredAt: number | null;
+    readonly step: number;
+    readonly attempt: number;
 }
 
 export interface Schedule {
@@ -119,6 +125,8 @@ interface OpenAsk {
     linesStart: number | null;
     linesEnd: number | null;
     answeredAt: number | null;
+    step: number;
+    attempt: number;
     question: Question;
     lines: number;
     said: number;
@@ -167,14 +175,14 @@ export function lessonSchedule(lesson: LessonDef, options: ScheduleOptions = {})
     let t = 0;
     let pos: Vec3 = lesson.start.pos;
     let yaw = lesson.start.yawDeg;
-    let scene: { readonly scene: DemoScene; readonly start: number; readonly index: number | null; readonly of: number | null } | null = null;
+    let scene: { readonly scene: DemoScene; readonly start: number; readonly index: number | null; readonly of: number | null; readonly step: number; readonly attempt: number } | null = null;
     let lastScene: DemoScene | null = null;
     // the question waiting for the pilot (set by handle(), a closure, so kept in a box for the type checker)
     const box: { ask: OpenAsk | null } = { ask: null };
 
     const closeScene = (at: number): void => {
         if (scene === null) return;
-        plays.push({ kind: 'scene', cue: scene.scene.cue, start: scene.start, end: at, index: scene.index, of: scene.of });
+        plays.push({ kind: 'scene', cue: scene.scene.cue, start: scene.start, end: at, index: scene.index, of: scene.of, step: scene.step, attempt: scene.attempt });
         scene = null;
     };
 
@@ -207,7 +215,7 @@ export function lessonSchedule(lesson: LessonDef, options: ScheduleOptions = {})
                     // the question's lines are the say actions handed just before it in this batch
                     const n = a.question.lines.length;
                     for (let k = Math.max(0, queue.length - n); k < queue.length; k++) queue[k] = { ...(queue[k] as Queued), ask: asks.length };
-                    const open: OpenAsk = { id: a.question.id, options: a.question.options, at: t, linesStart: null, linesEnd: null, answeredAt: null, question: a.question, lines: n, said: 0 };
+                    const open: OpenAsk = { id: a.question.id, options: a.question.options, at: t, linesStart: null, linesEnd: null, answeredAt: null, step: run.view().step, attempt: run.attempt, question: a.question, lines: n, said: 0 };
                     asks.push(open);
                     lastAsk = open;
                     break;
@@ -217,14 +225,14 @@ export function lessonSchedule(lesson: LessonDef, options: ScheduleOptions = {})
                     const kind: Play['kind'] = e.kind === 'preview' ? 'preview' : (e.kind as string) === 'repeat-cue' ? 'repeat-cue' : 'one-off';
                     const x = e as { readonly durS?: number; readonly index?: number; readonly of?: number };
                     const durMs = kind === 'preview' ? PREVIEW_PLAY_S * 1000 : kind === 'repeat-cue' ? (x.durS ?? PREVIEW_PLAY_S) * 1000 : ONE_OFF_S * 1000;
-                    plays.push({ kind, cue: cueOf(e), start: t, end: t + durMs, index: x.index ?? null, of: x.of ?? null });
+                    plays.push({ kind, cue: cueOf(e), start: t, end: t + durMs, index: x.index ?? null, of: x.of ?? null, step: run.view().step, attempt: run.attempt });
                     break;
                 }
                 case 'scene': {
                     closeScene(t);
                     if (a.scene !== null) {
                         const p = (a as { readonly play?: { readonly index: number; readonly of: number } }).play;
-                        scene = { scene: a.scene, start: t, index: p?.index ?? null, of: p?.of ?? null };
+                        scene = { scene: a.scene, start: t, index: p?.index ?? null, of: p?.of ?? null, step: run.view().step, attempt: run.attempt };
                         lastScene = a.scene;
                     }
                     break;
@@ -306,7 +314,7 @@ export function lessonSchedule(lesson: LessonDef, options: ScheduleOptions = {})
         lessonId: lesson.id,
         speech: spoken,
         plays,
-        asks: asks.map((a) => ({ id: a.id, options: a.options, at: a.at, linesStart: a.linesStart, linesEnd: a.linesEnd, answeredAt: a.answeredAt })),
+        asks: asks.map((a) => ({ id: a.id, options: a.options, at: a.at, linesStart: a.linesStart, linesEnd: a.linesEnd, answeredAt: a.answeredAt, step: a.step, attempt: a.attempt })),
         events,
         endT: t,
         phase: run.phase
@@ -318,4 +326,48 @@ export function speechOverlapMs(s: Pick<Schedule, 'speech'>, start: number, end:
     let ms = 0;
     for (const l of s.speech) ms += Math.max(0, Math.min(end, l.end) - Math.max(start, l.start));
     return ms;
+}
+
+/** What a pilot would notice in a schedule (M41-5, M41-9). */
+export interface ScheduleIssue {
+    readonly rule: 'under-speech' | 'question-without-sound' | 'not-repeated' | 'layer-off';
+    readonly at: number;
+    readonly detail: string;
+}
+
+/** How much speech may overlap a sound before it counts as under it, ms (one frame of a host and the gap of a voice). */
+export const OVERLAP_SLACK_MS = 50;
+
+/**
+ * The checks of a lesson's schedule: no sound plays under speech; every question has an audible sound of its
+ * step before its lines begin; every named sound of a step plays REPEAT_PLAYS times; every scene can be heard
+ * with the lesson's layers. One-off notes (a chime, the fanfare of a pass) are not checked: they come with
+ * the lesson's own events, not with a step.
+ */
+export function checkSchedule(s: Schedule, lesson: LessonDef): ScheduleIssue[] {
+    const issues: ScheduleIssue[] = [];
+    const sounds = s.plays.filter((p) => p.kind !== 'one-off');
+    const audible = (p: Play): boolean => speechOverlapMs(s, p.start, p.end) <= OVERLAP_SLACK_MS;
+    for (const p of sounds) {
+        const ms = speechOverlapMs(s, p.start, p.end);
+        if (ms > OVERLAP_SLACK_MS) issues.push({ rule: 'under-speech', at: p.start, detail: `${p.kind} ${p.cue} at ${(p.start / 1000).toFixed(2)} s: ${(ms / 1000).toFixed(2)} s of its ${((p.end - p.start) / 1000).toFixed(2)} s under speech` });
+        if (p.kind === 'scene') {
+            const why = sceneSilentReason(p.cue, lesson.layers);
+            if (why !== null) issues.push({ rule: 'layer-off', at: p.start, detail: why });
+        }
+    }
+    for (const q of s.asks) {
+        const before = sounds.filter((p) => p.step === q.step && p.attempt === q.attempt && p.end <= (q.linesStart ?? q.at) + OVERLAP_SLACK_MS && audible(p));
+        if (before.length === 0) issues.push({ rule: 'question-without-sound', at: q.at, detail: `question ${q.id} at ${(q.at / 1000).toFixed(2)} s has no sound of its step heard before it` });
+    }
+    // a named sound plays REPEAT_PLAYS times in its step (a scene the game replays after a wrong answer is an extra play)
+    const groups = new Map<string, Play[]>();
+    for (const p of sounds) {
+        const k = `${p.attempt}:${p.step}:${p.cue}`;
+        groups.set(k, [...(groups.get(k) ?? []), p]);
+    }
+    for (const [k, list] of groups) {
+        if (list.length < REPEAT_PLAYS) issues.push({ rule: 'not-repeated', at: (list[0] as Play).start, detail: `${k.split(':')[2]} in step ${k.split(':')[1]} plays ${list.length} time${list.length === 1 ? '' : 's'}, not ${REPEAT_PLAYS}` });
+    }
+    return issues.sort((a, b) => a.at - b.at);
 }

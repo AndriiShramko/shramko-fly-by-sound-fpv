@@ -24,6 +24,9 @@
   "id": "shapes-square",
   "intro": [
     {
+      "cues": [
+        "shape.square"
+      ],
       "key": "lesson.shapes-square.intro.1"
     },
     {

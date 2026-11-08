@@ -25,6 +25,9 @@
       "key": "lesson.rings-line.intro.1"
     },
     {
+      "cues": [
+        "target.note"
+      ],
       "key": "lesson.rings-line.intro.2"
     },
     {

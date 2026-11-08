@@ -1,57 +1,200 @@
-// M41-9: "the voice says press 1, press 2, but there is no sound". The ears lessons are played by a
-// model host (src/lesson/schedule.ts) with a speech queue whose lines take as long as a real voice
-// says them (test/fixtures/tts-en-david.json, the Windows voice Microsoft David at rate 1), and the
-// schedule shows when each sound played against the speech. The engine ducks every layer by 12 dB
-// while a line is queued or spoken, so a sound under speech is a sound the pilot does not hear.
+// M41-5 and M41-9: "the voice says press 1, press 2, but there is no sound". Each lesson is played by a
+// model host (src/lesson/schedule.ts) with a speech queue whose lines take as long as a voice says them:
+// the runner's own estimate, faster and slower voices, and the measured lengths of a real one
+// (test/fixtures/tts-en-david.json, the Windows voice Microsoft David at rate 1). The schedule says when
+// each line was said and each sound played; checkSchedule asks what a pilot would ask. The engine ducks
+// every layer by 12 dB while a line is queued or spoken, so a sound under speech is a sound not heard.
+// What this cannot show: how loud a sound is at the ear, or whether a person notices it (the render
+// proofs of lane s13-sound measure the audio; how it feels is for people).
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { estimateSpeech, getLesson, lessonSchedule, measuredSpeech, speechOverlapMs, type Schedule } from '../src/lesson';
+import type { LessonDef } from '../src/contract';
+import { CuePlanner } from '../src/cues';
+import { checkSchedule, createLessonRunner, estimateSpeech, getLesson, lessonSchedule, measuredSpeech, SHIPPED_LESSON_IDS, speechOverlapMs, validateLesson, type DemoScene, type Question, type Schedule, type ScheduleOptions } from '../src/lesson';
+import { getBuiltinTheme } from '../src/theme';
 
 const david = (JSON.parse(readFileSync(new URL('./fixtures/tts-en-david.json', import.meta.url), 'utf8')) as { seconds: Record<string, number> }).seconds;
 const EARS = ['ears-headphones', 'ears-glossary', 'ears-walls', 'ears-shapes', 'ears-game'] as const;
 
-/** the right answer to the headphone check: 1 (left) for the first trial, 2 for the second and the third */
-const rightAnswer = (q: { readonly id: string }): number => (q.id.split(':')[2] === '1' ? 1 : 2);
+/** the right answers: the headphone check (left, right, then behind), the game (what the scene was, where, whether it moved) */
+function truthAnswer(lesson: LessonDef): (q: Question, scene: DemoScene | null) => number {
+    const names = lesson.goals.find((g) => g.kind === 'name-cues');
+    const cues = names?.kind === 'name-cues' ? names.cues : [];
+    const sides = [
+        [-1, 0, 0],
+        [1, 0, 0],
+        [0, 0, -1],
+        [0, 0, 1]
+    ];
+    return (q, s) => {
+        if (q.id.endsWith(':side')) return q.id.split(':')[2] === '1' ? 1 : 2;
+        if (q.id.endsWith(':front-back')) return 2;
+        if (s === null) return 1;
+        if (q.id.endsWith(':what')) return cues.indexOf(s.cue) + 1;
+        if (q.id.endsWith(':where')) return sides.findIndex((d) => d[0] === s.dir[0] && d[2] === s.dir[2]) + 1;
+        return s.moving ? 1 : 2;
+    };
+}
 
-const sounds = (s: Schedule): Schedule['plays'] => s.plays.filter((p) => p.kind !== 'one-off');
-const underSpeech = (s: Schedule, share: number): number => sounds(s).filter((p) => speechOverlapMs(s, p.start, p.end) > share * (p.end - p.start)).length;
+const VOICES: Readonly<Record<string, ScheduleOptions['speech']>> = {
+    'fast (0.6 x the estimate)': estimateSpeech(0.6),
+    'the estimate': estimateSpeech(1),
+    'measured (Microsoft David)': measuredSpeech(david),
+    'slow (1.4 x, 0.3 s to start each line)': estimateSpeech(1.4, 0.3),
+    'very slow (2 x, 0.6 s to start each line)': estimateSpeech(2, 0.6)
+};
 
-describe('v0.12: when the sounds of the ears lessons play against the speech (facts of M41-9)', () => {
-    it('the measured voice is slower than the runner\'s estimate for most lines', () => {
+const schedule = (id: string, o: ScheduleOptions = {}): Schedule => {
+    const lesson = getLesson(id);
+    return lessonSchedule(lesson, { answer: truthAnswer(lesson), ...o, runner: { seed: 3, ...o.runner } });
+};
+const rules = (s: Schedule, id: string): string[] => checkSchedule(s, getLesson(id)).map((i) => i.rule);
+
+describe('every named sound plays three times with no speech over it, and every question comes after its sound', () => {
+    it('in every shipped lesson (the ears lessons whole, the task of every flying lesson), with fast, measured and slow voices, answers early or late', () => {
+        for (const id of SHIPPED_LESSON_IDS) {
+            for (const [voice, speech] of Object.entries(VOICES)) {
+                for (const answerTiming of ['after', 'early'] as const) {
+                    const s = schedule(id, { speech, answerTiming });
+                    const issues = checkSchedule(s, getLesson(id));
+                    expect(issues.map((i) => i.detail), `${id}, ${voice}, answers ${answerTiming}`).toEqual([]);
+                    if (getLesson(id).world.kind === 'none') expect(s.phase, `${id} ends`).toBe('passed');
+                }
+            }
+        }
+    }, 600000);
+
+    it('plays each sound of a step three times, a second apart, and the step goes on a second after the last', () => {
+        const s = schedule('ears-glossary', { speech: measuredSpeech(david) });
+        const plays = s.plays.filter((p) => p.kind === 'repeat-cue' && p.step === 2);
+        expect(plays.map((p) => [p.cue, p.index, p.of])).toEqual([
+            ['safety.wall', 1, 3],
+            ['safety.wall', 2, 3],
+            ['safety.wall', 3, 3]
+        ]);
+        expect(((plays[1]?.start ?? 0) - (plays[0]?.end ?? 0)) / 1000).toBeCloseTo(1, 1);
+        const next = s.speech.find((l) => l.start > (plays[2]?.end ?? 0));
+        expect(((next?.start ?? 0) - (plays[2]?.end ?? 0)) / 1000).toBeGreaterThanOrEqual(0.95);
+        // the hum of the headphone check comes from its side all three times, the question after the third
+        const h = schedule('ears-headphones', { speech: measuredSpeech(david) });
+        const first = h.plays.filter((p) => p.step === 2);
+        expect(first).toHaveLength(3);
+        expect(h.asks[0]?.linesStart).toBeGreaterThan(first[2]?.end ?? Infinity);
+        // a flying lesson's task: each sound its line names, three times after the line
+        const task = schedule('hover-height', { speech: measuredSpeech(david) });
+        expect(task.plays.map((p) => p.cue)).toEqual(['height.tone', 'height.tone', 'height.tone', 'height.rough', 'height.rough', 'height.rough']);
+        const line = task.speech.find((l) => l.key === 'lesson.hover-height.intro.2');
+        expect(task.plays[0]?.start).toBeGreaterThanOrEqual(line?.end ?? Infinity);
+    }, 60000);
+});
+
+describe('control: the v0.12 timing fails the same check (a line ends at the earlier of the report and the estimate, a sound starts at once, once)', () => {
+    const v012 = { seed: 3, testHooks: { speechWait: 'v012' as const } };
+
+    it('with the measured voice the sounds play under speech in the headphone check, the glossary and the game', () => {
+        for (const id of ['ears-headphones', 'ears-glossary', 'ears-game']) {
+            const s = schedule(id, { speech: measuredSpeech(david), runner: v012 });
+            expect(rules(s, id), id).toContain('under-speech');
+        }
+        // "press 1, press 2": with a slower voice the first question of the check comes with no sound heard before it
+        const slow = schedule('ears-headphones', { speech: estimateSpeech(1.4, 0.3), runner: v012 });
+        const issues = checkSchedule(slow, getLesson('ears-headphones'));
+        expect(issues.filter((i) => i.rule === 'question-without-sound').length).toBeGreaterThan(0);
+    }, 120000);
+
+    it('the defect needs speech slower than the estimate: with a fast voice v0.12 overlaps nothing, but plays each sound once', () => {
+        for (const id of EARS) {
+            const s = schedule(id, { speech: estimateSpeech(0.6), runner: v012 });
+            const r = rules(s, id);
+            expect(r.filter((x) => x === 'under-speech'), id).toEqual([]);
+            expect(r, id).toContain('not-repeated');
+        }
+    }, 120000);
+
+    it('the fact as measured: 262 of the 376 English lines take the Windows voice longer than the estimate', () => {
         const en = JSON.parse(readFileSync(new URL('../locales/en.json', import.meta.url), 'utf8')) as Record<string, string>;
         const keys = Object.keys(david);
-        const longer = keys.filter((k) => (david[k] as number) > 0.7 + 0.065 * (en[k] as string).length);
         expect(keys.length).toBe(376);
-        expect(longer.length).toBe(262);
-    });
-
-    it('ears-headphones: the first sound plays under the last line before it, then the question asks where it was', () => {
-        const s = lessonSchedule(getLesson('ears-headphones'), { speech: measuredSpeech(david), answer: rightAnswer });
-        const first = sounds(s)[0];
-        expect(first).toMatchObject({ kind: 'preview', cue: 'target.hum' });
-        const line = [...s.speech].reverse().find((l) => l.start < (first?.start ?? 0));
-        expect(line).toBeDefined();
-        // the sound starts before the line ends: part of its 3 s is under the voice (v0.12 as shipped: 2.5 s; with the trial line: 1 s)
-        expect((line?.end ?? 0) - (first?.start ?? 0)).toBeGreaterThan(500);
+        expect(keys.filter((k) => (david[k] as number) > 0.7 + 0.065 * (en[k] as string).length).length).toBe(262);
+        // and under v0.12 the first sound of the check plays partly under the line before it
+        const s = schedule('ears-headphones', { speech: measuredSpeech(david), runner: v012 });
+        const first = s.plays.find((p) => p.kind !== 'one-off');
         expect(speechOverlapMs(s, first?.start ?? 0, first?.end ?? 0)).toBeGreaterThan(500);
-        const ask = s.asks[0];
-        expect(ask?.id).toMatch(/:side$/);
-        expect(ask?.linesStart).toBeGreaterThanOrEqual(first?.end ?? Infinity);
     });
+});
 
-    it('every ears lesson has sounds that overlap speech with the measured voice, and none with a voice faster than the estimate', () => {
-        for (const id of EARS) {
-            const lesson = getLesson(id);
-            const measured = lessonSchedule(lesson, { speech: measuredSpeech(david), answer: rightAnswer, runner: { seed: 3 } });
-            expect(sounds(measured).filter((p) => speechOverlapMs(measured, p.start, p.end) > 50).length, id).toBeGreaterThan(0);
-            const fast = lessonSchedule(lesson, { speech: estimateSpeech(0.7), answer: rightAnswer, runner: { seed: 3 } });
-            expect(underSpeech(fast, 0), `${id} with a fast voice`).toBe(0);
+describe('every scene of module 0 is heard: the planner sounds its cue with the lesson\'s layers', () => {
+    /** the share of a scene's frames in which the planner sounds the scene's cue, for each scene play of the lesson */
+    function sceneShares(id: string, layers = getLesson(id).layers): number[] {
+        const lesson = getLesson(id);
+        const run = createLessonRunner(lesson, { seed: 3 });
+        const planner = new CuePlanner({ theme: getBuiltinTheme('soft'), layers });
+        const shares: number[] = [];
+        let frames = 0;
+        let heard = 0;
+        let cue: string | null = null;
+        const answer = truthAnswer(lesson);
+        let scene: DemoScene | null = null;
+        run.begin(0);
+        for (let t = 0; t < 1_200_000 && run.phase !== 'passed'; t += 33) {
+            run.step({ t, tick: t, pos: lesson.start.pos, vel: [0, 0, 0], quat: [1, 0, 0, 0], rate: [0, 0, 0], yawDeg: 0, pitchDeg: 0, rollDeg: 0, sticks: [0, 0, 0, 0], armed: false, touched: false, paused: false }, null);
+            for (const a of run.takeActions()) {
+                if (a.kind === 'say') run.spoken(t);
+                if (a.kind === 'scene') {
+                    if (a.scene === null && cue !== null) {
+                        shares.push(heard / Math.max(frames, 1));
+                        cue = null;
+                    } else if (a.scene !== null) {
+                        scene = a.scene;
+                        cue = a.scene.cue;
+                        frames = 0;
+                        heard = 0;
+                    }
+                }
+                if (a.kind === 'ask') run.answer(answer(a.question, scene), 'key', t);
+            }
+            const input = run.demoFrame(t);
+            if (input !== null && cue !== null) {
+                frames++;
+                const ids = planner.plan(input).cues.map((c) => c.id.split(':')[0]);
+                if (ids.includes(cue)) heard++;
+            }
         }
-    });
+        return shares;
+    }
 
-    it('with a voice 30 % slower than the estimate (a speech rate of 0.77), every glossary sound is mostly under speech', () => {
-        const s = lessonSchedule(getLesson('ears-glossary'), { speech: estimateSpeech(1.3) });
-        expect(sounds(s)).toHaveLength(20);
-        expect(underSpeech(s, 0.5)).toBe(20);
-    });
+    it('in every frame of every scene of ears-walls, ears-shapes and ears-game', () => {
+        for (const id of ['ears-walls', 'ears-shapes', 'ears-game']) {
+            const shares = sceneShares(id);
+            expect(shares.length, id).toBeGreaterThanOrEqual(9);
+            expect(Math.min(...shares), id).toBeGreaterThanOrEqual(0.9);
+        }
+    }, 120000);
+
+    it('control: with the layer that plays it off, a scene sounds nothing, and the lesson loader refuses such a lesson', () => {
+        const shapes = getLesson('ears-shapes');
+        const off = { ...shapes.layers, on: shapes.layers.on.filter((l) => l !== 'shape') };
+        expect(Math.max(...sceneShares('ears-shapes', off))).toBe(0);
+        const file = JSON.parse(readFileSync(new URL('../lessons/ears-shapes.json', import.meta.url), 'utf8')) as Record<string, unknown>;
+        const r = validateLesson({ ...file, layers: { ...(file['layers'] as object), on: ['voice'] } });
+        expect(r.ok).toBe(false);
+        expect(r.ok ? [] : r.issues.map((i) => i.path)).toContain('layers');
+        const walls = JSON.parse(readFileSync(new URL('../lessons/ears-walls.json', import.meta.url), 'utf8')) as Record<string, unknown>;
+        const silent = validateLesson({ ...walls, layers: { ...(walls['layers'] as object), hazardVoices: 0 } });
+        expect(silent.ok ? [] : silent.issues.map((i) => i.message).join(' ')).toMatch(/hazard voice/);
+        for (const id of EARS) expect(validateLesson(JSON.parse(readFileSync(new URL(`../lessons/${id}.json`, import.meta.url), 'utf8'))).ok, id).toBe(true);
+    }, 120000);
+});
+
+describe('how long the ears lessons take now (measured voice, answers a second after each question)', () => {
+    it('stays within a few minutes per lesson', () => {
+        const minutes: Record<string, number> = {};
+        for (const id of EARS) minutes[id] = Math.round(schedule(id, { speech: measuredSpeech(david) }).endT / 6000) / 10;
+        // the glossary has 20 sounds, three plays each; measured 2026-11-08
+        expect(minutes['ears-glossary']).toBeLessThan(9);
+        expect(minutes['ears-game']).toBeLessThan(10);
+        expect(minutes['ears-headphones']).toBeLessThan(3);
+        expect(minutes['ears-walls']).toBeLessThan(3);
+        expect(minutes['ears-shapes']).toBeLessThan(2);
+    }, 120000);
 });
