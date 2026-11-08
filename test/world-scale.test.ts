@@ -9,8 +9,9 @@
 // the lesson files as v0.12 shipped them) fail the same checks.
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import type { Goal, LessonDef, SonicObject } from '../src/contract';
-import { getLesson, lessonPaths, SHIPPED_LESSON_IDS } from '../src/lesson';
+import type { Goal, LessonDef, SonicObject, SpeechLine } from '../src/contract';
+import { createTranslator, DICTS } from '../src/i18n';
+import { APPROACH_MIN_M, getLesson, lessonPaths, nearestWallM, SHIPPED_LESSON_IDS } from '../src/lesson';
 import { createAnalyticWorld, type AnalyticWorldInfo } from '../src/world';
 import { ScriptedPilot } from './helpers/pilot';
 import { alongTrack } from './helpers/along';
@@ -85,6 +86,20 @@ describe('rooms at the scale of a micro drone (M41-18)', () => {
         expect(own).toBeLessThan(500);
         // control: in v0.12 it was as large as the pillars' room (40 x 60 x 12 each)
         expect(volume(worldOf(asV012('walls-hall'))!)).toBeGreaterThanOrEqual(volume(worldOf(asV012('walls-pillar'))!));
+    });
+
+    it('walls-hall asks for a wall to be approached and calls its room small (review M5); control: its v0.12 stop distance', () => {
+        const l = getLesson('walls-hall');
+        const within = (g: Goal): number => (g as Extract<Goal, { kind: 'approach-stop' }>).stopWithinM;
+        // the least approach the goal takes: APPROACH_MIN_M of flight from the start straight at the nearest wall. It must
+        // stop too far from the wall to count ("fly to the wall, stop before it", not "move 2 m and stop")
+        const left = (nearestWallM(worldOf(l), l.start.pos) as number) - APPROACH_MIN_M;
+        expect(left, `${left.toFixed(2)} m from the nearest wall after the least approach`).toBeGreaterThan(within(l.goals[0] as Goal) + 1);
+        // control: v0.12's 3 m, in this room, passes the least approach
+        expect(left).toBeLessThanOrEqual(within(asV012('walls-hall').goals[0] as Goal));
+        const en = createTranslator('en', DICTS);
+        expect(en.text(l.title)).toBe('A small room');
+        expect(en.text(l.intro[0] as SpeechLine)).toMatch(/^You are in a small, empty room\./);
     });
 
     it('the zones of move-speed and move-stop come in 2 to 3 s at their caps; control: v0.12 took 7.7 s to move-stop\'s', () => {

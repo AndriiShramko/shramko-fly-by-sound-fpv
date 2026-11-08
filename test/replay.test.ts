@@ -67,9 +67,10 @@ async function wallsHall(options: HostOptions = {}): Promise<{ host: RecordingHo
     host.hold(0.5);
     host.press(REPLAY_KEY_ACTIONS.next);
     host.until(() => host.runner.phase === 'flying', 120);
-    // 2.5 m from the front wall of the room, back to its middle, a touch, 2 m on, the resets, and the wall again
+    // inside the goal's distance from the front wall of the room, back to its middle, a touch, 2 m on, the resets, and the wall again
     const front = (host.world as AnalyticWorldInfo).landmarks.find((l) => l.id === 'wall-front')!.pos[2];
-    host.flyTo([0, 1.5, front + 2.5], 3);
+    const stop = front + (getLesson('walls-hall').goals[0] as { stopWithinM: number }).stopWithinM - 0.3;
+    host.flyTo([0, 1.5, stop], 3);
     host.hold(1.2);
     host.press(REPLAY_KEY_ACTIONS.repeat);
     host.until(() => host.runner.phase === 'flying', 60);
@@ -79,7 +80,7 @@ async function wallsHall(options: HostOptions = {}): Promise<{ host: RecordingHo
     host.press(REPLAY_KEY_ACTIONS.resetCheckpoint);
     host.hold(0.5);
     host.press(REPLAY_KEY_ACTIONS.resetStart);
-    host.flyTo([0, 1.5, front + 2.5], 3);
+    host.flyTo([0, 1.5, stop], 3);
     host.hold(1.5);
     host.hold(3);
     return { host, pkg: (await host.toPackage()).pkg };

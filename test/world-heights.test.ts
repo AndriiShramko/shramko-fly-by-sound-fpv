@@ -74,6 +74,8 @@ describe('rings at different heights (M41-22)', () => {
         expect(lesson.version).toBe(1);
         expect(NEW_LESSONS).toContain('rings-heights');
         expect(lesson.world.kind === 'analytic' && lesson.world.spec.generator === 'rings' && lesson.world.spec.version === 2).toBe(true);
+        // the layers of a gate lesson: the target tone it teaches, and the height tone and the room bed every flying lesson has (review M7)
+        expect(lesson.layers.on).toEqual(['safety', 'height', 'target', 'room', 'voice']);
     });
 
     it('puts every ring at its asked level: floor, middle and ceiling, each used, far apart', () => {

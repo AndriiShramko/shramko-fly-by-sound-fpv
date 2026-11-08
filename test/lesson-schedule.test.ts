@@ -8,6 +8,15 @@ import { describe, expect, it } from 'vitest';
 import { estimateSpeech, getLesson, lessonSchedule, measuredSpeech, speechOverlapMs, type Schedule } from '../src/lesson';
 
 const david = (JSON.parse(readFileSync(new URL('./fixtures/tts-en-david.json', import.meta.url), 'utf8')) as { seconds: Record<string, number> }).seconds;
+/**
+ * The English of lines measured above whose text changed since (lane s13-worlds, review M5 and m3: the first room is
+ * small, module 4 holds the tunnels): a measured length belongs to the text that was measured.
+ */
+const MEASURED_TEXT: Readonly<Record<string, string>> = {
+    'module.4.name': 'Corridor',
+    'lesson.walls-hall.title': 'The big hall',
+    'lesson.walls-hall.intro.1': 'You are in a big, empty hall. The walls, the floor and the ceiling make knocks, thuds and puffs when you come near.'
+};
 const EARS = ['ears-headphones', 'ears-glossary', 'ears-walls', 'ears-shapes', 'ears-game'] as const;
 
 /** the right answer to the headphone check: 1 (left) for the first trial, 2 for the second and the third */
@@ -20,7 +29,7 @@ describe('v0.12: when the sounds of the ears lessons play against the speech (fa
     it('the measured voice is slower than the runner\'s estimate for most lines', () => {
         const en = JSON.parse(readFileSync(new URL('../locales/en.json', import.meta.url), 'utf8')) as Record<string, string>;
         const keys = Object.keys(david);
-        const longer = keys.filter((k) => (david[k] as number) > 0.7 + 0.065 * (en[k] as string).length);
+        const longer = keys.filter((k) => (david[k] as number) > 0.7 + 0.065 * (MEASURED_TEXT[k] ?? (en[k] as string)).length);
         expect(keys.length).toBe(376);
         expect(longer.length).toBe(262);
     });

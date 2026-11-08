@@ -169,6 +169,12 @@ describe('tunnels (M41-21)', () => {
         full.forEach((id, i) => expect(getLesson(id).order, id).toBe(i));
     });
 
+    it('have the layers every flying lesson has: the height tone and the room bed (lane s13-sound, M41-10; review M7); control: the layers they had', () => {
+        const flyingLayers = (on: readonly string[]): boolean => ['safety', 'height', 'room', 'voice'].every((x) => on.includes(x));
+        for (const id of TUNNELS) expect(flyingLayers(getLesson(id).layers.on), id).toBe(true);
+        expect(flyingLayers(['safety', 'voice'])).toBe(false);
+    });
+
     it('get narrower in the series wide, narrow, narrower', () => {
         const width = (id: string): number => worldOf(getLesson(id)).resolved['widthM'] as number;
         expect(width('tunnel-wide')).toBeGreaterThan(width('tunnel-narrow'));

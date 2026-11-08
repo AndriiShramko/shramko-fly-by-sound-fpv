@@ -16,7 +16,7 @@
     {
       "kind": "approach-stop",
       "objectId": null,
-      "stopWithinM": 3
+      "stopWithinM": 1.5
     }
   ],
   "id": "walls-hall",

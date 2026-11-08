@@ -206,18 +206,21 @@ describe('every goal kind: a scripted pass and a near miss', () => {
         expect(goalEvents(p)).toEqual(['0:met', '1:met']);
     });
 
-    it('approach-stop: stopping 2.5 m from a wall passes, stopping 4 m from the nearest one misses', () => {
+    it('approach-stop: stopping within the goal distance of a wall passes, stopping 1 m outside it from the nearest one misses', () => {
         const front = frontWallZ('walls-hall');
+        // the goal's distance (1.5 m in the room of v0.13, 10 x 12 m; 3 m in v0.12's hall): the hull's distance to the wall
+        const within = (getLesson('walls-hall').goals[0] as { stopWithinM: number }).stopWithinM;
         const pass = new Pilot(getLesson('walls-hall'));
         pass.begin();
-        pass.flyTo([0, 1.5, front + 2.5], 3);
+        pass.flyTo([0, 1.5, front + within - 0.3], 3);
         pass.hold(1);
         expect(goalEvents(pass)).toEqual(['0:met']);
 
-        // a little over 2 m (an approach needs 2 m of flight) from the middle of the room: 4 m from every wall
+        // over 2 m of flight from the middle of the room (an approach needs 2 m), the goal's distance and 1 m from the
+        // front wall, 4 m from the side walls
         const near = new Pilot(getLesson('walls-hall'));
         near.begin();
-        near.flyTo([1, 1.5, front + 4], 3);
+        near.flyTo([1, 1.5, front + within + 1], 3);
         near.hold(GIVE_UP_MS / 1000 + 0.5);
         expect(goalEvents(near)).toEqual(['0:missed']);
     });
@@ -466,6 +469,7 @@ describe('pass rules, touches, resets and progress', () => {
 
     it('a goal met with more touches than the rule allows is a failed attempt', () => {
         const front = frontWallZ('walls-hall');
+        const within = (getLesson('walls-hall').goals[0] as { stopWithinM: number }).stopWithinM;
         const p = new Pilot(getLesson('walls-hall'));
         p.begin();
         p.flyTo([0, 1.5, front + 4], 3);
@@ -473,7 +477,7 @@ describe('pass rules, touches, resets and progress', () => {
         p.tick();
         p.touched = true;
         p.tick();
-        p.flyTo([0, 1.5, front + 2.5], 3);
+        p.flyTo([0, 1.5, front + within - 0.3], 3);
         p.hold(1);
         expect(goalEvents(p)).toEqual(['0:met']);
         expect(p.of('touch').length).toBe(2);

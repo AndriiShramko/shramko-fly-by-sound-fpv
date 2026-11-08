@@ -21,7 +21,7 @@ Review fixes (`docs/wip/s13-worlds-review.md`; what was done and why: "Review fi
 - [x] M9. Every tunnel obstacle blocks the centre line by 0.2 m or more (the long tunnel's free ways 0.7 m)
 - [x] M3. rings-heights: no height passes rings of two levels
 - [x] M1, M2, M8. The corridor's last goal, the tunnels' lesson checkpoints, `track-end` at the merge
-- [ ] M5, M7, m1, m2, m3. walls-hall's words and stop distance, the new lessons' layers, wording
+- [x] M5, M7, m1, m2, m3. walls-hall's words and stop distance, the new lessons' layers, wording
 - [ ] m4, m5, m7, M4, M6. AGENTS.md, this doc, the merge notes
 - [ ] All checks, final status
 
@@ -316,9 +316,9 @@ lesson with a goal other than hold-height, approach-stop or around): the owner's
   start (0, 2.5, 16.75); caps 3 and 1.5 m/s (rings-line's). Legs 2.68, 2.85 (four times) and 2.64 s, side walls 2.3 s,
   ceiling 1.96 s; each height change (1.3 or 2.6 m) fits its leg at the climb cap (2.11 s of climb in 2.34 s of the leg
   up to 1.5 m before the ring). The heights that pass each level without a touch (craft 0.12 m): floor 0.62 to 1.78,
-  middle 1.92 to 3.08, ceiling 3.22 to 4.38 m, so no one height passes two levels. Layers safety, target, height and
-  voice (lane s13-sound tunes them: the target tone of M41-12 is the next ring's centre). Goal: every ring in order; 3
-  counted attempts.
+  middle 1.92 to 3.08, ceiling 3.22 to 4.38 m, so no one height passes two levels. Layers safety, height, target, room
+  and voice (the room bed since review M7; lane s13-sound tunes them: the target tone of M41-12 is the next ring's
+  centre). Goal: every ring in order; 3 counted attempts.
   Intro (four languages): the rings at the floor, in the middle and under the ceiling; "the gliding one is your height,
   the second, steady tone is the height of the next ring"; "when the two tones sound the same, you are at the right
   height". It does not say "lower means climb": that flips with the pilot's height polarity (prefs), so the hint says
@@ -412,6 +412,30 @@ They are now `OBSTACLE_FREE_SIDES` / `ObstacleFreeSide` (the vocabulary of the `
 - M6's facing: the corridor's cp-3 and cp-5 now face the bend that starts there (yaw 90, as lane s13-lessons set them);
   at yaw 0 a respawn there faced a wall 1.25 m ahead.
 
+### M5, M7, m1, m2, m3: the first room's words, the new lessons' layers, wording
+
+- M5 (lane s13-lessons' fields, done here because they follow this lane's room): walls-hall is "A small room" / "You
+  are in a small, empty room. ..." in the four languages (each language's plain words for a small room), and its
+  `stopWithinM` is 1.5 m (was 3): the least approach the goal takes, 2 m from the start toward the nearest wall, now
+  stops 2.88 m from it, 1.38 m too far. Test (`test/world-scale.test.ts`); control: v0.12's 3 m passes that least
+  approach. Tests of lane s13-lessons that stopped 2.5 m from the front wall now stop inside the goal's own distance
+  (`test/runner.test.ts`, the approach-stop pass and the touches rule; `test/replay.test.ts`, the walls-hall flight).
+- M7: the six tunnels have `layers.on` safety, height, room and voice, rings-heights safety, height, target, room and
+  voice (lane s13-sound's rule of M41-10: the height tone and the room bed in every flying lesson; in `LAYER_IDS`
+  order, as their lessons list them). Tests: `test/world-tunnels.test.ts` (control: the layers they had),
+  `test/world-heights.test.ts`.
+- m1 (Russian): the word for "narrower" (uzhe) is spelled as "already" and a voice says "already"; the three lines now
+  say "a bit narrower" (pouzhe), "tighter still" (eshchyo tesnee) and "it narrows" (suzhaetsya).
+- m2: Polish "where it is free" (gdzie jest wolno, which reads "where it is slow") is now "to the free side" and "where
+  the way is free"; the gliding and the steady tone are "changes smoothly" and "steady" (in the hint too). Russian "walk
+  around" (obojti) is "fly around" (obletet'), twice, and "back by very little" is "not far back". Spanish "fly all the
+  stages" (vuela) is "go through all the stages" (recorre).
+- m3: module 4 is "Corridor and tunnels" in the four languages.
+- `test/lesson-schedule.test.ts` (lane s13-lessons' fact of M41-9, "262 of the 376 English lines take the Windows voice
+  longer than the estimate"): a measured length belongs to the text that was measured, so the three lines whose English
+  changed here (module 4's name, walls-hall's title and first line) are estimated from their measured text
+  (`MEASURED_TEXT`); with the new texts the count would be 261 (module 4's longer name).
+
 ## Needs from the simulator
 
 1. Draw the room from the package's boxes (`apps/fly/src/sonic/primitives.ts:215-231`, `cavityBoxes`), and delete the
@@ -449,27 +473,33 @@ They are now `OBSTACLE_FREE_SIDES` / `ObstacleFreeSide` (the vocabulary of the `
 
 Lane s13-lessons (owner of the strings, goals and the truth bot):
 
-1. walls-hall's title and first line say "The big hall" and "You are in a big, empty hall"; it is now the smallest room
-   (10 x 12 x 3.2 m). Proposed English: "A small room" / "You are in a small, empty room. The walls, the floor and the
-   ceiling make knocks, thuds and puffs when you come near."; the Spanish, Polish and Russian lines are in this lane's
-   report to the lead (this repository keeps every language but English in `locales/`).
-2. walls-hall's goal `approach-stop` `stopWithinM: 3` is now 60 % of the room's half width (5 m): two metres of
-   flight toward a side wall and a stop pass it. 1.5 m keeps the v0.12 task ("fly to the wall, stop before it").
+1. Done here since review M5 (it follows this lane's room; the lines are lane s13-lessons' to reword): walls-hall's
+   title and first line said "The big hall" and "You are in a big, empty hall" in the smallest room (10 x 12 x 3.2 m);
+   they say "A small room" and "You are in a small, empty room. ..." in the four languages.
+2. Done here since review M5: walls-hall's `approach-stop` `stopWithinM` is 1.5 m (was 3, 60 % of the room's half
+   width: two metres of flight toward a side wall and a stop passed it).
 3. The truth bot's pass-gates flight goes 4 m before and 4 m past every gate (`test/helpers/truth.ts`); with gates 5 to
    7 m apart it flies back between two gates (rings-small: 3 m back, 1.2 s at 2.5 m/s), which a wrong-way rule of more
    than 1 s (M41-15) would hear. The world's checkpoints (1.5 m before, 1 m past each gate) are a track to fly.
 4. corridor's `attemptLimitS` 900 s was for a 335 m corridor; the track is 126 m now (about 50 s at 3 m/s).
-5. The six tunnels' lesson-file checkpoints (above) are for the present runner; when it reads the world's
-   checkpoints (M41-20), keep or drop them. Their intro lines carry no `cues` (format 2 at eee530b has none):
-   tunnel-gaps' intro.2 names the open-way chime (`safety.free`, lane s13-sound) for the three plays of M41-5.
+5. Done here since review M8: the six tunnels' own checkpoints are the start and the end only (the runner's respawn
+   follows the world's list). Their intro lines carry no `cues` (format 2 at eee530b has none): tunnel-gaps' intro.2
+   names the open-way chime (`safety.free`, lane s13-sound) for the three plays of M41-5.
+6. Review M2: the corridor and the six tunnels end on your goal `track-end` at the merge (For the lead's merge); its
+   validator asks two lesson checkpoints or more, which the tunnels carry (the start and the end).
 
-Lane s13-sound: rings-heights has `layers` safety, target, height and voice: it is the lesson of the steady target
-tone (M41-12); check that the target tone follows the NEXT ring's centre and that the glide meets it in unison there.
+Lane s13-sound: rings-heights has `layers` safety, height, target, room and voice (the room bed added here, review M7):
+it is the lesson of the steady target tone (M41-12); check that the target tone follows the NEXT ring's centre and that
+the glide meets it in unison there. Its rings are 1.4 m since review M3 (each level its own band of heights).
 
-Lane s13-sound: the six tunnels have `layers` safety and voice, as the corridor; give them the height layer and the
-room bed as every flying lesson (their step 7). The free-way chime has its own lesson now: tunnel-gaps (3 x 3 m, free
-ways 1.2 m, as their box tunnels) and tunnel-long (2.4 m high, free ways 0.7 m since review M9: their middles 0.55 m
-beside the line, 0.85 m above or below it).
+Lane s13-sound: the six tunnels have `layers` safety, height, room and voice since review M7 (your rule of M41-10, in
+the order of `LAYER_IDS`; `hazardVoices` 3 as the corridor, yours to tune). The free-way chime has its own lesson now:
+tunnel-gaps (3 x 3 m, free ways 1.2 m, as their box tunnels) and tunnel-long (2.4 m high, free ways 0.7 m since review
+M9: their middles 0.55 m beside the line, 0.85 m above or below it; every obstacle reaches 0.2 m or more past the
+middle, so the nose ray meets it).
+
+Lane s13-sound (review M8): your Russian glossary names the open-way chime and the checkpoint chime with the same words
+("a short double chime"); give them different words, since tunnel-gaps teaches the open-way chime by ear.
 
 Lane s13-sound: the rings-course replay check now flies at the lesson's cap (4 m/s) and agrees on 95.2 % of the frames
 with the v0.12 sampler (side walls 7.4 m away flicker in and out of the three hazard voices); their time-to-contact
