@@ -84,7 +84,7 @@
         "heightM": 5,
         "heights": "middle,floor,ceiling,floor,middle",
         "layout": "line",
-        "sizeM": 2,
+        "sizeM": 1.4,
         "spacingM": 6,
         "widthM": 9
       },

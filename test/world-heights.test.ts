@@ -3,12 +3,13 @@
 // rings-small and before rings-course, teaches finding a ring's height by ear with the target tone of
 // M41-12 (lane s13-sound): the second, steady tone is the next ring's height. Held here: the gates at the
 // asked heights, all three levels used and far apart; every ring inside the room with its margins; each
-// height change can be flown within its leg at the lesson's caps; the truth bot passes; the intro says
-// what to listen for. Controls: rings-line's rings are all at one height; a climb too steep for its leg.
+// height change can be flown within its leg at the lesson's caps; no one height passes rings of two levels
+// (review M3); the truth bot passes; the intro says what to listen for. Controls: rings-line's rings are all
+// at one height; a climb too steep for its leg; the lesson's first rings (2 m) shared one band of heights.
 import { describe, expect, it } from 'vitest';
 import type { AnalyticWorldSpec, LessonDef, SonicObject } from '../src/contract';
 import { createTranslator, DICTS } from '../src/i18n';
-import { getLesson, lessonPaths } from '../src/lesson';
+import { BODY_RADIUS_M, getLesson, lessonPaths } from '../src/lesson';
 import { createAnalyticWorld, FLOOR_MARGIN_M, makeSpec, shapeHalfExtents, WALL_MARGIN_M, type AnalyticWorldInfo } from '../src/world';
 import { NEW_LESSONS } from './helpers/new-lessons';
 import { ScriptedPilot } from './helpers/pilot';
@@ -18,6 +19,32 @@ import { playLesson } from './helpers/truth';
 const worldOf = (l: LessonDef): AnalyticWorldInfo => createAnalyticWorld((l.world as { spec: AnalyticWorldSpec }).spec);
 const gatesOf = (w: AnalyticWorldInfo): SonicObject[] => w.objects().filter((o) => o.order !== null).sort((a, b) => (a.order as number) - (b.order as number));
 const span = (w: AnalyticWorldInfo): number => Math.max(...gatesOf(w).map((g) => g.pos[1])) - Math.min(...gatesOf(w).map((g) => g.pos[1]));
+
+/**
+ * The heights at which the craft (the package's radius) passes each ring's opening without a touch, its centre on the
+ * ring's axis: the ring's centre height plus or minus half its clear opening less the craft's radius.
+ */
+const windows = (w: AnalyticWorldInfo): { id: string; lo: number; hi: number }[] =>
+    gatesOf(w).map((g) => {
+        const half = (g.shape as { diameter: number }).diameter / 2 - BODY_RADIUS_M;
+        return { id: g.id, lo: g.pos[1] - half, hi: g.pos[1] + half };
+    });
+
+/** Pairs of rings of different levels that one height passes, each without a touch (their windows overlap). */
+function sharedHeights(w: AnalyticWorldInfo): string[] {
+    const levels = (w.resolved['heights'] as string).split(',');
+    const win = windows(w);
+    const out: string[] = [];
+    for (let i = 0; i < win.length; i++) {
+        for (let j = i + 1; j < win.length; j++) {
+            const a = win[i]!, b = win[j]!;
+            if (levels[Math.min(i, levels.length - 1)] === levels[Math.min(j, levels.length - 1)]) continue;
+            const lo = Math.max(a.lo, b.lo), hi = Math.min(a.hi, b.hi);
+            if (lo <= hi) out.push(`${a.id} and ${b.id} at ${lo.toFixed(2)} to ${hi.toFixed(2)} m`);
+        }
+    }
+    return out;
+}
 
 /** The legs whose height change cannot be flown before the gate at the lesson's caps (climb over the leg's time at the speed cap). */
 function tooSteep(l: Pick<LessonDef, 'assists' | 'start'>, w: AnalyticWorldInfo): string[] {
@@ -65,6 +92,21 @@ describe('rings at different heights (M41-22)', () => {
         for (let i = 1; i < gates.length; i++) expect(Math.abs(gates[i]!.pos[1] - gates[i - 1]!.pos[1]), gates[i]!.id).toBeGreaterThanOrEqual(1);
         // control: the rings of rings-line are all at one height
         expect(span(worldOf(getLesson('rings-line')))).toBeLessThan(1e-9);
+    });
+
+    it('no one height passes rings of two levels: each level is its own band of heights (review M3); control: the 2 m rings it had', () => {
+        expect(sharedHeights(w)).toEqual([]);
+        // the bands of the three levels, in order, with room between them
+        const win = windows(w);
+        const band = (level: string): { lo: number; hi: number } => win[(w.resolved['heights'] as string).split(',').indexOf(level)]!;
+        expect(band('floor').hi).toBeLessThan(band('middle').lo);
+        expect(band('middle').hi).toBeLessThan(band('ceiling').lo);
+        // control: the same lesson with its first rings of 2 m (fef8869): 1.62 to 2.38 m passes four of the five
+        const spec = (lesson.world as { spec: AnalyticWorldSpec }).spec;
+        const first = createAnalyticWorld({ ...spec, params: { ...spec.params, sizeM: 2 } });
+        expect(sharedHeights(first).length).toBeGreaterThan(0);
+        const common = windows(first).filter((x) => x.lo <= 2 && x.hi >= 2).map((x) => x.id);
+        expect(common).toEqual(['ring-1', 'ring-2', 'ring-4', 'ring-5']);
     });
 
     it('keeps every ring inside the room: 1 m from the walls, 0.3 m from the floor and the ceiling', () => {

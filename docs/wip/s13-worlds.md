@@ -19,7 +19,7 @@ Review fixes (`docs/wip/s13-worlds-review.md`; what was done and why: "Review fi
 
 - [x] B1. The tunnels' free sides exported as `OBSTACLE_FREE_SIDES` / `ObstacleFreeSide` (no clash with lane s13-sound)
 - [x] M9. Every tunnel obstacle blocks the centre line by 0.2 m or more (the long tunnel's free ways 0.7 m)
-- [ ] M3. rings-heights: no height passes rings of two levels
+- [x] M3. rings-heights: no height passes rings of two levels
 - [ ] M1, M2, M8. The corridor's last goal, the tunnels' lesson checkpoints, `track-end` at the merge
 - [ ] M5, M7, m1, m2, m3. walls-hall's words and stop distance, the new lessons' layers, wording
 - [ ] m4, m5, m7, M4, M6. AGENTS.md, this doc, the merge notes
@@ -308,17 +308,20 @@ lesson with a goal other than hold-height, approach-stop or around): the owner's
   height), or a list of metres; one per gate, the last repeating; with heights the craft starts at the first gate's
   height. A gate may sit exactly at its margin (the fit check allows a nanometre of rounding).
 - Lesson `rings-heights` (module 5, after rings-small, before rings-course; format 2, version 1; not on the fast path,
-  which keeps rings-first and rings-course): rings v2 `line` of five 2 m rings at middle, floor, ceiling, floor, middle
-  (2.5, 1.5, 3.5, 1.5, 2.5 m), 6 m apart, the first 5.5 m ahead, in a room 9 x 36.5 x 5 m; start (0, 2.5, 16.75);
-  caps 3 and 1.5 m/s (rings-line's). Legs 2.68, 2.85 (four times) and 2.64 s, side walls 2.3 s, ceiling 1.96 s; each
-  height change (1 or 2 m) fits its leg at the climb cap. Layers safety, target, height and voice (lane s13-sound
-  tunes them: the target tone of M41-12 is the next ring's centre). Goal: every ring in order; 3 counted attempts.
+  which keeps rings-first and rings-course): rings v2 `line` of five 1.4 m rings (2 m until review M3) at middle,
+  floor, ceiling, floor, middle (2.5, 1.2, 3.8, 1.2, 2.5 m), 6 m apart, the first 5.5 m ahead, in a room 9 x 36.5 x 5 m;
+  start (0, 2.5, 16.75); caps 3 and 1.5 m/s (rings-line's). Legs 2.68, 2.85 (four times) and 2.64 s, side walls 2.3 s,
+  ceiling 1.96 s; each height change (1.3 or 2.6 m) fits its leg at the climb cap (2.11 s of climb in 2.34 s of the leg
+  up to 1.5 m before the ring). The heights that pass each level without a touch (craft 0.12 m): floor 0.62 to 1.78,
+  middle 1.92 to 3.08, ceiling 3.22 to 4.38 m, so no one height passes two levels. Layers safety, target, height and
+  voice (lane s13-sound tunes them: the target tone of M41-12 is the next ring's centre). Goal: every ring in order; 3
+  counted attempts.
   Intro (four languages): the rings at the floor, in the middle and under the ceiling; "the gliding one is your height,
   the second, steady tone is the height of the next ring"; "when the two tones sound the same, you are at the right
   height". It does not say "lower means climb": that flips with the pilot's height polarity (prefs), so the hint says
   "move up or down until your tone matches the steady one".
 - Tests (`test/world-heights.test.ts`): the place on the ladder; every ring at its asked level, all three levels, a
-  span of 2 m and every leg changing the height by at least 1 m (the first at the start's height); every ring 1 m from
+  span of 2.6 m and every leg changing the height by at least 1 m (the first at the start's height); every ring 1 m from
   the walls and 0.3 m from the floor and the ceiling; each change fits its leg at the caps and the truth bot passes in
   at most 2 x r with no touch, gates in order; the intro's two promises in English and a translation in the three
   others; the same heights in squares and cube frames. Controls: rings-line's rings are all at one height (span 0); the
@@ -356,6 +359,22 @@ They are now `OBSTACLE_FREE_SIDES` / `ObstacleFreeSide` (the vocabulary of the `
   down the middle at flying height, measured on the world's own distance field along the run; refused: the long
   tunnel's first obstacle as it was ("reaches 0.1 m short of the middle"), and a way below that comes within 0.1 m of
   the flying height. Control: the review's block-1 rebuilt by hand in a straight tunnel of its stage measures -0.1 m.
+
+### M3: rings-heights, each level its own band of heights
+
+- The review: with 2 m rings at 2.5, 1.5, 3.5, 1.5, 2.5 m, a craft held at 1.62 to 2.38 m passed four of the five rings
+  without a touch; only the ceiling ring asked for about 0.25 m up and back. "Every leg changes the height by at least
+  1 m" was true of the centres, not of what the pilot must do.
+- The rings are 1.4 m now, in the same room (9 x 36.5 x 5 m, spacing 6 m): centres 2.5, 1.2, 3.8, 1.2, 2.5 m; the
+  heights that pass without a touch are floor 0.62 to 1.78, middle 1.92 to 3.08, ceiling 3.22 to 4.38 m, so every leg
+  asks for a climb or a descent of 1.3 or 2.6 m. The 2.6 m changes still fit their legs at 1.5 m/s (2.11 s of climb,
+  2.34 s of flight to 1.5 m before the ring); a spacing of 7 m would make the legs 3.18 s, over the 3 s rule of M41-18,
+  and a taller room (5.5 m, to keep 2 m rings apart) a climb of 3.1 m that does not fit a 6 m leg. Legs, walls and
+  ceiling are as before (2.64 to 2.85 s, 2.3 s, 1.96 s); the truth bot passes in 3 attempts with no touch. A 1.4 m ring
+  is between rings-small's 1.5 and 1 m.
+- Test (`test/world-heights.test.ts`): no two rings of different levels share a height that passes both without a
+  touch, and the floor, middle and ceiling bands come in that order with room between them. Control: the same lesson
+  with its 2 m rings shares heights, and 2 m passes ring-1, ring-2, ring-4 and ring-5.
 
 ## Needs from the simulator
 
