@@ -219,7 +219,8 @@ describe('how long the ears lessons take now (measured voice, answers a second a
     it('stays within a few minutes per lesson', () => {
         const minutes: Record<string, number> = {};
         for (const id of EARS) minutes[id] = Math.round(schedule(id, { speech: measuredSpeech(david) }).endT / 6000) / 10;
-        // the glossary has 20 sounds, three plays each; measured 2026-11-08
+        // the glossary names every sound, 26 since the s13-worlds merge (item 8f), three plays each: 8.4 minutes with the
+        // measured voice (2026-11-08)
         expect(minutes['ears-glossary']).toBeLessThan(9);
         expect(minutes['ears-game']).toBeLessThan(10);
         expect(minutes['ears-headphones']).toBeLessThan(3);

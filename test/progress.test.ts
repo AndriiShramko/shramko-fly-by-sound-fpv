@@ -87,7 +87,7 @@ describe('the progress view (I and the host panel)', () => {
     }, 60000);
 
     it('gives every lesson without a world its steps: the intro, then each sound, scene, trial or round', () => {
-        const counts: Record<string, number> = { 'ears-headphones': 1 + 3, 'ears-glossary': 1 + 20, 'ears-walls': 1 + 5, 'ears-shapes': 1 + 3, 'ears-game': 1 + 8 };
+        const counts: Record<string, number> = { 'ears-headphones': 1 + 3, 'ears-glossary': 1 + 26, 'ears-walls': 1 + 5, 'ears-shapes': 1 + 3, 'ears-game': 1 + 8 };
         for (const [id, steps] of Object.entries(counts)) {
             const p = new ScriptedPilot(getLesson(id));
             p.answerer = () => 1;

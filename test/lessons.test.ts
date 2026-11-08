@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import type { Goal, LessonDef, SpeechLine } from '../src/contract';
 import { LOCALES } from '../src/contract';
-import { createTranslator, DICTS, LESSONS, lessonKeys } from '../src/i18n';
+import { createTranslator, CUE_IDS, DICTS, LESSONS, lessonKeys } from '../src/i18n';
 import { createLessonRunner, getLesson, lessonPaths, lessonsOnPath, nextLesson, parseLesson, SHIPPED_LESSON_IDS, validateLesson, validatePaths, writeLesson } from '../src/lesson';
 import { createAnalyticWorld } from '../src/world';
 import { NEW_LESSONS } from './helpers/new-lessons';
@@ -101,6 +101,9 @@ describe('the shipped lessons', () => {
         const w = c.world.kind === 'analytic' ? createAnalyticWorld(c.world.spec) : null;
         const sections = (w?.landmarks ?? []).filter((m) => m.id.startsWith('section-') || m.id === 'end').map((m) => m.pos);
         expect(c.checkpoints.map((cp) => cp.at)).toEqual(sections);
+        // the glossary (key G): "you meet every sound you will hear while flying": every cue id, in the catalogue's order
+        const glossary = getLesson('ears-glossary').goals[0] as Extract<Goal, { kind: 'name-cues' }>;
+        expect(glossary.cues).toEqual(CUE_IDS);
         // Winter Garden x5 with its ring track (spec section 3, module 7; plan v12-flight step 10)
         const g = getLesson('free-garden');
         expect(g.world).toEqual({ kind: 'scan', sceneId: '7a475d38', sceneVersion: null, transform: [5, 0, 0, 0], track: { id: '7a475d38-rings', version: 1 } });

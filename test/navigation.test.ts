@@ -164,7 +164,7 @@ describe('a lesson of module 0: the intro, then one step per sound', () => {
         const p = slowSpeech('ears-glossary');
         p.begin();
         const steps = p.run.view().steps;
-        expect(steps).toBe(21);
+        expect(steps).toBe(1 + 26); // the intro and each of its 26 sounds
         const seen: number[] = [p.run.view().step];
         for (let k = 1; k < steps; k++) {
             p.press((run, t) => run.next(t));

@@ -143,8 +143,8 @@ Steps 7 to 11, lane s13-worlds:
     three tests still flew through walls, all passing, all s13-lessons' review R1 in `test/direction.test.ts`
     (rings-line 222 samples, rings-small 299, the course control 52: v0.12's 6 m beside a ring and 12 m back, in rooms 9
     and 10 m wide). They now pass ring 2 beside it by its frame and 2.5 m on the side with more room, 3 m past it
-    (short of ring 3), fly back to its front short of ring 1, and the control flies back to 0.6 m before the room's back wall (further
-    than `LINE_UP_M` from ring 2 for about 1.5 s). The probe then logs no sample in a wall. Broken on purpose once (the
+    (short of ring 3), fly back to its front short of ring 1, and the control flies back to 0.6 m before the room's
+    back wall (further than `LINE_UP_M` from ring 2 for about 1.5 s). The probe then logs no sample in a wall. Broken on purpose once (the
     wrong way judged against the track in a course too, R1 undone), the three R1 cases fail; restored, 10 of 10.
 - [x] 8d. The corridor's `attemptLimitS` was v0.12's 900 s, set for v0.12's corridor (5 x 4 m, its world's track 323.5
   m, its sections 335 m: 2.8 s a metre, about 8 times the track at the cap of 3 m/s). The corridor's track is 125.2 m
@@ -176,7 +176,15 @@ Steps 7 to 11, lane s13-worlds:
   checkpoint line was measured as goal.1 was: 5.175 s, longer than its estimate (the old line, 3.295 s, was shorter),
   so the schedule test's fact is 264 of 376 lines (was 263). Locale lint 0 problems (521 keys), layout 0, full suite
   1032 of 1032. No person has read the new lines aloud in Spanish, Polish or Russian.
-- [ ] 8f. `ears-glossary` names s13-sound's six new cues
+- [x] 8f. `ears-glossary` (the G key's dictionary, "you meet every sound you will hear while flying") names every cue
+  id of `CUE_IDS`, 26 in the catalogue's order: s13-sound's `safety.free`, `safety.wrong-way`, `safety.wrong-side`,
+  `height.target`, `target.praise` and `target.stage` beside the 20 of v0.12 (left open 1 of step 6). Their lines and
+  play lengths were there (`ONE_OFF_PLAY_S` of item 4c for the four one-off cues, the continuous play for the other
+  two). The lesson stays version 2 (unreleased since v0.12). Tests: `test/lessons.test.ts` "keep the promises their
+  texts make" now holds the glossary to `CUE_IDS` (on the merged lesson it failed: 20 against 26);
+  `test/repeat-plays.test.ts` 78 plays (was 60), `test/progress.test.ts` and `test/navigation.test.ts` 1 + 26 steps
+  (was 21); the schedule's every-sound-three-times check passes with all five speech models; the glossary takes 8.4
+  minutes with the measured voice (its bound in `test/lesson-schedule.test.ts` is 9). Full suite 1032 of 1032.
 - [ ] 8g. The truth bot in the ring lessons raises no wrong-way event
 - [ ] 8h. rings-heights: the target tone follows the next ring and the glide meets it in unison there
 - [ ] 8i. A recording that differs only in the world's id stays FAIL
