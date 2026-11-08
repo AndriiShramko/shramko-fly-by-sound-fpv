@@ -1,7 +1,7 @@
 # Lane s13-worlds: rooms, tunnels and rings at the scale of a micro drone (v0.13, owner's message 41)
 
 Plan: ShramkoGSFPV `docs/wip/v13-plan.md` (items M41-18, M41-20 world side, M41-21, M41-22). Branch `s13-worlds`,
-worktree `C:/dev/sonic-s13-worlds`, from lane s13-lessons at `eee530b` (lesson format 2, its pass rule, progress view,
+worktree `<sound checkout>`, from lane s13-lessons at `eee530b` (lesson format 2, its pass rule, progress view,
 navigation and truth bot `test/helpers/truth.ts`). No push. Every step one commit with this Status in it.
 
 ## Status
@@ -15,7 +15,7 @@ navigation and truth bot `test/helpers/truth.ts`). No push. Every step one commi
 - [x] 7. Rings at different heights (M41-22): the heights parameter and lesson rings-heights
 - [x] 8. All checks, final status (below: Final status)
 
-Review fixes (`docs/wip/s13-worlds-review.md`; what was done and why: "Review fixes" below):
+Review fixes (`docs/dev/review-v0.13-worlds.md`; what was done and why: "Review fixes" below):
 
 - [x] B1. The tunnels' free sides exported as `OBSTACLE_FREE_SIDES` / `ObstacleFreeSide` (no clash with lane s13-sound)
 - [x] M9. Every tunnel obstacle blocks the centre line by 0.2 m or more (the long tunnel's free ways 0.7 m)
@@ -28,7 +28,7 @@ Review fixes (`docs/wip/s13-worlds-review.md`; what was done and why: "Review fi
 ## Ownership
 
 Mine: `src/world/*`, the lesson files' `world`, `start` and `assists`, new lesson files, generator goldens and digests,
-`docs/wip/s13-worlds.md`, the tests and helpers I add (`test/world-*.test.ts`, `test/helpers/reach.ts`,
+`docs/dev/status-v0.13-worlds.md`, the tests and helpers I add (`test/world-*.test.ts`, `test/helpers/reach.ts`,
 `test/helpers/new-lessons.ts`, `test/fixtures/v012-*` of worlds and lessons). Additions only in `src/contract.ts`.
 Not mine: the runner, goals, pass, intro, speech, the meaning of the lesson files' `checkpoints` (lane s13-lessons);
 cues, sense, theme, audio and the lesson files' `layers` (lane s13-sound). Edits outside this that cannot be avoided
@@ -95,7 +95,7 @@ of flight between two of them. A touch sends the craft to the last one reached (
 `src/lesson/runner.ts:633-640`); a failed attempt starts the next one at the lesson's start (`runner.ts:558-562`, every
 lesson with a goal other than hold-height, approach-stop or around): the owner's "it throws me far back".
 
-### F4. How the simulator flies, draws and resets a lesson world (ShramkoGSFPV `C:/dev/gsfpv-v03`, read only)
+### F4. How the simulator flies, draws and resets a lesson world (ShramkoGSFPV `<simulator checkout>`, read only)
 
 - Collision: `apps/fly/src/sonic/lesson-world.ts:71-84` `buildLessonWorld`: `analyticCollision(bounds, voxelM,
   solidAt, sdf)` (74), a voxel solid when `solidAt` is true at its centre, culled by cells of 8^3 voxels
@@ -132,7 +132,7 @@ lesson with a goal other than hold-height, approach-stop or around): the owner's
   passes it on as `ReplayError('world')`).
 - Version 1 moved unchanged to `src/world/v1.ts` (the builders byte for byte; parameters `src/world/params.ts`, shared
   helpers `src/world/build.ts`). Its goldens in `test/world.test.ts` are untouched and pass.
-- Fixtures written by the v0.12 build itself (sources of 7d4b4b9 under `U:/Temp`, its own test host):
+- Fixtures written by the v0.12 build itself (sources of 7d4b4b9 under `<scratch>`, its own test host):
   `test/fixtures/v012-worlds.json` (the 15 v0.12 lessons with an analytic world: spec, id, digest, objects and field
   fingerprint), `test/fixtures/v012-session-walls-hall.zip` (a session it recorded on walls-hall) and
   `test/fixtures/v012-lesson-walls-hall.json` (that lesson file as v0.12 shipped it).
@@ -335,7 +335,7 @@ lesson with a goal other than hold-height, approach-stop or around): the owner's
 
 ## Review fixes
 
-The review (`docs/wip/s13-worlds-review.md`, at fef8869 and 030f7d0): one blocker, nine majors, seven minors. Each fix
+The review (`docs/dev/review-v0.13-worlds.md`, at fef8869 and 030f7d0): one blocker, nine majors, seven minors. Each fix
 below is one commit; the findings that are other lanes' or the lead's are answered under the merge notes.
 
 ### B1: the free sides of a tunnel's obstacles under their own names
@@ -636,7 +636,7 @@ Done:
 - Steps 1 to 8, one commit each: d4876e5 (1, facts), ea90804 (2, versions), 32c2163 (3, cavities), 75140b5 (4, world
   checkpoints), b56085a (5, micro scale), 8e28b36 (6, tunnels), 5b7c29c (7, rings at heights), 601c31c (8, checks),
   then f90f05c (the doc in English only) and fef8869 (rings-heights' last leg).
-- The review (`docs/wip/s13-worlds-review.md`, e099fa7 and 030f7d0), fixed one commit per finding or small group (what
+- The review (`docs/dev/review-v0.13-worlds.md`, e099fa7 and 030f7d0), fixed one commit per finding or small group (what
   and why: "Review fixes" above): 4af8278 (B1), 2336a0a (M9), 575c5c8 (M3), 18e3e93 (M1, M2, M8), 32a1671 (M5, M7,
   m1, m2, m3), 0e50e5a (M2: a corridor's track ends 2.5 m before its closing wall), 31f9d82 (M2: the goal checks hold
   before and after the merge), 516410c (m4, m5, m7, M4, M6), and this status.

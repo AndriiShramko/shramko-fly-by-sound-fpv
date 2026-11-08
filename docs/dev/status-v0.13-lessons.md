@@ -1,6 +1,6 @@
 # Lane s13-lessons: lessons a pilot understands the first time (v0.13, owner's message 41)
 
-Plan: ShramkoGSFPV `docs/wip/v13-plan.md` (items M41-n). Branch `s13-lessons`, worktree `C:/dev/sonic-s13-lessons`,
+Plan: ShramkoGSFPV `docs/wip/v13-plan.md` (items M41-n). Branch `s13-lessons`, worktree `<sound checkout>`,
 from `main` 7d4b4b9. No push. Every step one commit with this Status in it.
 
 ## Status
@@ -16,7 +16,7 @@ from `main` 7d4b4b9. No push. Every step one commit with this Status in it.
 - [x] 9. Never silence between attempts (M41-10, runner side)
 - [x] 10. Strings in four languages, speech lint, all checks
 
-Review fixes (`docs/wip/s13-lessons-review.md`, one commit per fix or small group):
+Review fixes (`docs/dev/review-v0.13-lessons.md`, one commit per fix or small group):
 
 - [x] R1 wrong way in a course: judged against the gate that counts next, not the track
 - [x] R2 shared cue events: payloads that take lane s13-sound's, the play length checked against the planner
@@ -40,7 +40,7 @@ Review fixes (`docs/wip/s13-lessons-review.md`, one commit per fix or small grou
 ## Final status (2026-11-08, after the review)
 
 Done (branch `s13-lessons`, not pushed). Steps 1 to 10: 7f83292, 318a8c5, 91c6dd5, eee530b, 4b276e8, 8a67aac, 3041e63,
-1ec02b4, 6798f1e, fc389e3, e0d1f0a. Review fixes (`docs/wip/s13-lessons-review.md`), one commit per fix or small group:
+1ec02b4, 6798f1e, fc389e3, e0d1f0a. Review fixes (`docs/dev/review-v0.13-lessons.md`), one commit per fix or small group:
 R1 1862a33, R2 cdb5733, R3 bcfa843, R6 and R7 bc35be4, R9 to R11 af563de, R12 c3541d6, R14 and R15 cb5abc4, R8 1b5d06c,
 R5 f107116; two defects found while measuring R4 against the simulator: a course's first attempt begins at its start
 df95a73, a key at the time a step was due re-derives the same 9336819; R4's measured list, R13's spec for the simulator
@@ -194,7 +194,7 @@ Schedule of the five lessons in v0.12 (each sound one play, right after the line
 
 (measured voice, answers 1 s after each question ends; `test/lesson-schedule.test.ts` and the model host reproduce it)
 
-What the host does, read only in `C:/dev/gsfpv-v03/apps/fly/src/sonic/`: it feeds `runner.demoFrame(t)` to the engine
+What the host does, read only in `<simulator checkout>/apps/fly/src/sonic/`: it feeds `runner.demoFrame(t)` to the engine
 while a scene is on (`lessons.ts` 291-296), carries cue actions to `engine.cue` (`lessons.ts` 316-317), keeps the
 lesson's layers on while frames run and silences them while the flight is paused (`bridge.ts` 262-314), and calls
 `runner.spoken(t)` with a `speech.end` marker whenever its whole queue runs empty (`bridge.ts` 377-418, 443-451). That is
@@ -524,7 +524,7 @@ walls line) go through the same queue, so the fix (wait for the report) also wai
 
 ### Review R4: what moving the gitlink to this package breaks in the simulator
 
-Measured, not copied from the review: the simulator's Fly by Sound tests (`C:/dev/gsfpv-v03` at 51d7939, read only:
+Measured, not copied from the review: the simulator's Fly by Sound tests (`<simulator checkout>` at 51d7939, read only:
 `tools/bench/test/sonic-*.test.ts`, `sonicrec-*.test.ts` but the headers test, `packages/prefs/test/sonic.test.ts`), every
 import of the package (its `src`, its test helpers, its locales) pointed at this worktree by a vitest config kept outside
 the simulator, cache on U:. On 9336819: 17 fail, 509 pass, 8 skipped (534), 48 s (the review: 16 fail at e0d1f0a, 531 pass
@@ -547,7 +547,7 @@ never on the simulator's main first. Until v13-host takes the 'go' action, N in 
 
 ## Needs from the simulator
 
-All in `C:/dev/gsfpv-v03/apps/fly/src/sonic/` (read only here; lane v13-host):
+All in `<simulator checkout>/apps/fly/src/sonic/` (read only here; lane v13-host):
 
 1. `lessons.ts` 183-190, `createLessonRunner(lesson, { ... })`: also pass `path: this.p.path()` (the view's lesson index
    and, step 6, the next lesson's title), `keys: { next: 'N', previous: 'B', repeat: 'Z' }` (the names the lines say) and

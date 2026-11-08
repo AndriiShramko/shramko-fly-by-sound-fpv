@@ -1,7 +1,7 @@
 # Review of lane s13-worlds (v0.13, owner's message 41)
 
 Independent review, 2026-11-08. Branch `s13-worlds` at fef8869, base `eee530b` (lane s13-lessons step 4). Read: the plan
-(ShramkoGSFPV `docs/wip/v13-plan.md`), the owner's message 41, `docs/wip/s13-worlds.md`, the diff `eee530b..fef8869`, and
+(ShramkoGSFPV `docs/wip/v13-plan.md`), the owner's message 41, `docs/dev/status-v0.13-worlds.md`, the diff `eee530b..fef8869`, and
 ShramkoGSFPV `apps/fly/src/sonic/` (read only). Evidence at the end.
 
 ## Verdict
@@ -289,7 +289,7 @@ ShramkoGSFPV `apps/fly/src/sonic/` (read only). Evidence at the end.
 
 ### m5 (minor): the lane doc overstates two things
 
-- **Where:** `docs/wip/s13-worlds.md:419-420` and `:169`.
+- **Where:** `docs/dev/status-v0.13-worlds.md:419-420` and `:169`.
 - **What:**
   - "the corridor's five keep the present respawn near the crash": along the track they are 15, 11, 33 and 30 m
     apart, and the last is 37 m from the end. The bends and mixed sections (33 and 37 m) have none inside. Respawn is

@@ -117,7 +117,7 @@ pnpm test
 pnpm proof:audio
 ```
 
-`pnpm test` runs Node tests only. `pnpm proof:audio` renders the engine offline in headless Chrome and measures it (direction, pulse rate, ceiling, fade-in, voice budget), each check also run on an engine broken on purpose that must fail, and then drives the demo with the keyboard alone; the numbers go to `evidence/`. The progress of the work is in [docs/dev/status-stage-1.md](docs/dev/status-stage-1.md), the independent review in [docs/dev/review-stage-1.md](docs/dev/review-stage-1.md), the changes in [CHANGELOG.md](CHANGELOG.md).
+`pnpm test` runs Node tests only. `pnpm proof:audio` renders the engine offline in headless Chrome and measures it (direction, pulse rate, ceiling, fade-in, voice budget), each check also run on an engine broken on purpose that must fail, and then drives the demo with the keyboard alone; the numbers go to `evidence/`. The progress of the work is in [docs/dev/status-stage-1.md](docs/dev/status-stage-1.md), the independent review in [docs/dev/review-stage-1.md](docs/dev/review-stage-1.md); for v0.13, the merge of its three lanes in [docs/dev/status-v0.13-merge.md](docs/dev/status-v0.13-merge.md), and each lane's notes and review beside it ([lessons](docs/dev/status-v0.13-lessons.md), [sound](docs/dev/status-v0.13-sound.md), [worlds](docs/dev/status-v0.13-worlds.md)); the changes in [CHANGELOG.md](CHANGELOG.md).
 
 ## For AI agents
 

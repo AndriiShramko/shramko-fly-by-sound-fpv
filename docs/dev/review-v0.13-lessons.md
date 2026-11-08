@@ -1,7 +1,7 @@
 # Review of lane s13-lessons (v0.13 wave 1, owner's message 41)
 
 Independent review, 2026-11-08, of branch `s13-lessons` at e0d1f0a against `main` 7d4b4b9 (66 files, +4987 -356).
-Read: the plan (ShramkoGSFPV `docs/wip/v13-plan.md`), the owner's message 41, `docs/wip/s13-lessons.md`, the whole diff
+Read: the plan (ShramkoGSFPV `docs/wip/v13-plan.md`), the owner's message 41, `docs/dev/status-v0.13-lessons.md`, the whole diff
 (the runner in full), the branches `s13-sound` 22e3b09 and `s13-worlds` 75140b5 where they meet this lane, and the
 simulator host (`apps/fly/src/sonic/*`, read only).
 

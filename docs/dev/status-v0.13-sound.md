@@ -38,7 +38,7 @@ Shared event kinds (plan, "Lanes"): the runner emits the cue events `wrong-way`,
   proof passing and every broken control failing; `pnpm listen` 7 of 7 checks valid and passing, fresh for inputs
   61b845a05094; the v0.12 recordings replay as recorded with an older build (`test/replay-v012.test.ts`)
 
-Fixes after the review (`docs/wip/s13-sound-review.md`), one commit per fix or small group:
+Fixes after the review (`docs/dev/review-v0.13-sound.md`), one commit per fix or small group:
 
 - [x] B1 objects by the craft's path: five rays along the velocity decide the collision course and give an object
   between two sector rays its time to contact (`src/sense/sampler.ts` `pathObjects`, `collisionCourse`); box faces and
@@ -88,7 +88,7 @@ Done, with commits (branch `s13-sound`, not pushed). The lane's steps:
 | 8 | M41-17 speech level, and the rig's passing evidence | e5bdaae |
 | 10 | the full checks, the v0.12 replay test, the proofs' evidence | 2a35675, 22e3b09 |
 
-The review's fixes (`docs/wip/s13-sound-review.md`, 2 blockers, 6 majors, 8 minors; none refuted):
+The review's fixes (`docs/dev/review-v0.13-sound.md`, 2 blockers, 6 majors, 8 minors; none refuted):
 
 | Finding | Fix | Commit |
 |---|---|---|

@@ -1,8 +1,8 @@
 # Review of lane s13-sound (v0.13 sound, the owner's message 41)
 
-Independent review, 2026-11-08, of branch `s13-sound` at 22e3b09 (worktree `C:/dev/sonic-s13-sound`) against `main`
+Independent review, 2026-11-08, of branch `s13-sound` at 22e3b09 (worktree `<sound checkout>`) against `main`
 7d4b4b9. Read against the plan (ShramkoGSFPV `docs/wip/v13-plan.md`, items M41-12 to M41-17 and the checks), the owner's
-words (message 41 of the brief) and the lane doc `docs/wip/s13-sound.md`. No code was changed by the review: every file
+words (message 41 of the brief) and the lane doc `docs/dev/status-v0.13-sound.md`. No code was changed by the review: every file
 broken on purpose was restored with `git checkout`, so was the evidence the runs rewrote, and this file is the review's
 only commit. Numbers marked "measured" come from runs listed under "Checks run".
 
@@ -88,7 +88,7 @@ ahead, or the velocity rays as a sector of their own) is the lane's call; state 
 ### B2 blocker: the shared events disagree with s13-lessons' runner
 
 Where: `src/contract.ts` (`CueEvent`), `src/cues/planner.ts` (`cue()`, `eventCue`), `src/audio/engine.ts` (`cue()`);
-s13-lessons at e0d1f0a (`src/lesson/runner.ts`, `src/lesson/sounds.ts`, its `docs/wip/s13-lessons.md` "Needs from other
+s13-lessons at e0d1f0a (`src/lesson/runner.ts`, `src/lesson/sounds.ts`, its `docs/dev/status-v0.13-lessons.md` "Needs from other
 lanes").
 
 What: the plan fixed the five kinds; each lane gave them its own fields.
@@ -307,7 +307,7 @@ Fix: the lead takes the lane's proposal: a verdict of its own for an older build
 
 ### m8 minor: build-machine folders in documents bound for the public repository
 
-Where: `docs/wip/s13-sound.md` (and `docs/design/virtual-listener.md`, which rides in from `vl-spec`).
+Where: `docs/dev/status-v0.13-sound.md` (and `docs/design/virtual-listener.md`, which rides in from `vl-spec`).
 
 What: no personal data was found, and English only outside `locales/` holds (the Cyrillic in `test/report.test.ts` is
 older than this lane). These documents do name the build machine's folders and install steps. `docs/wip/` does not

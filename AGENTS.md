@@ -24,6 +24,7 @@ Shramko Fly by Sound: the sound engine, lessons and session format that let blin
 | `evidence/` | Audio proofs, demo check, and `evidence/listen/` (the rig's checks, keyed by the hash of their inputs). |
 | `demo/` | Stand-alone demo and Sound Lab. |
 | `test/`, `test-audio/` | Node tests; browser proofs in headless Chrome. |
+| `docs/dev/` | Development notes and independent reviews: stage 1, and v0.13 (`status-v0.13-merge.md` and each lane's status and review). |
 
 ## Rules that matter
 

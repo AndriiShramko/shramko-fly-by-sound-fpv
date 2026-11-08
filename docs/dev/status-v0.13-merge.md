@@ -1,16 +1,16 @@
 # Merge s13-merge: v0.13 lanes s13-lessons and s13-sound into one branch
 
-Branch `s13-merge`, worktree `C:/dev/sonic-s13-merge`, cut from `main` 7d4b4b9 (what the live simulator ships). It
+Branch `s13-merge`, worktree `<sound checkout>`, cut from `main` 7d4b4b9 (what the live simulator ships). It
 merges exactly two finished lanes, each reviewed once with every finding fixed:
 
-- s13-lessons at 14e00f0 (lane doc `docs/wip/s13-lessons.md`: "Final status", "For the lead's merge", "Needs from other
+- s13-lessons at 14e00f0 (lane doc `docs/dev/status-v0.13-lessons.md`: "Final status", "For the lead's merge", "Needs from other
   lanes");
-- s13-sound at 3c73658 (lane doc `docs/wip/s13-sound.md`: "Final status", "Needs from other lanes"), which contains
+- s13-sound at 3c73658 (lane doc `docs/dev/status-v0.13-sound.md`: "Final status", "Needs from other lanes"), which contains
   `vl-spec` at 3044c7c (the virtual listener's design and rig).
 
 Lane s13-worlds was not merged in steps 1 to 6 (it was still fixing its review); it merges after them, in steps 7 to
-11, at 067278f (lane doc `docs/wip/s13-worlds.md`: "For the lead's merge", "Needs from other lanes", "Needs from the
-simulator", "Final status"; review `docs/wip/s13-worlds-review.md`), and the corridor's goal (s13-lessons' "For the
+11, at 067278f (lane doc `docs/dev/status-v0.13-worlds.md`: "For the lead's merge", "Needs from other lanes", "Needs from the
+simulator", "Final status"; review `docs/dev/review-v0.13-worlds.md`), and the corridor's goal (s13-lessons' "For the
 lead's merge" item 2, review R5) is set then. No push, no deploy.
 
 ## Status
@@ -247,22 +247,33 @@ Steps 7 to 11, lane s13-worlds:
   commit (the phase read through a function, as the other tests do); the typecheck is clean since.
 - [x] 9. Full checks on the final code with fresh evidence, all passing (the code of a393b74; the commits after it hold
   only evidence and documents, which no check is keyed by):
-  - part 1 (a393b74): `pnpm typecheck` clean (three projects, 10.6 s); `pnpm test` 44 files, 1042 tests (17.1 s);
-    `node tools/run-tool.mjs locale-lint` 0 problems (4 languages, 521 keys); `node tools/run-tool.mjs check-layout` 0
-    problems; `GPU_LOCK=C:/dev/.gpu-lock pnpm proof:audio` 3 files, 9 proofs, 48.5 s (headless Chrome 156.0.8078.80;
-    the five audio proofs pass and their broken controls fail, the demo's keyboard-only check passes; both evidence
-    files rewritten: their dates, and the demo flight's turn 60 degrees, was 61)
-  - part 2: `pnpm listen` with `SHRAMKO_LISTEN_PY` (`tools/listen/requirements.txt`'s environment), `SHRAMKO_LISTEN_CACHE`
-    on the data disk and `GPU_LOCK`: 24 of 24 renders, 8 of 8 checks valid and passing, 88.7 s, fresh for inputs
-    418eab75ba5d (125 files; step 5's run was 67e227c5d9ad, 112 files); a second run says the evidence is fresh,
-    nothing to run. Its numbers are step 5's but VL-0a's (1.8e-7, was 2.4e-7): VL-0b residual -131.1 dB (a stem left
-    out: -3.0 dB); VL-pitch largest step 3.7 cents per 10 ms (v0.12's stepped tone 118.7); VL-onset 2.475, 2.493,
-    2.475 s at 1, 3, 5 m/s (distance only at 5 m/s: 1.18 s); VL-6-speech soft 4.76, clear 4.66, race 4.64 LU (volume
-    1: 11.26, 7.91, 10.39); VL-6-peak -6.99, -3.74, -6.26 dBTP (volume 1: -0.52, -0.51, -0.49); VL-2-motor worst 15.0
-    dB (Air65, shape; Pavo20 30.3, Meteor65 20.1, Pavo Pico 22.3, 5-inch 24.2; the motor 11.0 to 12.1 LU under the
+  - part 1 (a393b74): `pnpm typecheck` clean (three projects, 10.6 s); `pnpm test` 44 files, 1042 tests (17.1 s); `node
+    tools/run-tool.mjs locale-lint` 0 problems (4 languages, 521 keys); `node tools/run-tool.mjs check-layout` 0
+    problems; `GPU_LOCK=C:/dev/.gpu-lock pnpm proof:audio` 3 files, 9 proofs, 48.5 s (headless Chrome 156.0.8078.80; the
+    five audio proofs pass and their broken controls fail, the demo's keyboard-only check passes; both evidence files
+    rewritten: their dates, and the demo flight's turn 60 degrees, was 61)
+  - part 2: `pnpm listen` with `SHRAMKO_LISTEN_PY` (`tools/listen/requirements.txt`'s environment),
+    `SHRAMKO_LISTEN_CACHE` on the data disk and `GPU_LOCK`: 24 of 24 renders, 8 of 8 checks valid and passing, 88.7 s,
+    fresh for inputs 418eab75ba5d (125 files; step 5's run was 67e227c5d9ad, 112 files); a second run says the evidence
+    is fresh, nothing to run. Its numbers are step 5's but VL-0a's (1.8e-7, was 2.4e-7): VL-0b residual -131.1 dB (a
+    stem left out: -3.0 dB); VL-pitch largest step 3.7 cents per 10 ms (v0.12's stepped tone 118.7); VL-onset 2.475,
+    2.493, 2.475 s at 1, 3, 5 m/s (distance only at 5 m/s: 1.18 s); VL-6-speech soft 4.76, clear 4.66, race 4.64 LU
+    (volume 1: 11.26, 7.91, 10.39); VL-6-peak -6.99, -3.74, -6.26 dBTP (volume 1: -0.52, -0.51, -0.49); VL-2-motor worst
+    15.0 dB (Air65, shape; Pavo20 30.3, Meteor65 20.1, Pavo Pico 22.3, 5-inch 24.2; the motor 11.0 to 12.1 LU under the
     cues, 14.05 for the 5-inch; raw motor at 60 %: shape 0.9 dB); VL-3-height in the band at most 1.1 % (2 to 70 Hz),
     out of it a 43 % buzz (the steady pair of before review M2: 44 %).
-- [ ] 10. The lanes' notes as public dev notes (`docs/dev/`); no build-machine folder in `docs/`, README, AGENTS, llms
+- [x] 10. The lanes' notes are public dev notes, as stage 1's are (`docs/dev/status-stage-1.md`, `review-stage-1.md`):
+  `git mv` of `docs/wip/s13-lessons.md` to `docs/dev/status-v0.13-lessons.md`, `s13-lessons-review.md` to
+  `review-v0.13-lessons.md`, the same for sound and worlds, and `s13-merge.md` to `status-v0.13-merge.md` (this doc);
+  `docs/wip/` is gone. Every reference to the seven files in the tree points at the new paths
+  (`docs/design/stage-1-spec.md`, the notes themselves, this doc; the code's four in part 1); the references to the
+  simulator's own `docs/wip/v12-plan.md` and `v13-plan.md` stay, they are in ShramkoGSFPV, and so do four sentences of
+  the sound lane's notes about whether `docs/wip/` would be published (review m8), which say what was true then.
+  README's development section and AGENTS.md's map link the v0.13 notes. The build machine's folders in `docs/`, README,
+  AGENTS.md and llms.txt are placeholders: `C:/dev/gsfpv-v03` is `<simulator checkout>` (four places), the lanes' and
+  the merge's worktrees `<sound checkout>` (four), `U:/Temp` `<scratch>` (one); a grep for a drive letter, `/Users/` or
+  `~/` there finds only `GPU_LOCK`'s default `C:/dev/.gpu-lock`, the default in the code (`tools/listen.ts`, the
+  proofs), which stays. `test/docs.test.ts` 8 of 8.
   - part 1, before step 9 (done): the four comments in `src/` and `test/` that named a lane's note now name its public
     path (`docs/dev/status-v0.13-lessons.md`, `status-v0.13-worlds.md`), so the code step 9 checks is the final code
     (the listener's evidence is keyed by every file of `src/`; the rest of step 10 touches only `docs/`, README,
@@ -329,20 +340,20 @@ Left open by this merge:
 
 What waits for the s13-worlds merge (by reference, not copied):
 
-- `docs/wip/s13-lessons.md`, "For the lead's merge" item 2 (review R5: the corridor's `goals[1]` and cp-6 with the
-  world's geometry, the tunnels' goals), and its "Left open" items 4 and 5 (the corridor passed at 240 m, the respawn
-  points' density until the world's checkpoint list).
-- `docs/wip/s13-sound.md`, "Needs from other lanes", the s13-worlds items (target heights on one 0.5 m grid; the
-  height and room layers of s13-worlds' new lessons) and the corridor line of review m4 for s13-worlds' own tunnel
+- `docs/dev/status-v0.13-lessons.md`, "For the lead's merge" item 2 (review R5: the corridor's `goals[1]` and cp-6 with
+  the world's geometry, the tunnels' goals), and its "Left open" items 4 and 5 (the corridor passed at 240 m, the
+  respawn points' density until the world's checkpoint list).
+- `docs/dev/status-v0.13-sound.md`, "Needs from other lanes", the s13-worlds items (target heights on one 0.5 m grid;
+  the height and room layers of s13-worlds' new lessons) and the corridor line of review m4 for s13-worlds' own tunnel
   lines (the corridor's own line is done here, item e).
 - After that merge: `pnpm proof:audio` and `pnpm listen` again (their inputs change), and left open 4 above.
 
 What each lane needs from the simulator (wave 2, lane v13-host, with the gitlink move; by reference):
 
-- s13-lessons: `docs/wip/s13-lessons.md`, "Needs from the simulator" items 1 to 7, and the simulator test updates of
-  its "Review R4" table.
-- s13-sound: `docs/wip/s13-sound.md`, "Needs from the simulator" (the motor on `motorInput` and who owns that change,
-  review M5; the five sound tests, M6; the settings `motorGainDb` and `heightTarget`; the panel's `plan` and the
+- s13-lessons: `docs/dev/status-v0.13-lessons.md`, "Needs from the simulator" items 1 to 7, and the simulator test
+  updates of its "Review R4" table.
+- s13-sound: `docs/dev/status-v0.13-sound.md`, "Needs from the simulator" (the motor on `motorInput` and who owns that
+  change, review M5; the five sound tests, M6; the settings `motorGainDb` and `heightTarget`; the panel's `plan` and the
   repeat-cue; every line through `engine.say()`; one run of the cost bench).
 - From this merge (item d, s13-sound's m7): the replay page (`apps/fly/src/sonic-session/replay-control.ts`,
   `summary`) picks its pass or fail line from `check.ok`; it should read `replayVerdict(check)` and say "recorded with
