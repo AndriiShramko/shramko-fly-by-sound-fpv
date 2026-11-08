@@ -1,7 +1,7 @@
 {
   "what": "Fly by Sound audio proofs: the real engine rendered offline in headless Chromium, each check also run on an engine broken on purpose (control), which must fail",
   "run": "pnpm proof:audio",
-  "date": "2026-11-08T20:09:34.255Z",
+  "date": "2026-11-08T21:43:09.300Z",
   "browser": "156.0.8078.80",
   "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36",
   "sampleRate": 48000,
@@ -269,6 +269,152 @@
           "hazardsKeptTheirVoices": true
         },
         "broken": "the budget raised to 16 moving voices"
+      },
+      "pass": true
+    },
+    {
+      "name": "target-note-gap",
+      "claim": "a target note from the target (through its HRTF panner, whose response begins about 5.6 ms late) and the height tone never sound together: in every note of a render, no sample has both above -60 dB of their own peaks",
+      "shipped": {
+        "ok": true,
+        "measured": {
+          "notes": 8,
+          "overlapMsPerNote": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "toneOffToNoteOnMs": [
+            24.25,
+            6,
+            6.083,
+            6.208,
+            6.354,
+            6.333,
+            6.292,
+            6.333
+          ],
+          "noteOffToToneOnMs": [
+            5,
+            2.813,
+            2.896,
+            2.875,
+            3.063,
+            3.042,
+            2.083,
+            2.104
+          ],
+          "thresholdDb": -60
+        }
+      },
+      "control": {
+        "ok": false,
+        "measured": {
+          "notes": 8,
+          "overlapMsPerNote": [
+            6.75,
+            9.188,
+            9.146,
+            9.125,
+            8.479,
+            8.5,
+            9.188,
+            9.229
+          ],
+          "toneOffToNoteOnMs": [
+            24.25,
+            6,
+            6.083,
+            6.208,
+            6.354,
+            6.333,
+            6.292,
+            6.333
+          ],
+          "noteOffToToneOnMs": [
+            0.021,
+            0.021,
+            0.021,
+            0.021,
+            0.021,
+            0.021,
+            0.021,
+            0.021
+          ],
+          "thresholdDb": -60
+        },
+        "broken": "the height tone back at the note's end, not after the HRTF's delay"
+      },
+      "pass": true
+    },
+    {
+      "name": "target-note-pan",
+      "claim": "a target note comes from its own direction from its first milliseconds: after the target moves from the left to the right, the next note's level difference between the ears over its first 20 ms is within 1 dB of the one over its held part",
+      "shipped": {
+        "ok": true,
+        "measured": {
+          "notes": [
+            {
+              "t0": 0.005,
+              "onsetLminusRdb": 4.99,
+              "heldLminusRdb": 4.54
+            },
+            {
+              "t0": 1.255,
+              "onsetLminusRdb": 5.07,
+              "heldLminusRdb": 4.55
+            },
+            {
+              "t0": 2.505,
+              "onsetLminusRdb": -5.07,
+              "heldLminusRdb": -4.55
+            },
+            {
+              "t0": 3.755,
+              "onsetLminusRdb": -5.07,
+              "heldLminusRdb": -4.56
+            }
+          ],
+          "worstOnsetFromHeldDb": 0.52,
+          "thresholdDb": 1,
+          "turnS": 1.9
+        }
+      },
+      "control": {
+        "ok": false,
+        "measured": {
+          "notes": [
+            {
+              "t0": 0.005,
+              "onsetLminusRdb": 1.62,
+              "heldLminusRdb": 4.54
+            },
+            {
+              "t0": 1.255,
+              "onsetLminusRdb": 5.07,
+              "heldLminusRdb": 4.55
+            },
+            {
+              "t0": 2.505,
+              "onsetLminusRdb": 1.99,
+              "heldLminusRdb": -4.55
+            },
+            {
+              "t0": 3.755,
+              "onsetLminusRdb": -5.07,
+              "heldLminusRdb": -4.56
+            }
+          ],
+          "worstOnsetFromHeldDb": 6.54,
+          "thresholdDb": 1,
+          "turnS": 1.9
+        },
+        "broken": "the panner moved at the note's start, not 60 ms before it"
       },
       "pass": true
     }

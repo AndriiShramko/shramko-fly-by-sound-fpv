@@ -111,7 +111,10 @@ the code, then fixed with a test and its control (section "Review fixes" below):
   and 7 Russian lines), the percent records for Polish and Russian; `pnpm listen:words` PASS (217fe5790a33), the
   English, Spanish, Polish and Russian lines that name a key all heard with it
 - [ ] F4 Review E5: VL-6 and VL-2 hear the floor, the ceiling and the chime with their breaths
-- [ ] F5 Review E6: the target note's two timings measured, with their controls
+- [x] F5 Review E6: the target note's two timings measured (two new audio proofs, `target-note-gap` and
+  `target-note-pan`, each with its control), and both found wrong on the shipped engine and fixed: the height tone now
+  comes back 12 ms after a placed note (`HRTF_TAIL_S`; 6.5 ms left 2.3 to 2.8 ms of overlap), and a constant input 140 dB
+  down keeps the target panner running between notes (Chrome had turned it only at the next note's onset)
 - [ ] F6 Review E7: rings-course in the numbers
 - [ ] F7 Every check again; final status of the review fixes
 
@@ -609,6 +612,37 @@ rykcie" (0.18). The design's VL-4 asks at most 2 % of a lesson's words: counted 
 (`lesson.<id>.*`), nine are over it by one to three words: English rings-line (3.4 %), Spanish rings-first (4.2 %),
 move-speed (3.1 %) and ears-game (2.7 %), Polish move-speed (3.3 %), shapes-cube (3.2 %) and ears-headphones (3.1 %),
 Russian shapes-square (2.9 %) and move-stop (2.1 %). The check's bound is per line; a lesson bound is open.
+
+### F5, the target note's two timings (review E6)
+
+Tried first, by measurement: two audio proofs (`test-audio/page/proofs.ts`, `pnpm proof:audio`), on a scene of the
+height layer alone, the craft 0.3 m under a ring 3 m away, a note every 1.25 s, the ring on the left, then (the craft
+turned) on the right, behind and ahead, two notes each; rendered twice with the same schedule, the height tone alone and
+the target notes alone (`EngineTestHooks.heightPart`), the direct sound only. Both claims failed on the engine as the
+lane left it:
+
+- The tone and the note together: in every note the height tone was back while the note's sound at the ears was still
+  above -60 dB of its peak, for 2.3 to 2.8 ms (6.5 ms of `HRTF_ONSET_S` covered Chrome's 5.6 ms delay, not the impulse
+  response ringing on after it). With the tone back at the note's end (the control) the overlap is 8.5 to 9.2 ms.
+- The note from its own direction: the first note after the ring moved from the left to the right began from the left,
+  its first 20 ms +1.31 dB left over right against -4.55 dB over its held part; with the 60 ms lead or without it alike
+  (+1.99 dB). Chrome stops processing a panner whose input has been silent past its tail, so the target panner took its
+  new direction only when the next note sounded, crossfading from the old one over the note's onset; the lead did not
+  act.
+
+Fixed in `src/audio/engine.ts`: the height tone comes back `HRTF_TAIL_S` 12 ms after a placed note (the longest tail
+measured, 9.2 ms, and a margin), and a constant input of 1e-7 (`TARGET_KEEP_ALIVE`, -140 dBFS) keeps the target panner
+running between the notes, so it turns during the lead. No other voice, note or timing changes; the panners made stay
+33 (`voice-budget`); the cost is a 5.5 ms longer gap after each placed note and one constant source.
+
+| Proof | Claim | Shipped | Control |
+|---|---|---|---|
+| `target-note-gap` | no sample with the tone and the note both above -60 dB of their peaks, in each of 8 notes | 0 ms in every note; the tone back 2.1 to 3.1 ms after the note's sound has fallen under -60 dB | `hrtfTailS` 0: 6.75 to 9.23 ms |
+| `target-note-pan` | the first 20 ms of a note within 1 dB of its held part in level difference, after the ring moves from the left to the right | 0.52 dB at worst | `targetPanLeadS` 0: 6.54 dB |
+
+By hand, each fix taken back once: the tail at 6.5 ms fails the gap (2.25 to 2.75 ms), no constant input fails the pan
+(+1.31 against -4.55 dB); restored. `pnpm proof:audio`'s audio file: 7 proofs, each passing with its control failing
+(`evidence/audio-proofs.json`).
 
 ## Needs from the simulator
 

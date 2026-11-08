@@ -371,6 +371,107 @@ async function voiceBudget(): Promise<ProofResult> {
     return { name: 'voice-budget', claim, shipped, control: { ...control, broken: 'the budget raised to 16 moving voices' }, pass: shipped.ok && !control.ok };
 }
 
+// ------------------------------------------------------------------ 6 and 7. the target note from the target (lane s13-elev, review E6)
+
+/**
+ * The target-note scene: the height layer alone, the craft 0.3 m under a ring 3 m to its left, so the target note (its
+ * pitch the ring's height) comes from the left through its own panner; at TARGET_TURN_S the craft faces the other way,
+ * and the notes after it come from the right; then from behind and from ahead (TARGET_YAWS: two notes each, a note
+ * every 1.25 s). Rendered twice with the same schedule: the height tone alone and the target notes alone
+ * (EngineTestHooks.heightPart), the direct sound only (no reverb return).
+ */
+const TARGET_RING: SonicObject = { id: 'g', shape: { kind: 'ring', diameter: 1, tube: 0.05 }, pos: [-3, 2.5, 0], quat: [1, 0, 0, 0], order: 0, solid: false, material: 'obstacle' };
+const TARGET_TURN_S = 1.9;
+/** the craft's heading from each time on: the ring on the left, on the right, behind, ahead */
+const TARGET_YAWS: readonly { readonly t: number; readonly yawDeg: number }[] = [
+    { t: 0, yawDeg: 0 },
+    { t: TARGET_TURN_S, yawDeg: 180 },
+    { t: TARGET_TURN_S + 2.5, yawDeg: 90 },
+    { t: TARGET_TURN_S + 5, yawDeg: -90 }
+];
+const TARGET_SCENE_S = 9.2;
+
+async function targetScene(hooks: EngineOptions['testHooks']): Promise<{ tone: Rendered; note: Rendered; notes: { readonly t0: number; readonly noteS: number }[] }> {
+    const notes: { t0: number; noteS: number }[] = [];
+    const yawAt = (t: number): number => [...TARGET_YAWS].reverse().find((y) => t >= y.t)?.yawDeg ?? 0;
+    const scene = (part: 'tone' | 'target'): Promise<Rendered> =>
+        render({
+            seconds: TARGET_SCENE_S,
+            engine: { testHooks: { ...hooks, heightPart: part, reverb: false, ...(part === 'target' ? { onTargetNote: (t0: number, _hz: number, noteS: number) => notes.push({ t0, noteS }) } : {}) } },
+            layers: { on: ['height'], heightBandM: null, hazardVoices: 0 },
+            frame: (t) => ({ sample: flight([0, 2.2, 0], [0, 0, 0], yawAt(t), t), world: null, target: TARGET_RING, floorY: 0 })
+        });
+    const tone = await scene('tone');
+    const note = await scene('target');
+    return { tone, note, notes };
+}
+
+/** The longest time within one note (from 50 ms before it to 60 ms after its release) that the tone and the note are both above -60 dB of their own peaks, ms; and where it is. */
+function noteToneOverlap(tone: Rendered, note: Rendered, notes: readonly { readonly t0: number; readonly noteS: number }[]): { maxMs: number; perNoteMs: number[]; startGapMs: number[]; endGapMs: number[] } {
+    const floor = 10 ** (-60 / 20);
+    const level = (r: Rendered, i: number): number => Math.max(Math.abs(r.left[i] as number), Math.abs(r.right[i] as number));
+    const peakOf = (r: Rendered): number => peak(r.left, r.right);
+    const tp = peakOf(tone);
+    const np = peakOf(note);
+    const perNoteMs: number[] = [];
+    const startGapMs: number[] = [];
+    const endGapMs: number[] = [];
+    for (const n of notes) {
+        const a = Math.max(0, Math.floor((n.t0 - 0.05) * SAMPLE_RATE));
+        const b = Math.min(tone.left.length, Math.floor((n.t0 + n.noteS + 0.015 + 0.06) * SAMPLE_RATE));
+        let both = 0;
+        let toneLastBefore = -1;
+        let noteFirst = -1;
+        let noteLast = -1;
+        let toneFirstAfter = -1;
+        for (let i = a; i < b; i++) {
+            const t = level(tone, i) / tp > floor;
+            const m = level(note, i) / np > floor;
+            if (t && m) both++;
+            if (m) {
+                if (noteFirst < 0) noteFirst = i;
+                noteLast = i;
+            }
+        }
+        for (let i = a; i < b; i++) if (level(tone, i) / tp > floor && (noteFirst < 0 || i < noteFirst)) toneLastBefore = i;
+        for (let i = b - 1; i >= a; i--) if (level(tone, i) / tp > floor && i > noteLast) toneFirstAfter = i;
+        perNoteMs.push(round((1000 * both) / SAMPLE_RATE, 3));
+        startGapMs.push(round((1000 * (noteFirst - toneLastBefore)) / SAMPLE_RATE, 3));
+        endGapMs.push(round((1000 * (toneFirstAfter - noteLast)) / SAMPLE_RATE, 3));
+    }
+    return { maxMs: Math.max(0, ...perNoteMs), perNoteMs, startGapMs, endGapMs };
+}
+
+async function targetNoteGap(): Promise<ProofResult> {
+    const claim = 'a target note from the target (through its HRTF panner, whose response begins about 5.6 ms late) and the height tone never sound together: in every note of a render, no sample has both above -60 dB of their own peaks';
+    const run = async (hooks: EngineOptions['testHooks']): Promise<Check> => {
+        const { tone, note, notes } = await targetScene(hooks);
+        const o = noteToneOverlap(tone, note, notes);
+        return { ok: notes.length >= 3 && o.maxMs === 0, measured: { notes: notes.length, overlapMsPerNote: o.perNoteMs, toneOffToNoteOnMs: o.startGapMs, noteOffToToneOnMs: o.endGapMs, thresholdDb: -60 } };
+    };
+    const shipped = await run({});
+    const control = await run({ hrtfTailS: 0 });
+    return { name: 'target-note-gap', claim, shipped, control: { ...control, broken: 'the height tone back at the note\'s end, not after the HRTF\'s delay' }, pass: shipped.ok && !control.ok };
+}
+
+async function targetNotePan(): Promise<ProofResult> {
+    const claim = 'a target note comes from its own direction from its first milliseconds: after the target moves from the left to the right, the next note\'s level difference between the ears over its first 20 ms is within 1 dB of the one over its held part';
+    const run = async (hooks: EngineOptions['testHooks']): Promise<Check> => {
+        const { note, notes } = await targetScene(hooks);
+        const ild = (from: number, to: number): number => db(rms(note.left, from, to)) - db(rms(note.right, from, to));
+        // the notes on the left and on the right (behind and ahead the two ears hear alike: no level difference to compare)
+        const rows = notes.filter((n) => n.t0 < (TARGET_YAWS[2] as { t: number }).t).map((n) => ({ t0: round(n.t0, 3), onsetLminusRdb: round(ild(n.t0 + 0.006, n.t0 + 0.026)), heldLminusRdb: round(ild(n.t0 + 0.1, n.t0 + n.noteS - 0.02)) }));
+        const after = rows.filter((r) => r.t0 > TARGET_TURN_S);
+        const before = rows.filter((r) => r.t0 < TARGET_TURN_S);
+        const worst = Math.max(...after.map((r) => Math.abs(r.onsetLminusRdb - r.heldLminusRdb)));
+        const sides = before.every((r) => r.heldLminusRdb > 3) && after.every((r) => r.heldLminusRdb < -3);
+        return { ok: before.length >= 1 && after.length >= 1 && sides && worst <= 1, measured: { notes: rows, worstOnsetFromHeldDb: round(worst), thresholdDb: 1, turnS: TARGET_TURN_S } };
+    };
+    const shipped = await run({});
+    const control = await run({ targetPanLeadS: 0 });
+    return { name: 'target-note-pan', claim, shipped, control: { ...control, broken: 'the panner moved at the note\'s start, not 60 ms before it' }, pass: shipped.ok && !control.ok };
+}
+
 function round(x: number, digits = 2): number {
     const f = 10 ** digits;
     return Math.round(x * f) / f;
@@ -384,7 +485,7 @@ export interface ProofReport {
     readonly proofs: readonly ProofResult[];
 }
 
-export const PROOFS: Readonly<Record<string, () => Promise<ProofResult>>> = { direction, 'pulse-rate': pulseRate, ceiling, 'fade-in': fadeIn, 'voice-budget': voiceBudget };
+export const PROOFS: Readonly<Record<string, () => Promise<ProofResult>>> = { direction, 'pulse-rate': pulseRate, ceiling, 'fade-in': fadeIn, 'voice-budget': voiceBudget, 'target-note-gap': targetNoteGap, 'target-note-pan': targetNotePan };
 
 export async function runProofs(names: readonly string[] = Object.keys(PROOFS)): Promise<ProofReport> {
     const proofs: ProofResult[] = [];

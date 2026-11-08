@@ -55,12 +55,19 @@ const TARGET_RELEASE_S = 0.015;
 const TARGET_OCTAVE = 0.12;
 /**
  * Lane s13-elev: a target note with a direction goes through the HRTF panner, whose impulse responses begin about
- * 5.6 ms late (Chrome's onset at sample 268 of 48 kHz, docs/design/virtual-listener.md 2.7): the height tone comes
- * back this much later after such a note, so the two still never sound together, s.
+ * 5.6 ms late (Chrome's onset at sample 268 of 48 kHz, docs/design/virtual-listener.md 2.7) and ring on after it: the
+ * note's sound at the ears stays above -60 dB of its peak until 8.5 to 9.2 ms after its end (measured from the left, the
+ * right, behind and ahead: the target-note-gap proof). The height tone comes back this much later after such a note, so
+ * the two never sound together, s. Review E6 of the lane: 6.5 ms, the delay alone, left 2.3 to 2.8 ms of overlap.
  */
-const HRTF_ONSET_S = 0.0065;
-/** Lane s13-elev: the target panner moves to the next note's direction this long before it, while it is silent, s. */
+const HRTF_TAIL_S = 0.012;
+/**
+ * Lane s13-elev: the target panner moves to the next note's direction this long before it, while it is silent, so
+ * Chrome's crossfade between two directions (2048 frames, 43 ms at 48 kHz) is over when the note begins, s.
+ */
 const TARGET_PAN_LEAD_S = 0.06;
+/** The constant input that keeps the target panner running between notes: 140 dB under full scale (review E6). */
+const TARGET_KEEP_ALIVE = 1e-7;
 /** The control's steady target tone (before review M2): 6 dB under the height tone. */
 const STEADY_TARGET_DB = -6;
 /** How fast the control's steady target tone moves to the next gate's note, s. */
@@ -147,6 +154,17 @@ export interface EngineTestHooks {
      * its dry twin is the HRTF's response; the return is the same with the panner and without it)
      */
     readonly reverb?: boolean;
+    /**
+     * The height layer keeps only the height tone ('tone') or only the target notes ('target'); the other part runs into a
+     * silent node, so the engine plays the same notes either way (lane s13-elev's target-gap proof, review E6)
+     */
+    readonly heightPart?: 'tone' | 'target';
+    /** how much later than a placed target note's end the height tone comes back, s (default HRTF_TAIL_S; the proof's control: 0) */
+    readonly hrtfTailS?: number;
+    /** how long before a placed target note its panner moves, s (default TARGET_PAN_LEAD_S; the proof's control: 0) */
+    readonly targetPanLeadS?: number;
+    /** false: no constant input keeps the target panner running between notes (the first engine of lane s13-elev) */
+    readonly targetKeepAlive?: boolean;
 }
 
 export interface EngineOptions {
@@ -589,6 +607,9 @@ export class FlyBySoundEngine implements SonicEngine {
         const motor = { input: motorIn, gate: motorGate, duck: motorDuck, duckTarget: 1 };
 
         // height: tone -> roughness -> swap (it gives way to each target note) -> out
+        // the proofs' parts of the height layer (EngineTestHooks.heightPart): the part left out runs into the silent node
+        const tonePart = this.hooks.heightPart === 'target' ? null : layers.height;
+        const notePart = this.hooks.heightPart === 'tone' ? null : layers.height;
         const heightRough = new Roughness(ctx, now);
         const heightSwap = ctx.createGain();
         heightSwap.gain.value = 1;
@@ -596,25 +617,35 @@ export class FlyBySoundEngine implements SonicEngine {
         heightOut.gain.value = 0;
         heightRough.output.connect(heightSwap);
         heightSwap.connect(heightOut);
-        heightOut.connect(layers.height.dry);
+        heightOut.connect(tonePart?.dry ?? mute);
         const heightSend = ctx.createGain();
         heightSend.gain.value = 0.1;
         heightOut.connect(heightSend);
-        heightSend.connect(layers.height.wet);
+        heightSend.connect(tonePart?.wet ?? mute);
         // the target notes: past the roughness, so a note is clean even when the craft is out of the band
         const targetOut = ctx.createGain();
-        targetOut.connect(layers.height.dry);
+        targetOut.connect(notePart?.dry ?? mute);
         const targetSend = ctx.createGain();
         targetSend.gain.value = 0.1;
         targetOut.connect(targetSend);
-        targetSend.connect(layers.height.wet);
+        targetSend.connect(notePart?.wet ?? mute);
         // lane s13-elev: the target notes that come from the target, through their own panner (as dry as the others)
         const targetPanned = ctx.createGain();
         const targetPanner = makePanner();
         if (targetPanner !== null) {
             targetPanned.connect(targetPanner);
-            targetPanner.connect(layers.height.dry);
-        } else targetPanned.connect(layers.height.dry);
+            targetPanner.connect(notePart?.dry ?? mute);
+            // review E6 of lane s13-elev: Chrome stops processing a panner whose input has been silent past its tail, and a
+            // stopped panner takes a new direction only when sound comes again, crossfading from the old one over the next
+            // note's onset; a constant input TARGET_KEEP_ALIVE keeps this one running between the notes, so it has turned
+            // before the next note begins (the target-note-pan proof)
+            if (this.hooks.targetKeepAlive !== false) {
+                const keep = ctx.createConstantSource();
+                keep.offset.value = TARGET_KEEP_ALIVE;
+                keep.connect(targetPanner);
+                keep.start();
+            }
+        } else targetPanned.connect(notePart?.dry ?? mute);
         targetPanned.connect(targetSend);
 
         const speedOut = ctx.createGain();
@@ -901,7 +932,7 @@ export class FlyBySoundEngine implements SonicEngine {
             const p = g.targetPanner;
             if (p !== null) {
                 const [x, y, z] = pannerDirection(target.dir as NonNullable<typeof target.dir>);
-                const at = Math.max(now, t0 - TARGET_PAN_LEAD_S);
+                const at = Math.max(now, t0 - (this.hooks.targetPanLeadS ?? TARGET_PAN_LEAD_S));
                 p.positionX.setValueAtTime(x, at);
                 p.positionY.setValueAtTime(y, at);
                 p.positionZ.setValueAtTime(z, at);
@@ -922,7 +953,7 @@ export class FlyBySoundEngine implements SonicEngine {
             osc.stop(end + 0.01);
         }
         const swap = g.heightSwap.gain;
-        const back = placed && g.targetPanner !== null ? end + HRTF_ONSET_S : end;
+        const back = placed && g.targetPanner !== null ? end + (this.hooks.hrtfTailS ?? HRTF_TAIL_S) : end;
         swap.setValueAtTime(1, Math.max(t0 - TARGET_SWAP_S, now));
         swap.linearRampToValueAtTime(0, t0);
         swap.setValueAtTime(0, back);
