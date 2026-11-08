@@ -14,7 +14,65 @@ from `main` 7d4b4b9. No push. Every step one commit with this Status in it.
 - [x] 7. Direction: wrong way, wrong side (M41-15)
 - [x] 8. Respawn near the crash (M41-20, runner side)
 - [x] 9. Never silence between attempts (M41-10, runner side)
-- [ ] 10. Strings in four languages, speech lint, all checks
+- [x] 10. Strings in four languages, speech lint, all checks
+
+## Final status (2026-11-08)
+
+Done, one commit per step (branch `s13-lessons`, not pushed): step 1 7f83292, 2 318a8c5, 3 91c6dd5, 4 eee530b, 5 4b276e8,
+6 8a67aac, 7 3041e63, 8 1ec02b4, 9 6798f1e, 10 fc389e3 and the last commit (this Status, the replay building the runner
+with the manifest's path and speech rate, the proofs' evidence files).
+
+Checks, all passing on the last commit: `pnpm typecheck`; `pnpm test` (27 files, 631 tests); `GPU_LOCK=C:/dev/.gpu-lock
+pnpm proof:audio` (headless Chrome 156, 3 files, 9 proofs: the engine proofs with their broken controls, the demo by
+keyboard alone, the demo's language marks; 49 s); `node tools/run-tool.mjs locale-lint` (0 problems, 4 languages, 452
+keys); `node tools/run-tool.mjs check-layout` (0 problems).
+
+Left open, with the reason:
+
+1. How it sounds and feels: the three plays, the praise, the stage and the wrong-way cues are placeholders in
+   `src/cues/planner.ts` until lane s13-sound designs them; no person has heard them. The schedule check proves timing
+   against five speech models, not that a person notices a sound.
+2. Real voice lengths were measured for English only (Windows voice Microsoft David; this machine has no Russian, Polish
+   or Spanish voice). The other languages are covered by the slow and very slow models (1.4 x and 2 x the estimate, with
+   0.3 s and 0.6 s to start each line), which pass.
+3. The owner's own flights were not recorded, so the hover-turn failure is reproduced by a model pilot (front/back
+   reversal) that gives exactly "15 attempts without a pass" under the v0.12 rule; other causes cannot be ruled out.
+4. The corridor is passed at 240 m flown, during its fourth section (goals are not in my ownership): its last section and
+   stage 4 are never flown in a passing attempt. For the lead or s13-worlds: end it at its last checkpoint, or 335 m.
+5. Respawn points are as dense as the checkpoints: 30 to 75 m apart in the corridor until lane s13-worlds gives the
+   world's checkpoint list (the runner already reads it).
+6. Recordings made with v0.12 (lesson version 1) do not verify: the rules changed. The replay says so ("lesson X is
+   version 2 here, the session was flown with 1", `test/replay.test.ts`).
+7. move-speed still goes silent at rest and between attempts (its layers: speed and voice): the planner's bed (s13-sound).
+8. Outside my ownership, changed because the API needed it and nobody else owns them: `src/replay/replay.ts` (the new key
+   actions, the runner built with the manifest's path and speech rate), `tools/locale-lint.ts` and
+   `tools/check-layout.ts` (a `main()` each), `demo/*` (B, Z, the 'go' action), and two placeholder blocks in
+   `src/cues/planner.ts` (the new cue kinds compile and sound like existing ones).
+
+## The API the host needs (summary)
+
+From `@shramko/sonic-fpv` (all in `src/lesson/*` unless said):
+
+- `createLessonRunner(lesson, options)`: new options `path: 'full' | 'fast'` (the pilot's path: lesson index, the next
+  lesson a pass names), `speechRate: number` (prefs.speechRate: how long a host that never reports speech is waited for),
+  `keys: { next, previous, repeat }` (the key names lines say; default N, B, Z).
+- `LessonSession` (beside begin, step, takeActions, spoken, answer, reset, demoFrame, target, progress):
+  `next(t)` N, `previous(t)` B, `repeat(t)` Z, `nextLesson(t)` and `previousLesson(t)` (the lesson menu), `view():
+  LessonView`, `statusLine(): SpeechLine` (I). Each returns the events like the other calls.
+- `RunnerAction`: new `{ kind: 'go', to: 'next' | 'previous' }` (open `lessonAfter(id, path)` / `lessonBefore(id, path)`, the
+  start screen when null); `scene` actions carry `play: { index, of }`.
+- `LessonView`: lessonId, title, lessonIndex, lessonCount, path, step, steps, stepKind ('task' | 'fly' | 'intro' | 'sound'
+  | 'scene' | 'trial' | 'round'), goal, goals, attempt, counted, required, failsInARow, offered, touches, maxTouches, phase,
+  passed, skipped, listening, playing ({ cue, index, of } or null). `statusLine(view, title)` is the pure form.
+- Contract (`src/contract.ts`, additions only): `CueEvent` kinds `repeat-cue` { cue, dir, index, of, durS }, `praise`,
+  `stage` { index }, `wrong-way` { dir }, `wrong-side` { dir } (the host passes them to `engine.cue` as any cue action);
+  `LessonProgress.skipped?`; `IntroLine` (`intro` items may carry `cues`); `Checkpoint.stage?`; `FORMATS.lesson` is
+  'shramko-sonic-lesson/2' (format 1 files are migrated on load); `PassRule` fields keep their names with format 2 meaning.
+- Events: the runner writes a lesson event `leave` when the pilot leaves for another lesson.
+- Replay: `REPLAY_KEY_ACTIONS` adds `previous`, `repeat`, `next-lesson`, `previous-lesson`; the host records each key event
+  with its action before the runner's call, as it does for N and R.
+- Timing contract: the runner now waits for `spoken(t)` (the host's whole speech queue empty) before a sound or the next
+  step; the simulator's bridge already reports it.
 
 ## Ownership
 

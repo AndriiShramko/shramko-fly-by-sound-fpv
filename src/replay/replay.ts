@@ -169,6 +169,9 @@ export class Replayer {
                       locale: s.locale,
                       floorY: s.floorY,
                       sessionStartMs: Date.parse(s.manifest.clock.startIso),
+                      // as the host made it: the pilot's path (the next lesson a pass names) and speech rate (how long a line may take)
+                      ...(s.manifest.lesson === null ? {} : { path: s.manifest.lesson.path }),
+                      speechRate: s.prefs.speechRate,
                       ...(s.objects === undefined ? {} : { objects: s.objects }),
                       ...(s.start === undefined ? {} : { start: s.start }),
                       ...(this.input.progress === undefined ? {} : { progress: this.input.progress }),

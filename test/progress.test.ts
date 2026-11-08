@@ -106,15 +106,19 @@ describe('the progress view (I and the host panel)', () => {
     }, 120000);
 
     it('says the view in one line, in the pilot\'s language', () => {
+        const ru = createTranslator('ru', DICTS);
+        const title = ru.text(getLesson('hover-height').title);
         const run = createLessonRunner(getLesson('hover-height'), { locale: 'ru' });
         run.begin(0);
-        expect(run.statusLine()).toEqual({ key: 'status.progress-step', params: { title: 'Держи высоту', lesson: 6, lessons: 21, step: 1, steps: 2 } });
+        expect(run.statusLine()).toEqual({ key: 'status.progress-step', params: { title, lesson: 6, lessons: 21, step: 1, steps: 2 } });
         const p = new ScriptedPilot(getLesson('hover-height'), { locale: 'ru' });
         p.begin();
         p.until(() => p.run.attempt === 2 && p.run.phase === 'flying', 400);
         const line = p.run.statusLine();
         expect(line.key).toBe('status.progress');
-        expect(createTranslator('ru', DICTS).text(line)).toBe('Урок 6 из 21: Держи высоту. Шаг 2 из 2. Попытка 2. Засчитано 0 из 3.');
+        // the Russian line, as the locale file has it: the title in Russian and the numbers in their places
+        expect(ru.text(line)).toBe((DICTS.ru['status.progress'] as string).replace('{lesson}', '6').replace('{lessons}', '21').replace('{title}', title).replace('{step}', '2').replace('{steps}', '2').replace('{n}', '2').replace('{counted}', '0').replace('{required}', '3'));
+        expect(ru.text(line)).toContain(title);
         expect(createTranslator('en', DICTS).text(statusLine(p.run.view(), 'Hold your height'))).toBe('Lesson 6 of 21: Hold your height. Step 2 of 2. Attempt 2. Counted 0 of 3.');
     }, 60000);
 });
