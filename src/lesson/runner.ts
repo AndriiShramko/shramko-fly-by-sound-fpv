@@ -31,7 +31,7 @@
 //
 // Sounds and speech (M41-5, M41-9). A spoken step is over when the host reports its speech queue empty
 // (spoken(t)), not when the runner thinks the lines should have been said: a voice slower than the
-// runner's estimate made v0.12 play the sounds under the speech (docs/wip/s13-lessons.md F2). A sound a
+// runner's estimate made v0.12 play the sounds under the speech (docs/dev/status-v0.13-lessons.md F2). A sound a
 // step names (in an intro line's `cues`, the glossary, the narrated scenes, the headphone trials, the
 // game's rounds) waits for that silence and then plays REPEAT_PLAYS times, REPEAT_GAP_S apart, as
 // 'repeat-cue' events (a scene: the scene shown that many times). A host that never reports the end of
@@ -42,7 +42,7 @@
 // goals in order (goals.ts). An attempt counts when every goal is met with at most `pass.maxTouches`
 // touches; `pass.required` counted attempts in total pass the lesson, and failures in between do not
 // reset the count (lesson format 2, v0.13: the v0.12 rule of blocks in a row let a pilot fail for
-// ever, docs/wip/s13-lessons.md F1). After every attempt that does not pass the lesson the pilot hears
+// ever, docs/dev/status-v0.13-lessons.md F1). After every attempt that does not pass the lesson the pilot hears
 // "Attempt k. Counted m of r."; after `pass.attempts` failures in a row he hears why and, in a blocking
 // lesson, that N goes on to the next lesson; a lesson that does not block (the game, the shapes, free
 // flight) moves on by itself then, so it never holds anyone back.

@@ -3,7 +3,7 @@
 // past an obstacle, the corrections of a narrow tunnel) is counted before the end: "lesson passed" in the
 // middle of the tunnel, its last obstacles never flown. Lane s13-lessons' goal 'track-end' (its review fix
 // R5) is met when the last point of the world's track is passed; at the merge the corridor and the six
-// tunnels take it (docs/wip/s13-worlds.md, "For the lead's merge"). Held here:
+// tunnels take it (docs/dev/status-v0.13-worlds.md, "For the lead's merge"). Held here:
 //   - the world side, always: every one of these tracks ends past its last obstacle and its last corner;
 //   - the control, always: goals 'fly-distance' of the track's length less 4 m count a pilot whose path is
 //     10 % longer than the track before the last obstacle or corner;

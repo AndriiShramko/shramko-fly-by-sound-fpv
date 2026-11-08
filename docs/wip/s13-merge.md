@@ -247,6 +247,10 @@ Steps 7 to 11, lane s13-worlds:
   commit (the phase read through a function, as the other tests do); the typecheck is clean since.
 - [ ] 9. Full checks on the final code with fresh evidence
 - [ ] 10. The lanes' notes as public dev notes (`docs/dev/`); no build-machine folder in `docs/`, README, AGENTS, llms
+  - part 1, before step 9 (done): the four comments in `src/` and `test/` that named a lane's note now name its public
+    path (`docs/dev/status-v0.13-lessons.md`, `status-v0.13-worlds.md`), so the code step 9 checks is the final code
+    (the listener's evidence is keyed by every file of `src/`; the rest of step 10 touches only `docs/`, README,
+    AGENTS.md and llms.txt, which no check's evidence is keyed by).
 - [ ] 11. Final status of the whole merge
 
 ## Final status (2026-11-08)

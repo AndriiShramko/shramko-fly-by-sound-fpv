@@ -1,7 +1,7 @@
 // M41-10, the runner's part: never silence in a flying lesson, so that silence always means something is
 // wrong. Between attempts the runner keeps giving the planner the next attempt's first target, so the
 // target layer goes on sounding while the attempt's lines are said and the pause runs. What else must keep
-// sounding (a quiet bed, the motor) is the planner's and the host's: docs/wip/s13-lessons.md, needs from
+// sounding (a quiet bed, the motor) is the planner's and the host's: docs/dev/status-v0.13-lessons.md, needs from
 // other lanes. Since lane s13-sound (M41-10, the planner's part) every flying lesson has the height tone and
 // the room bed on, so with the lessons' own layers the pause sounds whatever the runner does: the runner's
 // part is measured with v0.12's layers too (the lesson's layers without 'height' and 'room'), and the control
