@@ -1,7 +1,7 @@
 {
   "what": "Keyboard-only headless check of the stand-alone demo and the Sound Lab (page.keyboard only; the mouse and the touch screen throw)",
   "run": "pnpm proof:audio",
-  "date": "2026-11-08T18:30:30.686Z",
+  "date": "2026-11-08T18:40:07.348Z",
   "browser": "156.0.8078.80",
   "landmarks": {
     "banner": 1,
@@ -15,7 +15,7 @@
   "tabStopsAfterStart": 14,
   "tabStopsInFlight": 20,
   "flight": {
-    "climbedM": 1.27,
+    "climbedM": 1.25,
     "forwardM": 0.63,
     "turnedDeg": 61
   },

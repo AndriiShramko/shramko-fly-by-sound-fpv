@@ -53,11 +53,15 @@ and below change with it. In the same lane: "wrong way" between gates, which the
   rings-heights, rings-course and shapes-series; the truth bot and the new imperfect pilot (`test/helpers/imperfect.ts`)
   fly all eight gate lessons to their pass and are never told. Control: the 8 m rule of v0.13 (`testHooks.lineUp
   'fixed'`) never tells the turned pilot; `lineUpM` broken to 8 m fails 6 tests (`test/direction.test.ts`, 19 new)
-- [ ] E1-6 Measure: Node tests, the listener check of the placement (Chrome's HRTF, headless), the localization models
-  where runnable; all repository checks, the proofs and `pnpm listen`. In progress: the Node tests are in (E1-2 to
-  E1-5); the rig has the check VL-1-elevation (scenario `free-chime`, four renders: the direction on and off, each with
-  its dry twin; `tools/listen/measure.py` `check_elevation`), not run yet
-- [ ] E1-7 This lane's E1 status final
+- [x] E1-6 Measure (details below): Node tests (`test/elevation.test.ts` 36: the elevation sign per side and per target,
+  the setting off gives v0.13's plans exactly in seven flights, every note and rhythm unchanged; and the tests of E1-3
+  to E1-5); the listener's new check VL-1-elevation (the chime above, ahead and below through Chrome's HRTF in headless
+  Chrome: the HRTF's response over 4 to 16 kHz differs by 3.57, 3.05 and 4.94 dB rms, the notes within 0.15 cents;
+  control, the direction off: 0.57 dB); the localization model `baumgartner2014` on the design probe's 26 heads
+  (reported, not gated); `pnpm typecheck` clean, `pnpm test` 48 files 1120 tests, locale lint 0 problems (526 keys),
+  layout check 0 problems, `pnpm proof:audio` 3 files 9 proofs, `pnpm listen` 9 of 9 checks valid and passing
+  (inputs a884a229c68d)
+- [x] E1-7 This lane's E1 status final (below)
 - [ ] E2-1 (the next agent's; its task names it)
 - [ ] E2-2 (the next agent's)
 - [ ] E2-3 (the next agent's)
@@ -152,6 +156,84 @@ one exception).
   3 m) passes rings-first, rings-line, rings-small and rings-heights in 3 attempts, the shapes in 2, rings-course in 1,
   with no touch.
 
+### E1-6, the measurements
+
+The listener's check VL-1-elevation (`pnpm listen`, `evidence/listen/VL-1-elevation.json`): the open-way chime of a way
+above, then of a way below, played as tunnel-gaps' intro.3 plays it (repeat-cue from up, from down; soft theme), the
+safety layer and its direct sound alone, rendered by the real engine in headless Chrome 156 at 48 kHz; with the
+direction on and off, and each again with no panner (its dry twin, the same notes and breath). The HRTF's own response
+per ear and third octave is the render over its twin, so the cue's own spectrum and pitch drop out.
+
+| Measure | Direction on | Control: direction off |
+|---|---|---|
+| where the plan puts the chime above, below | 30 and -30 degrees (ahead) | 0 and 0 |
+| HRTF response, rms difference over 4 to 16 kHz and both ears: above against ahead | 3.57 dB | |
+| below against ahead | 3.05 dB | |
+| above against below | 4.94 dB | 0.57 dB (both ahead; the rule is 1 dB) |
+| 16 kHz third octave against the chime's strongest band (dry) | -11.2 dB above, -11.5 below | -58.4, -57.6 |
+| the chime's energy from 4 to 16 kHz (dry, one second of a play) | -8.6 dB of the total | -23.5 (above), -37.7 (below) |
+| pitch of the notes, on against off | the same within 0.15 cents (1170 and 1570 Hz above, 660 and 520 Hz below) | |
+
+The response in dB (left ear; 4, 5, 6.3, 8, 10, 12.7, 16 kHz): above -1.9, -2.4, -3.0, -9.4, -12.3, -7.7, -5.8; ahead
+-1.0, -1.9, -9.9, -12.3, -11.1, -2.4, -3.5; below -2.3, -6.3, -12.4, -6.7, -10.0, -0.4, -5.2: the notch Chrome's
+composite HRTF puts at about 6 to 8 kHz ahead moves up to 10 kHz above and down to 6 kHz below. The first run, with the
+reverb return in the renders and one ear's reference for both, gave 3.58, 2.87 and 4.94 dB but 1.14 dB for the
+control (its bands over 8 kHz hold almost nothing of the chime without its breath), so the check takes the direct
+sound alone (`EngineTestHooks.reverb`, test-only) and each ear over its own twin.
+
+The other eight checks of the rig hold on the new engine (the target note panned and with its breath, the floor and
+ceiling with theirs): the voice 4.67, 4.60, 4.80 LU over the mix (v0.13: 4.76, 4.66, 4.64); true peak -6.99, -3.74,
+-6.26 dBTP (unchanged); every cue at least 15.0 dB over the motor (unchanged; the height layer's own bands stay 400
+and 500 Hz, 40 dB over it); the height layer in its band modulated at most 1.0 % (1.1 %), its buzz out of the band
+42.8 %; the height glide 3.7 cents a hop at most; two renders within 1.8e-7; stems summing to -131.6 dB.
+
+The localization models of the design (probe F) are not runnable from this repository or from `vl-spec`: neither holds
+the adapters (design step 11 is not built). They were run, as information, from the probe's own setup on the build
+machine (`<tools>` Octave 9.4 and AMT 1.6.0, the probe's 26 heads: 20 ARI, 5 IRCAM LISTEN, KEMAR), outside the
+repository: `baumgartner2014`, Chrome's captured HRTF as the target, each head's own DTFs as its template, the chime's
+own dry signal (one second of a play, from the rig's renders) as the stimulus. Up/down error: the share of predicted
+responses on the other side of the horizontal plane than the way. Median of the 26 heads (interquartile range):
+
+| Chime | With the direction (Chrome renders it at) | Without (ahead) |
+|---|---|---|
+| way above | 11.5 % (8.2 to 18.0) at 30 degrees; 20.8 % at 15 | 17.4 % (12.5 to 25.5) |
+| way below | 58.9 % (46.7 to 63.0) at -30; 48.3 % at -15 | 66.6 % (61.2 to 74.4) |
+| mean of the two | 35.2 % (34.6 % at 15) | 42.0 % |
+| broadband noise for reference, at 30 and -30 | 7.5 % and 68.2 % | |
+
+So, by the model, the direction helps a little (7 points on average) and above more than below: with Chrome's generic
+HRTF a source below the horizon is still heard above by most heads, noise included. Pitch stays the carrier, as the
+design says; the direction is a second cue for the ears and headphones that can use it. `bayesian_listener` was not
+run: for a cue's own spectrum it needs the stimulus-weighted target the design describes for VL-1 (not built), and its
+probe run took about 65 s a head for broadband DTFs alone.
+
+## Final status of E1 (2026-11-08)
+
+Done, with commits (branch `s13-elev`, not pushed):
+
+| Step | What | Commits |
+|---|---|---|
+| lane doc | the request and the steps | a61624f |
+| E1-1 | the audit; v0.13's placement hashed before any change | a9de49c |
+| E1-2 | the chime, the target note, the floor and the ceiling from above or below, with a breath of air | e09fb02 |
+| E1-3 | `SonicPrefs.heightDirection`, its name and description in four languages | d3241df |
+| E1-4 | the words, tunnel-gaps' plays above and below, walls-pillar's line | 8d6cff0 |
+| E1-5 | the wrong way between gates | 80289e2 |
+| E1-6 | the listener's check, the proofs, `pnpm listen`, the model (this doc) | 41e3677, 6880fda, ea5fddc, c605068, this commit |
+
+Left open, with reasons:
+
+- How it sounds to a person: whether a pilot hears the chime above or below by its direction, likes the target note
+  coming from the target (it no longer sounds where the height tone does), and finds the breath of air (-10 dB against
+  a unit fundamental) pleasant; the first testers, with the setting to turn it off.
+- In flight the chime comes from the way's real direction, 8 to 20 degrees up or down in tunnel-gaps (Chrome's 15
+  degree slices); left and right are placed at an exaggerated 60 degrees. An exaggerated elevation (say at least 30
+  degrees, as the named plays have) is a choice for the owner once testers have heard both.
+- The model's numbers are predictions for 26 sighted listeners' ears with a generic HRTF; blind pilots and their
+  headphones may differ (design section 13). The adapters of VL-1 (the panel in the rig) are the design's step 11.
+- The corridor's intro.3 says the four sides in one line now (16 s with the local voice).
+- E2-1 to E2-4: the next agent's.
+
 ## Needs from the simulator
 
 - The panel (M41-25, wave 2 W14): `engine.plan.freeWay` has two new fields, `dir` (where the way's middle is, listener
@@ -163,3 +245,8 @@ one exception).
   from above and below") and explained by `menu.setting.height-direction-what` when the pilot lands on it (as
   `menu.setting.calm-what` explains calm mode), saved through `setup.update()` with the whole document. Nothing else:
   the engine reads it from the prefs it is given.
+- When the gitlink moves past 16c01a1: tunnel-gaps is version 2 and walls-pillar version 3 here, so the simulator's tests
+  that hold a lesson's version read it from the package (`getLesson(id).version`, as wave 2's W20 already asks for
+  walls-hall), and a recording made at 16c01a1 in those two lessons reads "recorded with an older build" on the replay
+  page (W10). The engine makes one more HRTF panner (33) and the free way two more rays a frame while the chime sounds:
+  worth noting in the cost bench run of W16, nothing to change.
