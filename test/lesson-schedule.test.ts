@@ -10,7 +10,8 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import type { LessonDef } from '../src/contract';
 import { CuePlanner } from '../src/cues';
-import { checkSchedule, createLessonRunner, estimateSpeech, getLesson, lessonSchedule, measuredSpeech, NAMED_SOUND_PLAYS, REPEAT_PLAYS, SHIPPED_LESSON_IDS, speechOverlapMs, validateLesson, type DemoScene, type Question, type Schedule, type ScheduleOptions } from '../src/lesson';
+import { createLessonRunner, getLesson, REPEAT_PLAYS, SHIPPED_LESSON_IDS, validateLesson, type DemoScene, type Question } from '../src/lesson';
+import { checkSchedule, estimateSpeech, lessonSchedule, measuredSpeech, NAMED_SOUND_PLAYS, speechOverlapMs, type Schedule, type ScheduleOptions } from '../src/lesson/schedule';
 import { getBuiltinTheme } from '../src/theme';
 
 const david = (JSON.parse(readFileSync(new URL('./fixtures/tts-en-david.json', import.meta.url), 'utf8')) as { seconds: Record<string, number> }).seconds;

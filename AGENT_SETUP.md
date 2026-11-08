@@ -13,7 +13,7 @@ Use this when a person asks their AI agent to "let me try flying a drone by soun
    pnpm demo          # serves http://127.0.0.1:5173/
    ```
 
-3. Tell the user: wired headphones, volume low at first, press **Start the sound**, then the keyboard (W S A D, arrows, N next, R reset, digits to answer, P pause). Everything works without a mouse or screen.
+3. Tell the user: wired headphones, volume low at first, press **Start the sound**, then the keyboard (W S A D, arrows, N next step, B previous step, Z the step again, R reset, digits to answer, P pause). Everything works without a mouse or screen.
 
 ## B. Analyse a recorded flight
 

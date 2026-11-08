@@ -1,3 +1,4 @@
+// Internal (review R15): the package's own checks import this file by path; it is not exported from src/lesson.
 // What a lesson sounds like in time, worked out without a browser: a model host runs the lesson runner
 // the way the simulator does (one speech queue that says lines one after the other, `spoken(t)` when it
 // runs empty, cues and module-0 scenes played when the runner hands them out, questions answered by a

@@ -31,8 +31,8 @@ Review fixes (`docs/wip/s13-lessons-review.md`, one commit per fix or small grou
 - [x] R11 an intro cue from the side its line names
 - [x] R12 wording of the new lines in ru, pl, en
 - [ ] R13 v0.12 recordings played back
-- [ ] R14 public docs
-- [ ] R15 test machinery marked internal
+- [x] R14 public docs
+- [x] R15 test machinery marked internal
 - [ ] Checks after the fixes, final status
 
 ## Final status (2026-11-08)
@@ -412,6 +412,16 @@ walls line) go through the same queue, so the fix (wait for the report) also wai
   around it.") instead of "Only 0 degrees of the full circle" (test: walls-pillar, an idle pilot, `test/pass-rule.test.ts`).
 - Written by this lane as a native speaker of Russian and Polish would say them; no person has read them aloud yet.
   Locale lint and parity pass (four languages).
+
+### Review R14 and R15
+
+- R14: `README.md` and `AGENT_SETUP.md` give the demo's keys with B and Z; `CHANGELOG.md` (Unreleased) has the entry for
+  lesson format 2 (a breaking file format, format 1 migrated on load) and the new API; `docs/design/stage-1-spec.md`
+  keeps its table of the stage-1 rules and says what v0.13 replaced them with.
+- R15: `src/lesson/schedule.ts` (the model host and its checks) is no longer exported from `src/lesson` (the tests import
+  it by path); `RunnerOptions.testHooks`, `RunnerTestHooks` and `V012PassRule` are marked `@internal` (the package's
+  own negative controls; a host never sets them). Moving the v0.12 rule out of the runner would need a pass-rule hook,
+  which is the same machinery under another name.
 
 ## Needs from the simulator
 

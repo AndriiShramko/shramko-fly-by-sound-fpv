@@ -222,11 +222,14 @@ export interface RunnerOptions {
      * and its pass says "Back to <that lesson>" instead of the next lesson on the path. Null or absent: none.
      */
     readonly returnTo?: string | null;
-    /** for the negative controls of the tests only: each one brings back a rule of v0.12 that a check must catch */
+    /**
+     * @internal For the package's own negative controls only (review R15): each brings back a rule of v0.12 that a
+     * check must catch. Not part of the host API; a host never sets it.
+     */
     readonly testHooks?: RunnerTestHooks;
 }
 
-/** For the tests' negative controls only. */
+/** @internal For the package's own negative controls only (RunnerOptions.testHooks); not part of the host API. */
 export interface RunnerTestHooks {
     /**
      * The block rule of v0.12 with the lesson's v0.12 numbers: `required` successes in a block of `attempts`, `blocks`
@@ -240,7 +243,7 @@ export interface RunnerTestHooks {
     readonly speechWait?: 'v012';
 }
 
-/** A lesson's pass rule as v0.12 shipped it (format 1). */
+/** @internal A lesson's pass rule as v0.12 shipped it (format 1), for RunnerTestHooks.passRule only. */
 export interface V012PassRule {
     readonly attempts: number;
     readonly required: number;

@@ -57,7 +57,7 @@ pnpm demo
 
 `pnpm demo` builds the stand-alone page and serves it at http://127.0.0.1:5173/. It holds two things:
 
-- **The flight demo**: the first lessons (hearing the sounds, hover, move and stop) flown with the keyboard (W S A D, arrows, N next, R reset, digits to answer, P pause) in a simple point-mass world. Press **Start the sound** first, with the volume low.
+- **The flight demo**: the first lessons (hearing the sounds, hover, move and stop) flown with the keyboard (W S A D, arrows, N next step, B previous step, Z the step again, R reset, digits to answer, P pause) in a simple point-mass world. Press **Start the sound** first, with the volume low.
 - **The Sound Lab**: a slider for every layer's gain and pitch, every number of the theme, a preview of each of the 20 cues, and an export of the theme as a JSON file that goes into [themes/](themes) or to the author.
 
 Everything works with the keyboard alone, and a headless check proves it (`pnpm proof:audio`). `pnpm demo:build` writes the page to `demo/dist/`, a folder of three files that opens by double click or from any web server. Use wired headphones: Bluetooth adds 180-250 ms of delay.
