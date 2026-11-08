@@ -179,10 +179,14 @@ export const GATE_MELODY_BASE = 5;
 /** How long a preview plays, s. */
 export const PREVIEW_S = 3;
 /**
- * How long one play of a 'repeat-cue' lasts at most, s (M41-5: a step plays the sound it names three
- * times, about 1 s apart: emit three 'repeat-cue' events with onsets at least REPEAT_CUE_S + 0.1 s apart).
+ * How long one play of a 'repeat-cue' lasts when the event gives no `durS`, s (M41-5). The runner gives every
+ * play its length (lane s13-lessons, src/lesson/sounds.ts: 2.5 s for a continuous cue, 1.2 s for a one-off one)
+ * and sends the next play about 1 s after it; the planner sounds a continuous cue for exactly that long and a
+ * one-off cue as its own notes, cut at that length.
  */
-export const REPEAT_CUE_S = 0.9;
+export const REPEAT_PLAY_DEFAULT_S = 2.5;
+/** The shortest and the longest play of a 'repeat-cue' the planner makes, s: a `durS` out of range is held to them. */
+export const REPEAT_PLAY_RANGE_S: readonly [number, number] = [0.2, 6];
 /** The praise figures, scale steps over the root an octave above the gate melody's start: one after the other, so praise does not tire. */
 export const PRAISE_FIGURES: readonly (readonly number[])[] = [
     [0, 2, 4],
@@ -854,20 +858,24 @@ export class CuePlanner {
                 break;
             }
             case 'wrong-way': {
-                // "you are flying back": two falling pairs, low in the melody's register, in the safety layer's own timbre
+                // "you are flying back": two falling pairs, low in the melody's register, in the safety layer's own timbre,
+                // from `dir` (the way forward: where to turn to), centred without one
                 const w = theme.layers.safety.timbre;
+                const dir = e.dir === null || e.dir === undefined ? null : normalize(e.dir);
                 for (const at of [0, 0.34]) {
-                    push('safety.wrong-way', 'safety', PRIORITY.chime, at, w, base + 2, 0.12, -9, null);
-                    push('safety.wrong-way', 'safety', PRIORITY.chime, at + 0.13, w, base, 0.16, -9, null);
+                    push('safety.wrong-way', 'safety', PRIORITY.chime, at, w, base + 2, 0.12, -9, dir);
+                    push('safety.wrong-way', 'safety', PRIORITY.chime, at + 0.13, w, base, 0.16, -9, dir);
                 }
                 break;
             }
             case 'wrong-side': {
-                // "that ring was passed from the wrong side": from the gate notes' register down by two big steps to the root below
+                // "that ring was passed from the wrong side": from the gate notes' register down by two big steps to the root
+                // below, from `dir` (where the gate is), centred without one
                 const w = theme.layers.safety.timbre;
-                push('safety.wrong-side', 'safety', PRIORITY.chime, 0, w, base + 5, 0.11, -9, null);
-                push('safety.wrong-side', 'safety', PRIORITY.chime, 0.11, w, base + 3, 0.11, -9, null);
-                push('safety.wrong-side', 'safety', PRIORITY.chime, 0.22, w, base, 0.32, -8, null);
+                const dir = e.dir === null || e.dir === undefined ? null : normalize(e.dir);
+                push('safety.wrong-side', 'safety', PRIORITY.chime, 0, w, base + 5, 0.11, -9, dir);
+                push('safety.wrong-side', 'safety', PRIORITY.chime, 0.11, w, base + 3, 0.11, -9, dir);
+                push('safety.wrong-side', 'safety', PRIORITY.chime, 0.22, w, base, 0.32, -8, dir);
                 break;
             }
             case 'praise': {
@@ -884,8 +892,11 @@ export class CuePlanner {
                 push('target.stage', 'target', PRIORITY.chime, 0.36, bright, base + lift, 0.6, -16, null);
                 break;
             }
-            case 'repeat-cue':
-                return this.previewCue(e.cue, e.dir ?? null, t, REPEAT_CUE_S);
+            case 'repeat-cue': {
+                const [lo, hi] = REPEAT_PLAY_RANGE_S;
+                const durS = e.durS !== undefined && Number.isFinite(e.durS) ? Math.min(Math.max(e.durS, lo), hi) : REPEAT_PLAY_DEFAULT_S;
+                return this.previewCue(e.cue, e.dir ?? null, t, durS, true);
+            }
             case 'preview':
                 return this.previewCue(e.cue, e.dir, t, PREVIEW_S);
         }
@@ -918,16 +929,17 @@ export class CuePlanner {
     }
 
     /**
-     * A cue's own sound as the glossary plays it, for `durS`: the notes of a one-off cue at once, or a preview
-     * of a continuous one that the next frames sound. An unknown cue sounds nothing.
+     * A cue's own sound as the glossary plays it, for `durS`: the notes of a one-off cue at once (cut at `durS` for
+     * a play of a 'repeat-cue'), or a preview of a continuous one that the next frames sound. An unknown cue
+     * sounds nothing.
      */
-    private previewCue(cue: CueId, rawDir: Vec3 | null, t: number, durS: number): NotePlan[] {
+    private previewCue(cue: CueId, rawDir: Vec3 | null, t: number, durS: number, cut = false): NotePlan[] {
         const dir = rawDir === null ? null : normalize(rawDir);
         const oneOff: Readonly<Record<string, CueEvent>> = {
             'safety.touch': { kind: 'touch', material: 'wall', dir, speed: 2 },
             'safety.reset': { kind: 'reset' },
-            'safety.wrong-way': { kind: 'wrong-way' },
-            'safety.wrong-side': { kind: 'wrong-side' },
+            'safety.wrong-way': { kind: 'wrong-way', dir },
+            'safety.wrong-side': { kind: 'wrong-side', dir },
             'target.note': { kind: 'gate', index: 0, of: 3 },
             'target.lap': { kind: 'lap' },
             'target.checkpoint': { kind: 'checkpoint' },
@@ -936,7 +948,7 @@ export class CuePlanner {
             'target.stage': { kind: 'stage', stage: 1 }
         };
         const event = oneOff[cue];
-        if (event !== undefined) return this.cue(event, t, durS < PREVIEW_S ? durS : Infinity).map((n) => ({ ...n, cue }));
+        if (event !== undefined) return this.cue(event, t, cut ? durS : Infinity).map((n) => ({ ...n, cue }));
         const material = cue.startsWith('safety.') ? (cue.slice(7) as MaterialClass) : null;
         // the open-way chime with no direction plays all four sides in turn: a zero vector says so
         const fallback: Vec3 = cue === 'safety.free' ? [0, 0, 0] : material !== null && material in MATERIAL_DIR ? MATERIAL_DIR[material] : FRONT;

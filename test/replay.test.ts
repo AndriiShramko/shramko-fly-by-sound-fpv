@@ -235,12 +235,12 @@ describe('what the replay needs from the recording, and what it checks', () => {
 
     it("says when the build is not the recording's own: another lesson version, theme version or an unknown theme", () => {
         const m = first.pkg.manifest;
-        const here = getLesson('rings-first').version;
-        const lesson = { ...(m.lesson as NonNullable<SessionManifest['lesson']>), version: here + 1 };
+        // a recording made with v0.12 (lesson version 1): said plainly, not a silent failure
+        const lesson = { ...(m.lesson as NonNullable<SessionManifest['lesson']>), version: 1 };
         const a = checkSession({ ...first.pkg, manifest: { ...m, lesson } });
         expect(a.setup.exact).toBe(false);
         expect(a.setup.notes.map((n) => n.code)).toEqual(['lesson-version']);
-        expect(formatReplayCheck(a.check)).toMatch(new RegExp(`not the recording's own build: lesson rings-first is version ${here} here, the session was flown with ${here + 1}`));
+        expect(formatReplayCheck(a.check)).toMatch(/not the recording's own build: lesson rings-first is version 2 here, the session was flown with 1/);
         expect(rebuildSession({ ...m, theme: { id: 'soft', version: 9 } }).notes.map((n) => n.code)).toEqual(['theme-version']);
         expect(rebuildSession({ ...m, theme: { id: 'my-own', version: 1 } }).notes.map((n) => n.code)).toEqual(['unknown-theme']);
         expect(rebuildSession(m).exact).toBe(true);

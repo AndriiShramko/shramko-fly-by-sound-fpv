@@ -29,15 +29,14 @@ describe('a session recorded with v0.12', () => {
             expect(line).toMatch(/not the recording's own build/);
             expect(line).toMatch(/theme soft is version 2 here, the session was flown with 1/);
         }
-        // the lesson's own events differ only by the lesson version they carry (rings-first@1 recorded, @2 derived):
-        // nothing else of what the runner derives changed in this lane
-        for (const d of check.events.diffs) {
-            expect(d.kind, d.detail).toBe('lesson');
-            const e = (d.recorded ?? d.derived) as { version: number };
-            expect(e.version).toBe(d.recorded !== null ? pkg.manifest.lesson?.version : getLesson(pkg.manifest.lesson?.id as string).version);
+        // events the runner derives differently: with this lane alone only the lesson version they carry (rings-first@1
+        // recorded, @2 derived); merged with lane s13-lessons (lesson format 2, a new runner) goals, gates, resets and
+        // speech differ too. Either way the replay must say that the lesson is another version (review B2; s13-lessons
+        // review R2), so a reader knows why
+        if (check.events.diffs.length > 0) {
+            expect(setup.notes.some((n) => n.code === 'lesson-version')).toBe(true);
+            expect(getLesson(pkg.manifest.lesson?.id as string).version).not.toBe(pkg.manifest.lesson?.version);
         }
-        const strip = (list: readonly { kind: string; what?: string; attempt?: number }[]): string[] => list.filter((e) => e.kind === 'lesson').map((e) => `${e.what}:${e.attempt}`);
-        expect(strip(check.events.diffs.filter((d) => d.problem === 'missing').map((d) => d.recorded as never))).toEqual(strip(check.events.diffs.filter((d) => d.problem === 'extra').map((d) => d.derived as never)));
     });
 
     it('control: the same recording claiming the current versions would fail without a word about why', () => {

@@ -872,8 +872,8 @@ export class FlyBySoundEngine implements SonicEngine {
         if (this.g === null || this.stateValue !== 'running') return;
         const now = this.g.ctx.currentTime;
         for (const n of notes) this.playOneOff(n, now + 0.01 + n.atS);
-        // a preview starts sounding with the next plan: make it now
-        if (e.kind === 'preview' && this.lastInput !== null) {
+        // a preview (and a play of a 'repeat-cue', M41-5) starts sounding with the next plan: make it now
+        if ((e.kind === 'preview' || e.kind === 'repeat-cue') && this.lastInput !== null) {
             const plan = this.planner.plan(this.lastInput);
             this.lastPlan = plan;
             this.render(plan);
