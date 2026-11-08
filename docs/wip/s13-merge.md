@@ -246,6 +246,11 @@ Steps 7 to 11, lane s13-worlds:
   `p.run.phase` with 'passed' after the loop had narrowed it (TS2367; vitest does not typecheck). Fixed in the next
   commit (the phase read through a function, as the other tests do); the typecheck is clean since.
 - [ ] 9. Full checks on the final code with fresh evidence
+  - part 1 (a393b74): `pnpm typecheck` clean (three projects, 10.6 s); `pnpm test` 44 files, 1042 tests (17.1 s);
+    `node tools/run-tool.mjs locale-lint` 0 problems (4 languages, 521 keys); `node tools/run-tool.mjs check-layout` 0
+    problems; `GPU_LOCK=C:/dev/.gpu-lock pnpm proof:audio` 3 files, 9 proofs, 48.5 s (headless Chrome 156.0.8078.80;
+    the five audio proofs pass and their broken controls fail, the demo's keyboard-only check passes; both evidence
+    files rewritten: their dates, and the demo flight's turn 60 degrees, was 61)
 - [ ] 10. The lanes' notes as public dev notes (`docs/dev/`); no build-machine folder in `docs/`, README, AGENTS, llms
   - part 1, before step 9 (done): the four comments in `src/` and `test/` that named a lane's note now name its public
     path (`docs/dev/status-v0.13-lessons.md`, `status-v0.13-worlds.md`), so the code step 9 checks is the final code
