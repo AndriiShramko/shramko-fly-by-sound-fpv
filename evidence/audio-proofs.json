@@ -1,7 +1,7 @@
 {
   "what": "Fly by Sound audio proofs: the real engine rendered offline in headless Chromium, each check also run on an engine broken on purpose (control), which must fail",
   "run": "pnpm proof:audio",
-  "date": "2026-11-08T22:10:11.263Z",
+  "date": "2026-11-08T23:34:24.416Z",
   "browser": "156.0.8078.80",
   "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36",
   "sampleRate": 48000,
@@ -144,7 +144,7 @@
       "control": {
         "ok": false,
         "measured": {
-          "peak": 3.19623,
+          "peak": 3.19622,
           "peakDbfs": 10.09,
           "ceilingDbfs": -6
         },
@@ -415,6 +415,70 @@
           "turnS": 1.9
         },
         "broken": "the panner moved at the note's start, not 60 ms before it"
+      },
+      "pass": true
+    },
+    {
+      "name": "engine-reset",
+      "claim": "a new lesson hears nothing of the last one: the craft flies at the left wall, then the host opens the next lesson (its frame clock back at 0, the craft at rest 3 m over the floor and 20 m from every wall, where a new engine voices no hazard) and calls engine.reset(); from the new lesson's first frame to the end of the sampler's hold (300 ms) no hazard of the last lesson is active and no moving voice holds one (the last lesson voiced the left wall up to the switch)",
+      "shipped": {
+        "ok": true,
+        "measured": {
+          "atSwitch": {
+            "cues": [
+              "safety.wall:left",
+              "safety.wall:front-left",
+              "safety.wall:front"
+            ],
+            "voices": [
+              "safety:left",
+              "safety:front-left",
+              "safety:front"
+            ]
+          },
+          "newEngineInTheMiddle": [],
+          "framesOfTheHoldWithTheLastLesson": 0,
+          "of": 18,
+          "first": {
+            "ms": 0,
+            "cues": [],
+            "voices": []
+          }
+        }
+      },
+      "control": {
+        "ok": false,
+        "measured": {
+          "atSwitch": {
+            "cues": [
+              "safety.wall:left",
+              "safety.wall:front-left",
+              "safety.wall:front"
+            ],
+            "voices": [
+              "safety:left",
+              "safety:front-left",
+              "safety:front"
+            ]
+          },
+          "newEngineInTheMiddle": [],
+          "framesOfTheHoldWithTheLastLesson": 18,
+          "of": 18,
+          "first": {
+            "ms": 0,
+            "cues": [
+              "safety.floor:front-down",
+              "safety.ceiling:front-up",
+              "safety.wall:front-left"
+            ],
+            "voices": [
+              "safety:front-down",
+              "safety:front-left",
+              "safety:front-up"
+            ]
+          }
+        },
+        "broken": "no engine.reset() when the next lesson opens"
       },
       "pass": true
     }
