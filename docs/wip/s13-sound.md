@@ -576,6 +576,14 @@ lock directory; the driver has a default).
   `safety.wrong-way`, `safety.wrong-side`, `height.target`, `target.praise`, `target.stage` are in `CUE_IDS` with
   their lines).
 
+- The lead, the trial merge with s13-lessons (f107116, in a scratch clone; no worktree touched): conflicts only in
+  `src/cues/planner.ts` (take this lane's side) and the two proofs' evidence files (run `pnpm proof:audio` again);
+  `src/contract.ts` and the shared tests merge clean. Merged so, the three typechecks are clean and 749 of 750 tests
+  pass, s13-lessons' `test/repeat-plays.test.ts` among them (every play of a named sound now sounds for its `durS`).
+  The one failure is s13-lessons' control in `test/silence.test.ts` ("without the target between attempts ... the
+  pause of hover-turn and of move-stop is silent"): with this lane's layers (the height tone and the bed in every
+  flying lesson, M41-10) that pause is never silent, so the control cannot fail any more. Give the control v0.12's
+  layers (the lesson's `layers` without 'height' and 'room') or count only the target layer's cues.
 - s13-lessons, and the lead at the merge (review m4): `walls-hall` asks to stop within 3 m of a wall (`approach-stop`,
   `stopWithinM` 3). Since v0.13 a slowing craft stops hearing a wall once its time to contact is over about 3 s (and
   the distance over 1 m; braking from 2 m/s the knocks stop at about 3.1 s): stopping where the knocks start (about
