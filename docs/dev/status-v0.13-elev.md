@@ -86,9 +86,11 @@ and below change with it. In the same lane: "wrong way" between gates, which the
   v13-host e7612d3, 249 lines a language with K's help, the same round trip and bound. Heard with no error: 230, 232,
   230 and 203 of 249 (en, es, pl, ru); over the bound 4, 4, 9 and 21, each listed with its transcript; the name "Fly
   by Sound" in Russian and Polish and the key lines are the simulator's main items
-- [ ] E2-4 All checks again, in progress: `pnpm typecheck` clean, `pnpm test` 49 files 1138 tests, locale lint 0
-  problems (526 keys), layout check 0 problems, `pnpm proof:audio` 3 files 9 proofs (numbers as before; the evidence's
-  dates), `pnpm listen:words` fresh (00c1d278316c); `pnpm listen` next (the locales and the rig's folder changed)
+- [x] E2-4 All checks again: `pnpm typecheck` clean, `pnpm test` 49 files 1138 tests, locale lint 0 problems (526
+  keys), layout check 0 problems, `pnpm proof:audio` 3 files 9 proofs (numbers as before; the evidence's dates),
+  `pnpm listen` 9 of 9 checks valid and passing (inputs ee49704722ea: the locales and the rig's folder changed; the
+  numbers within a render's noise of E1's), `pnpm listen:words` PASS, fresh (00c1d278316c). This lane's E2 status
+  final (above)
 
 ## E1-1 Audit: the cues of up and down in v0.13 (code as of 16c01a1)
 
@@ -255,7 +257,33 @@ Left open, with reasons:
 - The model's numbers are predictions for 26 sighted listeners' ears with a generic HRTF; blind pilots and their
   headphones may differ (design section 13). The adapters of VL-1 (the panel in the rig) are the design's step 11.
 - The corridor's intro.3 says the four sides in one line now (16 s with the local voice).
-- E2-1 to E2-4: the next agent's.
+- E2-1 to E2-4: the next agent's (done since: "Final status of E2").
+
+## Final status of E2 (2026-11-08)
+
+Done, with commits (branch `s13-elev`, not pushed):
+
+| Step | What | Commits |
+|---|---|---|
+| E2-1 | the Spanish, Polish and Russian lines measured with their voices; the timing tests in four languages | 8e62a45 |
+| E2-2 | `pnpm listen:words`; K's help names "the key" in es, pl, ru; bound 0.2, 56 recorded words, the control | 50064bb, e5bf963, 18c1ae4 |
+| E2-3 | the simulator's Fly by Sound lines, the same round trip | e2b45d5, 269c6ed |
+| E2-4 | every check again; this status | 6a432ed, this commit |
+
+Left open, with reasons:
+
+- How the lines sound to a person: no native speaker has heard them yet. Whisper is a word check that understands
+  better than people (design, VL-4). The voices' habits recorded here are where a pilot may mishear too, and whether a
+  word changes is the owner's call with a native speaker: English "height tone" heard as "high tone", Polish
+  "węższy" (narrower) as "wyższy" (higher), Russian "пролети" (fly through) as "пролейте" (pour) and "гул" (hum) as
+  "гол" (goal), the Russian voice spelling "Fly by Sound".
+- The voices checked are the Windows desktop ones (David, Helena, Paulina, Irina). Chrome also lists the OneCore voices
+  (Laura, Pablo, Adam, Pavel and the others) and online ones; their lengths and words are not measured, nor is the
+  loudness of the new voices (M41-17, `evidence/voices-local.json`, now measurable on this machine).
+- The bound finds a line a voice cannot say; one lost word in a long line stays under it. The simulator's long key lines
+  show it; the package's key lines are all heard with their key, but no rule checks a key's name on its own.
+- The English length fixture still holds 385 of its 471 lines without parameters (the lines added since take the
+  estimate); Spanish, Polish and Russian hold all 471.
 
 ## E2: the lines in Spanish, Polish and Russian, said by real voices
 

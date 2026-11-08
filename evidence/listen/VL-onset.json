@@ -1,9 +1,9 @@
 {
  "format": "shramko-listen-evidence/1",
- "key": "a884a229c68dc03dc7272e5fdd4d08b09c23fba4dde64f42f4baafd7072f86e7",
+ "key": "ee49704722eadf15ae24584a66fe450a476a95b8011a9593d8f7839a170ec0f7",
  "inputs": {
-  "hash": "a884a229c68dc03dc7272e5fdd4d08b09c23fba4dde64f42f4baafd7072f86e7",
-  "files": 125,
+  "hash": "ee49704722eadf15ae24584a66fe450a476a95b8011a9593d8f7839a170ec0f7",
+  "files": 126,
   "driver": 3,
   "measure": 3,
   "chrome": "156.0.8078.80",
@@ -15,7 +15,7 @@
    "pyloudnorm": "0.2.0"
   }
  },
- "date": "2026-11-08T18:35:42.949Z",
+ "date": "2026-11-08T20:12:34.015Z",
  "id": "VL-onset",
  "claim": "the hazard stem starts at least 2 s before impact when flying straight at a wall at 1, 3 and 5 m/s (control: a distance-only rule, v0.12 front 6 m, starts later at 5 m/s)",
  "thresholds": {
