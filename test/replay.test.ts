@@ -59,15 +59,17 @@ async function ringsFirst(options: HostOptions = {}): Promise<{ host: RecordingH
     return { host, pkg: (await host.toPackage()).pkg };
 }
 
-/** walls-hall with the pilot's keys: next, a reset to the checkpoint (none: the start) and a long reset, and a contact. */
+/** walls-hall with the pilot's keys: N (the task skipped), Z (the task again), a reset to the checkpoint (none: the start) and a long reset, and a contact. */
 async function wallsHall(options: HostOptions = {}): Promise<{ host: RecordingHost; pkg: SessionPackage }> {
     const host = new RecordingHost(getLesson('walls-hall'), options);
     host.begin();
+    host.hold(0.5);
+    host.press(REPLAY_KEY_ACTIONS.next);
     host.until(() => host.runner.phase === 'flying', 120);
     host.flyTo([0, 1.5, -27.5], 3);
     host.hold(1.2);
-    host.press(REPLAY_KEY_ACTIONS.next);
-    host.until(() => host.runner.phase === 'flying', 20);
+    host.press(REPLAY_KEY_ACTIONS.repeat);
+    host.until(() => host.runner.phase === 'flying', 60);
     host.flyTo([0, 1.5, -20], 3);
     host.touch();
     host.flyTo([0, 1.5, -24], 3);
@@ -235,11 +237,12 @@ describe('what the replay needs from the recording, and what it checks', () => {
 
     it("says when the build is not the recording's own: another lesson version, theme version or an unknown theme", () => {
         const m = first.pkg.manifest;
-        const lesson = { ...(m.lesson as NonNullable<SessionManifest['lesson']>), version: 2 };
+        // a recording made with v0.12 (lesson version 1): said plainly, not a silent failure
+        const lesson = { ...(m.lesson as NonNullable<SessionManifest['lesson']>), version: 1 };
         const a = checkSession({ ...first.pkg, manifest: { ...m, lesson } });
         expect(a.setup.exact).toBe(false);
         expect(a.setup.notes.map((n) => n.code)).toEqual(['lesson-version']);
-        expect(formatReplayCheck(a.check)).toMatch(/not the recording's own build: lesson rings-first is version 1 here, the session was flown with 2/);
+        expect(formatReplayCheck(a.check)).toMatch(/not the recording's own build: lesson rings-first is version 2 here, the session was flown with 1/);
         expect(rebuildSession({ ...m, theme: { id: 'soft', version: 9 } }).notes.map((n) => n.code)).toEqual(['theme-version']);
         expect(rebuildSession({ ...m, theme: { id: 'my-own', version: 1 } }).notes.map((n) => n.code)).toEqual(['unknown-theme']);
         expect(rebuildSession(m).exact).toBe(true);
@@ -264,7 +267,7 @@ describe('what the replay needs from the recording, and what it checks', () => {
 describe('keys, contacts and resets: walls-hall', () => {
     it("re-derives the events that follow the pilot's keys and a contact", async () => {
         const { pkg } = await wallsHall();
-        expect(kinds(pkg.events, 'key').map((e) => (e.kind === 'key' ? e.action : ''))).toEqual(['next', 'reset.checkpoint', 'reset.start']);
+        expect(kinds(pkg.events, 'key').map((e) => (e.kind === 'key' ? e.action : ''))).toEqual(['next', 'repeat', 'reset.checkpoint', 'reset.start']);
         expect(kinds(pkg.events, 'touch')).toHaveLength(1);
         expect(kinds(pkg.events, 'reset').length).toBeGreaterThanOrEqual(2);
         const { check } = checkSession(pkg);

@@ -11,7 +11,7 @@
   "attemptLimitS": 900,
   "checkpoints": [],
   "fastPath": true,
-  "format": "shramko-sonic-lesson/1",
+  "format": "shramko-sonic-lesson/2",
   "goals": [
     {
       "kind": "timed-course",
@@ -24,6 +24,9 @@
       "key": "lesson.free-garden.intro.1"
     },
     {
+      "cues": [
+        "target.hum"
+      ],
       "key": "lesson.free-garden.intro.2"
     },
     {
@@ -48,7 +51,6 @@
   "pass": {
     "attempts": 3,
     "blocking": false,
-    "blocks": 1,
     "maxTouches": null,
     "required": 1
   },
@@ -72,7 +74,7 @@
   "title": {
     "key": "lesson.free-garden.title"
   },
-  "version": 1,
+  "version": 2,
   "world": {
     "kind": "scan",
     "sceneId": "7a475d38",

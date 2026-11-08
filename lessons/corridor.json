@@ -26,16 +26,18 @@
         "pos": [0, 2, -50],
         "yawDeg": 0
       },
-      "radiusM": 2.5
+      "radiusM": 2.5,
+      "stage": 1
     },
     {
       "at": [0, 2, -80],
       "id": "cp-3",
       "pose": {
         "pos": [0, 2, -80],
-        "yawDeg": 0
+        "yawDeg": 90
       },
-      "radiusM": 2.5
+      "radiusM": 2.5,
+      "stage": 2
     },
     {
       "at": [45, 2, -125],
@@ -44,20 +46,31 @@
         "pos": [45, 2, -125],
         "yawDeg": 0
       },
-      "radiusM": 2.5
+      "radiusM": 2.5,
+      "stage": 3
     },
     {
       "at": [45, 2, -200],
       "id": "cp-5",
       "pose": {
         "pos": [45, 2, -200],
+        "yawDeg": 90
+      },
+      "radiusM": 2.5,
+      "stage": 4
+    },
+    {
+      "at": [90, 2, -245],
+      "id": "cp-6",
+      "pose": {
+        "pos": [90, 2, -245],
         "yawDeg": 0
       },
       "radiusM": 2.5
     }
   ],
   "fastPath": true,
-  "format": "shramko-sonic-lesson/1",
+  "format": "shramko-sonic-lesson/2",
   "goals": [
     {
       "kind": "fly-distance",
@@ -74,9 +87,16 @@
       "key": "lesson.corridor.intro.1"
     },
     {
+      "cues": [
+        "safety.wall"
+      ],
       "key": "lesson.corridor.intro.2"
     },
     {
+      "cues": [
+        "target.checkpoint",
+        "safety.reset"
+      ],
       "key": "lesson.corridor.intro.3"
     },
     {
@@ -97,11 +117,10 @@
   "module": 4,
   "order": 12,
   "pass": {
-    "attempts": 4,
+    "attempts": 3,
     "blocking": true,
-    "blocks": 1,
-    "maxTouches": 2,
-    "required": 3
+    "maxTouches": null,
+    "required": 1
   },
   "speech": {
     "hints": [
@@ -123,7 +142,7 @@
   "title": {
     "key": "lesson.corridor.title"
   },
-  "version": 1,
+  "version": 2,
   "world": {
     "kind": "analytic",
     "spec": {

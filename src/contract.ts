@@ -45,7 +45,8 @@ export interface SpeechLine {
 
 /** Format identifiers of every file this contract describes; a breaking change is a new number. */
 export const FORMATS = {
-    lesson: 'shramko-sonic-lesson/1',
+    /** format 2 (v0.13): the pass rule counts in total; files of format 1 are migrated on load (src/lesson/validate.ts) */
+    lesson: 'shramko-sonic-lesson/2',
     track: 'shramko-sonic-track/1',
     theme: 'shramko-sonic-theme/1',
     prefs: 'shramko-sonic-prefs/1',
@@ -330,16 +331,30 @@ export type Goal =
     | { readonly kind: 'fly-distance'; readonly metres: number }
     | { readonly kind: 'pass-gates'; readonly gateIds: readonly string[] | 'all'; readonly inOrder: boolean }
     | { readonly kind: 'name-shape'; readonly objectId: string }
-    | { readonly kind: 'timed-course'; readonly laps: number };
+    | { readonly kind: 'timed-course'; readonly laps: number }
+    /**
+     * v0.13 (review R5): the end of the lesson's track reached: the last point of the world's checkpoint list, or
+     * else the lesson's last checkpoint (a corridor flown to its end, every stage of it). Needs two checkpoints or more.
+     */
+    | { readonly kind: 'track-end' };
 
-/** "k of n attempts, in b blocks in a row, with at most m touches each". */
+/**
+ * Lesson format 2: "r counted attempts in total, with at most m touches each". Failures in between do
+ * not reset the count. After `attempts` failed attempts in a row the pilot hears why; a blocking
+ * lesson then offers the next lesson (and offers it again after every further `attempts` in a row), a
+ * lesson that does not block moves on by itself. Format 1 ("k of n attempts in b blocks in a row") is
+ * migrated on load: required = min(3, required x blocks), attempts = 3 (blocking) or min(3, attempts x blocks).
+ */
 export interface PassRule {
+    /** failed attempts in a row after which the pilot hears why and is offered to go on (1 to 3) */
     readonly attempts: number;
+    /** counted attempts in total that pass the lesson (1 to 3) */
     readonly required: number;
+    /** format 1 only (blocks in a row); 1 in format 2 */
     readonly blocks: number;
-    /** touches allowed in a successful attempt; null = any */
+    /** touches allowed in a counted attempt; null = any */
     readonly maxTouches: number | null;
-    /** false: the lesson never blocks progress (the "what is it, where is it" game) */
+    /** false: the lesson never holds anyone back (the game, the shapes, free flight) */
     readonly blocking: boolean;
 }
 
@@ -350,6 +365,19 @@ export interface Checkpoint {
     /** reached when the craft's centre comes within radiusM of this point */
     readonly at: Vec3;
     readonly radiusM: number;
+    /** lesson format 2: this checkpoint ends stage `stage` of the course ("Stage 2 passed"); stages count up along the list */
+    readonly stage?: number;
+}
+
+/** A line of a lesson's intro (format 2): `cues` are the sounds it names, each played three times after the line. */
+export interface IntroLine extends SpeechLine {
+    readonly cues?: readonly (CueId | IntroCue)[];
+}
+
+/** A sound an intro line names, played from the side the line speaks of (listener frame) instead of the cue's default. */
+export interface IntroCue {
+    readonly cue: CueId;
+    readonly from: 'left' | 'right' | 'front' | 'back' | 'up' | 'down';
 }
 
 /** A lesson is data (spec section 3). Every lesson can be opened directly; the ladder only recommends. */
@@ -364,7 +392,7 @@ export interface LessonDef {
     /** part of the short path of about six lessons */
     readonly fastPath: boolean;
     readonly title: SpeechLine;
-    readonly intro: readonly SpeechLine[];
+    readonly intro: readonly IntroLine[];
     readonly world: LessonWorldRef;
     readonly start: Pose;
     readonly assists: LessonAssists;
@@ -387,6 +415,8 @@ export interface LessonProgress {
     readonly bestTimeMs: number | null;
     /** ISO 8601 */
     readonly lastAt: string;
+    /** v0.13: the pilot went on to the next lesson without passing this one (N); false or absent otherwise */
+    readonly skipped?: boolean;
 }
 
 // ------------------------------------------------------------------ the session package
@@ -523,7 +553,24 @@ export type CueEvent =
     | { readonly kind: 'checkpoint' }
     | { readonly kind: 'reset' }
     | { readonly kind: 'fanfare' }
-    | { readonly kind: 'preview'; readonly cue: CueId; readonly dir: Vec3 | null };
+    | { readonly kind: 'preview'; readonly cue: CueId; readonly dir: Vec3 | null }
+    // v0.13 (plan v13 "Lanes"): the lesson runner emits these five, the cue planner owns how each sounds. Each
+    // variant takes every field either lane gives it (the runner sets them all), so code of both lanes compiles.
+    /**
+     * M41-5: one play of a sound a step names, the cue's own sound as the glossary plays it. The runner sends one
+     * per play (`index` of `of`), with no speech over them, the next one REPEAT_GAP_S (1 s) after this one's
+     * `durS` has run out; the planner sounds a continuous cue for `durS` (a one-off cue is its own notes, never
+     * longer than `durS`). `dir`: listener frame, or null or absent for the cue's own default.
+     */
+    | { readonly kind: 'repeat-cue'; readonly cue: CueId; readonly dir?: Vec3 | null; readonly index?: number; readonly of?: number; readonly durS?: number }
+    /** M41-11: a counted attempt, said with a short praise line */
+    | { readonly kind: 'praise' }
+    /** M41-11: stage `stage` (1, 2, ...) of a long course passed (a checkpoint that ends a stage), said "Stage k passed" */
+    | { readonly kind: 'stage'; readonly stage?: number }
+    /** M41-15: flying back for more than a second; `dir`: the way forward (the track's, or toward the gate that counts next), listener frame */
+    | { readonly kind: 'wrong-way'; readonly dir?: Vec3 | null }
+    /** M41-15: a gate crossed from its back side (not counted); `dir`: where the gate is, listener frame */
+    | { readonly kind: 'wrong-side'; readonly dir?: Vec3 | null };
 
 /** A cue sounding now: what the recording stores and the captions may show. */
 export interface ActiveCue {

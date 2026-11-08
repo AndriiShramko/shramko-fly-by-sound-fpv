@@ -11,7 +11,7 @@
   "attemptLimitS": 60,
   "checkpoints": [],
   "fastPath": false,
-  "format": "shramko-sonic-lesson/1",
+  "format": "shramko-sonic-lesson/2",
   "goals": [
     {
       "kind": "fly-distance",
@@ -27,6 +27,9 @@
   "id": "move-speed",
   "intro": [
     {
+      "cues": [
+        "speed.tick"
+      ],
       "key": "lesson.move-speed.intro.1"
     },
     {
@@ -47,11 +50,10 @@
   "module": 2,
   "order": 7,
   "pass": {
-    "attempts": 5,
+    "attempts": 3,
     "blocking": true,
-    "blocks": 1,
     "maxTouches": null,
-    "required": 4
+    "required": 3
   },
   "speech": {
     "hints": [
@@ -73,7 +75,7 @@
   "title": {
     "key": "lesson.move-speed.title"
   },
-  "version": 1,
+  "version": 2,
   "world": {
     "kind": "analytic",
     "spec": {

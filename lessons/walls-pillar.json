@@ -11,7 +11,7 @@
   "attemptLimitS": 120,
   "checkpoints": [],
   "fastPath": false,
-  "format": "shramko-sonic-lesson/1",
+  "format": "shramko-sonic-lesson/2",
   "goals": [
     {
       "kind": "around",
@@ -21,6 +21,9 @@
   "id": "walls-pillar",
   "intro": [
     {
+      "cues": [
+        "safety.obstacle"
+      ],
       "key": "lesson.walls-pillar.intro.1"
     },
     {
@@ -42,11 +45,10 @@
   "module": 3,
   "order": 10,
   "pass": {
-    "attempts": 5,
+    "attempts": 3,
     "blocking": true,
-    "blocks": 1,
     "maxTouches": 1,
-    "required": 4
+    "required": 3
   },
   "speech": {
     "hints": [
@@ -68,7 +70,7 @@
   "title": {
     "key": "lesson.walls-pillar.title"
   },
-  "version": 1,
+  "version": 2,
   "world": {
     "kind": "analytic",
     "spec": {

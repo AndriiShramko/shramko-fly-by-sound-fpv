@@ -14,7 +14,7 @@ and the corridor's goal (s13-lessons' "For the lead's merge" item 2, review R5) 
 ## Status
 
 - [x] 1. Worktree and this doc with the checklist
-- [ ] 2. Merge s13-lessons (14e00f0)
+- [x] 2. Merge s13-lessons (14e00f0): clean, main had not moved (74 files)
 - [ ] 3. Merge s13-sound (3c73658), every conflict resolved and listed
 - [ ] 4a. The silence control of `test/silence.test.ts` with v0.12's layers (it must fail with them, the real check pass)
 - [ ] 4b. `test/repeat-plays.test.ts` passes: the repeat-cue case honours `durS` (confirmed once with `durS` ignored)

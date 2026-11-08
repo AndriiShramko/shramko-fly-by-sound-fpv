@@ -5,27 +5,92 @@
 // drains with takeActions() and carries out.
 //
 // The host loop:
-//   const run = createLessonRunner(lesson, { locale, objects, start });
-//   run.begin(t)                                  // intro, then the first attempt
+//   const run = createLessonRunner(lesson, { locale, objects, start, path, returnTo });
+//   run.begin(t)                                  // the task, then the first attempt
 //   every frame: events = run.step(sample, world); actions = run.takeActions();
 //                engine.update(run.demoFrame(t) ?? { sample, world, target: run.target(), floorY })
 //   say actions: engine.say(line), then run.spoken(t) when the speech queue is empty
-//   digits / voice: run.answer(value, via, t)    R: run.reset('checkpoint' | 'start', t)    N: run.next(t)
+//   digits / voice: run.answer(value, via, t)    R: run.reset('checkpoint' | 'start', t)
+//   N: run.next(t)   B: run.previous(t)   Z: run.repeat(t)   menu: run.nextLesson(t), run.previousLesson(t)
+//   a 'go' action: the lesson G left first (returnTo), else the lesson after (or before) this one on the
+//                  pilot's path (lessonAfter, lessonBefore), else the start screen
+//   I: run.view() and run.statusLine()            (what the host draws and says: lesson k of n, step, attempt, count)
+//   the flight pauses (the Escape menu, the simulator's pause): run.pause(t); it goes on: run.resume(t), then
+//                  run.spoken(t) once the speech queue is empty (at once when it already is); see "Pause" below
 //
-// An attempt of a lesson without a world (module 0, the ears) is a script: narrated scenes, the
-// headphone check, the glossary, the game "what is it, where is it, is it moving". An attempt of a
-// flying lesson tracks its goals in order (goals.ts). A block is `pass.attempts` attempts; it
-// passes with `pass.required` successes (an attempt succeeds when every goal is met with at most
-// `pass.maxTouches` touches) and ends early once that is reached or out of reach. A blocking lesson
-// is passed after `pass.blocks` passed blocks in a row; a non-blocking one (the game, the shapes,
-// free flight) is done after `pass.blocks` blocks whatever the score, so it never holds anyone back.
-import type { Checkpoint, CueEvent, CueId, FlightSample, Goal, LessonDef, LessonProgress, LessonRunner, Locale, MaterialClass, Pose, SessionEvent, SonicFrameInput, SonicObject, SonicWorld, SpeechLine, Vec3 } from '../contract';
+// Steps. A lesson is a short list of steps the pilot can tell apart and move between. A flying lesson
+// has two: 1 the task (its title and intro lines) and 2 flying (the attempts). A lesson without a
+// world (module 0, the ears) has its intro as step 1, then one step per sound of the glossary, per
+// narrated scene, per trial of the headphone check or per round of the game. N moves one step on and,
+// from the last step (flying, or the last sound), to the next lesson, marking this one skipped unless
+// it was passed; B moves one step back and, from step 1, to the previous lesson (B while flying drops
+// the attempt, uncounted, for the task); Z gives the step again from its first line (while flying the
+// task is said again and the attempt waits, its clock stopped, then goes on). A lesson opened with G from
+// another one (RunnerOptions.returnTo, the glossary) is a detour: its ways out lead back there, and
+// leaving it forward does not mark it skipped (review R3).
+//
+// Sounds and speech (M41-5, M41-9). A spoken step is over when the host reports its speech queue empty
+// (spoken(t)), not when the runner thinks the lines should have been said: a voice slower than the
+// runner's estimate made v0.12 play the sounds under the speech (docs/wip/s13-lessons.md F2). A sound a
+// step names (in an intro line's `cues`, the glossary, the narrated scenes, the headphone trials, the
+// game's rounds) waits for that silence and then plays REPEAT_PLAYS times, REPEAT_GAP_S apart, as
+// 'repeat-cue' events (a scene: the scene shown that many times). A host that never reports the end of
+// speech is waited for no longer than twice the runner's estimate and a second per line.
+//
+// An attempt of a lesson without a world is a script: narrated scenes, the headphone check, the
+// glossary, the game "what is it, where is it, is it moving". An attempt of a flying lesson tracks its
+// goals in order (goals.ts). An attempt counts when every goal is met with at most `pass.maxTouches`
+// touches; `pass.required` counted attempts in total pass the lesson, and failures in between do not
+// reset the count (lesson format 2, v0.13: the v0.12 rule of blocks in a row let a pilot fail for
+// ever, docs/wip/s13-lessons.md F1). After every attempt that does not pass the lesson the pilot hears
+// "Attempt k. Counted m of r."; after `pass.attempts` failures in a row he hears why and, in a blocking
+// lesson, that N goes on to the next lesson; a lesson that does not block (the game, the shapes, free
+// flight) moves on by itself then, so it never holds anyone back.
+//
+// Praise (M41-11). A counted attempt that does not yet pass the lesson is praised in a short line from a
+// pool (never the same twice in a row), or "Better than last time!" when its score really improved (by at
+// least BETTER_SHARE: the share in the height band, the miss of the gates' centres, the stop's distance, or
+// else the attempt's time); with it the cue event 'praise'. The pass is the fanfare, the lesson's own pass
+// line and "Lesson passed. Next, a bit harder: <the next lesson on the pilot's path>". A checkpoint that
+// ends a stage gives the cue event 'stage' and "Stage k passed".
+//
+// Direction (M41-15). A lesson with a track (track.ts: the world's checkpoint list, the lesson's
+// checkpoints, or a course's gates) knows which way is forward: flying against it faster than
+// WRONG_WAY_MPS for more than WRONG_WAY_S gives the cue event 'wrong-way' and "You are flying back. Turn
+// around.", at most once every WRONG_WAY_EVERY_S. While the goal is a course of gates, forward is the way to
+// the gate that counts next, judged only in front of it further than LINE_UP_M (behind it or close to it the
+// pilot may be flying round to its front: a ring missed beside it is flown back to). A gate crossed from its
+// back side gives 'wrong-side' and its line, and is not counted.
+//
+// Respawn (M41-20). A touch in a lesson that re-centres, or a short R, puts the craft RESPAWN_BEFORE_M
+// before the furthest point of the track passed in this attempt (a lesson checkpoint, or a point of the
+// world's checkpoint list), facing along the track (a checkpoint's own pose yaw, a world point's dir), and
+// the attempt's flown path goes back to what it was there, so a stretch flown twice is not counted twice. A
+// long R still goes back to the start; with no point passed yet a short R goes to the start of the attempt.
+// When an attempt of such a lesson fails (its time ran out), the next one begins at that point too, not at
+// the far start (review R9).
+//
+// Pause (review R8). While the flight is paused (the lesson menu of M41-3 speaks through the same queue) the
+// lesson waits: pause(t) stops it, and resume(t) moves every clock it keeps on by the pause (the step's start,
+// its plays, a question's time to answer, the speech deadline, the attempt's time limit and its goals), so a
+// pause never counts as time held in a band, never times a question out and never starts a sound or a line over
+// the menu. A report of the queue ran empty while paused is the menu's, not the lesson's: it is not taken; the
+// host reports spoken(t) after resume(t) when its queue is empty. Keys still work while paused.
+//
+// Never silence (M41-10, the runner's part). Between attempts target() keeps giving the first target of the
+// next attempt (the gate, the zone, the sound to turn to), so the target layer goes on sounding while the
+// attempt's lines are said and the pause runs; a step never waits in silence without a line said first.
+import type { Checkpoint, CueEvent, CueId, FlightSample, Goal, IntroCue, LessonDef, LessonProgress, LessonRunner, Locale, MaterialClass, Pose, SessionEvent, SonicFrameInput, SonicObject, SonicWorld, SpeechLine, Vec3 } from '../contract';
 import { DICTS } from '../i18n/dicts';
 import { createTranslator, type Dicts, type Translator } from '../i18n/translator';
 import { createRng } from '../util/rng';
-import { distance as dist3, yawQuat } from '../util/vec';
+import { distance as dist3, dot, normalize, sub, yawQuat } from '../util/vec';
 import { createAnalyticWorld, makeSpec, type AnalyticWorldInfo } from '../world/analytic-world';
-import { createTracker, type GoalTracker, type Outcome } from './goals';
+import { BODY_RADIUS_M, createTracker, toLocal, type GoalScore, type GoalTracker, type Outcome } from './goals';
+import { getLesson, isShippedLesson, lessonAfter, lessonPaths } from './library';
+import { APPROACHES, GAME_SCENE_S, isGlossary, NARRATED_SCENE_S, playS, REPEAT_GAP_S, REPEAT_PLAYS, SHAPE_ORDER } from './sounds';
+import { lessonTrack, yawOf, type LessonTrack, type TrackPoint } from './track';
+import { headingBasis, worldToListener } from '../sense/frame';
 
 // ------------------------------------------------------------------ host interface
 
@@ -56,11 +121,63 @@ export type RunnerAction =
     | { readonly kind: 'place'; readonly pose: Pose; readonly to: 'start' | 'checkpoint' }
     /** digits are expected now (the host may show them; the question's lines come as 'say' actions) */
     | { readonly kind: 'ask'; readonly question: Question }
-    /** module 0: while a scene is set, feed the engine with demoFrame(t) instead of the craft */
-    | { readonly kind: 'scene'; readonly scene: DemoScene | null };
+    /** module 0: while a scene is set, feed the engine with demoFrame(t) instead of the craft; `play`: which play of the scene (a named sound plays three times) */
+    | { readonly kind: 'scene'; readonly scene: DemoScene | null; readonly play?: { readonly index: number; readonly of: number } }
+    /**
+     * the pilot leaves this lesson. 'next': the way back to the lesson left with G first (RunnerOptions.returnTo),
+     * else the next lesson on the pilot's path (lessonAfter), else the start screen: the simulator host's advance().
+     * 'previous': the way back first too, else the lesson before (lessonBefore), else the start screen. The runner is
+     * done after it (a lesson event 'leave').
+     */
+    | { readonly kind: 'go'; readonly to: 'next' | 'previous' };
+
+/** What a step of a lesson is (see "Steps" above). */
+export type StepKind = 'task' | 'fly' | 'intro' | 'sound' | 'scene' | 'trial' | 'round';
+
+/**
+ * Where the pilot is in the lesson, for the I key and the host's progress panel ("Lesson 6 of 21, step
+ * 2 of 2, attempt 4, counted 2 of 3"). Plain data, so a host can draw it and say it (statusLine).
+ */
+export interface LessonView {
+    readonly lessonId: string;
+    readonly title: SpeechLine;
+    /** the lesson's place on the pilot's path (1-based) and the path's length; the full ladder's when the lesson is not on it */
+    readonly lessonIndex: number;
+    readonly lessonCount: number;
+    readonly path: 'full' | 'fast';
+    /** the step running (1-based), how many steps the lesson has, and what the step is */
+    readonly step: number;
+    readonly steps: number;
+    readonly stepKind: StepKind;
+    /** the goal being flown (1-based) and how many the lesson has; 0 outside an attempt or in a lesson without a world */
+    readonly goal: number;
+    readonly goals: number;
+    /** attempts started in this sitting (0 before the first) */
+    readonly attempt: number;
+    /** counted attempts toward the pass, and how many pass the lesson */
+    readonly counted: number;
+    readonly required: number;
+    /** failed attempts in a row now */
+    readonly failsInARow: number;
+    /** the pilot has been told in this sitting that N goes on to the next lesson */
+    readonly offered: boolean;
+    readonly touches: number;
+    /** touches a counted attempt allows; null: any */
+    readonly maxTouches: number | null;
+    readonly phase: LessonRunner['phase'];
+    readonly passed: boolean;
+    /** the pilot went on without passing (here or in an earlier sitting) */
+    readonly skipped: boolean;
+    /** Z while flying: the task is being said again and the attempt waits */
+    readonly listening: boolean;
+    /** the flight is paused (pause(t)): the lesson waits */
+    readonly paused: boolean;
+    /** a sound the step is playing now (a named sound plays three times): its cue, which play and of how many; null otherwise */
+    readonly playing: { readonly cue: CueId; readonly index: number; readonly of: number } | null;
+}
 
 export interface LessonSession extends LessonRunner {
-    /** starts the lesson: the intro, then the first attempt */
+    /** starts the lesson: the task, then the first attempt */
     begin(t: number): readonly SessionEvent[];
     /** what the host must do now; each action is handed out once */
     takeActions(): RunnerAction[];
@@ -68,8 +185,24 @@ export interface LessonSession extends LessonRunner {
     spoken(t: number): readonly SessionEvent[];
     /** module 0: the frame the engine should hear at t while a scene runs, else null */
     demoFrame(t: number): SonicFrameInput | null;
-    /** the N key: skip the intro, a question or the pause between attempts */
+    /** N: the next step; from the last step, the next lesson (a 'go' action; this one is marked skipped unless passed) */
     next(t: number): readonly SessionEvent[];
+    /** B: the previous step; from step 1, the previous lesson (a 'go' action) */
+    previous(t: number): readonly SessionEvent[];
+    /** Z: the step again from its first line; while flying the task is said again and the attempt waits */
+    repeat(t: number): readonly SessionEvent[];
+    /** the next lesson at once (the lesson menu): this one marked skipped unless passed */
+    nextLesson(t: number): readonly SessionEvent[];
+    /** the previous lesson at once (the lesson menu) */
+    previousLesson(t: number): readonly SessionEvent[];
+    /** the flight paused (the lesson menu, the simulator's pause): the lesson waits, its clocks stop (review R8) */
+    pause(t: number): readonly SessionEvent[];
+    /** the flight goes on: every clock moves on by the pause; then report spoken(t) once the speech queue is empty */
+    resume(t: number): readonly SessionEvent[];
+    /** where the pilot is: lesson, step, attempt, count */
+    view(): LessonView;
+    /** the view as one line to say (I) */
+    statusLine(): SpeechLine;
     /** attempts started so far (1 during the first) */
     readonly attempt: number;
     /** touches in the current attempt */
@@ -92,6 +225,44 @@ export interface RunnerOptions {
     readonly floorY?: number;
     /** dice of the game's rounds */
     readonly seed?: number;
+    /** the pilot's path (SonicPrefs.path): where the lesson stands on it and what comes after; default 'full' */
+    readonly path?: 'full' | 'fast';
+    /** the pilot's speech rate (SonicPrefs.speechRate): how long a host that never reports the end of speech is waited for */
+    readonly speechRate?: number;
+    /** the names of the host's keys, as the lines say them ("Press N to go on"); default N, B, Z */
+    readonly keys?: { readonly next?: string; readonly previous?: string; readonly repeat?: string };
+    /**
+     * The lesson the pilot left with G (the sound glossary opened from another lesson): this one is a detour. Its
+     * 'go' actions lead back there (the host's way back, review R3), leaving it forward does not mark it skipped,
+     * and its pass says "Back to <that lesson>" instead of the next lesson on the path. Null or absent: none.
+     */
+    readonly returnTo?: string | null;
+    /**
+     * @internal For the package's own negative controls only (review R15): each brings back a rule of v0.12 that a
+     * check must catch. Not part of the host API; a host never sets it.
+     */
+    readonly testHooks?: RunnerTestHooks;
+}
+
+/** @internal For the package's own negative controls only (RunnerOptions.testHooks); not part of the host API. */
+export interface RunnerTestHooks {
+    /**
+     * The block rule of v0.12 with the lesson's v0.12 numbers: `required` successes in a block of `attempts`, `blocks`
+     * blocks in a row, a block that can no longer pass starts again from zero; no reason and no offer to go on.
+     */
+    readonly passRule?: V012PassRule;
+    /**
+     * 'v012': the timing of v0.12: a spoken step ends at the earlier of the host's report and the runner's estimate,
+     * a sound or a scene starts at once and plays once (the cause of "press 1, press 2, but no sound").
+     */
+    readonly speechWait?: 'v012';
+}
+
+/** @internal A lesson's pass rule as v0.12 shipped it (format 1), for RunnerTestHooks.passRule only. */
+export interface V012PassRule {
+    readonly attempts: number;
+    readonly required: number;
+    readonly blocks: number;
 }
 
 // ------------------------------------------------------------------ numbers
@@ -100,10 +271,30 @@ export interface RunnerOptions {
 export const ASK_TIMEOUT_S = 20;
 /** Pause between attempts, s. */
 export const BETWEEN_S = 1.5;
-/** A scene of module 0 lasts this long, s. */
-export const SCENE_S = 5;
-/** A cue preview (glossary, headphone check) is given this long, s. */
+/** v0.12 (testHooks.speechWait only): a preview was given this long, s. */
 export const PREVIEW_WAIT_S = 3.3;
+/** Flying against the track faster than this, m/s, ... */
+export const WRONG_WAY_MPS = 0.5;
+/** ... for longer than this, s, is flying the wrong way; it is said at most once every WRONG_WAY_EVERY_S. */
+export const WRONG_WAY_S = 1;
+export const WRONG_WAY_EVERY_S = 5;
+/**
+ * In a course, this close in front of the gate that counts next a pilot may be turning to line up with it: flying
+ * away from it there is not flying back, m (review R1; rings 14 m apart, a pilot back from beside one ends 5 m out).
+ */
+export const LINE_UP_M = 8;
+/** A respawn puts the craft this far before the last point of the track it passed, m. */
+export const RESPAWN_BEFORE_M = 1;
+/** The craft further than this from the start when a course's first attempt begins goes back there first, m. */
+export const START_SLACK_M = 1;
+/** A point of the world's checkpoint list is passed by crossing its plane forward this close to it, m. */
+export const PASS_POINT_M = 4;
+/** A gate's back side is told at most this often, s (a craft that hovers on the plane would cross it to and fro). */
+export const WRONG_SIDE_EVERY_S = 3;
+/** The praise lines of a counted attempt (keys praise.1 .. praise.PRAISE_LINES). */
+export const PRAISE_LINES = 8;
+/** A score counts as better than the last counted attempt's when it improved by this share of it. */
+export const BETTER_SHARE = 0.05;
 /** Share of right answers that meets 'name-cues' (spec: names cues at 90 %). */
 export const NAME_SHARE = 0.9;
 /** Share of right answers that meets 'locate'. */
@@ -115,6 +306,9 @@ export const LOCATE_SHARE = 0.8;
  */
 export const TURN_OFFSETS = [0, 180, 90, -135] as const;
 
+/** Where an intro line's cue comes from, listener frame (x right, y up, -z ahead). */
+const SIDE_DIRS: Readonly<Record<IntroCue['from'], Vec3>> = { left: [-1, 0, 0], right: [1, 0, 0], front: [0, 0, -1], back: [0, 0, 1], up: [0, 1, 0], down: [0, -1, 0] };
+
 const SIDES: readonly { readonly dir: Vec3; readonly sector: 'left' | 'right' | 'front' | 'back' }[] = [
     { dir: [-1, 0, 0], sector: 'left' },
     { dir: [1, 0, 0], sector: 'right' },
@@ -122,39 +316,49 @@ const SIDES: readonly { readonly dir: Vec3; readonly sector: 'left' | 'right' | 
     { dir: [0, 0, 1], sector: 'back' }
 ];
 
-/** Where each wall-like cue comes from in the narrated scenes of ears-walls (spec: front, left, right, above, below). */
-const APPROACHES: Readonly<Record<string, readonly { readonly dir: Vec3; readonly sector: string }[]>> = {
-    'safety.wall': [
-        { dir: [0, 0, -1], sector: 'front' },
-        { dir: [-1, 0, 0], sector: 'left' },
-        { dir: [1, 0, 0], sector: 'right' }
-    ],
-    'safety.ceiling': [{ dir: [0, 1, 0], sector: 'up' }],
-    'safety.floor': [{ dir: [0, -1, 0], sector: 'down' }],
-    'safety.obstacle': [{ dir: [Math.SQRT1_2, 0, -Math.SQRT1_2], sector: 'front-right' }]
-};
-
-const SHAPE_ORDER: readonly CueId[] = ['shape.ring', 'shape.square', 'shape.cube', 'shape.pillar'];
-
 // ------------------------------------------------------------------ the script
 
 type Step =
     | { readonly kind: 'say'; readonly lines: readonly SpeechLine[]; readonly interrupt?: boolean }
     | { readonly kind: 'cue'; readonly event: CueEvent; readonly waitS: number }
-    | { readonly kind: 'scene'; readonly scene: DemoScene }
+    /** a sound the step names: once the speech is over, `plays` plays REPEAT_GAP_S apart */
+    | { readonly kind: 'sound'; readonly cue: CueId; readonly dir: Vec3 | null; readonly plays: number }
+    | { readonly kind: 'scene'; readonly scene: DemoScene; readonly plays: number }
     | { readonly kind: 'ask'; readonly question: Question; readonly onAnswer: (value: number | null, t: number) => void }
     | { readonly kind: 'wait'; readonly s: number }
     | { readonly kind: 'do'; readonly run: (t: number) => void };
 
+/** One step of the lesson as the pilot moves between them: what it is and what it plays. */
+interface Block {
+    readonly kind: StepKind;
+    readonly steps: readonly Step[];
+}
+
 interface Running {
     readonly step: Step;
-    readonly t0: number;
-    /** say: the lines were handed out and the host has not yet reported the queue empty */
+    /** when the step began (moved on by a pause) */
+    t0: number;
     answered: boolean;
-    spoken: boolean;
+    /** say, ask: the batch of lines the step handed to the host's speech queue */
+    batch: number;
+    /** v0.12 timing: the host reported its queue empty while this step was current */
+    spokenSeen: boolean;
+    /** ask: when its lines had been said (its time to answer runs from here) */
+    askSpokenAt: number | null;
+    /** sound, scene: when the plays began (after the speech), how many have begun, and the end of the one going on */
+    playT0: number | null;
+    played: number;
+    playEnd: number;
 }
 
 type Phase = LessonRunner['phase'];
+
+/** One answer of module 0, by question id: asked again (a step repeated), it replaces the earlier one. */
+interface EarsAnswer {
+    readonly kind: 'what' | 'where' | 'moving' | 'side' | 'front-back';
+    readonly value: number | null;
+    readonly right: boolean;
+}
 
 const speedOf = (s: FlightSample): number => Math.hypot(s.vel[0], s.vel[1], s.vel[2]);
 
@@ -171,6 +375,13 @@ class Runner implements LessonSession {
     private began = false;
     private prev: FlightSample | null = null;
     private worldRef: SonicWorld | null = null;
+    // speech: batches of lines handed to the host, the last one it has said, and when the lines handed must be over at the latest
+    private handed = 0;
+    private spokenUpTo = 0;
+    private speechDeadline = 0;
+    // steps: the task or the intro first, then (module 0) one per sound, scene, trial or round
+    private blocks: Block[] = [];
+    private blockIndex = 0;
     // attempt
     private attemptNo = 0;
     private attemptT0 = 0;
@@ -183,17 +394,52 @@ class Runner implements LessonSession {
     private shapeOutcome: Outcome = null;
     /** set while the pilot's own key (N, an answer) is being handled: the first line said after it interrupts the speech in progress */
     private interruptNext = false;
-    private earsScore = { what: 0, whatAsked: 0, where: 0, whereAsked: 0, moving: 0, movingAsked: 0, answers: [] as (number | null)[] };
+    private earsAnswers = new Map<string, EarsAnswer>();
+    /** the scores of the goals met in this attempt, and the score of the last counted attempt of this sitting */
+    private goalScores: GoalScore[] = [];
+    private lastScore: GoalScore | null = null;
+    private lastPraise = -1;
+    // direction: the track (built once the world is known), since when the craft flies against it, the last warnings
+    private trackValue: LessonTrack | null | undefined = undefined;
+    private backSince: number | null = null;
+    private lastWrongWay = -Infinity;
+    private lastWrongSide = -Infinity;
+    // respawn: the furthest point of the track passed in this attempt (its index on the track) and the path flown there
+    private passedPoint: { readonly point: TrackPoint; readonly index: number; readonly pathM: number; readonly checkpoint: Checkpoint | null } | null = null;
     // progress
+    /** attempts and counted attempts of this lesson version, earlier sessions included */
     private attemptsDone: number;
     private successes: number;
-    private blockOk = 0;
-    private blockDone = 0;
-    private consecutive: number;
-    private blocksPlayed = 0;
+    /** counted attempts toward the pass: this sitting's, plus an unfinished earlier sitting's of the same version */
+    private counted: number;
+    /** failed attempts in a row */
+    private failRun = 0;
+    /** the go-on offer was made in this sitting */
+    private offered = false;
+    /** the lesson was passed by its rule (not only ended, as a lesson that does not block may be) */
+    private passedByRule = false;
     private passedValue: boolean;
+    private skippedValue: boolean;
     private bestTimeMs: number | null;
     private lastAtT = 0;
+    /** the pilot left the lesson (a 'go' action): nothing more happens */
+    private left = false;
+    /** the lesson ended by moving on after failures in a row (a lesson that does not block), not by a pass */
+    private movedOn = false;
+    /** the flight is paused since then (pause(t)), or null */
+    private pausedAt: number | null = null;
+    /** a failed attempt of a course that re-centres: the furthest point it passed, where the next attempt begins */
+    private resumeFrom: Runner['passedPoint'] = null;
+    /** Z while flying: the task is said again; the goals and the attempt's clock wait from listenT0 */
+    private listening = false;
+    private listenT0 = 0;
+    /** how long the attempt waited for repeats, ms (the goals' and the time limit's clock leaves it out) */
+    private pausedMs = 0;
+    // the v0.12 block rule (testHooks.passRule only)
+    private blockOk = 0;
+    private blockDone = 0;
+    private consecutive = 0;
+    private blocksPlayed = 0;
     // scenes
     private scene: { readonly scene: DemoScene; readonly t0: number } | null = null;
     private readonly sceneWorlds = new Map<string, AnalyticWorldInfo>();
@@ -204,11 +450,25 @@ class Runner implements LessonSession {
         this.tr = createTranslator(options.locale ?? 'en', options.dicts ?? DICTS);
         const p = options.progress ?? null;
         const same = p !== null && p.lessonId === lesson.id;
-        this.attemptsDone = same ? p.attempts : 0;
-        this.successes = same ? p.successes : 0;
-        this.consecutive = same ? p.blocksPassed : 0;
+        // counts carry on within one version of the lesson only: another version has another rule
+        const sameVersion = same && p.version === lesson.version;
+        this.attemptsDone = sameVersion ? p.attempts : 0;
+        this.successes = sameVersion ? p.successes : 0;
         this.passedValue = same ? p.passed : false;
+        this.skippedValue = same && !p.passed && p.skipped === true;
+        this.passedByRule = sameVersion && p.passed && p.blocksPassed > 0;
+        // a lesson passed before is practised afresh; an unfinished one goes on from its count
+        this.counted = sameVersion && !p.passed ? Math.min(p.successes, lesson.pass.required - 1) : 0;
+        this.consecutive = sameVersion ? p.blocksPassed : 0;
         this.bestTimeMs = same ? p.bestTimeMs : null;
+    }
+
+    private get hooks(): RunnerTestHooks {
+        return this.o.testHooks ?? {};
+    }
+
+    private key(which: 'next' | 'previous' | 'repeat'): string {
+        return this.o.keys?.[which] ?? { next: 'N', previous: 'B', repeat: 'Z' }[which];
     }
 
     get phase(): Phase {
@@ -225,6 +485,11 @@ class Runner implements LessonSession {
 
     private get ears(): boolean {
         return this.lesson.world.kind === 'none';
+    }
+
+    /** opened with G from another lesson, which the pilot goes back to (RunnerOptions.returnTo) */
+    private get detour(): boolean {
+        return (this.o.returnTo ?? null) !== null;
     }
 
     // -------------------------------------------------------------- plumbing
@@ -270,19 +535,38 @@ class Runner implements LessonSession {
         this.script.push(...steps);
     }
 
+    /** Runs step `index` of the lesson's steps from its beginning (what was going on stops). */
+    private startBlock(index: number, t: number): void {
+        this.blockIndex = index;
+        this.script.length = 0;
+        this.stopCurrent();
+        const block = this.blocks[index];
+        if (block !== undefined) this.push(...block.steps);
+        this.advance(t);
+    }
+
+    /** The step going on is dropped: a scene stops; a question is left (no answer is recorded). */
+    private stopCurrent(): void {
+        this.current = null;
+        if (this.scene !== null) {
+            this.scene = null;
+            this.actions.push({ kind: 'scene', scene: null });
+        }
+    }
+
     /** Runs the script as far as time and answers allow. */
     private advance(t: number): void {
-        for (let guard = 0; guard < 1000; guard++) {
+        for (let guard = 0; guard < 1000 && !this.left; guard++) {
             if (this.current === null) {
                 const step = this.script.shift();
                 if (step === undefined) return;
-                this.current = { step, t0: t, answered: false, spoken: false };
-                this.startStep(step, t);
+                this.current = { step, t0: t, answered: false, batch: 0, spokenSeen: false, askSpokenAt: null, playT0: null, played: 0, playEnd: 0 };
+                this.startStep(this.current, t);
             }
             const c = this.current;
             if (!this.stepDone(c, t)) return;
             this.current = null;
-            if (c.step.kind === 'scene') {
+            if (this.scene !== null) {
                 this.scene = null;
                 this.actions.push({ kind: 'scene', scene: null });
             }
@@ -294,22 +578,47 @@ class Runner implements LessonSession {
         }
     }
 
-    private startStep(step: Step, t: number): void {
+    private get v012(): boolean {
+        return this.hooks.speechWait === 'v012';
+    }
+
+    /** How long the host may take to say a line before the runner stops waiting for its report, ms: twice the estimate and a second. */
+    private fallbackMs(line: SpeechLine): number {
+        const rate = Math.min(Math.max(this.o.speechRate ?? 1, 0.25), 4);
+        return 2000 * ((0.7 + this.text(line).length * 0.065) / rate) + 1000;
+    }
+
+    /** Hands lines to the host's speech queue; the first one interrupts what is being said when the pilot's key asked for it. */
+    private sayLines(lines: readonly SpeechLine[], interrupt: boolean, t: number): number {
+        lines.forEach((line, i) => this.actions.push({ kind: 'say', line, interrupt: i === 0 && interrupt }));
+        let ms = 0;
+        for (const l of lines) ms += this.fallbackMs(l);
+        this.speechDeadline = (interrupt ? t : Math.max(t, this.speechDeadline)) + ms;
+        return ++this.handed;
+    }
+
+    /** Lines were handed that the host has not reported said (and the longest wait for them has not run out). */
+    private speaking(t: number): boolean {
+        return this.spokenUpTo < this.handed && t < this.speechDeadline;
+    }
+
+    private startStep(c: Running, t: number): void {
+        const step = c.step;
         switch (step.kind) {
             case 'say':
                 // a key the pilot just pressed cuts the speech still going with the first line of what follows
-                step.lines.forEach((line, i) => this.actions.push({ kind: 'say', line, interrupt: i === 0 && (step.interrupt ?? this.interruptNext) }));
+                c.batch = this.sayLines(step.lines, step.interrupt ?? this.interruptNext, t);
                 this.interruptNext = false;
                 break;
             case 'cue':
                 this.actions.push({ kind: 'cue', event: step.event });
                 break;
+            case 'sound':
             case 'scene':
-                this.scene = { scene: step.scene, t0: t };
-                this.actions.push({ kind: 'scene', scene: step.scene });
+                // played in stepDone, once the speech is over (v0.12: at once)
                 break;
             case 'ask':
-                step.question.lines.forEach((line, i) => this.actions.push({ kind: 'say', line, interrupt: i === 0 && this.interruptNext }));
+                c.batch = this.sayLines(step.question.lines, this.interruptNext, t);
                 this.interruptNext = false;
                 this.actions.push({ kind: 'ask', question: step.question });
                 break;
@@ -321,17 +630,62 @@ class Runner implements LessonSession {
         }
     }
 
+    /** One play of a sound or a scene begins. */
+    private play(c: Running, t: number): void {
+        const step = c.step;
+        c.played++;
+        if (step.kind === 'sound') {
+            const durS = playS(step.cue);
+            if (this.v012) {
+                // v0.12: one preview (the planner plays 3 s of it), the next step 3.3 s after it began
+                c.playEnd = t + (PREVIEW_WAIT_S - 0.3) * 1000;
+                this.actions.push({ kind: 'cue', event: { kind: 'preview', cue: step.cue, dir: step.dir } });
+                return;
+            }
+            c.playEnd = t + durS * 1000;
+            this.actions.push({ kind: 'cue', event: { kind: 'repeat-cue', cue: step.cue, dir: step.dir, index: c.played, of: step.plays, durS } });
+        } else if (step.kind === 'scene') {
+            c.playEnd = t + step.scene.durS * 1000;
+            this.scene = { scene: step.scene, t0: t };
+            this.actions.push({ kind: 'scene', scene: step.scene, play: { index: c.played, of: step.plays } });
+        }
+    }
+
     private stepDone(c: Running, t: number): boolean {
         const age = (t - c.t0) / 1000;
         switch (c.step.kind) {
             case 'say':
-                return c.spoken || age >= this.sayS(c.step.lines);
+                if (this.v012) return c.spokenSeen || age >= this.sayS(c.step.lines);
+                return this.spokenUpTo >= c.batch || t >= this.speechDeadline;
             case 'cue':
                 return age >= c.step.waitS;
-            case 'scene':
-                return age >= c.step.scene.durS;
+            case 'sound':
+            case 'scene': {
+                const plays = this.v012 ? 1 : c.step.plays;
+                if (c.playT0 === null) {
+                    if (!this.v012 && this.speaking(t)) return false;
+                    c.playT0 = t;
+                    this.play(c, t);
+                }
+                // a play ends, then the gap; the next play, or the step is over after the gap of the last one
+                if (this.scene !== null && t >= c.playEnd) {
+                    this.scene = null;
+                    this.actions.push({ kind: 'scene', scene: null });
+                }
+                const gapMs = this.v012 ? (c.step.kind === 'sound' ? 300 : 0) : REPEAT_GAP_S * 1000;
+                if (t < c.playEnd + gapMs) return false;
+                if (c.played < plays) {
+                    this.play(c, t);
+                    return false;
+                }
+                return true;
+            }
             case 'ask':
-                return c.answered || age >= this.sayS(c.step.question.lines) + ASK_TIMEOUT_S;
+                if (c.answered) return true;
+                if (this.v012) return age >= this.sayS(c.step.question.lines) + ASK_TIMEOUT_S;
+                // the time to answer runs from the end of the question's lines
+                if (c.askSpokenAt === null && (this.spokenUpTo >= c.batch || t >= this.speechDeadline)) c.askSpokenAt = t;
+                return c.askSpokenAt !== null && t - c.askSpokenAt >= ASK_TIMEOUT_S * 1000;
             case 'wait':
                 return age >= c.step.s;
             case 'do':
@@ -341,7 +695,12 @@ class Runner implements LessonSession {
 
     spoken(t: number): readonly SessionEvent[] {
         this.t = Math.max(this.t, t);
-        if (this.current !== null && this.current.step.kind === 'say') this.current.spoken = true;
+        // paused, the queue holds the lesson menu's lines: its running empty says nothing about the lesson's (review R8)
+        if (this.pausedAt !== null) return this.drain();
+        // every line handed so far has been said (the host's queue ran empty)
+        this.spokenUpTo = this.handed;
+        this.speechDeadline = t;
+        if (this.current !== null) this.current.spokenSeen = true;
         this.advance(t);
         this.afterScript(t);
         return this.drain();
@@ -356,11 +715,27 @@ class Runner implements LessonSession {
         this.lessonEvent('open', t);
         this.lessonEvent('intro', t);
         if (!this.ears) this.actions.push({ kind: 'place', pose: this.startPose(1), to: 'start' });
-        this.push({ kind: 'say', lines: [this.lesson.title, ...this.lesson.intro] });
+        this.blocks = [this.introBlock()];
         this.phaseValue = 'intro';
-        this.advance(t);
+        this.startBlock(0, t);
         this.afterScript(t);
         return this.drain();
+    }
+
+    /** Step 1: the task of a flying lesson, or the intro of a lesson without a world: the lines, each named sound three times after its line. */
+    private introBlock(): Block {
+        const steps: Step[] = [];
+        let lines: SpeechLine[] = [this.lesson.title];
+        for (const l of this.lesson.intro) {
+            lines.push(l.params === undefined ? { key: l.key } : { key: l.key, params: l.params });
+            if (l.cues === undefined || l.cues.length === 0) continue;
+            steps.push({ kind: 'say', lines });
+            lines = [];
+            // a cue the line places on a side plays from there (review R11: "a sound will come from one side"); else its own default
+            for (const c of l.cues) steps.push(typeof c === 'string' ? { kind: 'sound', cue: c, dir: null, plays: REPEAT_PLAYS } : { kind: 'sound', cue: c.cue, dir: SIDE_DIRS[c.from], plays: REPEAT_PLAYS });
+        }
+        if (lines.length > 0) steps.push({ kind: 'say', lines });
+        return { kind: this.ears ? 'intro' : 'task', steps };
     }
 
     private startPose(attempt: number): Pose {
@@ -376,27 +751,52 @@ class Runner implements LessonSession {
     }
 
     private startAttempt(t: number, first: boolean): void {
+        // a course that re-centres goes on from the last point the failed attempt passed (review R9, M41-20)
+        const resume = first ? null : this.resumeFrom;
+        this.resumeFrom = null;
         this.attemptNo++;
         this.attemptT0 = t;
         this.touchCount = 0;
         this.pathM = 0;
         this.goalIndex = 0;
         this.shapeOutcome = null;
-        this.lastCheckpoint = null;
-        this.reached.clear();
-        this.earsScore = { what: 0, whatAsked: 0, where: 0, whereAsked: 0, moving: 0, movingAsked: 0, answers: [] };
+        if (resume === null) {
+            this.lastCheckpoint = null;
+            this.passedPoint = null;
+            this.reached.clear();
+        } else this.passedPoint = resume;
+        this.earsAnswers = new Map();
+        this.goalScores = [];
+        this.backSince = null;
+        this.listening = false;
+        this.pausedMs = 0;
         this.phaseValue = 'flying';
-        if (!first && !this.ears && this.returnsToStart()) {
-            const pose = this.startPose(this.attemptNo);
-            this.actions.push({ kind: 'place', pose, to: 'start' });
-            this.emit({ t, kind: 'reset', to: 'start', checkpointId: null });
+        // the first attempt of a course begins at its start too when the craft left it while the task was said: what the
+        // attempt counts (the distance flown, the gates) is the course's, not what is left of it (a pilot who flew 170 m
+        // of the corridor during its task could never meet its 240 m before the dead end, and every touch there sent him
+        // back to cp-5 for ever: the simulator's corridor pilot, found after the fix of review R9)
+        const left = first && this.prev !== null && dist3(this.prev.pos, this.startPose(1).pos) > START_SLACK_M;
+        if ((!first || left) && !this.ears && this.returnsToStart()) {
+            if (resume !== null) {
+                // the path flown to that point counts again, so the course's distance goals stay where they were
+                const back = this.respawn();
+                this.actions.push({ kind: 'place', pose: back.pose, to: back.to });
+                this.emit({ t, kind: 'reset', to: back.to, checkpointId: back.id });
+                this.prev = null; // the jump is not flight
+            } else {
+                const pose = this.startPose(this.attemptNo);
+                this.actions.push({ kind: 'place', pose, to: 'start' });
+                this.emit({ t, kind: 'reset', to: 'start', checkpointId: null });
+            }
         }
         this.lessonEvent('attempt-start', t);
         if (this.ears) {
             this.tracker = null;
-            this.pushEarsAttempt();
+            this.blocks = [this.introBlock(), ...this.earsBlocks()];
+            this.startBlock(1, t);
         } else {
-            this.push({ kind: 'say', lines: [first ? { key: 'fly.go' } : { key: 'fly.attempt', params: { n: this.attemptNo } }] });
+            this.script.length = 0;
+            this.push({ kind: 'say', lines: [{ key: 'fly.go' }] });
             this.startGoal(t);
         }
     }
@@ -412,20 +812,40 @@ class Runner implements LessonSession {
                 this.emit({ t: at, kind: 'gate', gateId: gate.id, index, missM: Math.round(missM * 1000) / 1000 });
                 this.actions.push({ kind: 'cue', event: { kind: 'gate', index, of } });
                 if (lapDone) this.actions.push({ kind: 'cue', event: { kind: 'lap' } });
+            },
+            // a 'track-end' goal: the furthest point passed is the track's last (the world's list, else the lesson's checkpoints)
+            trackEnded: () => {
+                const track = this.track();
+                const pp = this.passedPoint;
+                return track !== null && track.source !== 'gates' && pp !== null && pp.index >= track.points.length - 1;
+            },
+            wrongSide: (gate, at) => {
+                if (at - this.lastWrongSide < WRONG_SIDE_EVERY_S * 1000) return;
+                this.lastWrongSide = at;
+                this.actions.push({ kind: 'cue', event: { kind: 'wrong-side', dir: this.toListener(sub(gate.pos, this.prev?.pos ?? gate.pos)) } });
+                this.actions.push({ kind: 'say', line: { key: 'fly.wrong-side' }, interrupt: false });
             }
         });
         if (goal.kind === 'name-shape') this.pushShapeQuestion(goal.objectId, t);
     }
 
-    /** The script has run dry: the intro is over, an attempt of module 0 has asked everything, or the pause between attempts ended. */
+    /**
+     * The script has run dry: the task or the intro is over, a step of module 0 has played (the next one
+     * begins, or the attempt is scored after the last), or the pause between attempts ended.
+     */
     private afterScript(t: number): void {
-        if (this.current !== null || this.script.length > 0) return;
-        if (this.phaseValue === 'intro' && this.began) this.startAttempt(t, true);
-        else if (this.phaseValue === 'between') this.startAttempt(t, false);
-        else if (this.phaseValue === 'flying' && this.ears) this.endEarsAttempt(t);
-        else return;
-        this.advance(t);
-        if (this.current === null && this.script.length === 0 && this.phaseValue === 'flying' && this.ears) this.afterScript(t);
+        for (let guard = 0; guard < 64; guard++) {
+            if (this.current !== null || this.script.length > 0 || !this.began || this.left) return;
+            // after the task (also heard again by B): the craft goes back to the start for every attempt but the first
+            if (this.phaseValue === 'intro') this.startAttempt(t, this.attemptNo === 0);
+            else if (this.phaseValue === 'between') this.startAttempt(t, false);
+            else if (this.phaseValue === 'flying' && this.listening) this.endListening(t);
+            else if (this.phaseValue === 'flying' && this.ears) {
+                if (this.blockIndex + 1 < this.blocks.length) this.startBlock(this.blockIndex + 1, t);
+                else this.endEarsAttempt(t);
+            } else return;
+            this.advance(t);
+        }
     }
 
     // -------------------------------------------------------------- frames
@@ -434,15 +854,20 @@ class Runner implements LessonSession {
         const t = sample.t;
         this.t = t;
         this.worldRef = world;
+        if (this.pausedAt !== null) return this.drain(); // a host steps no paused frame; one that does changes nothing
         const prev = this.prev;
         this.prev = sample;
-        if (!this.began || this.phaseValue === 'passed') return this.drain();
-        if (prev !== null) {
+        if (!this.began || this.left || this.phaseValue === 'passed') return this.drain();
+        if (prev !== null && !this.listening) {
             const d = dist3(prev.pos, sample.pos);
             if (d < 3) this.pathM += d; // a longer jump is a reset, not flight
         }
         this.advance(t);
-        if (this.phaseValue === 'flying' && !this.ears) this.fly(sample, prev ?? sample, t);
+        if (this.phaseValue === 'flying' && !this.ears && !this.listening) {
+            this.fly(this.goalClock(sample), this.goalClock(prev ?? sample), t);
+            // what an attempt that just ended says goes out with this frame
+            this.advance(t);
+        }
         this.afterScript(t);
         return this.drain();
     }
@@ -452,22 +877,134 @@ class Runner implements LessonSession {
             this.touchCount++;
             this.emit({ t, kind: 'touch', material: this.touchMaterial(s.pos), speed: Math.round(speedOf(s) * 100) / 100, pos: s.pos });
             if (this.lesson.assists.onTouch === 'bump-recentre') {
-                const cp = this.lastCheckpoint;
-                const pose = cp === null ? this.startPose(this.attemptNo) : cp.pose;
-                this.actions.push({ kind: 'place', pose, to: cp === null ? 'start' : 'checkpoint' });
+                const back = this.respawn();
+                this.actions.push({ kind: 'place', pose: back.pose, to: back.to });
                 this.actions.push({ kind: 'cue', event: { kind: 'reset' } });
-                this.emit({ t, kind: 'reset', to: cp === null ? 'start' : 'checkpoint', checkpointId: cp === null ? null : cp.id });
+                this.emit({ t, kind: 'reset', to: back.to, checkpointId: back.id });
                 this.prev = null; // the jump is not flight
+                this.backSince = null;
             }
         }
         for (const cp of this.lesson.checkpoints) {
-            if (this.reached.has(cp.id) || dist3(s.pos, cp.at) > cp.radiusM) continue;
+            if (this.reached.has(cp.id) || segmentDistance(prev.pos, s.pos, cp.at) > cp.radiusM) continue;
             this.reached.add(cp.id);
             this.lastCheckpoint = cp;
             this.emit({ t, kind: 'checkpoint', id: cp.id });
-            if (this.lesson.checkpoints.indexOf(cp) > 0) this.actions.push({ kind: 'cue', event: { kind: 'checkpoint' } });
+            this.passed(cp.id, cp);
+            if (cp.stage !== undefined && !this.stagesFromWorld()) this.stagePassed(cp.stage);
+            else if (this.lesson.checkpoints.indexOf(cp) > 0) this.actions.push({ kind: 'cue', event: { kind: 'checkpoint' } });
         }
+        this.passWorldPoints(prev, s);
+        this.checkDirection(s);
         this.evaluateGoals(s, prev, t);
+    }
+
+    /** A point of the track was passed: the furthest one passed is where a respawn goes back to. */
+    private passed(id: string, checkpoint: Checkpoint | null): void {
+        const track = this.track();
+        let index: number;
+        let point: TrackPoint | undefined;
+        if (checkpoint !== null) {
+            // the world's own list, when there is one, is the finer track: the lesson's checkpoints do not move the respawn then
+            if (track?.source === 'world') return;
+            index = this.lesson.checkpoints.indexOf(checkpoint);
+            const a = (checkpoint.pose.yawDeg * Math.PI) / 180;
+            point = track?.source === 'checkpoints' ? track.points[index] : { id, pos: checkpoint.at, dir: [Math.sin(a), 0, -Math.cos(a)], pose: checkpoint.pose };
+        } else {
+            index = (track?.points ?? []).findIndex((p) => p.id === id);
+            point = track?.points[index];
+        }
+        if (point === undefined || (this.passedPoint !== null && index <= this.passedPoint.index)) return;
+        this.passedPoint = { point, index, pathM: this.pathM, checkpoint };
+    }
+
+    /**
+     * Where a course's stages come from: the world's checkpoint list when it marks any, else the lesson's checkpoints;
+     * never both, or a stage is said twice (review R6). A world list without stages (the corridor of version 1) leaves
+     * them to the lesson's checkpoints.
+     */
+    private stagesFromWorld(): boolean {
+        const track = this.track();
+        return track !== null && track.source === 'world' && track.points.some((p) => p.stage !== undefined);
+    }
+
+    /** The world's checkpoint list: a point is passed by crossing its plane forward close to it (its stages are said). */
+    private passWorldPoints(prev: FlightSample, s: FlightSample): void {
+        const track = this.track();
+        if (track === null || track.source !== 'world') return;
+        const from = this.passedPoint === null ? 0 : this.passedPoint.index + 1;
+        for (let i = from; i < track.points.length; i++) {
+            const p = track.points[i] as TrackPoint;
+            const before = dot(sub(prev.pos, p.pos), p.dir);
+            const after = dot(sub(s.pos, p.pos), p.dir);
+            if (!(before < 0 && after >= 0) || dist3(s.pos, p.pos) > PASS_POINT_M) continue;
+            this.passed(p.id, null);
+            if (p.stage !== undefined) this.stagePassed(p.stage);
+        }
+    }
+
+    /**
+     * Where a touch that re-centres, or a short R, puts the craft: RESPAWN_BEFORE_M before the furthest point passed,
+     * facing along the track, the path flown set back to what it was there; the attempt's start when none was passed.
+     */
+    private respawn(): { readonly pose: Pose; readonly to: 'start' | 'checkpoint'; readonly id: string | null } {
+        const passed = this.passedPoint;
+        if (passed === null) return { pose: this.startPose(Math.max(this.attemptNo, 1)), to: 'start', id: null };
+        const { point, checkpoint } = passed;
+        // a lesson checkpoint's own pose says how to face there (its height too); a world point its direction
+        const yawDeg = checkpoint !== null ? checkpoint.pose.yawDeg : yawOf(point.dir);
+        const at = checkpoint !== null ? checkpoint.pose.pos : point.pos;
+        const a = (yawDeg * Math.PI) / 180;
+        const before: Vec3 = [point.pos[0] - Math.sin(a) * RESPAWN_BEFORE_M, at[1], point.pos[2] + Math.cos(a) * RESPAWN_BEFORE_M];
+        const w = this.worldRef as { sdf?: (x: number, y: number, z: number) => number } | null;
+        const free = typeof w?.sdf !== 'function' || (w.sdf(before[0], before[1], before[2]) as number) > BODY_RADIUS_M + 0.2;
+        this.pathM = Math.max(0, passed.pathM - RESPAWN_BEFORE_M);
+        return { pose: { pos: free ? before : at, yawDeg }, to: 'checkpoint', id: checkpoint?.id ?? point.id };
+    }
+
+    /** The lesson's track, built the first time a frame brings the world. */
+    private track(): LessonTrack | null {
+        if (this.trackValue === undefined) this.trackValue = lessonTrack(this.lesson, this.worldRef, this.objects(), this.o.start ?? this.lesson.start);
+        return this.trackValue;
+    }
+
+    /** A world direction in the craft's heading frame (the listener frame the cue events use), unit; null for none. */
+    private toListener(w: Vec3): Vec3 | null {
+        const p = this.prev;
+        if (p === null || Math.hypot(w[0], w[1], w[2]) < 1e-6) return null;
+        return normalize(worldToListener(headingBasis(p.yawDeg), w));
+    }
+
+    /** M41-15: flying against the way forward for more than a second, told at most once every few seconds. */
+    private checkDirection(s: FlightSample): void {
+        const dir = this.wayForward(s);
+        if (dir === null || dot(s.vel, dir) >= -WRONG_WAY_MPS) {
+            this.backSince = null;
+            return;
+        }
+        this.backSince ??= s.t;
+        if (s.t - this.backSince < WRONG_WAY_S * 1000 || s.t - this.lastWrongWay < WRONG_WAY_EVERY_S * 1000) return;
+        this.lastWrongWay = s.t;
+        this.actions.push({ kind: 'cue', event: { kind: 'wrong-way', dir: this.toListener(dir) } });
+        this.actions.push({ kind: 'say', line: { key: 'fly.wrong-way' }, interrupt: false });
+    }
+
+    /**
+     * The way forward where the craft is (unit, world frame), or null where nothing says it. While the goal is a
+     * course of gates it is the way to the gate that counts next, and only in front of that gate, further than
+     * LINE_UP_M from it: behind it, beside it or close in front of it a pilot may be on his way round to its front
+     * (review R1: a ring passed beside it is flown back to, its hum ahead). Elsewhere it is the way the track goes.
+     */
+    private wayForward(s: FlightSample): Vec3 | null {
+        const goal = this.lesson.goals[this.goalIndex];
+        if (goal !== undefined && (goal.kind === 'pass-gates' || goal.kind === 'timed-course')) {
+            const gate = this.tracker?.target() ?? null;
+            if (gate === null) return null;
+            const to = sub(gate.pos, s.pos);
+            if (toLocal(gate, s.pos)[2] <= 0 || Math.hypot(to[0], to[1], to[2]) <= LINE_UP_M) return null;
+            return normalize(to);
+        }
+        return this.track()?.dirAt(s.pos) ?? null;
     }
 
     /** The current goal, and the next ones as each is met, in order; then the attempt's time limit. */
@@ -478,9 +1015,11 @@ class Runner implements LessonSession {
             if (outcome === null) break;
             this.emit({ t, kind: 'goal', index: this.goalIndex, what: outcome });
             if (outcome === 'missed') {
-                this.endAttempt(false, t);
+                this.endAttempt(false, t, this.whyMissed(false));
                 return;
             }
+            const score = this.tracker.score();
+            if (score !== null) this.goalScores.push(score);
             this.goalIndex++;
             if (this.goalIndex >= this.lesson.goals.length) {
                 this.endAttempt(true, t);
@@ -489,10 +1028,30 @@ class Runner implements LessonSession {
             this.startGoal(t);
         }
         const limit = this.lesson.attemptLimitS;
-        if (this.phaseValue === 'flying' && limit !== null && (t - this.attemptT0) / 1000 >= limit) {
+        if (this.phaseValue === 'flying' && limit !== null && (t - this.pausedMs - this.attemptT0) / 1000 >= limit) {
             this.emit({ t, kind: 'goal', index: this.goalIndex, what: 'missed' });
-            this.endAttempt(false, t);
+            this.endAttempt(false, t, this.whyMissed(true));
         }
+    }
+
+    /** A checkpoint that ends a stage: the stage cue and "Stage k passed", said over the flight (it does not wait for other lines). */
+    private stagePassed(stage: number): void {
+        this.actions.push({ kind: 'cue', event: { kind: 'stage', stage } });
+        this.actions.push({ kind: 'say', line: { key: 'fly.stage', params: { n: stage } }, interrupt: false });
+    }
+
+    /** A sample on the goals' clock: the time the attempt waited for a repeat (Z) is left out. */
+    private goalClock(s: FlightSample): FlightSample {
+        return this.pausedMs === 0 ? s : { ...s, t: s.t - this.pausedMs };
+    }
+
+    /** What went wrong in the attempt now ending: the time ran out, and what the current goal says (at most two short lines). */
+    private whyMissed(outOfTime: boolean): SpeechLine[] {
+        const goal = this.tracker === null ? null : this.tracker.reason();
+        const out: SpeechLine[] = [];
+        if (outOfTime) out.push({ key: 'reason.time' });
+        if (goal !== null) out.push(goal);
+        return out;
     }
 
     private touchMaterial(p: Vec3): MaterialClass {
@@ -514,27 +1073,147 @@ class Runner implements LessonSession {
         return best === null ? 'wall' : best.m;
     }
 
-    // -------------------------------------------------------------- attempts and blocks
+    // -------------------------------------------------------------- attempts and the pass rule
 
-    private endAttempt(goalsMet: boolean, t: number): void {
+    /**
+     * An attempt ends. Format 2: it counts when every goal was met with at most `maxTouches` touches;
+     * `required` counted attempts in total pass the lesson (failures in between do not reset the count).
+     * The pilot hears "Attempt k. Counted m of r." (no line when the lesson is passed: the pass line instead).
+     * After `attempts` failures in a row he hears why (`why`: the goal's reason) and, in a blocking
+     * lesson, that N goes on to the next lesson; a lesson that does not block moves on by itself then.
+     */
+    private endAttempt(goalsMet: boolean, t: number, why: readonly SpeechLine[] = []): void {
+        if (this.hooks.passRule !== undefined) {
+            this.endAttemptV012(goalsMet, t, this.hooks.passRule);
+            return;
+        }
+        const rule = this.lesson.pass;
+        const touchesOk = rule.maxTouches === null || this.touchCount <= rule.maxTouches;
+        const ok = goalsMet && touchesOk;
+        this.attemptsDone++;
+        if (ok) {
+            this.successes++;
+            this.counted++;
+            this.failRun = 0;
+            this.timedLine(t);
+        } else {
+            this.failRun++;
+            // a course that re-centres on a touch (the corridor, the tunnels) does not throw the pilot back to its far start
+            // when an attempt fails (its time ran out): the next one begins where this one got to (review R9, M41-20)
+            if (this.lesson.assists.onTouch === 'bump-recentre') this.resumeFrom = this.passedPoint;
+        }
+        this.lessonEvent(ok ? 'attempt-pass' : 'attempt-fail', t);
+        this.tracker = null;
+        if (ok && this.counted >= rule.required) {
+            this.pass(t);
+            return;
+        }
+        const touches: SpeechLine = rule.maxTouches === 0 ? { key: 'reason.touches-none' } : { key: 'reason.touches', params: { n: this.touchCount, limit: rule.maxTouches ?? 0 } };
+        const reasons: SpeechLine[] = ok ? [] : goalsMet ? [touches] : [...why];
+        const progress: SpeechLine = { key: 'fly.progress', params: { n: this.attemptNo, counted: this.counted, required: rule.required } };
+        const offerNow = !ok && this.failRun % rule.attempts === 0;
+        if (offerNow && !rule.blocking) {
+            this.moveOn(t, [progress, ...reasons]);
+            return;
+        }
+        this.phaseValue = 'between';
+        this.script.length = 0;
+        if (ok) {
+            this.actions.push({ kind: 'cue', event: { kind: 'praise' } });
+            this.push({ kind: 'say', lines: [this.praise(t), progress] });
+        } else if (offerNow) {
+            this.offered = true;
+            this.push({ kind: 'say', lines: [progress, ...reasons, { key: 'fly.offer-next', params: { key: this.key('next') } }] });
+        } else {
+            const hints = this.lesson.speech.hints;
+            const hint = hints.length === 0 ? [] : [hints[(this.attemptsDone - 1) % hints.length] as SpeechLine];
+            this.push({ kind: 'say', lines: [progress, this.lesson.speech.retry, ...hint] });
+        }
+        this.push({ kind: 'wait', s: BETWEEN_S });
+    }
+
+    /**
+     * The praise of a counted attempt: "Better than last time!" when its score improved by BETTER_SHARE on the last
+     * counted attempt of this sitting, else a line of the pool, never the one said last. A timed course says its time instead.
+     */
+    private praise(t: number): SpeechLine {
+        const timed = this.lesson.goals.some((g) => g.kind === 'timed-course');
+        const score: GoalScore = this.goalScores.at(-1) ?? { value: t - this.pausedMs - this.attemptT0, better: 'lower' };
+        const last = this.lastScore;
+        this.lastScore = score;
+        if (!timed && last !== null && last.better === score.better) {
+            const better = score.better === 'lower' ? score.value < last.value * (1 - BETTER_SHARE) : score.value > last.value * (1 + BETTER_SHARE);
+            if (better) return { key: 'praise.better' };
+        }
+        // the pool, in an order of its own for each lesson and attempt, never the same line twice in a row
+        let k = (this.attemptNo * 5 + this.counted * 3 + (this.o.seed ?? 0)) % PRAISE_LINES;
+        if (k === this.lastPraise) k = (k + 1) % PRAISE_LINES;
+        this.lastPraise = k;
+        return { key: `praise.${k + 1}` };
+    }
+
+    /** What the pass says comes next: the lesson G left (a detour), the next lesson on the pilot's path, or that this was the last. */
+    private nextLine(): SpeechLine {
+        const back = this.o.returnTo ?? null;
+        if (back !== null && isShippedLesson(back)) return { key: 'fly.back-to', params: { title: this.text(getLesson(back).title) } };
+        const next = lessonAfter(this.lesson.id, this.o.path ?? 'full');
+        return next === null ? { key: 'fly.last-lesson' } : { key: 'fly.lesson-passed', params: { title: this.text(next.title) } };
+    }
+
+    /** A timed course: the time of a counted attempt, and whether it is the best one. */
+    private timedLine(t: number): void {
+        if (!this.lesson.goals.some((g) => g.kind === 'timed-course')) return;
+        const ms = Math.round(t - this.pausedMs - this.attemptT0);
+        const better = this.bestTimeMs === null || ms < this.bestTimeMs;
+        if (better) this.bestTimeMs = ms;
+        this.actions.push({ kind: 'say', line: { key: better ? 'fly.best-time' : 'fly.time', params: { time: this.tr.duration(ms) } }, interrupt: false });
+    }
+
+    /** The lesson is passed by its rule: the fanfare and the pass line. */
+    private pass(t: number): void {
+        this.passedValue = true;
+        this.passedByRule = true;
+        this.skippedValue = false;
+        this.phaseValue = 'passed';
+        // the report counts a `passed` as a pass when the lesson event just before it says the rule was met
+        this.lessonEvent('block-pass', t);
+        this.lessonEvent('passed', t);
+        this.script.length = 0;
+        this.current = null;
+        this.actions.push({ kind: 'cue', event: { kind: 'fanfare' } });
+        this.actions.push({ kind: 'say', line: this.lesson.speech.pass, interrupt: false });
+        this.actions.push({ kind: 'say', line: this.nextLine(), interrupt: false });
+    }
+
+    /**
+     * A lesson that does not block ends after `attempts` failures in a row: it never holds anyone back. Its phase is
+     * 'passed', so the host goes on as after a pass, but it is saved as skipped, not passed (review R7): the start
+     * screen shows it as a lesson left without passing, like one left with N.
+     */
+    private moveOn(t: number, lines: readonly SpeechLine[]): void {
+        if (!this.passedValue && !this.detour) this.skippedValue = true;
+        this.movedOn = true;
+        this.phaseValue = 'passed';
+        this.lessonEvent('passed', t);
+        this.script.length = 0;
+        this.current = null;
+        this.actions.push({ kind: 'cue', event: { kind: 'checkpoint' } });
+        for (const line of [...lines, { key: 'fly.moving-on' }]) this.actions.push({ kind: 'say', line, interrupt: false });
+    }
+
+    /** The block rule of v0.12, kept only for the negative controls (testHooks.passRule). */
+    private endAttemptV012(goalsMet: boolean, t: number, rule: V012PassRule): void {
         const touchesOk = this.lesson.pass.maxTouches === null || this.touchCount <= this.lesson.pass.maxTouches;
         const ok = goalsMet && touchesOk;
         this.attemptsDone++;
         this.blockDone++;
-        const timed = this.lesson.goals.some((g) => g.kind === 'timed-course');
         if (ok) {
             this.successes++;
             this.blockOk++;
-            if (timed) {
-                const ms = Math.round(t - this.attemptT0);
-                const better = this.bestTimeMs === null || ms < this.bestTimeMs;
-                if (better) this.bestTimeMs = ms;
-                this.actions.push({ kind: 'say', line: { key: better ? 'fly.best-time' : 'fly.time', params: { time: this.tr.duration(ms) } }, interrupt: false });
-            }
+            this.timedLine(t);
         }
         this.lessonEvent(ok ? 'attempt-pass' : 'attempt-fail', t);
         this.tracker = null;
-        const rule = this.lesson.pass;
         const left = rule.attempts - this.blockDone;
         let blockOver = false;
         let blockPassed = false;
@@ -551,10 +1230,11 @@ class Runner implements LessonSession {
                 this.consecutive++;
                 this.lessonEvent('block-pass', t);
             } else this.consecutive = 0;
-            done = rule.blocking ? this.consecutive >= rule.blocks : this.blocksPlayed >= rule.blocks;
+            done = this.lesson.pass.blocking ? this.consecutive >= rule.blocks : this.blocksPlayed >= rule.blocks;
         }
         if (done) {
             this.passedValue = true;
+            this.passedByRule = blockPassed;
             this.phaseValue = 'passed';
             this.lessonEvent('passed', t);
             this.script.length = 0;
@@ -564,6 +1244,7 @@ class Runner implements LessonSession {
             return;
         }
         this.phaseValue = 'between';
+        this.script.length = 0;
         if (ok) {
             if (!this.ears) this.actions.push({ kind: 'cue', event: { kind: 'checkpoint' } });
             if (blockPassed) this.push({ kind: 'say', lines: [{ key: 'fly.step-passed' }] });
@@ -581,12 +1262,23 @@ class Runner implements LessonSession {
         return (this.lesson.goals.find((g) => g.kind === kind) as Extract<Goal, { kind: K }> | undefined) ?? null;
     }
 
-    private pushEarsAttempt(): void {
+    /** The steps of an attempt of module 0 (after the intro): one per sound, scene, trial or round. */
+    private earsBlocks(): Block[] {
         const names = this.goalOf('name-cues');
         const locate = this.goalOf('locate');
-        if (names !== null && names.trials > 0) this.pushGame(names, locate);
-        else if (names !== null) this.pushPresentation(names.cues);
-        else if (locate !== null) this.pushHeadphoneCheck(locate.trials);
+        if (names !== null && names.trials > 0) return this.gameBlocks(names, locate);
+        if (names !== null) return this.presentationBlocks(names.cues);
+        if (locate !== null) return this.headphoneBlocks(locate.trials);
+        return [];
+    }
+
+    /** How many steps an attempt of module 0 has (known before the attempt is built). */
+    private earsStepCount(): number {
+        const names = this.goalOf('name-cues');
+        const locate = this.goalOf('locate');
+        if (names !== null && names.trials > 0) return Math.max(names.trials, locate?.trials ?? 0);
+        if (names !== null) return isGlossary(names.cues) ? names.cues.length : names.cues.reduce((n, c) => n + (APPROACHES[c] ?? [null]).length, 0);
+        return locate === null ? 0 : locate.trials;
     }
 
     private cueName(cue: CueId): string {
@@ -594,130 +1286,140 @@ class Runner implements LessonSession {
     }
 
     /** The glossary, or narrated scenes when every cue is a wall or a shape (ears-walls, ears-shapes). */
-    private pushPresentation(cues: readonly CueId[]): void {
-        const glossary = !cues.every((c) => c in APPROACHES || SHAPE_ORDER.includes(c));
-        if (glossary) {
-            this.push({ kind: 'say', lines: [{ key: 'glossary.intro' }] });
-            cues.forEach((cue, i) => {
-                this.push({ kind: 'say', lines: [{ key: `cue.${cue}.name` }, { key: `cue.${cue}.glossary` }] });
-                this.push({ kind: 'cue', event: { kind: 'preview', cue, dir: null }, waitS: PREVIEW_WAIT_S });
-                if (i < cues.length - 1) this.push({ kind: 'say', lines: [{ key: 'glossary.next' }] });
-            });
-            this.push({ kind: 'say', lines: [{ key: 'glossary.done' }] });
-            return;
+    private presentationBlocks(cues: readonly CueId[]): Block[] {
+        if (isGlossary(cues)) {
+            return cues.map((cue, i) => ({
+                kind: 'sound' as const,
+                steps: [
+                    { kind: 'say', lines: [{ key: i === 0 ? 'glossary.intro' : 'glossary.next' }, { key: `cue.${cue}.name` }, { key: `cue.${cue}.glossary` }] },
+                    { kind: 'sound', cue, dir: null, plays: REPEAT_PLAYS },
+                    ...(i === cues.length - 1 ? [{ kind: 'say', lines: [{ key: 'glossary.done' }] } as Step] : [])
+                ]
+            }));
         }
+        const out: Block[] = [];
         for (const cue of cues) {
             const ways = APPROACHES[cue] ?? [{ dir: [0, 0, -1] as Vec3, sector: 'front' }];
             for (const w of ways) {
-                this.push({ kind: 'say', lines: [{ key: 'narrate.coming', params: { name: this.cueName(cue) } }, { key: `dir.${w.sector}` }] });
-                this.push({ kind: 'scene', scene: { cue, dir: w.dir, moving: true, durS: SCENE_S } });
+                out.push({
+                    kind: 'scene',
+                    steps: [
+                        { kind: 'say', lines: [{ key: 'narrate.coming', params: { name: this.cueName(cue) } }, { key: `dir.${w.sector}` }] },
+                        { kind: 'scene', scene: { cue, dir: w.dir, moving: true, durS: NARRATED_SCENE_S }, plays: REPEAT_PLAYS }
+                    ]
+                });
             }
         }
+        return out;
     }
 
     /** The headphone check: a sound on the left, on the right, behind; answered by digits. */
-    private pushHeadphoneCheck(trials: number): void {
-        this.push({ kind: 'say', lines: [{ key: 'headphones.intro' }, { key: 'headphones.wired' }, { key: 'headphones.os-spatial' }] });
+    private headphoneBlocks(trials: number): Block[] {
         const order = [SIDES[0], SIDES[1], SIDES[3], SIDES[2]] as (typeof SIDES)[number][];
+        const out: Block[] = [];
         for (let i = 0; i < trials; i++) {
             const side = order[i % order.length] as (typeof SIDES)[number];
             const lateral = side.sector === 'left' || side.sector === 'right';
             const correct = lateral ? (side.sector === 'left' ? 1 : 2) : side.sector === 'front' ? 1 : 2;
-            this.push({ kind: 'cue', event: { kind: 'preview', cue: 'target.hum', dir: side.dir }, waitS: PREVIEW_WAIT_S });
-            this.push({
+            const id = `${this.lesson.id}:${this.attemptNo}:${i + 1}:${lateral ? 'side' : 'front-back'}`;
+            const steps: Step[] = [];
+            // every trial begins with a line, so a key that moves here cuts what was being said (N, B, Z)
+            const trial: SpeechLine = { key: 'headphones.trial', params: { n: i + 1, total: trials } };
+            steps.push({ kind: 'say', lines: i === 0 ? [{ key: 'headphones.intro' }, { key: 'headphones.wired' }, { key: 'headphones.os-spatial' }, trial] : [trial] });
+            steps.push({ kind: 'sound', cue: 'target.hum', dir: side.dir, plays: REPEAT_PLAYS });
+            steps.push({
                 kind: 'ask',
-                question: { id: `${this.lesson.id}:${this.attemptNo}:${i + 1}:${lateral ? 'side' : 'front-back'}`, lines: [{ key: lateral ? 'headphones.q-side' : 'headphones.q-front-back' }], options: 3, skippable: true },
+                question: { id, lines: [{ key: lateral ? 'headphones.q-side' : 'headphones.q-front-back' }], options: 3, skippable: true },
                 onAnswer: (value) => {
-                    this.earsScore.answers.push(value);
                     // only left and right are graded: the check is that the headphones are the right way round, and telling
                     // front from behind with a generic HRTF is unreliable (research 01: 10 to 50 % reversals), so that answer is
                     // asked and recorded for the report but never fails the check
-                    if (!lateral) return;
-                    this.earsScore.whereAsked++;
-                    if (value === correct) this.earsScore.where++;
+                    this.earsAnswers.set(id, { kind: lateral ? 'side' : 'front-back', value, right: value === correct });
                 }
             });
+            out.push({ kind: 'trial', steps });
         }
+        return out;
     }
 
     /** The game "what is it, where is it, is it moving" (rounds of three questions). */
-    private pushGame(names: Extract<Goal, { kind: 'name-cues' }>, locate: Extract<Goal, { kind: 'locate' }> | null): void {
+    private gameBlocks(names: Extract<Goal, { kind: 'name-cues' }>, locate: Extract<Goal, { kind: 'locate' }> | null): Block[] {
         const rng = createRng((this.o.seed ?? 1) * 7919 + this.attemptNo);
         const options = names.cues.slice(0, 9);
         const rounds = Math.max(names.trials, locate?.trials ?? 0);
-        this.push({ kind: 'say', lines: [{ key: 'quiz.howto' }] });
+        const out: Block[] = [];
         for (let r = 0; r < rounds; r++) {
             const cueIndex = rng.int(0, options.length - 1);
             const cue = options[cueIndex] as CueId;
             const side = SIDES[rng.int(0, SIDES.length - 1)] as (typeof SIDES)[number];
             const moving = rng.next() < 0.5;
-            const scene: DemoScene = { cue, dir: side.dir, moving, durS: SCENE_S - 1 };
+            const scene: DemoScene = { cue, dir: side.dir, moving, durS: GAME_SCENE_S };
             const id = `${this.lesson.id}:${this.attemptNo}:${r + 1}`;
             const feedback = (value: number | null, right: boolean, replay: boolean): Step[] =>
-                value === null ? [] : right ? [{ kind: 'say', lines: [{ key: 'quiz.right' }] }] : [{ kind: 'say', lines: [{ key: 'quiz.wrong' }] }, ...(replay ? [{ kind: 'scene', scene } as Step] : [])];
-            this.push({ kind: 'say', lines: [{ key: 'quiz.intro' }] });
-            this.push({ kind: 'scene', scene });
+                value === null ? [] : right ? [{ kind: 'say', lines: [{ key: 'quiz.right' }] }] : [{ kind: 'say', lines: [{ key: 'quiz.wrong' }] }, ...(replay ? [{ kind: 'scene', scene, plays: 1 } as Step] : [])];
+            const steps: Step[] = [{ kind: 'say', lines: r === 0 ? [{ key: 'quiz.howto' }, { key: 'quiz.intro' }] : [{ key: 'quiz.intro' }] }, { kind: 'scene', scene, plays: REPEAT_PLAYS }];
             if (r < names.trials) {
-                this.push({
+                steps.push({
                     kind: 'ask',
                     question: { id: `${id}:what`, lines: [{ key: 'quiz.q-what' }, ...options.map((c, i) => ({ key: 'quiz.option', params: { n: i + 1, label: this.cueName(c) } }))], options: options.length, skippable: true },
                     onAnswer: (value) => {
-                        this.earsScore.whatAsked++;
                         const right = value === cueIndex + 1;
-                        if (right) this.earsScore.what++;
+                        this.earsAnswers.set(`${id}:what`, { kind: 'what', value, right });
                         this.script.unshift(...feedback(value, right, true));
                     }
                 });
             }
             if (locate !== null && r < locate.trials) {
                 const where = SIDES.indexOf(side) + 1;
-                this.push({
+                steps.push({
                     kind: 'ask',
                     question: { id: `${id}:where`, lines: [{ key: 'quiz.q-where' }, { key: 'quiz.where-options' }], options: 4, skippable: true },
                     onAnswer: (value) => {
-                        this.earsScore.whereAsked++;
                         const right = value === where;
-                        if (right) this.earsScore.where++;
+                        this.earsAnswers.set(`${id}:where`, { kind: 'where', value, right });
                         this.script.unshift(...feedback(value, right, false));
                     }
                 });
-                this.push({
+                steps.push({
                     kind: 'ask',
                     question: { id: `${id}:moving`, lines: [{ key: 'quiz.q-moving' }], options: 2, skippable: true },
                     onAnswer: (value) => {
-                        this.earsScore.movingAsked++;
                         const right = value === (moving ? 1 : 2);
-                        if (right) this.earsScore.moving++;
+                        this.earsAnswers.set(`${id}:moving`, { kind: 'moving', value, right });
                         if (value !== null) this.script.unshift({ kind: 'say', lines: [{ key: right ? 'quiz.right' : 'quiz.wrong' }, { key: moving ? 'quiz.moving' : 'quiz.still' }] });
                     }
                 });
             }
+            out.push({ kind: 'round', steps });
         }
+        return out;
     }
 
     private endEarsAttempt(t: number): void {
         if (this.phaseValue !== 'flying') return;
         const names = this.goalOf('name-cues');
         const locate = this.goalOf('locate');
-        const sc = this.earsScore;
+        const all = [...this.earsAnswers.values()];
+        const count = (kind: EarsAnswer['kind'], right: boolean | null): number => all.filter((a) => a.kind === kind && (right === null || a.right === right)).length;
         const results: { index: number; met: boolean }[] = [];
         this.lesson.goals.forEach((g, index) => {
-            if (g.kind === 'name-cues') results.push({ index, met: g.trials === 0 ? true : sc.whatAsked > 0 && sc.what / g.trials >= NAME_SHARE });
+            if (g.kind === 'name-cues') results.push({ index, met: g.trials === 0 ? true : count('what', null) > 0 && count('what', true) / g.trials >= NAME_SHARE });
             else if (g.kind === 'locate') {
-                // the headphone check grades the left and right trials it asked (not the front and behind one)
-                const asked = names !== null && names.trials > 0 ? 2 * g.trials : Math.max(1, sc.whereAsked);
-                const right = names !== null && names.trials > 0 ? sc.where + sc.moving : sc.where;
+                // the game grades where and moving of every round; the headphone check the left and right trials it asked
+                const game = names !== null && names.trials > 0;
+                const asked = game ? 2 * g.trials : Math.max(1, count('side', null));
+                const right = game ? count('where', true) + count('moving', true) : count('side', true);
                 results.push({ index, met: right / asked >= LOCATE_SHARE });
             }
         });
         for (const r of results) this.emit({ t, kind: 'goal', index: r.index, what: r.met ? 'met' : 'missed' });
         // what the pilot hears about the attempt
         if (names !== null && names.trials > 0) {
-            const total = sc.whatAsked + sc.whereAsked + sc.movingAsked;
-            this.actions.push({ kind: 'say', line: { key: 'quiz.score', params: { right: sc.what + sc.where + sc.moving, total } }, interrupt: false });
+            const total = count('what', null) + count('where', null) + count('moving', null);
+            this.actions.push({ kind: 'say', line: { key: 'quiz.score', params: { right: count('what', true) + count('where', true) + count('moving', true), total } }, interrupt: false });
         } else if (locate !== null && names === null) {
-            const a = sc.answers;
-            const swapped = a[0] === 2 && a[1] === 1;
+            const side = all.filter((a) => a.kind === 'side');
+            const swapped = side[0]?.value === 2 && side[1]?.value === 1;
             const good = results.every((r) => r.met);
             this.actions.push({ kind: 'say', line: { key: good ? 'headphones.good' : swapped ? 'headphones.swapped' : 'headphones.unclear' }, interrupt: false });
         }
@@ -744,6 +1446,8 @@ class Runner implements LessonSession {
 
     answer(value: number, via: 'key' | 'voice', t: number): readonly SessionEvent[] {
         this.t = Math.max(this.t, t);
+        if (this.left) return this.drain();
+        this.catchUp(t);
         const c = this.current;
         if (c === null || c.step.kind !== 'ask' || c.answered) return this.drain();
         const q = c.step.question;
@@ -764,48 +1468,167 @@ class Runner implements LessonSession {
         return this.drain();
     }
 
-    next(t: number): readonly SessionEvent[] {
-        this.interruptNext = true;
-        try {
-            return this.skipAhead(t);
-        } finally {
-            this.interruptNext = false;
-        }
+    // -------------------------------------------------------------- N, B, Z and the lesson menu
+
+    /**
+     * Before a key, an answer or a reset at `t` the lesson catches up to `t`: what was due by then (the pause between
+     * attempts ran out, a play ended, a question timed out) has happened, whether or not a frame came after it. A live host
+     * steps a frame every 16 ms, a replay has the recording's 30 Hz frames: without this, a key in the same millisecond as
+     * an attempt's start was taken before it in the replay and after it live (the simulator's reader test, found while
+     * measuring review R4). Not while paused: the lesson's clocks wait then.
+     */
+    private catchUp(t: number): void {
+        if (this.pausedAt !== null || !this.began || this.left) return;
+        this.advance(t);
+        this.afterScript(t);
     }
 
-    private skipAhead(t: number): readonly SessionEvent[] {
+    /** A key of the pilot: the first line said after it cuts the speech going on (review D2). */
+    private byKey(t: number, run: () => void): readonly SessionEvent[] {
         this.t = Math.max(this.t, t);
-        const c = this.current;
-        if (c !== null && c.step.kind === 'ask') return this.answer(0, 'key', t);
-        if (this.ears && this.phaseValue === 'flying' && c !== null) {
-            // skip the scene or the line that is going on
-            this.current = null;
-            if (c.step.kind === 'scene') {
-                this.scene = null;
-                this.actions.push({ kind: 'scene', scene: null });
-            }
+        if (!this.began || this.left) return this.drain();
+        this.catchUp(t);
+        this.interruptNext = true;
+        try {
+            run();
             this.advance(t);
             this.afterScript(t);
-            return this.drain();
-        }
-        if (this.phaseValue === 'intro' || this.phaseValue === 'between') {
-            this.script.length = 0;
-            this.current = null;
-            if (this.scene !== null) {
-                this.scene = null;
-                this.actions.push({ kind: 'scene', scene: null });
-            }
-            this.afterScript(t);
+        } finally {
+            this.interruptNext = false;
         }
         return this.drain();
     }
 
+    /** A question going on is left by a key: a skip, as when it times out. */
+    private abandonQuestion(t: number): void {
+        const c = this.current;
+        if (c === null || c.step.kind !== 'ask' || c.answered) return;
+        c.answered = true;
+        this.emit({ t, kind: 'answer', item: c.step.question.id, value: null, via: 'skip' });
+        c.step.onAnswer(null, t);
+    }
+
+    next(t: number): readonly SessionEvent[] {
+        return this.byKey(t, () => {
+            if (this.phaseValue === 'intro') {
+                // the task or the intro is skipped: the first attempt begins (afterScript)
+                this.abandonQuestion(t);
+                this.script.length = 0;
+                this.stopCurrent();
+                return;
+            }
+            if (this.ears && this.phaseValue === 'flying' && this.blockIndex + 1 < this.blocks.length) {
+                this.abandonQuestion(t);
+                this.startBlock(this.blockIndex + 1, t);
+                return;
+            }
+            // the last step (flying, the last sound, the pause after an attempt, the pass): the next lesson
+            this.leave('next', t);
+        });
+    }
+
+    previous(t: number): readonly SessionEvent[] {
+        return this.byKey(t, () => {
+            if (this.phaseValue === 'intro' || (this.ears && this.phaseValue === 'flying' && this.blockIndex === 0)) {
+                this.leave('previous', t);
+                return;
+            }
+            if (this.ears && this.phaseValue === 'flying') {
+                this.abandonQuestion(t);
+                this.startBlock(this.blockIndex - 1, t);
+                return;
+            }
+            this.backToTask(t);
+        });
+    }
+
+    repeat(t: number): readonly SessionEvent[] {
+        return this.byKey(t, () => {
+            if (this.phaseValue === 'intro' || (this.ears && this.phaseValue === 'flying')) {
+                this.abandonQuestion(t);
+                this.startBlock(this.blockIndex, t);
+                return;
+            }
+            if (this.phaseValue === 'flying') {
+                this.listen(t);
+                return;
+            }
+            if (this.phaseValue === 'between') {
+                // the task again, then the next attempt as planned
+                this.stopCurrent();
+                this.script.unshift(...this.introBlock().steps);
+                return;
+            }
+            // after the end: the pass line, or that the lesson moved on without a pass
+            this.actions.push({ kind: 'say', line: this.movedOn ? { key: 'fly.moving-on' } : this.lesson.speech.pass, interrupt: true });
+        });
+    }
+
+    nextLesson(t: number): readonly SessionEvent[] {
+        return this.byKey(t, () => this.leave('next', t));
+    }
+
+    previousLesson(t: number): readonly SessionEvent[] {
+        return this.byKey(t, () => this.leave('previous', t));
+    }
+
+    /** B while flying (or after an attempt, or after the pass): the task again; the attempt is dropped, not counted. */
+    private backToTask(t: number): void {
+        this.abandonQuestion(t);
+        this.resumeFrom = null; // the attempt after the task begins at the start
+        this.tracker = null;
+        this.listening = false;
+        this.phaseValue = 'intro';
+        this.blocks = [this.introBlock()];
+        this.startBlock(0, t);
+    }
+
+    /** Z while flying: the task again; the goals and the attempt's clock wait until it has been said. */
+    private listen(t: number): void {
+        const c = this.current;
+        // a question of the attempt (name-shape) is asked again after the task, not skipped
+        const ask = c !== null && c.step.kind === 'ask' && !c.answered ? c.step : null;
+        if (!this.listening) {
+            this.listening = true;
+            this.listenT0 = t;
+        }
+        this.script.length = 0;
+        this.current = null;
+        this.push(...this.introBlock().steps);
+        if (ask !== null) this.push(ask);
+    }
+
+    /** The task has been said again: the attempt goes on. */
+    private endListening(t: number): void {
+        this.listening = false;
+        this.pausedMs += t - this.listenT0;
+        this.push({ kind: 'say', lines: [{ key: 'fly.go-on' }] });
+    }
+
+    /** The pilot leaves for the next or the previous lesson: the host opens it ('go'); nothing more happens here. */
+    private leave(to: 'next' | 'previous', t: number): void {
+        this.abandonQuestion(t);
+        this.stopCurrent();
+        this.script.length = 0;
+        // a detour (G) left forward was heard, not skipped: the ladder's state of the lesson stays as it was
+        if (to === 'next' && !this.passedValue && !this.detour) this.skippedValue = true;
+        this.listening = false;
+        this.lessonEvent('leave', t);
+        this.left = true;
+        this.actions.push({ kind: 'go', to });
+    }
+
     reset(to: 'checkpoint' | 'start', t: number): { readonly pose: Pose; readonly events: readonly SessionEvent[] } {
         this.t = Math.max(this.t, t);
-        const cp = to === 'checkpoint' ? this.lastCheckpoint : null;
-        const pose = cp === null ? this.startPose(Math.max(this.attemptNo, 1)) : cp.pose;
-        this.emit({ t, kind: 'reset', to, checkpointId: cp === null ? null : cp.id });
+        if (this.left) return { pose: this.startPose(Math.max(this.attemptNo, 1)), events: this.drain() };
+        this.catchUp(t);
+        // a short R: near the last point passed (M41-20); a long R: the start
+        const back = to === 'checkpoint' && !this.ears && this.phaseValue === 'flying' ? this.respawn() : null;
+        const pose = back === null ? this.startPose(Math.max(this.attemptNo, 1)) : back.pose;
+        this.emit({ t, kind: 'reset', to, checkpointId: back === null ? null : back.id });
         this.prev = null;
+        this.backSince = null;
+        if (to === 'start') this.resumeFrom = null; // a long R in the pause: the next attempt from the start too
         if (to === 'start' && this.phaseValue === 'flying') {
             // the same attempt again from the start (a manual reset is not a failure)
             this.attemptT0 = t;
@@ -814,12 +1637,16 @@ class Runner implements LessonSession {
             this.goalIndex = 0;
             this.shapeOutcome = null;
             this.lastCheckpoint = null;
+            this.passedPoint = null;
             this.reached.clear();
             this.script.length = 0;
             this.current = null;
             if (this.ears) {
-                this.earsScore = { what: 0, whatAsked: 0, where: 0, whereAsked: 0, moving: 0, movingAsked: 0, answers: [] };
-                this.pushEarsAttempt();
+                this.earsAnswers = new Map();
+                this.blocks = [this.introBlock(), ...this.earsBlocks()];
+                this.blockIndex = 1;
+                const block = this.blocks[1];
+                if (block !== undefined) this.push(...block.steps);
             } else this.startGoal(t);
             this.push({ kind: 'say', lines: [{ key: 'fly.reset-start' }], interrupt: !this.ears });
             this.advance(t);
@@ -827,22 +1654,140 @@ class Runner implements LessonSession {
         return { pose, events: this.drain() };
     }
 
+    // -------------------------------------------------------------- pause
+
+    pause(t: number): readonly SessionEvent[] {
+        this.t = Math.max(this.t, t);
+        if (this.pausedAt === null && this.began && !this.left) this.pausedAt = t;
+        return this.drain();
+    }
+
+    resume(t: number): readonly SessionEvent[] {
+        this.t = Math.max(this.t, t);
+        const at = this.pausedAt;
+        if (at === null) return this.drain();
+        this.pausedAt = null;
+        const d = Math.max(0, t - at);
+        // every clock the lesson keeps moves on by the pause, as if it had not been
+        const c = this.current;
+        if (c !== null) {
+            c.t0 += d;
+            if (c.playT0 !== null) {
+                c.playT0 += d;
+                c.playEnd += d;
+            }
+            if (c.askSpokenAt !== null) c.askSpokenAt += d;
+        }
+        if (this.speechDeadline > at) this.speechDeadline += d;
+        if (this.scene !== null) this.scene = { scene: this.scene.scene, t0: this.scene.t0 + d };
+        // the attempt's time limit and its goals' clock (goalClock) leave the pause out; a repeat (Z) going on waits it out too
+        this.pausedMs += d;
+        if (this.listening) this.listenT0 += d;
+        this.lastWrongWay += d;
+        this.lastWrongSide += d;
+        this.backSince = null;
+        // the first frame after the pause is not measured against the last one before it (no jump, no time in a band)
+        this.prev = null;
+        this.advance(t);
+        this.afterScript(t);
+        return this.drain();
+    }
+
+    // -------------------------------------------------------------- what the host shows and says
+
+    view(): LessonView {
+        const paths = lessonPaths();
+        const path = this.o.path ?? 'full';
+        const onPath = paths[path].includes(this.lesson.id) ? path : 'full';
+        const list = paths[onPath];
+        const index = list.indexOf(this.lesson.id);
+        const steps = this.ears ? 1 + this.earsStepCount() : 2;
+        const step = this.ears ? Math.min(this.blockIndex + 1, steps) : this.phaseValue === 'intro' ? 1 : 2;
+        const stepKind: StepKind = this.ears ? (this.blocks[this.blockIndex]?.kind ?? 'intro') : step === 1 ? 'task' : 'fly';
+        const flying = !this.ears && this.phaseValue === 'flying';
+        return {
+            lessonId: this.lesson.id,
+            title: this.lesson.title,
+            lessonIndex: index < 0 ? 1 : index + 1,
+            lessonCount: index < 0 ? 1 : list.length,
+            path: onPath,
+            step,
+            steps,
+            stepKind,
+            goal: flying ? this.goalIndex + 1 : 0,
+            goals: this.ears ? 0 : this.lesson.goals.length,
+            attempt: this.attemptNo,
+            counted: this.counted,
+            required: this.lesson.pass.required,
+            failsInARow: this.failRun,
+            offered: this.offered,
+            touches: this.touchCount,
+            maxTouches: this.lesson.pass.maxTouches,
+            phase: this.phaseValue,
+            passed: this.passedValue,
+            skipped: this.skippedValue,
+            listening: this.listening,
+            paused: this.pausedAt !== null,
+            playing: this.playing()
+        };
+    }
+
+    private playing(): LessonView['playing'] {
+        const c = this.current;
+        if (c === null || c.playT0 === null || (c.step.kind !== 'sound' && c.step.kind !== 'scene') || this.t >= c.playEnd) return null;
+        return { cue: c.step.kind === 'sound' ? c.step.cue : c.step.scene.cue, index: c.played, of: this.v012 ? 1 : c.step.plays };
+    }
+
+    statusLine(): SpeechLine {
+        return statusLine(this.view(), this.text(this.lesson.title));
+    }
+
     // -------------------------------------------------------------- what the engine hears
 
     target(): SonicObject | null {
-        if (this.ears || this.phaseValue !== 'flying' || this.tracker === null) return null;
-        return this.tracker.target();
+        if (this.ears || this.left) return null;
+        if (this.phaseValue === 'flying') return this.tracker === null ? null : this.tracker.target();
+        // between attempts the next attempt's first target keeps sounding (M41-10: silence means something is wrong)
+        return this.phaseValue === 'between' ? this.firstTarget() : null;
+    }
+
+    /** What the first goal of an attempt sounds as its target (null for a goal without one: a height, a distance). */
+    private firstTarget(): SonicObject | null {
+        const goal = this.lesson.goals[0];
+        if (goal === undefined) return null;
+        return createTracker(goal, { floorY: this.o.floorY ?? 0, objects: () => this.objects(), world: () => this.worldRef, attemptPathM: () => 0, passedGate: () => undefined }).target();
     }
 
     progress(): LessonProgress {
         const lastAt = new Date((this.o.sessionStartMs ?? 0) + Math.max(this.lastAtT, 0)).toISOString();
-        return { lessonId: this.lesson.id, version: this.lesson.version, attempts: this.attemptsDone, successes: this.successes, blocksPassed: this.consecutive, passed: this.passedValue, bestTimeMs: this.bestTimeMs, lastAt };
+        // blocksPassed: 1 once the lesson was passed by its rule (format 2 has no blocks), the blocks in a row under the v0.12 control
+        const blocksPassed = this.hooks.passRule !== undefined ? this.consecutive : this.passedByRule ? 1 : 0;
+        return { lessonId: this.lesson.id, version: this.lesson.version, attempts: this.attemptsDone, successes: this.successes, blocksPassed, passed: this.passedValue, bestTimeMs: this.bestTimeMs, lastAt, skipped: this.skippedValue };
     }
 
     demoFrame(t: number): SonicFrameInput | null {
         if (this.scene === null) return null;
         return demoFrame(this.scene.scene, (t - this.scene.t0) / 1000, t, this.sceneWorlds);
     }
+}
+
+/** How close the segment a..b comes to p (a fast craft can pass a checkpoint between two frames), m. */
+function segmentDistance(a: Vec3, b: Vec3, p: Vec3): number {
+    const ab = sub(b, a);
+    const len2 = dot(ab, ab);
+    const u = len2 < 1e-12 ? 0 : Math.min(1, Math.max(0, dot(sub(p, a), ab) / len2));
+    return dist3(p, [a[0] + ab[0] * u, a[1] + ab[1] * u, a[2] + ab[2] * u]);
+}
+
+/**
+ * The progress view as one line to say (I): "Lesson 6 of 21: Hold your height. Step 2 of 2. Attempt 4.
+ * Counted 2 of 3." A lesson without a world says its lesson and step only. `title` is the lesson's title
+ * in the pilot's language.
+ */
+export function statusLine(v: LessonView, title: string): SpeechLine {
+    const base = { title, lesson: v.lessonIndex, lessons: v.lessonCount, step: v.step, steps: v.steps };
+    if (v.goals === 0 || v.attempt === 0) return { key: 'status.progress-step', params: base };
+    return { key: 'status.progress', params: { ...base, n: v.attempt, counted: v.counted, required: v.required } };
 }
 
 // ------------------------------------------------------------------ module-0 scenes

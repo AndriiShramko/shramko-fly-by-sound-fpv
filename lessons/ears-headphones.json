@@ -11,7 +11,7 @@
   "attemptLimitS": null,
   "checkpoints": [],
   "fastPath": true,
-  "format": "shramko-sonic-lesson/1",
+  "format": "shramko-sonic-lesson/2",
   "goals": [
     {
       "kind": "locate",
@@ -41,9 +41,8 @@
   "module": 0,
   "order": 0,
   "pass": {
-    "attempts": 1,
+    "attempts": 3,
     "blocking": true,
-    "blocks": 1,
     "maxTouches": null,
     "required": 1
   },
@@ -67,7 +66,7 @@
   "title": {
     "key": "lesson.ears-headphones.title"
   },
-  "version": 1,
+  "version": 2,
   "world": {
     "kind": "none"
   }

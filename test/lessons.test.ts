@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import type { Goal, LessonDef, SpeechLine } from '../src/contract';
 import { LOCALES } from '../src/contract';
 import { createTranslator, DICTS, LESSONS, lessonKeys } from '../src/i18n';
-import { getLesson, lessonPaths, lessonsOnPath, nextLesson, parseLesson, SHIPPED_LESSON_IDS, validateLesson, validatePaths, writeLesson } from '../src/lesson';
+import { createLessonRunner, getLesson, lessonPaths, lessonsOnPath, nextLesson, parseLesson, SHIPPED_LESSON_IDS, validateLesson, validatePaths, writeLesson } from '../src/lesson';
 import { createAnalyticWorld } from '../src/world';
 
 const DIR = fileURLToPath(new URL('../lessons/', import.meta.url));
@@ -95,10 +95,10 @@ describe('the shipped lessons', () => {
             const l = getLesson(id);
             expect(l.world.kind === 'none', id).toBe(l.module === 0);
         }
-        // the corridor's checkpoints sit at the starts of its sections
+        // the corridor's checkpoints sit at the starts of its sections, and the last at its end (review R5)
         const c = getLesson('corridor');
         const w = c.world.kind === 'analytic' ? createAnalyticWorld(c.world.spec) : null;
-        const sections = (w?.landmarks ?? []).filter((m) => m.id.startsWith('section-')).map((m) => m.pos);
+        const sections = (w?.landmarks ?? []).filter((m) => m.id.startsWith('section-') || m.id === 'end').map((m) => m.pos);
         expect(c.checkpoints.map((cp) => cp.at)).toEqual(sections);
         // Winter Garden x5 with its ring track (spec section 3, module 7; plan v12-flight step 10)
         const g = getLesson('free-garden');
@@ -156,5 +156,103 @@ describe('the lesson loader refuses a bad lesson with its reason (negative contr
         const p = JSON.parse(read('paths.json')) as { full: string[]; fast: string[] };
         expect(validatePaths({ ...p, fast: [...p.fast].reverse() }).ok).toBe(false);
         expect(validatePaths({ ...p, fast: [...p.fast, 'no-such'] }).ok).toBe(false);
+    });
+});
+
+describe('lesson format 2 and the files of format 1 (v0.12)', () => {
+    const current = (id: string): Record<string, unknown> => JSON.parse(read(`${id}.json`)) as Record<string, unknown>;
+    /** the file as v0.12 wrote it: format 1, its block rule */
+    const asV1 = (id: string, pass: Record<string, unknown>): Record<string, unknown> => ({ ...current(id), format: 'shramko-sonic-lesson/1', version: 1, pass });
+
+    it('reads a format 1 file and migrates its block rule: r = min(3, required x blocks), the offer after 3 failures in a row', () => {
+        const turn = validateLesson(asV1('hover-turn', { attempts: 5, required: 4, blocks: 1, maxTouches: null, blocking: true }));
+        expect(turn.ok).toBe(true);
+        if (!turn.ok) return;
+        expect(turn.value.format).toBe('shramko-sonic-lesson/2');
+        expect(turn.value.pass).toEqual({ attempts: 3, required: 3, blocks: 1, maxTouches: null, blocking: true });
+        // a lesson that does not block: its attempts, at most 3, are the failures in a row after which it moves on
+        const game = validateLesson(asV1('ears-game', { attempts: 1, required: 1, blocks: 2, maxTouches: null, blocking: false }));
+        expect(game.ok && game.value.pass).toEqual({ attempts: 2, required: 2, blocks: 1, maxTouches: null, blocking: false });
+        const course = validateLesson(asV1('rings-course', { attempts: 3, required: 1, blocks: 1, maxTouches: 0, blocking: true }));
+        expect(course.ok && course.value.pass).toEqual({ attempts: 3, required: 1, blocks: 1, maxTouches: 0, blocking: true });
+        const old = validateLesson(asV1('hover-height', { attempts: 10, required: 8, blocks: 1, maxTouches: null, blocking: true }));
+        expect(old.ok && old.value.pass.required).toBe(3);
+        // and a migrated lesson is written back in format 2, which reads as the same lesson
+        if (old.ok) {
+            const again = parseLesson(writeLesson(old.value));
+            expect(again.ok && again.value).toEqual(old.value);
+            expect(writeLesson(old.value)).toContain('"format": "shramko-sonic-lesson/2"');
+            expect(writeLesson(old.value)).not.toContain('"blocks"');
+        }
+    });
+
+    it('refuses a format 2 rule that would trap a pilot: more than 3 to pass, more than 3 failures before the offer, blocks', () => {
+        const paths = (pass: Record<string, unknown>): string[] => {
+            const r = validateLesson({ ...current('hover-turn'), pass });
+            return r.ok ? [] : r.issues.map((i) => i.path);
+        };
+        expect(paths({ attempts: 3, required: 3, maxTouches: null, blocking: true })).toEqual([]);
+        expect(paths({ attempts: 3, required: 4, maxTouches: null, blocking: true })).toContain('pass.required');
+        expect(paths({ attempts: 4, required: 3, maxTouches: null, blocking: true })).toContain('pass.attempts');
+        expect(paths({ attempts: 3, required: 3, blocks: 1, maxTouches: null, blocking: true })).toContain('pass.blocks');
+        expect(validateLesson({ ...current('hover-turn'), format: 'shramko-sonic-lesson/9' }).ok).toBe(false);
+    });
+
+    it('every shipped lesson is format 2, version 2 (v0.12 recordings of version 1 are told apart by the replay)', () => {
+        for (const id of SHIPPED_LESSON_IDS) {
+            const l = getLesson(id);
+            expect(current(id)['format'], id).toBe('shramko-sonic-lesson/2');
+            expect(l.version, id).toBe(2);
+            expect(l.pass.required, id).toBeLessThanOrEqual(3);
+            expect(l.pass.attempts, id).toBeLessThanOrEqual(3);
+        }
+    });
+});
+
+describe('an intro line may place the sound it names on a side (review R11)', () => {
+    const file = (): Record<string, unknown> => JSON.parse(read('hover-turn.json')) as Record<string, unknown>;
+    const withCues = (cues: unknown): Record<string, unknown> => {
+        const f = file();
+        const intro = [...(f['intro'] as Record<string, unknown>[])];
+        intro[0] = { ...intro[0], cues };
+        return { ...f, intro };
+    };
+    /** the directions of the task's plays (the runner's repeat-cue events before the first attempt) */
+    const taskDirs = (lesson: LessonDef): (readonly number[] | null)[] => {
+        const run = createLessonRunner(lesson);
+        run.begin(0);
+        const dirs: (readonly number[] | null)[] = [];
+        for (let t = 0; t < 120000 && run.phase === 'intro'; t += 20) {
+            for (const a of run.takeActions()) {
+                if (a.kind === 'say') run.spoken(t);
+                if (a.kind === 'cue' && a.event.kind === 'repeat-cue') dirs.push(a.event.dir ?? null);
+            }
+            run.step({ t, tick: t, pos: lesson.start.pos, vel: [0, 0, 0], quat: [1, 0, 0, 0], rate: [0, 0, 0], yawDeg: 0, pitchDeg: 0, rollDeg: 0, sticks: [0, 0, 0, 0], armed: true, touched: false, paused: false }, null);
+        }
+        return dirs;
+    };
+
+    it('hover-turn: "A sound will come from one side" and the hum three times from the left; control: a plain cue id plays from its default (straight ahead)', () => {
+        expect(getLesson('hover-turn').intro[0]?.cues).toEqual([{ cue: 'target.hum', from: 'left' }]);
+        expect(taskDirs(getLesson('hover-turn'))).toEqual([
+            [-1, 0, 0],
+            [-1, 0, 0],
+            [-1, 0, 0]
+        ]);
+        const plain = validateLesson(withCues(['target.hum']));
+        if (!plain.ok) throw new Error(JSON.stringify(plain.issues));
+        expect(taskDirs(plain.value)).toEqual([null, null, null]);
+    });
+
+    it('the loader takes a cue id or { cue, from } and refuses an unknown side, an unknown cue and a repeat', () => {
+        expect(validateLesson(withCues([{ cue: 'target.hum', from: 'right' }, 'height.tone'])).ok).toBe(true);
+        const issues = (cues: unknown): string[] => {
+            const r = validateLesson(withCues(cues));
+            return r.ok ? [] : r.issues.map((i) => i.path);
+        };
+        expect(issues([{ cue: 'target.hum', from: 'sideways' }])).toContain('intro[0].cues[0].from');
+        expect(issues([{ cue: 'target.nothing', from: 'left' }])).toContain('intro[0].cues[0].cue');
+        expect(issues([{ cue: 'target.hum', from: 'left', loud: true }])).toContain('intro[0].cues[0].loud');
+        expect(issues([{ cue: 'target.hum', from: 'left' }, { cue: 'target.hum', from: 'left' }])).toContain('intro[0].cues');
     });
 });

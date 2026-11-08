@@ -11,7 +11,7 @@
   "attemptLimitS": 300,
   "checkpoints": [],
   "fastPath": true,
-  "format": "shramko-sonic-lesson/1",
+  "format": "shramko-sonic-lesson/2",
   "goals": [
     {
       "gateIds": "all",
@@ -25,6 +25,9 @@
       "key": "lesson.rings-course.intro.1"
     },
     {
+      "cues": [
+        "target.lap"
+      ],
       "key": "lesson.rings-course.intro.2"
     },
     {
@@ -45,7 +48,6 @@
   "pass": {
     "attempts": 3,
     "blocking": true,
-    "blocks": 1,
     "maxTouches": 0,
     "required": 1
   },
@@ -69,7 +71,7 @@
   "title": {
     "key": "lesson.rings-course.title"
   },
-  "version": 1,
+  "version": 2,
   "world": {
     "kind": "analytic",
     "spec": {

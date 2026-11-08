@@ -3,16 +3,17 @@
 // code, so the loader is strict: unknown and missing keys are refused, every number has a range,
 // every spoken line must be a key of the locale catalogue, a lesson without a world asks only
 // questions, and a lesson with a world flies.
-import type { Checkpoint, Goal, LessonAssists, LessonDef, LessonLayers, LessonWorldRef, PassRule, Pose, SpeechLine } from '../contract';
+import type { Checkpoint, Goal, IntroCue, IntroLine, LessonAssists, LessonDef, LessonLayers, LessonWorldRef, PassRule, Pose, SpeechLine } from '../contract';
 import { FORMATS, LAYER_IDS, MODULES, WORLD_GENERATORS } from '../contract';
 import { CUE_IDS, requiredKeys } from '../i18n/catalog';
 import { canonicalPretty } from '../util/canonical';
 import { Collector, joinPath, type Validation } from '../util/check';
+import { sceneCues, sceneSilentReason } from './sounds';
 
 export const LESSON_ID = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 const OBJECT_ID = /^[A-Za-z0-9][A-Za-z0-9._-]{0,39}$/;
 const QUESTION_GOALS = ['name-cues', 'locate'] as const;
-const GOAL_KINDS = ['name-cues', 'locate', 'hold-height', 'turn-to', 'reach-zone', 'approach-stop', 'around', 'fly-distance', 'pass-gates', 'name-shape', 'timed-course'] as const;
+const GOAL_KINDS = ['name-cues', 'locate', 'hold-height', 'turn-to', 'reach-zone', 'approach-stop', 'around', 'fly-distance', 'pass-gates', 'name-shape', 'timed-course', 'track-end'] as const;
 
 let catalogue: Set<string> | null = null;
 function keyKnown(key: string): boolean {
@@ -40,6 +41,40 @@ function speechLine(c: Collector, v: unknown, path: string): SpeechLine | undefi
     if (key === undefined) return undefined;
     return params === undefined ? { key } : { key, params };
 }
+
+/** An intro line (format 2): a speech line, and the cues it names (each played three times after it). */
+function introLine(c: Collector, v: unknown, path: string): IntroLine | undefined {
+    const r = c.record(v, path);
+    if (r === null) return undefined;
+    if (r.cues === undefined) return speechLine(c, v, path);
+    const { cues: raw, ...rest } = r;
+    const line = speechLine(c, rest, path);
+    const cues = c.array(raw, joinPath(path, 'cues'), { min: 1, max: 4 });
+    if (cues === null) return undefined;
+    const before = c.issues.length;
+    // each a cue id, or { cue, from }: the cue played from the side the line names (review R11)
+    const out: (string | IntroCue)[] = [];
+    for (const [i, x] of cues.entries()) {
+        const at = joinPath(joinPath(path, 'cues'), i);
+        if (typeof x === 'string') {
+            if (!(CUE_IDS as readonly string[]).includes(x)) c.add(at, 'must be a cue id of src/i18n/catalog.ts CUE_IDS');
+            out.push(x);
+            continue;
+        }
+        const r2 = c.record(x, at);
+        if (r2 === null) continue;
+        c.keys(r2, at, ['cue', 'from']);
+        if (typeof r2.cue !== 'string' || !(CUE_IDS as readonly string[]).includes(r2.cue)) c.add(joinPath(at, 'cue'), 'must be a cue id of src/i18n/catalog.ts CUE_IDS');
+        if (typeof r2.from !== 'string' || !(INTRO_SIDES as readonly string[]).includes(r2.from)) c.add(joinPath(at, 'from'), `must be one of ${INTRO_SIDES.join(', ')}`);
+        out.push({ cue: r2.cue as string, from: r2.from as IntroCue['from'] });
+    }
+    const names = out.map((x) => (typeof x === 'string' ? x : `${x.cue}:${x.from}`));
+    if (new Set(names).size !== names.length) c.add(joinPath(path, 'cues'), 'must not repeat a cue');
+    return line === undefined || c.issues.length > before ? undefined : { ...line, cues: out };
+}
+
+/** The sides an intro line's cue may come from. */
+export const INTRO_SIDES: readonly IntroCue['from'][] = ['left', 'right', 'front', 'back', 'up', 'down'];
 
 function lines(c: Collector, v: unknown, path: string, min: number, max: number): SpeechLine[] | undefined {
     const arr = c.array(v, path, { min, max });
@@ -217,6 +252,10 @@ function goal(c: Collector, v: unknown, path: string): Goal | undefined {
             const objectId = id('objectId');
             return objectId === undefined ? undefined : { kind, objectId };
         }
+        case 'track-end': {
+            c.keys(r, path, ['kind']);
+            return { kind };
+        }
         case 'fly-distance': {
             c.keys(r, path, ['kind', 'metres']);
             const metres = c.number(r.metres, at('metres'), { min: 1, max: 5000 });
@@ -251,29 +290,53 @@ function goal(c: Collector, v: unknown, path: string): Goal | undefined {
     }
 }
 
-function passRule(c: Collector, v: unknown, path: string): PassRule | undefined {
+/** The lesson format files were written in before v0.13: its pass rule counted blocks of attempts in a row. */
+export const LESSON_FORMAT_V1 = 'shramko-sonic-lesson/1';
+/** At most this many counted attempts pass a lesson, and at most this many failures in a row come before the go-on offer. */
+export const MAX_REQUIRED = 3;
+export const MAX_FAILS_IN_A_ROW = 3;
+
+/** A format 1 rule ("required of attempts in blocks blocks in a row") as format 2 ("required in total, the offer after attempts failures in a row"). */
+export function migratePassRule(v1: { readonly attempts: number; readonly required: number; readonly blocks: number; readonly maxTouches: number | null; readonly blocking: boolean }): PassRule {
+    const required = Math.max(1, Math.min(MAX_REQUIRED, v1.required * v1.blocks));
+    const attempts = v1.blocking ? MAX_FAILS_IN_A_ROW : Math.max(1, Math.min(MAX_FAILS_IN_A_ROW, v1.attempts * v1.blocks));
+    return { attempts, required, blocks: 1, maxTouches: v1.maxTouches, blocking: v1.blocking };
+}
+
+function passRule(c: Collector, v: unknown, path: string, format: 1 | 2): PassRule | undefined {
     const r = c.record(v, path);
     if (r === null) return undefined;
-    c.keys(r, path, ['attempts', 'required', 'blocks', 'maxTouches', 'blocking']);
-    const attempts = c.number(r.attempts, joinPath(path, 'attempts'), { integer: true, min: 1, max: 100 });
-    const required = c.number(r.required, joinPath(path, 'required'), { integer: true, min: 1, max: 100 });
-    const blocks = c.number(r.blocks, joinPath(path, 'blocks'), { integer: true, min: 1, max: 20 });
+    if (format === 1) {
+        c.keys(r, path, ['attempts', 'required', 'blocks', 'maxTouches', 'blocking']);
+        const attempts = c.number(r.attempts, joinPath(path, 'attempts'), { integer: true, min: 1, max: 100 });
+        const required = c.number(r.required, joinPath(path, 'required'), { integer: true, min: 1, max: 100 });
+        const blocks = c.number(r.blocks, joinPath(path, 'blocks'), { integer: true, min: 1, max: 20 });
+        const maxTouches = orNull(r.maxTouches, () => c.number(r.maxTouches, joinPath(path, 'maxTouches'), { integer: true, min: 0, max: 100 }));
+        const blocking = c.boolean(r.blocking, joinPath(path, 'blocking'));
+        if (attempts !== undefined && required !== undefined && required > attempts) c.add(joinPath(path, 'required'), `must not exceed attempts (${attempts})`);
+        if (attempts === undefined || required === undefined || blocks === undefined || maxTouches === undefined || blocking === undefined) return undefined;
+        return migratePassRule({ attempts, required, blocks, maxTouches, blocking });
+    }
+    c.keys(r, path, ['attempts', 'required', 'maxTouches', 'blocking']);
+    const attempts = c.number(r.attempts, joinPath(path, 'attempts'), { integer: true, min: 1, max: MAX_FAILS_IN_A_ROW });
+    const required = c.number(r.required, joinPath(path, 'required'), { integer: true, min: 1, max: MAX_REQUIRED });
     const maxTouches = orNull(r.maxTouches, () => c.number(r.maxTouches, joinPath(path, 'maxTouches'), { integer: true, min: 0, max: 100 }));
     const blocking = c.boolean(r.blocking, joinPath(path, 'blocking'));
-    if (attempts !== undefined && required !== undefined && required > attempts) c.add(joinPath(path, 'required'), `must not exceed attempts (${attempts})`);
-    if (attempts === undefined || required === undefined || blocks === undefined || maxTouches === undefined || blocking === undefined) return undefined;
-    return { attempts, required, blocks, maxTouches, blocking };
+    if (attempts === undefined || required === undefined || maxTouches === undefined || blocking === undefined) return undefined;
+    return { attempts, required, blocks: 1, maxTouches, blocking };
 }
 
 function checkpoint(c: Collector, v: unknown, path: string): Checkpoint | undefined {
     const r = c.record(v, path);
     if (r === null) return undefined;
-    c.keys(r, path, ['id', 'pose', 'at', 'radiusM']);
+    c.keys(r, path, ['id', 'pose', 'at', 'radiusM', 'stage'], ['id', 'pose', 'at', 'radiusM']);
     const id = c.string(r.id, joinPath(path, 'id'), { min: 1, max: 40, pattern: OBJECT_ID });
     const p = pose(c, r.pose, joinPath(path, 'pose'));
     const at = c.vec3(r.at, joinPath(path, 'at'));
     const radiusM = c.number(r.radiusM, joinPath(path, 'radiusM'), { min: 0.2, max: 50 });
-    return id === undefined || p === undefined || at === undefined || radiusM === undefined ? undefined : { id, pose: p, at, radiusM };
+    const stage = r.stage === undefined ? undefined : c.number(r.stage, joinPath(path, 'stage'), { integer: true, min: 1, max: 50 });
+    if (id === undefined || p === undefined || at === undefined || radiusM === undefined || (r.stage !== undefined && stage === undefined)) return undefined;
+    return stage === undefined ? { id, pose: p, at, radiusM } : { id, pose: p, at, radiusM, stage };
 }
 
 const TOP = ['format', 'id', 'version', 'module', 'order', 'fastPath', 'title', 'intro', 'world', 'start', 'assists', 'layers', 'goals', 'pass', 'checkpoints', 'attemptLimitS', 'speech'] as const;
@@ -283,14 +346,27 @@ export function validateLesson(input: unknown): Validation<LessonDef> {
     const r = c.record(input, '');
     if (r === null) return c.result(undefined as never);
     c.keys(r, '', TOP);
-    if (r.format !== FORMATS.lesson && r.format !== undefined) c.add('format', `must be '${FORMATS.lesson}', got ${JSON.stringify(r.format)}`);
+    // format 1 (v0.12 and before) is read and migrated to format 2 (its pass rule counted blocks of attempts in a row)
+    const format: 1 | 2 = r.format === LESSON_FORMAT_V1 ? 1 : 2;
+    if (r.format !== FORMATS.lesson && r.format !== LESSON_FORMAT_V1 && r.format !== undefined) c.add('format', `must be '${FORMATS.lesson}' (or '${LESSON_FORMAT_V1}', migrated on load), got ${JSON.stringify(r.format)}`);
     const id = c.string(r.id, 'id', { min: 1, max: 40, pattern: LESSON_ID, patternHint: 'must be lower-case letters and digits in groups joined by single hyphens' });
     const version = c.number(r.version, 'version', { integer: true, min: 1 });
     const module = c.number(r.module, 'module', { integer: true, min: 0, max: MODULES.length - 1 });
     const order = c.number(r.order, 'order', { integer: true, min: 0, max: 999 });
     const fastPath = c.boolean(r.fastPath, 'fastPath');
     const title = r.title === undefined ? undefined : speechLine(c, r.title, 'title');
-    const intro = r.intro === undefined ? undefined : lines(c, r.intro, 'intro', 1, 12);
+    let intro: IntroLine[] | undefined;
+    if (r.intro !== undefined) {
+        const arr = c.array(r.intro, 'intro', { min: 1, max: 12 });
+        if (arr !== null) {
+            const out: IntroLine[] = [];
+            arr.forEach((x, i) => {
+                const l = introLine(c, x, joinPath('intro', i));
+                if (l !== undefined) out.push(l);
+            });
+            if (out.length === arr.length) intro = out;
+        }
+    }
     const w = r.world === undefined ? undefined : world(c, r.world, 'world');
     const start = r.start === undefined ? undefined : pose(c, r.start, 'start');
     const a = r.assists === undefined ? undefined : assists(c, r.assists, 'assists');
@@ -307,7 +383,7 @@ export function validateLesson(input: unknown): Validation<LessonDef> {
             if (out.length === arr.length) goals = out;
         }
     }
-    const pass = r.pass === undefined ? undefined : passRule(c, r.pass, 'pass');
+    const pass = r.pass === undefined ? undefined : passRule(c, r.pass, 'pass', format);
     let checkpoints: Checkpoint[] | undefined;
     if (r.checkpoints !== undefined) {
         const arr = c.array(r.checkpoints, 'checkpoints', { max: 50 });
@@ -318,6 +394,8 @@ export function validateLesson(input: unknown): Validation<LessonDef> {
                 if (cp !== undefined) out.push(cp);
             });
             if (new Set(out.map((x) => x.id)).size !== out.length) c.add('checkpoints', 'must not repeat a checkpoint id');
+            const stages = out.flatMap((x) => (x.stage === undefined ? [] : [x.stage]));
+            if (!stages.every((st, i) => i === 0 || st > (stages[i - 1] as number))) c.add('checkpoints', 'stages must count up along the list');
             if (out.length === arr.length) checkpoints = out;
         }
     }
@@ -338,6 +416,14 @@ export function validateLesson(input: unknown): Validation<LessonDef> {
         if (w.kind === 'none' && asks !== goals.length) c.add('goals', "a lesson without a world (module 0, the ears) can only have 'name-cues' and 'locate' goals");
         if (w.kind !== 'none' && asks > 0) c.add('goals', "'name-cues' and 'locate' goals belong to a lesson without a world");
         if (module !== undefined && (module === 0) !== (w.kind === 'none')) c.add('world', 'module 0 (the ears) and only module 0 runs without a world');
+        if (goals.some((g) => g.kind === 'track-end') && (checkpoints?.length ?? 0) < 2) c.add('goals', "a 'track-end' goal needs the lesson's track: two checkpoints or more");
+        // M41-9: a scene of module 0 is heard through the lesson's own layers (a preview sounds whatever is on), so every scene must have its layer on
+        if (w.kind === 'none' && l !== undefined && c.ok) {
+            for (const cue of sceneCues({ world: w, goals })) {
+                const why = sceneSilentReason(cue, l);
+                if (why !== null) c.add('layers', `${why}: it would play without a sound`);
+            }
+        }
     }
 
     if (!c.ok) return c.result(undefined as never);
@@ -372,9 +458,10 @@ export function parseLesson(text: string): Validation<LessonDef> {
     return validateLesson(value);
 }
 
-/** The canonical text of a lesson file (sorted keys, two spaces, one final newline). */
+/** The canonical text of a lesson file in format 2 (sorted keys, two spaces, one final newline; the pass rule has no `blocks`). */
 export function writeLesson(lesson: LessonDef): string {
-    return `${canonicalPretty(lesson)}\n`;
+    const { blocks: _blocks, ...pass } = lesson.pass;
+    return `${canonicalPretty({ ...lesson, format: FORMATS.lesson, pass })}\n`;
 }
 
 // ------------------------------------------------------------------ paths

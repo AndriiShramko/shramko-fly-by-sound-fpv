@@ -11,7 +11,7 @@
   "attemptLimitS": null,
   "checkpoints": [],
   "fastPath": false,
-  "format": "shramko-sonic-lesson/1",
+  "format": "shramko-sonic-lesson/2",
   "goals": [
     {
       "cues": [
@@ -56,9 +56,8 @@
   "module": 0,
   "order": 4,
   "pass": {
-    "attempts": 1,
+    "attempts": 2,
     "blocking": false,
-    "blocks": 2,
     "maxTouches": null,
     "required": 1
   },
@@ -82,7 +81,7 @@
   "title": {
     "key": "lesson.ears-game.title"
   },
-  "version": 1,
+  "version": 2,
   "world": {
     "kind": "none"
   }

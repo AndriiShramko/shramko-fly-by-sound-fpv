@@ -54,6 +54,13 @@ A lesson is data: world, assists, layers on, spoken intro, goals, pass rule, che
 | 6. Shapes | square, series of squares, cube frame; name the shape after passing | optional |
 | 7. Free flight | Winter Garden x5 with a chain of rings, timed | best time saved |
 
+v0.13 replaced these pass rules (lesson format 2, after the owner flew v0.12 and ran 15 attempts of the turn lesson
+without passing): a lesson passes after r counted attempts in total, failures in between do not reset the count, and
+after 3 failed attempts in a row the pilot hears why and that N goes on to the next lesson. Shipped: hover, move and
+stop, walls, the first rings: 3 counted (the walls with at most one touch, the row with none); the corridor 1 (a touch
+goes back to the last checkpoint); the ring course 1 with no touch; the headphone check 1; the shapes 2, optional; the
+glossary, the narrated scenes, the game and free flight never block (`docs/wip/s13-lessons.md`).
+
 A fast path of about six lessons (hover, walls, corridor, rings) is offered next to the full path; a test records which path was used, because the owner wants to find out whether the brain learns faster than the ladder assumes.
 
 ## 4. World

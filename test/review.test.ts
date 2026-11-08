@@ -44,7 +44,7 @@ describe('review D2: a key the pilot presses cuts the speech in progress', () =>
         expect(after[0]?.interrupt, 'the queued intro must be cut by N').toBe(true);
     });
 
-    it('N during the pause between attempts: the next attempt announcement interrupts', () => {
+    it('Z during the pause between attempts: the task said again interrupts (v0.13: N there goes to the next lesson)', () => {
         const lesson = getLesson('hover-height');
         const run = createLessonRunner(lesson);
         run.begin(0);
@@ -62,10 +62,11 @@ describe('review D2: a key the pilot presses cuts the speech in progress', () =>
             t += 50;
         }
         expect(phaseBetween).toBe(true);
-        run.next(t);
+        run.repeat(t);
         const after = says(run.takeActions());
-        expect(after[0]?.line.key).toBe('fly.attempt');
+        expect(after[0]?.line.key).toBe('lesson.hover-height.title');
         expect(after[0]?.interrupt).toBe(true);
+        expect(after.slice(1).every((a) => !a.interrupt)).toBe(true);
     });
 
     it('an answer cuts the rest of the question that is still being read out', () => {
@@ -184,7 +185,7 @@ describe('review D3: the headphone check is about left and right, not about fron
 });
 
 describe('review D4: the report does not call an optional lesson passed when no attempt was', () => {
-    // shapes-square is not blocking: after its block of 3 attempts the runner ends it ("passed") whatever the score
+    // shapes-square is not blocking: after 3 failed attempts in a row the runner ends it ("passed") whatever the score
     const run = async (fly: boolean): Promise<Report> => {
         const host = new RecordingHost(getLesson('shapes-square'));
         host.begin();
@@ -206,7 +207,7 @@ describe('review D4: the report does not call an optional lesson passed when no 
 
     it('a block in which every attempt failed is not a pass', async () => {
         const r = await run(false);
-        expect(r.attempts.map((a) => a.result)).toEqual(['fail', 'fail']); // 2 of 3 needed: the block ends once it is out of reach
+        expect(r.attempts.map((a) => a.result)).toEqual(['fail', 'fail', 'fail']); // 2 counted needed: it moves on after 3 failures in a row
         expect(r.outcome.success).toBe(false);
         expect(r.outcome.status).toBe('not-passed');
         expect(r.outcome.passedAtMs).toBeNull();

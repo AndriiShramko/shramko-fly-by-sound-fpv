@@ -211,7 +211,16 @@ export function eventCue(e: CueEvent): CueId {
         case 'fanfare':
             return 'target.fanfare';
         case 'preview':
+        case 'repeat-cue':
             return e.cue;
+        // lane s13-lessons placeholders until lane s13-sound designs them
+        case 'praise':
+            return 'target.checkpoint';
+        case 'stage':
+            return 'target.lap';
+        case 'wrong-way':
+        case 'wrong-side':
+            return 'safety.reset';
     }
 }
 
@@ -683,8 +692,19 @@ export class CuePlanner {
                 push('target.fanfare', 'target', PRIORITY.chime, 0.39, bright, base, 0.8, -14, null);
                 break;
             }
+            // lane s13-lessons placeholders until lane s13-sound designs them: a praise sounds as a checkpoint chime, a stage as the lap chime
+            case 'praise':
+                return this.cue({ kind: 'checkpoint' }, t).map((n) => ({ ...n, cue: 'target.checkpoint' }));
+            case 'stage':
+                return this.cue({ kind: 'lap' }, t);
+            // and flying back or through a gate's back side as the re-centre sweep
+            case 'wrong-way':
+            case 'wrong-side':
+                return this.cue({ kind: 'reset' }, t);
+            // lane s13-lessons placeholder until lane s13-sound designs it: a play of a named sound sounds as its preview, for its length
+            case 'repeat-cue':
             case 'preview': {
-                const dir = e.dir === null ? null : normalize(e.dir);
+                const dir = e.dir === null || e.dir === undefined ? null : normalize(e.dir);
                 const oneOff: Readonly<Record<string, CueEvent>> = {
                     'safety.touch': { kind: 'touch', material: 'wall', dir, speed: 2 },
                     'safety.reset': { kind: 'reset' },
@@ -697,7 +717,7 @@ export class CuePlanner {
                 if (event !== undefined) return this.cue(event, t).map((n) => ({ ...n, cue: e.cue }));
                 const material = e.cue.startsWith('safety.') ? (e.cue.slice(7) as MaterialClass) : null;
                 const fallback = material !== null && material in MATERIAL_DIR ? MATERIAL_DIR[material] : FRONT;
-                this.previews.push({ key: `preview:${++this.previewCount}`, cue: e.cue, dir: dir ?? fallback, t0: t, durS: PREVIEW_S });
+                this.previews.push({ key: `preview:${++this.previewCount}`, cue: e.cue, dir: dir ?? fallback, t0: t, durS: e.kind === 'repeat-cue' ? (e.durS ?? PREVIEW_S) : PREVIEW_S });
                 return [];
             }
         }

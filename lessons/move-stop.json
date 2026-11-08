@@ -11,7 +11,7 @@
   "attemptLimitS": 90,
   "checkpoints": [],
   "fastPath": false,
-  "format": "shramko-sonic-lesson/1",
+  "format": "shramko-sonic-lesson/2",
   "goals": [
     {
       "kind": "reach-zone",
@@ -29,6 +29,9 @@
       }
     },
     {
+      "cues": [
+        "target.hum"
+      ],
       "key": "lesson.move-stop.intro.2"
     },
     {
@@ -47,11 +50,10 @@
   "module": 2,
   "order": 8,
   "pass": {
-    "attempts": 10,
+    "attempts": 3,
     "blocking": true,
-    "blocks": 1,
     "maxTouches": null,
-    "required": 8
+    "required": 3
   },
   "speech": {
     "hints": [
@@ -73,7 +75,7 @@
   "title": {
     "key": "lesson.move-stop.title"
   },
-  "version": 1,
+  "version": 2,
   "world": {
     "kind": "analytic",
     "spec": {

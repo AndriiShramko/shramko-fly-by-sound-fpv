@@ -53,9 +53,11 @@ class Pilot {
         }
     }
 
+    /** Begins the lesson; a flying lesson's task (its lines, each named sound three times) goes by before the first attempt. */
     begin(): void {
         this.events.push(...this.run.begin(this.t));
         this.take();
+        if (this.lesson.world.kind !== 'none') this.until(() => this.run.phase !== 'intro', 120);
     }
 
     sample(): FlightSample {
@@ -339,7 +341,7 @@ describe('every goal kind: a scripted pass and a near miss', () => {
         expect(swapped.run.attempt).toBe(2); // the check runs again
     });
 
-    it('name-cues and locate (the game): right answers pass a block; a near miss is scored but never blocks', () => {
+    it('name-cues and locate (the game): right answers pass it; a near miss is scored but never blocks', () => {
         const lesson = getLesson('ears-game');
         const first = lesson.goals[0];
         const cues: readonly string[] = first?.kind === 'name-cues' ? first.cues : [];
@@ -359,9 +361,9 @@ describe('every goal kind: a scripted pass and a near miss', () => {
         pass.answerer = truth;
         pass.begin();
         pass.until(() => pass.run.phase === 'passed', 900);
-        expect(goalEvents(pass)).toEqual(['0:met', '1:met', '0:met', '1:met']);
-        expect(pass.lessonWhat().filter((w) => w === 'block-pass').length).toBe(2);
-        expect(pass.run.progress()).toMatchObject({ passed: true, blocksPassed: 2 });
+        expect(goalEvents(pass)).toEqual(['0:met', '1:met']);
+        expect(pass.lessonWhat().filter((w) => w === 'block-pass').length).toBe(1);
+        expect(pass.run.progress()).toMatchObject({ passed: true, blocksPassed: 1 });
 
         let whats = 0;
         const near = new Pilot(lesson, { seed: 3 });
@@ -371,8 +373,8 @@ describe('every goal kind: a scripted pass and a near miss', () => {
         };
         near.begin();
         near.until(() => near.run.phase === 'passed', 900);
-        expect(goalEvents(near).slice(0, 2)).toEqual(['0:missed', '1:met']);
-        expect(near.run.progress()).toMatchObject({ passed: true, blocksPassed: 1 }); // the game never blocks
+        expect(goalEvents(near)).toEqual(['0:missed', '1:met', '0:met', '1:met']);
+        expect(near.run.progress()).toMatchObject({ passed: true, blocksPassed: 1 });
         expect(near.said()).toContain('quiz.score');
     });
 
@@ -413,7 +415,7 @@ describe('module 0 scenes are heard as in flight', () => {
 });
 
 describe('pass rules, touches, resets and progress', () => {
-    it('8 of 10 passes the block; a block out of reach ends early and starts again', () => {
+    it('3 counted attempts in total pass the lesson; failures in between do not reset the count', () => {
         const lesson = getLesson('rings-first');
         const p = new Pilot(lesson);
         p.begin();
@@ -422,21 +424,18 @@ describe('pass rules, touches, resets and progress', () => {
             p.flyTo([1.9, 3, 66], 6);
             p.flyTo([1.9, 3, 55], 6);
         };
-        for (let i = 0; i < 3; i++) {
-            miss();
+        for (const fly of [miss, through, miss, through, miss]) {
+            fly();
             p.hold(3);
         }
-        // 0 of 3 with 7 left cannot reach 8: the block is lost and a new one begins
-        expect(p.lessonWhat().filter((w) => w === 'attempt-fail').length).toBe(3);
-        expect(p.run.progress().blocksPassed).toBe(0);
-        for (let i = 0; i < 8; i++) {
-            through();
-            p.hold(3);
-        }
+        expect(p.run.phase).not.toBe('passed');
+        expect(p.run.progress()).toMatchObject({ attempts: 5, successes: 2, blocksPassed: 0, passed: false });
+        through();
+        p.hold(3);
         expect(p.run.phase).toBe('passed');
-        expect(p.lessonWhat()).toContain('block-pass');
-        expect(p.lessonWhat().at(-1)).toBe('passed');
-        expect(p.run.progress()).toMatchObject({ attempts: 11, successes: 8, passed: true });
+        expect(p.lessonWhat().filter((w) => w.startsWith('attempt-') && w !== 'attempt-start')).toEqual(['attempt-fail', 'attempt-pass', 'attempt-fail', 'attempt-pass', 'attempt-fail', 'attempt-pass']);
+        expect(p.lessonWhat().slice(-2)).toEqual(['block-pass', 'passed']);
+        expect(p.run.progress()).toMatchObject({ attempts: 6, successes: 3, blocksPassed: 1, passed: true });
         expect(p.actions.some((a) => a.kind === 'cue' && a.event.kind === 'fanfare')).toBe(true);
         expect(p.said()).toContain('lesson.rings-first.pass');
     });
@@ -468,9 +467,10 @@ describe('pass rules, touches, resets and progress', () => {
         p.tick();
         const place = p.actions.filter((a): a is Extract<RunnerAction, { kind: 'place' }> => a.kind === 'place').at(-1)!;
         expect(place.to).toBe('checkpoint');
-        expect(place.pose).toEqual(lesson.checkpoints[1]!.pose);
+        // 1 m before the checkpoint, facing along the corridor (M41-20)
+        expect(place.pose).toEqual({ pos: [0, 2, -49], yawDeg: 0 });
         expect(p.of('reset').at(-1)).toMatchObject({ to: 'checkpoint', checkpointId: 'cp-2' });
-        expect(p.pos).toEqual(lesson.checkpoints[1]!.pose.pos);
+        expect(p.pos).toEqual([0, 2, -49]);
     });
 
     it('reset to the last checkpoint and to the start; a reset to the start begins the same attempt again', () => {
@@ -479,7 +479,7 @@ describe('pass rules, touches, resets and progress', () => {
         p.begin();
         p.flyTo([0, 2, -55], 4);
         const cp = p.run.reset('checkpoint', p.t);
-        expect(cp.pose).toEqual(lesson.checkpoints[1]!.pose);
+        expect(cp.pose).toEqual({ pos: [0, 2, -49], yawDeg: 0 });
         expect(cp.events[0]).toMatchObject({ kind: 'reset', to: 'checkpoint', checkpointId: 'cp-2' });
         const start = p.run.reset('start', p.t);
         expect(start.pose).toEqual(lesson.start);
@@ -497,12 +497,17 @@ describe('pass rules, touches, resets and progress', () => {
 
     it('progress carries on from earlier progress and dates itself on the session clock', () => {
         const lesson = getLesson('rings-first');
-        const p = new Pilot(lesson, { progress: { lessonId: 'rings-first', version: 1, attempts: 4, successes: 3, blocksPassed: 0, passed: false, bestTimeMs: null, lastAt: '2026-11-01T10:00:00.000Z' }, sessionStartMs: Date.UTC(2026, 10, 7, 12) });
+        const p = new Pilot(lesson, { progress: { lessonId: 'rings-first', version: 2, attempts: 4, successes: 1, blocksPassed: 0, passed: false, bestTimeMs: null, lastAt: '2026-11-01T10:00:00.000Z' }, sessionStartMs: Date.UTC(2026, 10, 7, 12) });
         p.begin();
         p.flyTo([0, 3, 55], 3);
         const pr = p.run.progress();
-        expect(pr).toMatchObject({ lessonId: 'rings-first', attempts: 5, successes: 4 });
+        expect(pr).toMatchObject({ lessonId: 'rings-first', attempts: 5, successes: 2, passed: false });
         expect(pr.lastAt.startsWith('2026-11-07T12:00:')).toBe(true);
+        // progress of another version of the lesson (v0.12's rule) is not counted on: only a pass is kept
+        const old = new Pilot(lesson, { progress: { lessonId: 'rings-first', version: 1, attempts: 9, successes: 7, blocksPassed: 0, passed: false, bestTimeMs: null, lastAt: '2026-11-01T10:00:00.000Z' } });
+        old.begin();
+        old.flyTo([0, 3, 55], 3);
+        expect(old.run.progress()).toMatchObject({ version: 2, attempts: 1, successes: 1, passed: false });
     });
 
     it('the same flight gives the same events (a replay re-derives them)', () => {
