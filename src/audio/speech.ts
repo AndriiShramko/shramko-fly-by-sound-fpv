@@ -1,12 +1,16 @@
 // Speech behind the contract's SpeechOut, so pre-rendered clips can replace speechSynthesis later
 // (spec section 2). This one uses the browser's speechSynthesis: a voice of the pilot's language
 // when the system has one, else the default voice with the language tag set (the captions carry
-// the text either way). A promise per line resolves when the line ends, fails or is cancelled,
-// and never later than a safety timeout, so a missing 'end' event cannot hold a lesson.
+// the text either way). A voice on the machine comes before a network voice of the same language
+// (review M4): the themes' voice volume is measured on the local Windows voices (tools/listen), and a
+// network voice's loudness is unknown (Chrome offers Google's when it is online), so an English pilot
+// on a machine with only en-US local voices hears one of those, not a network en-GB voice (src/audio/voice-choice.ts).
+// A promise per line resolves when the line ends, fails or is cancelled, and never later than a safety timeout, so a
+// missing 'end' event cannot hold a lesson.
 import type { Locale, SpeechOut } from '../contract';
+import { chooseVoice, SPEECH_LANG } from './voice-choice';
 
-/** BCP 47 tags of the four languages, for the utterance and the voice choice. */
-export const SPEECH_LANG: Readonly<Record<Locale, string>> = { en: 'en-GB', es: 'es-ES', pl: 'pl-PL', ru: 'ru-RU' };
+export { chooseVoice, SPEECH_LANG, type VoiceLike } from './voice-choice';
 
 export interface SpeakOptions {
     readonly lang: Locale;
@@ -36,17 +40,7 @@ export function createBrowserSpeech(synth: SynthLike | null = typeof speechSynth
     // Chrome drops an utterance that nothing references before it ends: keep them
     const live = new Set<SpeechSynthesisUtterance>();
 
-    const pickVoice = (lang: Locale): SpeechSynthesisVoice | null => {
-        if (synth === null) return null;
-        const voices = synth.getVoices();
-        const tag = SPEECH_LANG[lang].toLowerCase();
-        return (
-            voices.find((v) => v.lang.toLowerCase() === tag && v.localService) ??
-            voices.find((v) => v.lang.toLowerCase() === tag) ??
-            voices.find((v) => v.lang.toLowerCase().startsWith(`${lang}-`) || v.lang.toLowerCase() === lang) ??
-            null
-        );
-    };
+    const pickVoice = (lang: Locale): SpeechSynthesisVoice | null => (synth === null ? null : chooseVoice(synth.getVoices(), lang));
 
     return {
         get speaking(): boolean {

@@ -1,0 +1,178 @@
+{
+ "format": "shramko-voices-evidence/1",
+ "claim": "the local Windows voices Chrome's speechSynthesis can use on the build machine (desktop and OneCore categories, through SAPI 5 as Chrome drives them) speak within 0 to -1.7 LU of the voice the themes' voice volume was set on (SAPI desktop David), and follow the same volume law (0.25 dB per step of 0 to 100); review M4",
+ "how": "tools/listen/tts/voice-levels.ps1 (SAPI.SpVoice with each voice token, SetVolume, spoken to a 48 kHz WAV file, nothing aloud) and tools/listen/measure-voices.py (BS.1770 integrated loudness of three lines joined, 4x oversampled true peak)",
+ "lines": [
+  "Go.",
+  "If the hum is smooth, you are lined up. If it is rough, you are off to one side. Steer until it is smooth.",
+  "Attempt 2."
+ ],
+ "machine": "Windows 10 Pro 19045, en-US voices only (no es, pl or ru voice installed)",
+ "date": "2026-11-08",
+ "measured": {
+  "reference": "desktop_Microsoft-David-Desktop-English-United-States",
+  "voices": {
+   "desktop_Microsoft-David-Desktop-English-United-States": {
+    "100": {
+     "lufs": -17.5,
+     "truePeakDbtp": -0.35,
+     "againstReferenceLu": 0.0,
+     "againstOwn100Lu": 0.0
+    },
+    "87": {
+     "lufs": -20.76,
+     "truePeakDbtp": -3.6,
+     "againstReferenceLu": -3.26,
+     "againstOwn100Lu": -3.26
+    },
+    "77": {
+     "lufs": -23.26,
+     "truePeakDbtp": -6.1,
+     "againstReferenceLu": -5.76,
+     "againstOwn100Lu": -5.76
+    },
+    "74": {
+     "lufs": -24.01,
+     "truePeakDbtp": -6.85,
+     "againstReferenceLu": -6.51,
+     "againstOwn100Lu": -6.51
+    },
+    "50": {
+     "lufs": -30.01,
+     "truePeakDbtp": -12.85,
+     "againstReferenceLu": -12.51,
+     "againstOwn100Lu": -12.51
+    }
+   },
+   "desktop_Microsoft-Zira-Desktop-English-United-States": {
+    "100": {
+     "lufs": -17.87,
+     "truePeakDbtp": -3.05,
+     "againstReferenceLu": -0.37,
+     "againstOwn100Lu": 0.0
+    },
+    "87": {
+     "lufs": -21.12,
+     "truePeakDbtp": -6.3,
+     "againstReferenceLu": -3.62,
+     "againstOwn100Lu": -3.25
+    },
+    "77": {
+     "lufs": -23.62,
+     "truePeakDbtp": -8.8,
+     "againstReferenceLu": -6.12,
+     "againstOwn100Lu": -5.75
+    },
+    "74": {
+     "lufs": -24.37,
+     "truePeakDbtp": -9.55,
+     "againstReferenceLu": -6.87,
+     "againstOwn100Lu": -6.5
+    },
+    "50": {
+     "lufs": -30.38,
+     "truePeakDbtp": -15.55,
+     "againstReferenceLu": -12.88,
+     "againstOwn100Lu": -12.51
+    }
+   },
+   "onecore_Microsoft-David-English-United-States": {
+    "100": {
+     "lufs": -17.5,
+     "truePeakDbtp": -0.35,
+     "againstReferenceLu": 0.0,
+     "againstOwn100Lu": 0.0
+    },
+    "87": {
+     "lufs": -20.76,
+     "truePeakDbtp": -3.6,
+     "againstReferenceLu": -3.26,
+     "againstOwn100Lu": -3.26
+    },
+    "77": {
+     "lufs": -23.26,
+     "truePeakDbtp": -6.1,
+     "againstReferenceLu": -5.76,
+     "againstOwn100Lu": -5.76
+    },
+    "74": {
+     "lufs": -24.01,
+     "truePeakDbtp": -6.85,
+     "againstReferenceLu": -6.51,
+     "againstOwn100Lu": -6.51
+    },
+    "50": {
+     "lufs": -30.01,
+     "truePeakDbtp": -12.85,
+     "againstReferenceLu": -12.51,
+     "againstOwn100Lu": -12.51
+    }
+   },
+   "onecore_Microsoft-Mark-English-United-States": {
+    "100": {
+     "lufs": -18.08,
+     "truePeakDbtp": -2.02,
+     "againstReferenceLu": -0.58,
+     "againstOwn100Lu": 0.0
+    },
+    "87": {
+     "lufs": -21.33,
+     "truePeakDbtp": -5.27,
+     "againstReferenceLu": -3.83,
+     "againstOwn100Lu": -3.25
+    },
+    "77": {
+     "lufs": -23.83,
+     "truePeakDbtp": -7.77,
+     "againstReferenceLu": -6.33,
+     "againstOwn100Lu": -5.75
+    },
+    "74": {
+     "lufs": -24.58,
+     "truePeakDbtp": -8.52,
+     "againstReferenceLu": -7.08,
+     "againstOwn100Lu": -6.5
+    },
+    "50": {
+     "lufs": -30.58,
+     "truePeakDbtp": -14.52,
+     "againstReferenceLu": -13.08,
+     "againstOwn100Lu": -12.5
+    }
+   },
+   "onecore_Microsoft-Zira-English-United-States": {
+    "100": {
+     "lufs": -19.22,
+     "truePeakDbtp": -4.19,
+     "againstReferenceLu": -1.72,
+     "againstOwn100Lu": 0.0
+    },
+    "87": {
+     "lufs": -22.47,
+     "truePeakDbtp": -7.44,
+     "againstReferenceLu": -4.97,
+     "againstOwn100Lu": -3.25
+    },
+    "77": {
+     "lufs": -24.97,
+     "truePeakDbtp": -9.94,
+     "againstReferenceLu": -7.47,
+     "againstOwn100Lu": -5.75
+    },
+    "74": {
+     "lufs": -25.72,
+     "truePeakDbtp": -10.69,
+     "againstReferenceLu": -8.22,
+     "againstOwn100Lu": -6.5
+    },
+    "50": {
+     "lufs": -31.72,
+     "truePeakDbtp": -16.69,
+     "againstReferenceLu": -14.22,
+     "againstOwn100Lu": -12.5
+    }
+   }
+  }
+ },
+ "cannotShow": "the network voices Chrome offers when online (Google's: they cannot be captured headless or without a loopback recording); that Chrome passes utterance.volume x 100 to SAPI (the lane's assumption, consistent with every SAPI voice here); how loud a person sets the headphones"
+}
