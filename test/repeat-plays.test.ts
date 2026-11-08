@@ -5,8 +5,12 @@
 // reads, frame by frame, whether the planner sounds that cue: a continuous cue's preview (previewsAt) or a one-off
 // cue's notes (its id among the frame's cues). A continuous play must sound through its whole slot and the cue be
 // silent in the gap before the next play; a one-off play sounds at once and is over within its slot.
-// Control: a planner that plays every repeat-cue for 0.9 s whatever `durS` says (lane s13-sound's planner as it
-// stands: REPEAT_CUE_S) fails it, with 2.6 s of silence between plays.
+// Control: a planner that plays every repeat-cue for 0.9 s whatever `durS` says (lane s13-sound's planner before
+// its review fix B2: REPEAT_CUE_S) fails it, with 2.6 s of silence between plays. The planner now honours `durS`
+// (REPEAT_PLAY_DEFAULT_S, 2.5 s, only when it is absent). That default is the runner's continuous play, so the
+// main check alone would not notice a planner that ignored `durS`: with `durS` ignored on purpose (merge
+// s13-merge) the control fails (the 0.9 s plays it asks for are no longer short), and so does test/events.test.ts
+// (a fanfare given a 0.5 s play is not cut).
 // What this cannot show: how the plays sound at the ear (lane s13-sound's rig renders the audio) or how they feel.
 import { describe, expect, it } from 'vitest';
 import type { CueEvent, FlightSample, LessonDef } from '../src/contract';
@@ -114,7 +118,7 @@ describe('the planner sounds every play of a named sound for as long as the runn
         expect(renderPlays('ears-glossary')).toHaveLength(60);
     }, 120000);
 
-    it('control: a planner that plays every repeat-cue for 0.9 s whatever durS says (REPEAT_CUE_S of lane s13-sound) fails it', () => {
+    it('control: a planner that plays every repeat-cue for 0.9 s whatever durS says (REPEAT_CUE_S, lane s13-sound before its review fix B2) fails it', () => {
         const short = (e: Extract<CueEvent, { kind: 'repeat-cue' }>): CueEvent => ({ ...e, durS: 0.9 });
         const issues = playIssues(renderPlays('ears-glossary', 'soft', short));
         expect(issues.filter((x) => /sounds in \d+ %/.test(x)).length).toBeGreaterThanOrEqual(30);

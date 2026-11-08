@@ -21,7 +21,12 @@ and the corridor's goal (s13-lessons' "For the lead's merge" item 2, review R5) 
   frames (69 %, the control holds); with the lessons' own layers it is silent in 0 of 150 (the control as merged,
   failing: broken on purpose once, as in the merge's first test run). The real check now runs with both: a target in
   every pause frame and no silent frame in all 9 lessons, own layers and v0.12's.
-- [ ] 4b. `test/repeat-plays.test.ts` passes: the repeat-cue case honours `durS` (confirmed once with `durS` ignored)
+- [x] 4b. `test/repeat-plays.test.ts` passes (2 of 2) with s13-sound's repeat-cue case, which honours `durS`
+  (`REPEAT_PLAY_DEFAULT_S` 2.5 only when absent). With `durS` ignored on purpose (the planner always 2.5 s), once,
+  then restored: its main check still passed (the default is the runner's continuous play, and a one-off cue ends
+  inside its slot by itself), its control failed (0 plays cut short, at least 30 wanted: the 0.9 s plays it asks
+  for were not short any more), and `test/events.test.ts` failed (a fanfare given a 0.5 s play lasted 1.19 s). The
+  test's header and the control's title now say so; nothing else changed.
 - [ ] 4c. `ONE_OFF_PLAY_S` gets the lengths of s13-sound's one-off cues
 - [ ] 4d. The replay's verdict "recorded with an older build" (not FAIL), its negative control, `test/replay-v012.test.ts`
 - [ ] 4e. The lines of walls-hall and the corridor say what the knocks of v0.13 mean (four languages)
