@@ -13,6 +13,10 @@ import { BODY_RADIUS_M } from '../../src/lesson';
 import { quatRotate } from '../../src/util/vec';
 import { createAnalyticWorld, type AnalyticWorldInfo } from '../../src/world';
 
+/** The collision bound of the simulator's default drone (pavo20pro-3s) and of its largest (taurusx8-komodo), m (lane doc F4). */
+export const DEFAULT_CRAFT_M = 0.077;
+export const LARGEST_CRAFT_M = 0.318;
+
 export const ACCEL_MPS2 = 6;
 export const TAU_VELOCITY_S = 0.4;
 export const TAU_ATTITUDE_S = 0.2;

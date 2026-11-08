@@ -11,7 +11,7 @@ navigation and truth bot `test/helpers/truth.ts`). No push. Every step one commi
 - [x] 3. The hollow for the simulator: the cavity boxes in the analytic world
 - [x] 4. The world's checkpoint list (M41-20)
 - [x] 5. Micro-drone scale (M41-18): version 2 of the room generators, the lessons' world, start and assists
-- [ ] 6. Tunnels (M41-21): corridor version 2 and the tunnel lessons
+- [x] 6. Tunnels (M41-21): corridor version 2 and the tunnel lessons
 - [ ] 7. Rings at different heights (M41-22): the heights parameter and lesson rings-heights
 - [ ] 8. All checks, final status
 
@@ -239,6 +239,55 @@ lesson with a goal other than hold-height, approach-stop or around): the owner's
   flight inside the room; rings-course flown at its own cap of 4 m/s instead of 6: at 6 m/s the v0.12 sampler's replay
   agreed on 94.9 % of the frames in the smaller room, under the 95 % rule; at 4 m/s 95.2 %, at 3 m/s 96.1 %).
 
+### Step 6: tunnels (M41-21)
+
+- Corridor version 2 (`src/world/tunnels.ts`; version 1 stays for the corridor lesson): a tunnel `widthM` x `heightM`
+  walked in straight runs and 90 degree bends that turn right and left in turn (it zigzags forward, never doubles back),
+  layouts `tunnel` (a straight, `bendCount` bends with legs of `segmentM`, a last straight), `gaps` (an obstacle per
+  side of `gaps` in the middle of a run of `obstacleRunM`) and `long` (stages: `stageWidths`, `stageBends`,
+  `stageGaps`; the last checkpoint of stage k carries `stage: k`). An obstacle is a box (`block-k`, shape `box`, which
+  the simulator already draws) that fills the cross section but for a free way `gapM` across, above it, under it, left
+  or right of it; it reaches 5 cm into the surfaces it stands on (no face of it lies on a face of the room). New
+  parameter kinds: `names` (the free sides, "up,right,down,left") and lists with defaults. Landmarks: `start`, `bend-k`
+  (the first point of the leg after a corner), `gap-k` (1.5 m before obstacle k, on its free way), `stage-k`, `end`.
+- The lessons (module 4, after corridor, format 2, version 1: new in v0.13; `onTouch: bump-recentre`; required 1):
+
+| Lesson | Tunnel | Cap (m/s) | A turn or obstacle every | Track | Widest sphere on the track | Goal |
+|---|---|---|---|---|---|---|
+| tunnel-wide | 3 x 3 m, 4 bends, legs 6 m | 3 / climb 1 | 2.85 s | 32.5 m | 1.08 m | fly 29 m |
+| tunnel-narrow | 1.8 x 2 m, 4 bends, legs 5 m | 2.5 / 1 | 2.80 s | 27.9 m | 0.63 m | fly 25 m |
+| tunnel-narrower | 1.2 x 1.8 m, 4 bends, legs 4 m (voxel 0.05) | 2 / 0.8 | 2.76 s | 22.6 m | 0.42 m (corners: 0.6 / sqrt 2) | fly 20 m |
+| tunnel-bends | 2 x 2 m, 10 bends, legs 4 m | 2.5 / 1 | 2.40 s | 42.1 m | 0.73 m | fly 39 m |
+| tunnel-gaps | 3 x 3 m, free up, right, down, left, gaps 1.2 m | 2.5 / 1.2 | 3.0 s | 35.8 m | 0.60 m | fly 33 m |
+| tunnel-long | 2.4 m high, 5 stages | 2.5 / 1.2 | 2.80 s | 150.8 m (about 60 s at the cap) | 0.42 m | fly 148 m |
+
+  The long tunnel's stages: widths 3, 2.4, 1.8, 1.4, 1.2 m; bends 2, 3, 4, 4, 6; obstacles 0, 0, 1, 2, 2 (free right,
+  up, down, up, down; gaps 1.0 m, the free way's centre 0.7 m off the line, the free-way probe's first offset). The
+  measure of a stage (taken from the world, not the parameters): d = (1 + turns + 2 x obstacles) / (width / 2 - 0.12 m),
+  width the least wall-to-wall distance across its checkpoints: 2.17, 3.70, 8.97, 15.52, 22.92 (s1..s5), and each part is
+  no easier than the stage before (width not wider, turns and obstacles not fewer). Margins (the widest sphere that
+  follows the whole track, sampled on 52 points of it every 5 cm): the default drone (0.077 m) has 0.37 m to spare in
+  the narrowest tunnels and the largest preset (0.318 m, an 8-inch X8) 0.1 m at their corners; both pass every tunnel.
+- The lessons' own checkpoints (the present runner's respawn, M41-20 until lane s13-lessons reads the world's): the
+  start, the first point after each bend, 1.5 m before each obstacle on its free way, each stage's start; radius half
+  the cross section's diagonal (and 0.6 m more before an obstacle, so a craft not yet off the middle reaches it). The
+  world's own track has 11 to 63 checkpoints, at most 5 m apart, the stage ends marked.
+- Registered (additive): `src/lesson/library.ts`, `lessons/paths.json` (full: all six after corridor; fast: tunnel-gaps
+  only, the one lesson that teaches finding the free way past an obstacle by the open-way chime of M41-14, which no other
+  lesson of the fast path has; the others train what the corridor starts), `src/i18n/catalog.ts` and the four locales
+  (44 keys each; tunnel-gaps says the chime comes from the free side and a high one means the way is above).
+  `order` of every lesson is now its place on the full path (rings-first 13 -> 19 ... free-garden 20 -> 26): the
+  simulator's start screen sorts by it (`apps/fly/src/sonic/start-model.ts:40`).
+- Tests (`test/world-tunnels.test.ts`): the six on the ladder after corridor, one on the fast path, every order its
+  place; wide, narrow, narrower get narrower; a turn or an obstacle every 2 to 3.2 s at the lesson's cap; the goal the
+  track's length less under 4 m; the lesson's checkpoints on the track; a flood fill at 0.12 m from start to end and
+  the widest sphere over the largest drone; the truth bot passes each in at most 2 x r with no touch; every obstacle
+  open on its stated side only (a sphere swept along each of the four strips); the long tunnel's five stage marks, its
+  measure and its parts, its widths; the intro's promise; five bad specs refused. Controls: each obstacle grown over its
+  free way makes the tunnel impassable to the same flood fill; a stage 3 made wider (2.8 m) fails the measure.
+  `test/world-cavities.test.ts` and `test/world-track.test.ts` take every layout of version 2 too (its cavities are the
+  shell; its tracks keep the gaps, dirs and free lines).
+
 ## Needs from the simulator
 
 1. Draw the room from the package's boxes (`apps/fly/src/sonic/primitives.ts:215-231`, `cavityBoxes`), and delete the
@@ -275,6 +324,14 @@ Lane s13-lessons (owner of the strings, goals and the truth bot):
    than 1 s (M41-15) would hear. The world's checkpoints (1.5 m before, 1 m past each gate) are a track to fly.
 4. corridor's `attemptLimitS` 900 s was for a 335 m corridor; the track is 126 m now (about 50 s at 3 m/s).
 
+5. The six tunnels' lesson-file checkpoints (above) are for the present runner; when it reads the world's
+   checkpoints (M41-20), keep or drop them. Their intro lines carry no `cues` (format 2 at eee530b has none):
+   tunnel-gaps' intro.2 names the open-way chime (`safety.free`, lane s13-sound) for the three plays of M41-5.
+
+Lane s13-sound: the six tunnels have `layers` safety and voice, as the corridor; give them the height layer and the
+room bed as every flying lesson (their step 7). The free-way chime has its own lesson now: tunnel-gaps (3 x 3 m, free
+ways 1.2 m, as their box tunnels) and tunnel-long (2.4 m high, free ways 1.0 m, 0.7 m off the line).
+
 Lane s13-sound: the rings-course replay check now flies at the lesson's cap (4 m/s) and agrees on 95.2 % of the frames
 with the v0.12 sampler (side walls 7.4 m away flicker in and out of the three hazard voices); their time-to-contact
 rule and `pathMissM` filter are expected to raise it. Nothing to do unless it drops under 95 % after the merge.
@@ -287,5 +344,12 @@ rule and `pathMissM` filter are expected to raise it. Nothing to do unless it dr
   and corridor, move-stop's `intro[0].params.metres`, and corridor's `checkpoints[*].at` and `.pose.pos` moved with the
   geometry (see step 5). Merge by field: lane s13-lessons' `pass`, `intro` (`cues`), `speech`, `checkpoints` meaning
   and lane s13-sound's `layers` do not touch these lines.
+- Registering the tunnels (step 6, additive): `src/lesson/library.ts` (six imports and entries), `lessons/paths.json`,
+  `src/i18n/catalog.ts` (six `LESSONS` entries after corridor), `locales/{en,es,pl,ru}.json` (44 keys each after
+  `lesson.corridor.hint.1`), `README.md` and `llms.txt` (27 lessons, a fast path of 8). Not additive but needed: the
+  `order` of the eight lessons after corridor (their place on the full path).
+- Tests of other lanes, step 6: `test/lessons.test.ts` (a lesson new in v0.13 is version 1), `test/pass-rule.test.ts`
+  (the v0.12 rules fixture covers the lessons v0.12 shipped), `test/progress.test.ts` (the lesson count from the path);
+  the list of new lessons is `test/helpers/new-lessons.ts`.
 - Tests of other lanes edited only to take positions from the worlds (step 5 lists them); when lane s13-lessons or
   s13-sound adds a flight with v0.12's numbers (z = 72, -27.5, -55, a zone at 30 m ...), it needs the same treatment.

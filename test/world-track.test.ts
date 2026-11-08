@@ -12,9 +12,8 @@ import { canonicalJson } from '../src/util/canonical';
 import { sha256Hex } from '../src/util/sha256';
 import { quatRotate } from '../src/util/vec';
 import { createAnalyticWorld, GENERATOR_VERSIONS, makeSpec, paramSchema, type AnalyticWorldInfo } from '../src/world';
+import { LARGEST_CRAFT_M } from './helpers/reach';
 
-/** The largest collision bound of the simulator's drone presets (taurusx8-komodo, lane doc F4), m. */
-export const LARGEST_CRAFT_M = 0.318;
 const TRACK_GENERATORS = ['corridor', 'rings', 'squares', 'cube-frames'] as const;
 
 function trackWorlds(): { name: string; world: AnalyticWorldInfo }[] {

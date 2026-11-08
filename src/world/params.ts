@@ -30,6 +30,15 @@ export interface ListParam {
     readonly min: number;
     readonly max: number;
     readonly maxLength: number;
+    /** absent: this list (version 1's lists have none: an empty list) */
+    readonly def?: readonly number[];
+}
+/** Names joined by commas, each one of `values` (the free sides of a tunnel's obstacles); kept without spaces. */
+export interface NamesParam {
+    readonly kind: 'names';
+    readonly def: string;
+    readonly values: readonly string[];
+    readonly maxLength: number;
 }
 /**
  * Heights (version 2 of the gate generators): a list of metres like a ListParam, or level names joined
@@ -43,12 +52,13 @@ export interface HeightsParam {
     readonly maxLength: number;
     readonly levels: readonly string[];
 }
-export type ParamDef = NumberParam | EnumParam | ListParam | HeightsParam;
+export type ParamDef = NumberParam | EnumParam | ListParam | HeightsParam | NamesParam;
 export type Schema = Readonly<Record<string, ParamDef>>;
 
 export const num = (def: number, min: number, max: number, integer = false): NumberParam => ({ kind: 'number', def, min, max, integer });
 export const oneOf = (def: string, ...values: string[]): EnumParam => ({ kind: 'enum', def, values });
-export const list = (min: number, max: number, maxLength: number): ListParam => ({ kind: 'list', min, max, maxLength });
+export const list = (min: number, max: number, maxLength: number, def?: readonly number[]): ListParam => (def === undefined ? { kind: 'list', min, max, maxLength } : { kind: 'list', min, max, maxLength, def });
+export const names = (def: string, values: readonly string[], maxLength: number): NamesParam => ({ kind: 'names', def, values, maxLength });
 export const heights = (min: number, max: number, maxLength: number, levels: readonly string[]): HeightsParam => ({ kind: 'heights', min, max, maxLength, levels });
 
 /** Checks `given` against `schema` and fills every default; throws WorldSpecError. */
@@ -77,11 +87,20 @@ export function resolveWith(schema: Schema, generator: WorldGenerator, given: An
                 break;
             }
             case 'list': {
-                if (v === undefined) out[name] = [];
+                if (v === undefined) out[name] = [...(def.def ?? [])];
                 else if (!Array.isArray(v) || v.length > def.maxLength) throw new WorldSpecError(`${where} must be a list of at most ${def.maxLength} numbers`);
                 else if (!v.every((x) => typeof x === 'number' && Number.isFinite(x) && x >= def.min && x <= def.max)) {
                     throw new WorldSpecError(`${where} must hold numbers between ${def.min} and ${def.max}`);
                 } else out[name] = [...v];
+                break;
+            }
+            case 'names': {
+                const text = v === undefined ? def.def : v;
+                const parts = typeof text === 'string' ? text.split(',').map((x) => x.trim()) : null;
+                if (parts === null || parts.length === 0 || parts.length > def.maxLength || !parts.every((x) => def.values.includes(x))) {
+                    throw new WorldSpecError(`${where} must be 1 to ${def.maxLength} of ${def.values.join(', ')} joined by commas, got ${JSON.stringify(v)}`);
+                }
+                out[name] = parts.join(',');
                 break;
             }
             case 'heights': {

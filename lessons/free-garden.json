@@ -44,7 +44,7 @@
     ]
   },
   "module": 7,
-  "order": 20,
+  "order": 26,
   "pass": {
     "attempts": 3,
     "blocking": false,

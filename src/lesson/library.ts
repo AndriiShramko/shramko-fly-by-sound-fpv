@@ -21,6 +21,12 @@ import ringsSmall from '../../lessons/rings-small.json';
 import shapesCube from '../../lessons/shapes-cube.json';
 import shapesSeries from '../../lessons/shapes-series.json';
 import shapesSquare from '../../lessons/shapes-square.json';
+import tunnelWide from '../../lessons/tunnel-wide.json';
+import tunnelNarrow from '../../lessons/tunnel-narrow.json';
+import tunnelNarrower from '../../lessons/tunnel-narrower.json';
+import tunnelBends from '../../lessons/tunnel-bends.json';
+import tunnelGaps from '../../lessons/tunnel-gaps.json';
+import tunnelLong from '../../lessons/tunnel-long.json';
 import wallsHall from '../../lessons/walls-hall.json';
 import wallsPillar from '../../lessons/walls-pillar.json';
 import wallsRow from '../../lessons/walls-row.json';
@@ -41,6 +47,12 @@ const SOURCES: Readonly<Record<string, unknown>> = {
     'walls-pillar': wallsPillar,
     'walls-row': wallsRow,
     corridor,
+    'tunnel-wide': tunnelWide,
+    'tunnel-narrow': tunnelNarrow,
+    'tunnel-narrower': tunnelNarrower,
+    'tunnel-bends': tunnelBends,
+    'tunnel-gaps': tunnelGaps,
+    'tunnel-long': tunnelLong,
     'rings-first': ringsFirst,
     'rings-line': ringsLine,
     'rings-small': ringsSmall,

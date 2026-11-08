@@ -1,0 +1,134 @@
+{
+  "assists": {
+    "altitude": "hold",
+    "autoArm": true,
+    "control": "velocity",
+    "maxClimbMps": 1,
+    "maxSpeedMps": 2.5,
+    "maxYawDps": 90,
+    "onTouch": "bump-recentre"
+  },
+  "attemptLimitS": 120,
+  "checkpoints": [
+    {
+      "at": [0, 1, 0],
+      "id": "cp-1",
+      "pose": {
+        "pos": [0, 1, 0],
+        "yawDeg": 0
+      },
+      "radiusM": 1.3
+    },
+    {
+      "at": [0.9, 1, -5],
+      "id": "cp-2",
+      "pose": {
+        "pos": [0.9, 1, -5],
+        "yawDeg": 90
+      },
+      "radiusM": 1.3
+    },
+    {
+      "at": [5, 1, -5.9],
+      "id": "cp-3",
+      "pose": {
+        "pos": [5, 1, -5.9],
+        "yawDeg": 0
+      },
+      "radiusM": 1.3
+    },
+    {
+      "at": [5.9, 1, -10],
+      "id": "cp-4",
+      "pose": {
+        "pos": [5.9, 1, -10],
+        "yawDeg": 90
+      },
+      "radiusM": 1.3
+    },
+    {
+      "at": [10, 1, -10.9],
+      "id": "cp-5",
+      "pose": {
+        "pos": [10, 1, -10.9],
+        "yawDeg": 0
+      },
+      "radiusM": 1.3
+    }
+  ],
+  "fastPath": false,
+  "format": "shramko-sonic-lesson/2",
+  "goals": [
+    {
+      "kind": "fly-distance",
+      "metres": 25
+    }
+  ],
+  "id": "tunnel-narrow",
+  "intro": [
+    {
+      "key": "lesson.tunnel-narrow.intro.1"
+    },
+    {
+      "key": "lesson.tunnel-narrow.intro.2"
+    },
+    {
+      "key": "lesson.tunnel-narrow.goal.1"
+    }
+  ],
+  "layers": {
+    "hazardVoices": 3,
+    "heightBandM": null,
+    "on": [
+      "safety",
+      "voice"
+    ]
+  },
+  "module": 4,
+  "order": 14,
+  "pass": {
+    "attempts": 3,
+    "blocking": true,
+    "maxTouches": null,
+    "required": 1
+  },
+  "speech": {
+    "hints": [
+      {
+        "key": "lesson.tunnel-narrow.hint.1"
+      }
+    ],
+    "pass": {
+      "key": "lesson.tunnel-narrow.pass"
+    },
+    "retry": {
+      "key": "lesson.tunnel-narrow.retry"
+    }
+  },
+  "start": {
+    "pos": [0, 1, 0],
+    "yawDeg": 0
+  },
+  "title": {
+    "key": "lesson.tunnel-narrow.title"
+  },
+  "version": 1,
+  "world": {
+    "kind": "analytic",
+    "spec": {
+      "generator": "corridor",
+      "params": {
+        "bendCount": 4,
+        "endM": 5,
+        "heightM": 2,
+        "layout": "tunnel",
+        "segmentM": 5,
+        "startHeightM": 1,
+        "straightM": 5,
+        "widthM": 1.8
+      },
+      "seed": 0,
+      "version": 2
+    }
+  }
+}

@@ -1,0 +1,188 @@
+{
+  "assists": {
+    "altitude": "hold",
+    "autoArm": true,
+    "control": "velocity",
+    "maxClimbMps": 1,
+    "maxSpeedMps": 2.5,
+    "maxYawDps": 120,
+    "onTouch": "bump-recentre"
+  },
+  "attemptLimitS": 150,
+  "checkpoints": [
+    {
+      "at": [0, 1, 0],
+      "id": "cp-1",
+      "pose": {
+        "pos": [0, 1, 0],
+        "yawDeg": 0
+      },
+      "radiusM": 1.4
+    },
+    {
+      "at": [1, 1, -4],
+      "id": "cp-2",
+      "pose": {
+        "pos": [1, 1, -4],
+        "yawDeg": 90
+      },
+      "radiusM": 1.4
+    },
+    {
+      "at": [4, 1, -5],
+      "id": "cp-3",
+      "pose": {
+        "pos": [4, 1, -5],
+        "yawDeg": 0
+      },
+      "radiusM": 1.4
+    },
+    {
+      "at": [5, 1, -8],
+      "id": "cp-4",
+      "pose": {
+        "pos": [5, 1, -8],
+        "yawDeg": 90
+      },
+      "radiusM": 1.4
+    },
+    {
+      "at": [8, 1, -9],
+      "id": "cp-5",
+      "pose": {
+        "pos": [8, 1, -9],
+        "yawDeg": 0
+      },
+      "radiusM": 1.4
+    },
+    {
+      "at": [9, 1, -12],
+      "id": "cp-6",
+      "pose": {
+        "pos": [9, 1, -12],
+        "yawDeg": 90
+      },
+      "radiusM": 1.4
+    },
+    {
+      "at": [12, 1, -13],
+      "id": "cp-7",
+      "pose": {
+        "pos": [12, 1, -13],
+        "yawDeg": 0
+      },
+      "radiusM": 1.4
+    },
+    {
+      "at": [13, 1, -16],
+      "id": "cp-8",
+      "pose": {
+        "pos": [13, 1, -16],
+        "yawDeg": 90
+      },
+      "radiusM": 1.4
+    },
+    {
+      "at": [16, 1, -17],
+      "id": "cp-9",
+      "pose": {
+        "pos": [16, 1, -17],
+        "yawDeg": 0
+      },
+      "radiusM": 1.4
+    },
+    {
+      "at": [17, 1, -20],
+      "id": "cp-10",
+      "pose": {
+        "pos": [17, 1, -20],
+        "yawDeg": 90
+      },
+      "radiusM": 1.4
+    },
+    {
+      "at": [20, 1, -21],
+      "id": "cp-11",
+      "pose": {
+        "pos": [20, 1, -21],
+        "yawDeg": 0
+      },
+      "radiusM": 1.4
+    }
+  ],
+  "fastPath": false,
+  "format": "shramko-sonic-lesson/2",
+  "goals": [
+    {
+      "kind": "fly-distance",
+      "metres": 39
+    }
+  ],
+  "id": "tunnel-bends",
+  "intro": [
+    {
+      "key": "lesson.tunnel-bends.intro.1"
+    },
+    {
+      "key": "lesson.tunnel-bends.intro.2"
+    },
+    {
+      "key": "lesson.tunnel-bends.goal.1"
+    }
+  ],
+  "layers": {
+    "hazardVoices": 3,
+    "heightBandM": null,
+    "on": [
+      "safety",
+      "voice"
+    ]
+  },
+  "module": 4,
+  "order": 16,
+  "pass": {
+    "attempts": 3,
+    "blocking": true,
+    "maxTouches": null,
+    "required": 1
+  },
+  "speech": {
+    "hints": [
+      {
+        "key": "lesson.tunnel-bends.hint.1"
+      }
+    ],
+    "pass": {
+      "key": "lesson.tunnel-bends.pass"
+    },
+    "retry": {
+      "key": "lesson.tunnel-bends.retry"
+    }
+  },
+  "start": {
+    "pos": [0, 1, 0],
+    "yawDeg": 0
+  },
+  "title": {
+    "key": "lesson.tunnel-bends.title"
+  },
+  "version": 1,
+  "world": {
+    "kind": "analytic",
+    "spec": {
+      "generator": "corridor",
+      "params": {
+        "bendCount": 10,
+        "endM": 4,
+        "heightM": 2,
+        "layout": "tunnel",
+        "segmentM": 4,
+        "startHeightM": 1,
+        "straightM": 4,
+        "widthM": 2
+      },
+      "seed": 0,
+      "version": 2
+    }
+  }
+}

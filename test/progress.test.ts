@@ -109,13 +109,14 @@ describe('the progress view (I and the host panel)', () => {
     it('says the view in one line, in the pilot\'s language', () => {
         const run = createLessonRunner(getLesson('hover-height'), { locale: 'ru' });
         run.begin(0);
-        expect(run.statusLine()).toEqual({ key: 'status.progress-step', params: { title: 'Держи высоту', lesson: 6, lessons: 21, step: 1, steps: 2 } });
+        const lessons = lessonPaths().full.length;
+        expect(run.statusLine()).toEqual({ key: 'status.progress-step', params: { title: 'Держи высоту', lesson: 6, lessons, step: 1, steps: 2 } });
         const p = new ScriptedPilot(getLesson('hover-height'), { locale: 'ru' });
         p.begin();
         p.until(() => p.run.attempt === 2 && p.run.phase === 'flying', 400);
         const line = p.run.statusLine();
         expect(line.key).toBe('status.progress');
-        expect(createTranslator('ru', DICTS).text(line)).toBe('Урок 6 из 21: Держи высоту. Шаг 2 из 2. Попытка 2. Засчитано 0 из 3.');
-        expect(createTranslator('en', DICTS).text(statusLine(p.run.view(), 'Hold your height'))).toBe('Lesson 6 of 21: Hold your height. Step 2 of 2. Attempt 2. Counted 0 of 3.');
+        expect(createTranslator('ru', DICTS).text(line)).toBe(`Урок 6 из ${lessons}: Держи высоту. Шаг 2 из 2. Попытка 2. Засчитано 0 из 3.`);
+        expect(createTranslator('en', DICTS).text(statusLine(p.run.view(), 'Hold your height'))).toBe(`Lesson 6 of ${lessons}: Hold your height. Step 2 of 2. Attempt 2. Counted 0 of 3.`);
     }, 60000);
 });

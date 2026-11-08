@@ -1,0 +1,138 @@
+{
+  "assists": {
+    "altitude": "hold",
+    "autoArm": true,
+    "control": "velocity",
+    "maxClimbMps": 1.2,
+    "maxSpeedMps": 2.5,
+    "maxYawDps": 90,
+    "onTouch": "bump-recentre"
+  },
+  "attemptLimitS": 150,
+  "checkpoints": [
+    {
+      "at": [0, 1.5, 0],
+      "id": "cp-1",
+      "pose": {
+        "pos": [0, 1.5, 0],
+        "yawDeg": 0
+      },
+      "radiusM": 2.1
+    },
+    {
+      "at": [0, 2.4, -6.75],
+      "id": "cp-2",
+      "pose": {
+        "pos": [0, 2.4, -6.75],
+        "yawDeg": 0
+      },
+      "radiusM": 2.5
+    },
+    {
+      "at": [0.9, 1.5, -12.25],
+      "id": "cp-3",
+      "pose": {
+        "pos": [0.9, 1.5, -12.25],
+        "yawDeg": 0
+      },
+      "radiusM": 2.5
+    },
+    {
+      "at": [0, 0.6, -17.75],
+      "id": "cp-4",
+      "pose": {
+        "pos": [0, 0.6, -17.75],
+        "yawDeg": 0
+      },
+      "radiusM": 2.5
+    },
+    {
+      "at": [-0.9, 1.5, -23.25],
+      "id": "cp-5",
+      "pose": {
+        "pos": [-0.9, 1.5, -23.25],
+        "yawDeg": 0
+      },
+      "radiusM": 2.5
+    }
+  ],
+  "fastPath": true,
+  "format": "shramko-sonic-lesson/2",
+  "goals": [
+    {
+      "kind": "fly-distance",
+      "metres": 33
+    }
+  ],
+  "id": "tunnel-gaps",
+  "intro": [
+    {
+      "key": "lesson.tunnel-gaps.intro.1"
+    },
+    {
+      "key": "lesson.tunnel-gaps.intro.2"
+    },
+    {
+      "key": "lesson.tunnel-gaps.intro.3"
+    },
+    {
+      "key": "lesson.tunnel-gaps.goal.1"
+    }
+  ],
+  "layers": {
+    "hazardVoices": 3,
+    "heightBandM": null,
+    "on": [
+      "safety",
+      "voice"
+    ]
+  },
+  "module": 4,
+  "order": 17,
+  "pass": {
+    "attempts": 3,
+    "blocking": true,
+    "maxTouches": null,
+    "required": 1
+  },
+  "speech": {
+    "hints": [
+      {
+        "key": "lesson.tunnel-gaps.hint.1"
+      }
+    ],
+    "pass": {
+      "key": "lesson.tunnel-gaps.pass"
+    },
+    "retry": {
+      "key": "lesson.tunnel-gaps.retry"
+    }
+  },
+  "start": {
+    "pos": [0, 1.5, 0],
+    "yawDeg": 0
+  },
+  "title": {
+    "key": "lesson.tunnel-gaps.title"
+  },
+  "version": 1,
+  "world": {
+    "kind": "analytic",
+    "spec": {
+      "generator": "corridor",
+      "params": {
+        "endM": 5,
+        "gapM": 1.2,
+        "gaps": "up,right,down,left",
+        "heightM": 3,
+        "layout": "gaps",
+        "obstacleRunM": 5.5,
+        "startHeightM": 1.5,
+        "straightM": 6,
+        "widthM": 3
+      },
+      "seed": 0,
+      "version": 2
+    }
+  }
+}

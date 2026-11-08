@@ -1,0 +1,135 @@
+{
+  "assists": {
+    "altitude": "hold",
+    "autoArm": true,
+    "control": "velocity",
+    "maxClimbMps": 0.8,
+    "maxSpeedMps": 2,
+    "maxYawDps": 90,
+    "onTouch": "bump-recentre"
+  },
+  "attemptLimitS": 120,
+  "checkpoints": [
+    {
+      "at": [0, 0.9, 0],
+      "id": "cp-1",
+      "pose": {
+        "pos": [0, 0.9, 0],
+        "yawDeg": 0
+      },
+      "radiusM": 1.1
+    },
+    {
+      "at": [0.6, 0.9, -4],
+      "id": "cp-2",
+      "pose": {
+        "pos": [0.6, 0.9, -4],
+        "yawDeg": 90
+      },
+      "radiusM": 1.1
+    },
+    {
+      "at": [4, 0.9, -4.6],
+      "id": "cp-3",
+      "pose": {
+        "pos": [4, 0.9, -4.6],
+        "yawDeg": 0
+      },
+      "radiusM": 1.1
+    },
+    {
+      "at": [4.6, 0.9, -8],
+      "id": "cp-4",
+      "pose": {
+        "pos": [4.6, 0.9, -8],
+        "yawDeg": 90
+      },
+      "radiusM": 1.1
+    },
+    {
+      "at": [8, 0.9, -8.6],
+      "id": "cp-5",
+      "pose": {
+        "pos": [8, 0.9, -8.6],
+        "yawDeg": 0
+      },
+      "radiusM": 1.1
+    }
+  ],
+  "fastPath": false,
+  "format": "shramko-sonic-lesson/2",
+  "goals": [
+    {
+      "kind": "fly-distance",
+      "metres": 20
+    }
+  ],
+  "id": "tunnel-narrower",
+  "intro": [
+    {
+      "key": "lesson.tunnel-narrower.intro.1"
+    },
+    {
+      "key": "lesson.tunnel-narrower.intro.2"
+    },
+    {
+      "key": "lesson.tunnel-narrower.goal.1"
+    }
+  ],
+  "layers": {
+    "hazardVoices": 3,
+    "heightBandM": null,
+    "on": [
+      "safety",
+      "voice"
+    ]
+  },
+  "module": 4,
+  "order": 15,
+  "pass": {
+    "attempts": 3,
+    "blocking": true,
+    "maxTouches": null,
+    "required": 1
+  },
+  "speech": {
+    "hints": [
+      {
+        "key": "lesson.tunnel-narrower.hint.1"
+      }
+    ],
+    "pass": {
+      "key": "lesson.tunnel-narrower.pass"
+    },
+    "retry": {
+      "key": "lesson.tunnel-narrower.retry"
+    }
+  },
+  "start": {
+    "pos": [0, 0.9, 0],
+    "yawDeg": 0
+  },
+  "title": {
+    "key": "lesson.tunnel-narrower.title"
+  },
+  "version": 1,
+  "world": {
+    "kind": "analytic",
+    "spec": {
+      "generator": "corridor",
+      "params": {
+        "bendCount": 4,
+        "endM": 4,
+        "heightM": 1.8,
+        "layout": "tunnel",
+        "segmentM": 4,
+        "startHeightM": 0.9,
+        "straightM": 4,
+        "voxelM": 0.05,
+        "widthM": 1.2
+      },
+      "seed": 0,
+      "version": 2
+    }
+  }
+}

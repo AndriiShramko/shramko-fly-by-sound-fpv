@@ -14,6 +14,7 @@ import { createRng } from '../util/rng';
 import type { Built } from './build';
 import { resolveWith, WorldSpecError, type ResolvedParams, type Schema } from './params';
 import { buildRoomV2, V2_ROOM_SCHEMAS } from './rooms-v2';
+import { buildTunnel, TUNNEL_SCHEMA } from './tunnels';
 import { buildV1, V1_SCHEMAS } from './v1';
 
 export { SHELL_THICKNESS_M, type Built, type Landmark } from './build';
@@ -47,7 +48,7 @@ const room2 = (generator: 'hall' | 'pillars' | 'rings' | 'squares' | 'cube-frame
 const VERSIONS: Readonly<Record<WorldGenerator, Readonly<Record<number, Version>>>> = {
     open: { 1: v1('open') },
     hall: { 1: v1('hall'), 2: room2('hall') },
-    corridor: { 1: v1('corridor') },
+    corridor: { 1: v1('corridor'), 2: { schema: TUNNEL_SCHEMA, build: (p) => buildTunnel(p) } },
     pillars: { 1: v1('pillars'), 2: room2('pillars') },
     rings: { 1: v1('rings'), 2: room2('rings') },
     squares: { 1: v1('squares'), 2: room2('squares') },
