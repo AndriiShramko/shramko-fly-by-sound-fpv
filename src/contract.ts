@@ -444,7 +444,7 @@ export interface LessonDef {
     readonly version: number;
     readonly module: ModuleId;
     readonly order: number;
-    /** part of the short path of about six lessons */
+    /** part of the fast path, the short one beside the full ladder (`lessons/paths.json`) */
     readonly fastPath: boolean;
     readonly title: SpeechLine;
     readonly intro: readonly IntroLine[];

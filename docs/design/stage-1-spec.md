@@ -61,7 +61,7 @@ stop, walls, the first rings: 3 counted (the walls with at most one touch, the r
 goes back to the last checkpoint); the ring course 1 with no touch; the headphone check 1; the shapes 2, optional; the
 glossary, the narrated scenes, the game and free flight never block (`docs/dev/status-v0.13-lessons.md`).
 
-A fast path of about six lessons (hover, walls, corridor, rings) is offered next to the full path; a test records which path was used, because the owner wants to find out whether the brain learns faster than the ladder assumes.
+A fast path (about six lessons in this specification; 8 since v0.13: the headphone check, hover, walls, the corridor, a tunnel, two of rings, free flight) is offered next to the full path; a test records which path was used, because the owner wants to find out whether the brain learns faster than the ladder assumes.
 
 ## 4. World
 

@@ -291,7 +291,7 @@ simulator's part stays in the review's wave 2 list.
 - [x] 13. M2. The target note named and played where it first sounds (hover-height); rings-heights' words for it
 - [x] 14. M3. The open-way chime named and played in the corridor and in tunnel-gaps
 - [x] 15. m1. The corridor's checkpoints line and its plays; the chime of a track's last checkpoint (one commit with 14)
-- [ ] 16. m2. The stale lesson counts in `CITATION.cff`, `src/contract.ts` and `docs/testing/test-protocol.md`
+- [x] 16. m2. The stale lesson counts in `CITATION.cff`, `src/contract.ts` and `docs/testing/test-protocol.md`
 - [ ] 17. m3. Tests for the six tunnels' respawn and the open-way chime at the shipped obstacles
 - [ ] 18. n1. s13-worlds' Russian sentence in `test/progress.test.ts`, as `\u` escapes
 - [ ] 19. All checks on the final code with fresh evidence; the final status
@@ -385,6 +385,21 @@ One commit: both change the corridor's intro.
   ("safety.free sounds while flying corridor, and no lesson so far named it"); the runner without the rule fails the
   end-of-track test ("corridor: expected [ { kind: 'checkpoint' } ] to deeply equal []"). Full suite 1052 of 1052,
   typecheck clean, locale lint 0 problems (523 keys), layout 0.
+
+### 16. m2: the lesson counts in the public files
+
+- Tried first: `CITATION.cff`'s abstract said "a curriculum of 21 lessons" (28 ship), `src/contract.ts` "part of the
+  short path of about six lessons" and `docs/testing/test-protocol.md` "the short path (about six lessons)" (the fast
+  path is 8); a grep found the same "about six" in `docs/design/stage-1-spec.md` and in the title of a test in
+  `test/lessons.test.ts`, which asserts 5 to 8. The finding holds.
+- Fix: the citation says 28; the contract's `fastPath` comment names `lessons/paths.json` and no number; the protocol
+  says "the short path (8 lessons)"; the specification keeps its "about six" as the design said it and adds "8 since
+  v0.13" with the lessons; the test's title says 5 to 8. The changelog keeps each release as it was.
+- Test, `test/docs.test.ts`: the citation, the README, llms.txt, AGENTS.md and the protocol give the number of
+  `SHIPPED_LESSON_IDS` and of the fast path of `lessonPaths()`; no public file but the changelog and the dev notes
+  gives the fast path as about six lessons. Broken on purpose (the four files as merged), then restored: both fail
+  ("expected ... to contain 'a curriculum of 28 lessons'"; the specification, the contract and the protocol listed).
+  Full suite 1054 of 1054, typecheck clean, layout 0.
 
 ## Final status (2026-11-08, the whole merge)
 

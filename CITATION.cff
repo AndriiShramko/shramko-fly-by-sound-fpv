@@ -1,7 +1,7 @@
 cff-version: 1.2.0
 message: "If you use this software or its research notes, please cite it as below."
 title: "Shramko Fly by Sound: spatial-audio engine, lessons and flight recorder for blind and low-vision FPV drone pilots"
-abstract: "Open-source TypeScript engine that turns walls, obstacles, gates and the path ahead into object-based HRTF spatial audio on stereo headphones, with consonant pentatonic cues, speech, a curriculum of 21 lessons from ear training to free flight, and a session format that records flight data with the pilot's voice for synchronised replay and analysis. Built for the ShramkoGSFPV browser FPV simulator."
+abstract: "Open-source TypeScript engine that turns walls, obstacles, gates and the path ahead into object-based HRTF spatial audio on stereo headphones, with consonant pentatonic cues, speech, a curriculum of 28 lessons from ear training to free flight, and a session format that records flight data with the pilot's voice for synchronised replay and analysis. Built for the ShramkoGSFPV browser FPV simulator."
 authors:
   - family-names: Shramko
     given-names: Andrii

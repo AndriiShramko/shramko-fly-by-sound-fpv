@@ -9,7 +9,7 @@ Nothing here claims therapy or medical benefit. This is a game that people choos
 | Question | Where the answer comes from |
 |---|---|
 | Can a person who cannot see learn to fly the first lessons by ear, and in how many sessions and minutes? | lesson events: attempts, passes, time to the first pass |
-| Does the short path (about six lessons) bring people to the first ring faster than the full ladder? (The ladder's order rests on thin evidence; the package records which path was used.) | `manifest.lesson.path`, time and attempts to the first `rings-first` pass |
+| Does the short path (8 lessons) bring people to the first ring faster than the full ladder? (The ladder's order rests on thin evidence; the package records which path was used.) | `manifest.lesson.path`, time and attempts to the first `rings-first` pass |
 | Which sounds helped and which annoyed? Which do pilots switch off or turn down? | spoken survey (open answers by voice), the settings in the manifest |
 | Is "up = higher" the natural polarity, or do some pilots flip it? | survey item `up-direction`, `heightPolarity` in the settings, the module-0 game |
 | Can front and back be told apart with the scene yawing at once with the stick? | the module-0 headphone check and game answers, and the recording of what the pilot says |

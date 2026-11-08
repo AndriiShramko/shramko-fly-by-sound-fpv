@@ -2,6 +2,7 @@ import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
+import { lessonPaths, SHIPPED_LESSON_IDS } from '../src/lesson';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const read = (path: string): string => readFileSync(join(ROOT, path), 'utf8');
@@ -66,6 +67,25 @@ describe('the README', () => {
     it('names the scripts it tells people to run, and they exist', () => {
         const scripts = (JSON.parse(read('package.json')) as { scripts: Record<string, string> }).scripts;
         for (const name of ['demo', 'demo:build', 'report', 'typecheck', 'test', 'proof:audio']) expect(scripts[name], name).toBeTypeOf('string');
+    });
+});
+
+describe('the lesson counts the public files give (review m2 of the v0.13 merge)', () => {
+    const lessons = SHIPPED_LESSON_IDS.length;
+    const fast = lessonPaths().fast.length;
+
+    it('are the shipped lessons and the fast path: the citation, the README, llms.txt, AGENTS.md and the test protocol', () => {
+        expect(read('CITATION.cff')).toContain(`a curriculum of ${lessons} lessons`);
+        expect(read('README.md')).toContain(`the lessons (${lessons} in modules 0 to 7, and a fast path of ${fast})`);
+        expect(read('llms.txt')).toContain(`Curriculum: ${lessons} lessons in modules 0 to 7`);
+        expect(read('llms.txt')).toContain(`and a fast path of ${fast};`);
+        expect(read('AGENTS.md')).toContain(`Lessons (${lessons}; \`paths.json\`: the full path and a fast path of ${fast})`);
+        expect(read('docs/testing/test-protocol.md')).toContain(`the short path (${fast} lessons)`);
+    });
+
+    it('no public file but the changelog, which keeps each release as it was, gives the fast path as about six lessons', () => {
+        const stale = textFiles().filter((f) => !f.startsWith('docs/dev/') && f !== 'CHANGELOG.md' && f !== 'test/docs.test.ts' && /(short|fast) path of about six|short path \(about six/.test(read(f)));
+        expect(stale).toEqual([]);
     });
 });
 

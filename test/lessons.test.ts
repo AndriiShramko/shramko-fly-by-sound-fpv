@@ -109,7 +109,7 @@ describe('the shipped lessons', () => {
         expect(g.world).toEqual({ kind: 'scan', sceneId: '7a475d38', sceneVersion: null, transform: [5, 0, 0, 0], track: { id: '7a475d38-rings', version: 1 } });
     });
 
-    it('have a full path of every lesson in ladder order and a fast path of about six, flagged in the files', () => {
+    it('have a full path of every lesson in ladder order and a fast path of 5 to 8, flagged in the files', () => {
         const p = lessonPaths();
         expect(validatePaths(JSON.parse(read('paths.json'))).ok).toBe(true);
         expect(p.full).toEqual(LESSONS.map((l) => l.id));
