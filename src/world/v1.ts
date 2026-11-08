@@ -8,6 +8,7 @@ import { DEG, round6 } from '../util/vec';
 import { hallBox, hollowBounds, n, object, requireInside, s, SHELL_THICKNESS_M, type Built, type Landmark } from './build';
 import { list, num, oneOf, WorldSpecError, type ResolvedParams, type Schema } from './params';
 import { cavityShell, shapeHalfExtents, slabShell, type Box } from './parts';
+import { corridorNodes, type Dodge, type Run } from './track';
 
 // ------------------------------------------------------------------ parameters
 
@@ -202,6 +203,10 @@ function buildCorridor(p: ResolvedParams): Built {
     const boxes: Box[] = [];
     const objects: SonicObject[] = [];
     const landmarks: Landmark[] = [];
+    // the track (added in v0.13, no geometry): each forward is a run of the centre line at the start height,
+    // a pillar placed before it is a dodge of that run through the wider gap beside the pillar
+    const runs: Run[] = [];
+    let dodges: Dodge[] = [];
     let x = 0, y = 0, z = 0;
     let hx = 0, hz = -1; // heading on the floor plane: -Z first
 
@@ -213,6 +218,8 @@ function buildCorridor(p: ResolvedParams): Built {
         const alongX = hx !== 0;
         const half = len / 2 + w / 2; // each end reaches w / 2 past the corner, so two segments meet in a full square
         boxes.push({ cx: (x + nx) / 2, cy: y + h / 2, cz: (z + nz) / 2, hx: alongX ? half : w / 2, hy: h / 2, hz: alongX ? w / 2 : half });
+        runs.push({ from: [x, y + startY, z], to: [nx, y + startY, nz], heading: [hx, 0, hz], half: w / 2, dodges });
+        dodges = [];
         x = nx;
         z = nz;
     };
@@ -230,6 +237,8 @@ function buildCorridor(p: ResolvedParams): Built {
         const px = x + hx * along + -hz * lateral;
         const pz = z + hz * along + hx * lateral;
         objects.push(object(`pillar-${objects.length + 1}`, { kind: 'pillar', radius: obstacleR, height: h }, [px, y + h / 2, pz], 0, null, true, 'obstacle'));
+        const gapRight = w / 2 - (lateral + obstacleR), gapLeft = lateral - obstacleR + w / 2;
+        dodges.push({ along, reach: obstacleR, right: gapRight >= gapLeft ? (lateral + obstacleR + w / 2) / 2 : (lateral - obstacleR - w / 2) / 2, up: 0 });
     };
 
     const straight = (): void => {
@@ -295,7 +304,8 @@ function buildCorridor(p: ResolvedParams): Built {
         objects,
         bounds: hollowBounds(boxes),
         landmarks,
-        start: { pos: [0, startY, 0], yawDeg: 0 }
+        start: { pos: [0, startY, 0], yawDeg: 0 },
+        track: corridorNodes(runs)
     };
 }
 

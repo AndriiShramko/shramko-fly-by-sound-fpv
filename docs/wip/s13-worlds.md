@@ -9,7 +9,7 @@ navigation and truth bot `test/helpers/truth.ts`). No push. Every step one commi
 - [x] 1. Lane doc: ownership, facts with file:line, the seconds-to-wall table of v0.12
 - [x] 2. Versions that keep old recordings: every generator builds every version it published
 - [x] 3. The hollow for the simulator: the cavity boxes in the analytic world
-- [ ] 4. The world's checkpoint list (M41-20)
+- [x] 4. The world's checkpoint list (M41-20)
 - [ ] 5. Micro-drone scale (M41-18): version 2 of the room generators, the lessons' world, start and assists
 - [ ] 6. Tunnels (M41-21): corridor version 2 and the tunnel lessons
 - [ ] 7. Rings at different heights (M41-22): the heights parameter and lesson rings-heights
@@ -149,6 +149,34 @@ lesson with a goal other than hold-height, approach-stop or around): the owner's
   and within an object's bounding sphere left out, at least 8 000 checked), a point inside a box is free and one outside
   every box is solid; the open world has none. Control: the first box moved by 0.5 m disagrees on more than 20 points in
   walls-hall and in the corridor.
+
+### Step 4: the world's checkpoint list (M41-20)
+
+- Contract (added): `WorldCheckpoint { pos: Vec3; dir: Vec3; stage?: number }` and `AnalyticWorld.checkpoints?: readonly
+  WorldCheckpoint[]`, the shape lane s13-lessons feature-detects (`test/helpers/truth.ts` `worldTrack`). Present for
+  every world with a track (corridor, rings, squares, cube-frames, every layout and version), absent for open, hall
+  and pillars. `pos` is on the track's centre line at flying height (through the free way past an obstacle); `dir` is
+  a HORIZONTAL unit vector, the track's heading there (a corridor's heading, a gate's pass direction, a leg's
+  direction), so a respawn can face it even where the track climbs; `stage` = k on the checkpoint that ends stage k.
+- `src/world/track.ts`: a builder gives nodes, `densify` adds points so consecutive checkpoints are at most 5 m apart
+  (the contract promises 6). Corridors (`corridorNodes`): a corner or a step (jog) is left `half` before it and joined
+  `half` after it, so the line between stays in the corner square or the shaft, `half * sqrt(2) / 2` from the inner
+  corner; past an obstacle the track moves to the centre of the free way over 3 m per metre of offset, reaches it
+  1.5 m before the obstacle's front, keeps it 1 m past its back and comes back. Courses (`gateNodes`): the start, then
+  for each gate 1.5 m before it on its axis facing it, and 1 m past it.
+- Version 1 of the corridor records its runs and pillars as it walks (no geometry changed: its goldens and the v0.12
+  digests pass); the wider gap beside a pillar is the free way. The corridor lesson's world now has 87 checkpoints, at
+  most 5 m apart, from the start to the end (the lesson file's five are 30 to 90 m apart, none in the last 90 m).
+- Tests (`test/world-track.test.ts`, every shipped corridor and course and every track generator's layouts at every
+  version, 16 worlds): no gap over 6 m; the first checkpoint is the world's start; every dir a horizontal unit vector,
+  the point 0.5 m ahead along it free, never pointing back along the track; every checkpoint with room for the largest
+  drone (0.318 m); the straight line between consecutive checkpoints clear by more than the craft's radius (0.12 m);
+  a checkpoint 1.5 m before every gate on its axis, facing it. Controls: a list with a 10 m gap; a dir reversed, one
+  into a wall 0.3 m away, one tilted; the corridor's corners joined straight (the line cuts them); a course without
+  its approach checkpoints. Golden tracks pin the lists of three version-1 worlds: a change of the track of a
+  published version needs a new version, as its geometry does.
+- The truth bot of lane s13-lessons now flies the corridor along the world's checkpoints (its `worldTrack`, found by
+  feature detection) instead of its own corridor line, and still passes it in exactly r attempts with no touch.
 
 ## Needs from the simulator
 

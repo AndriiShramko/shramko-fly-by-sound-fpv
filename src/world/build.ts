@@ -4,6 +4,7 @@ import type { Pose, SonicObject, Vec3 } from '../contract';
 import { round6, round9, yawQuat } from '../util/vec';
 import type { Box, Part } from './parts';
 import { WorldSpecError, type ResolvedParams } from './params';
+import type { TrackNode } from './track';
 
 /** Thickness of the solid around a hollow that the collider is built over, metres. */
 export const SHELL_THICKNESS_M = 1;
@@ -20,6 +21,8 @@ export interface Built {
     readonly bounds: { readonly min: Vec3; readonly max: Vec3 };
     readonly landmarks: Landmark[];
     readonly start: Pose;
+    /** the track's nodes (src/world/track.ts), for a world with a track the builder lays out itself (a corridor) */
+    readonly track?: readonly TrackNode[];
 }
 
 export const n = (p: ResolvedParams, name: string): number => p[name] as number;
