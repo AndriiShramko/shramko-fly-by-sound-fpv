@@ -10,7 +10,8 @@ fixed:
 - s13-worlds at 067278f (its notes `docs/dev/status-v0.13-worlds.md`, review `review-v0.13-worlds.md`).
 
 Steps 1 to 6 merged the first two (b3b86de); s13-worlds was still fixing its review and merged after them, in steps 7
-to 11. No push, no deploy. The lanes' notes were `docs/wip/` until step 10 made them public dev notes.
+to 11. Steps 12 to 19 fixed the review of the whole merge (`docs/dev/review-v0.13-merge.md`). No push, no deploy. The
+lanes' notes were `docs/wip/` until step 10 made them public dev notes.
 
 ## Status
 
@@ -294,7 +295,7 @@ simulator's part stays in the review's wave 2 list.
 - [x] 16. m2. The stale lesson counts in `CITATION.cff`, `src/contract.ts` and `docs/testing/test-protocol.md`
 - [x] 17. m3. Tests for the six tunnels' respawn and the open-way chime at the shipped obstacles
 - [x] 18. n1. s13-worlds' Russian sentence in `test/progress.test.ts`, as `\u` escapes
-- [ ] 19. All checks on the final code with fresh evidence; the final status
+- [x] 19. All checks on the final code with fresh evidence; the final status ("Final status after the review" below)
   - part 1 (done): `CHANGELOG.md` (Unreleased) says what the fixes change for a pilot and for a host's recorder;
     AGENTS.md's glossary rule names `test/named-sounds.test.ts`
   - part 2 (done, on 626d38e): `pnpm typecheck` clean (three projects); `pnpm test` 47 files, 1062 tests (17.3 s);
@@ -302,6 +303,11 @@ simulator's part stays in the review's wave 2 list.
     proof:audio` 3 files, 9 proofs, 48.6 s (headless Chrome 156.0.8078.80; the five audio proofs pass and their broken
     controls fail, the demo's keyboard-only check passes; both evidence files rewritten: their dates, and the demo
     flight's turn 61 degrees, was 60)
+  - part 3 (done): `pnpm listen` with `SHRAMKO_LISTEN_PY` (`tools/listen/requirements.txt`'s environment),
+    `SHRAMKO_LISTEN_CACHE` on the data disk and `GPU_LOCK`: 24 of 24 renders, 8 of 8 checks valid and passing, fresh
+    for inputs fa57e9492aa8 (125 files; step 9's run was 418eab75ba5d); a second run says the evidence is fresh,
+    nothing to run. Its numbers are step 9's but VL-0a (2.4e-7, was 1.8e-7) and VL-0b (-131.9 dB, was -131.1); one band
+    of one craft in VL-2-motor moved 0.1 dB, its worst is 15.0 dB again (Air65, shape)
 
 ## Review fixes (steps 12 to 19)
 
@@ -317,17 +323,17 @@ simulator's part stays in the review's wave 2 list.
   frame crossed: with the host fixed alone, the corridor's touch the frame after crossing `w6` (a crossing frame the
   recording drops) still re-derived its reset to `w5`, where the live run went to `w6`.
 - Fix: `fly()` (`src/lesson/runner.ts`) counts the lesson's checkpoints and `passWorldPoints` first and the touch after
-  them (the two blocks moved, nothing else; the header's respawn paragraph says why). `test/helpers/record.ts` writes the
-  sample the runner was given, as the simulator's sampler does (a place shows in the next frame), one in two, and every
-  sample with a touch (`keepTouched`, default true: W11's rule; false is the sampler as it is). The replay's header
-  says a recorder keeps every touched sample. With both, the 16 probe flights read PASS.
+  them (the two blocks moved, nothing else; the header's respawn paragraph says why). `test/helpers/record.ts` writes
+  the sample the runner was given, as the simulator's sampler does (a place shows in the next frame), one in two, and
+  every sample with a touch (`keepTouched`, default true: W11's rule; false is the sampler as it is). The replay's
+  header says a recorder keeps every touched sample. With both, the 16 probe flights read PASS.
 - Test, new `test/replay-touch.test.ts`: the corridor, tunnel-gaps and tunnel-long, each with two touches (the frame
   after crossing the sixth point, a frame the recording keeps while it drops the crossing one; halfway between the 10th
   and 11th on a frame that is not due), each back 1 m before `w6` and `w10`: the replay re-derives every event (touches
   and resets 2 of 2) and says PASS. Its control: the same tunnel-gaps flight written by a host that keeps only the due
-  samples reads FAIL on the second touch. Broken on purpose, then restored: the old order in `fly()` fails the three PASS
-  cases ("checkpoint:w6 ... is recorded but the replay did not derive it", `w5` derived instead), and so does the host
-  writing the position after the place (the touches at the respawn). Full suite 1046 of 1046, typecheck clean.
+  samples reads FAIL on the second touch. Broken on purpose, then restored: the old order in `fly()` fails the three
+  PASS cases ("checkpoint:w6 ... is recorded but the replay did not derive it", `w5` derived instead), and so does the
+  host writing the position after the place (the touches at the respawn). Full suite 1046 of 1046, typecheck clean.
 - The simulator's half, `FrameSampler.take` keeping every sample with `touched`, is W11 of the review's wave 2 list.
 
 ### 13. M2: the target note is named and played where it first sounds
@@ -434,6 +440,45 @@ One commit: both change the corridor's intro.
   ASCII): the title "Hold your height" in Russian, and the whole sentence "Lesson 6 of 28: Hold your height. Step 2 of
   2. Attempt 2. Counted 0 of 3." in Russian. Broken on purpose (that one word of the template changed), then restored:
   the literal fails, the composition alone would not. Full suite 1062 of 1062.
+
+## Final status after the review (2026-11-08, steps 12 to 19)
+
+Done, branch `s13-merge`, not pushed, nothing deployed; `main` (7d4b4b9), the lanes' branches and the simulator are
+untouched. Every finding of the review held when it was tried against the code and a run, and each is fixed with a
+test that fails without the fix (broken on purpose once, then restored):
+
+| Finding | What | Commit |
+|---|---|---|
+| M1 | a frame's points count before its touch; the test host writes the sample the runner was given and every touched sample; `test/replay-touch.test.ts` | 731490e |
+| M2 | hover-height's intro.3 names and plays the target note; rings-heights says the short note and plays it; `test/named-sounds.test.ts` | 6a3bebb |
+| M3, m1 | the corridor's intro.3 (the open way, played) and intro.4 (stages and reset, played); tunnel-gaps' intro.2 plays the chime; a track-end lesson's last checkpoint does not chime | 3a345c8 |
+| m2 | 28 lessons and a fast path of 8 in the citation, the contract, the protocol and the specification; `test/docs.test.ts` | 9226ad1 |
+| m3 | `test/tunnels-flown.test.ts`: the respawn in the corridor and the six tunnels, the chime at their nine obstacles | 8b6d145 |
+| n1 | the Russian status line word for word, as escapes | d9fb302 |
+| 19 | the changelog and AGENTS.md; all checks and fresh evidence | 626d38e, 0532508, this commit |
+
+Checks on the final code (the tree of 626d38e; the commits after it hold only evidence and this doc), all passing:
+`pnpm typecheck` clean; `pnpm test` 47 files, 1062 tests (17.3 s); `node tools/run-tool.mjs locale-lint` 0 problems,
+4 languages, 523 keys; `node tools/run-tool.mjs check-layout` 0 problems; `GPU_LOCK=C:/dev/.gpu-lock pnpm proof:audio`
+3 files, 9 proofs, 48.6 s, every broken control failing; `pnpm listen` 24 renders, 8 of 8 checks valid and passing for
+inputs fa57e9492aa8 (125 files), its numbers step 9's but VL-0a 2.4e-7 and VL-0b -131.9 dB (step 19, part 3).
+
+Left open, with the reason:
+
+1. No person has heard v0.13, the new lines included (hover-height's target note, rings-heights' short note, the
+   corridor's open way and stages); no native speaker has read the Spanish, Polish and Russian lines aloud. English
+   lines were measured with the Windows voice only; the fixture now holds 380 of the 523 keys.
+2. Wave 2, the simulator: the review's list (W1 to W20) stands as written; W11 is the simulator's side of M1 (the test
+   host records that way now). Its table of the simulator's tests was measured at e101f7c; since then hover-height's
+   and the corridor's tasks each have one more line with three plays, tunnel-gaps' task plays the chime three times,
+   and the corridor and the tunnels end on the fanfare with no checkpoint chime just before it: W20 measures the
+   simulator's tests again against the new tip (the review's wave 2 list says so).
+3. tunnel-gaps' intro.3 tells above from below by the chime's contour and plays neither (its intro.2 plays the chime
+   from the left; one line plays a cue once, from one side). A play from above or below is the lessons' owner's
+   choice, as is a line for walls-pillar, where the chime sounds head-on to its pillar (the full path names the chime
+   in its second lesson, the glossary; the fast path does not fly walls-pillar).
+4. The merge's own "Left open" below stands but for items 2 and 3, which steps 13 and 14 closed (rings-heights' words,
+   tunnel-gaps' plays).
 
 ## Final status (2026-11-08, the whole merge)
 

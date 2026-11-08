@@ -1,8 +1,8 @@
 {
  "format": "shramko-listen-evidence/1",
- "key": "418eab75ba5de7e0556c144cbdebaf6133b8d137d38e74fed4f9583d729a3a22",
+ "key": "fa57e9492aa818950be44070e3c05f2a524feed95dd4bda6335f416eaab1f662",
  "inputs": {
-  "hash": "418eab75ba5de7e0556c144cbdebaf6133b8d137d38e74fed4f9583d729a3a22",
+  "hash": "fa57e9492aa818950be44070e3c05f2a524feed95dd4bda6335f416eaab1f662",
   "files": 125,
   "driver": 2,
   "measure": 2,
@@ -15,7 +15,7 @@
    "pyloudnorm": "0.2.0"
   }
  },
- "date": "2026-11-08T15:38:45.244Z",
+ "date": "2026-11-08T17:20:36.976Z",
  "id": "VL-2-motor",
  "claim": "every cue (safety, height, target, shape) is at least 6 dB over the motor in its own third-octave bands, where it sounds, for the simulator's default craft and the micro presets and a 5-inch quad, the slider at its default 15 % (control: the v0.12 path, the raw motor at the slider at 60 %)",
  "thresholds": {
@@ -166,10 +166,10 @@
       "315",
       "397"
      ],
-     "minMarginDb": 81.2,
+     "minMarginDb": 81.3,
      "marginsDb": {
       "315": 100.4,
-      "397": 81.2
+      "397": 81.3
      }
     },
     "height": {
@@ -230,7 +230,7 @@
      ],
      "minMarginDb": 81.6,
      "marginsDb": {
-      "315": 100.5,
+      "315": 100.4,
       "397": 81.6
      }
     },

@@ -275,7 +275,17 @@ v13-look `lesson-world.ts`, `primitives.ts` and collision; `app/builtin/sound.ts
 | W19 | v13-host | `tools/bench/test/sonic-int-replay.test.ts:245` | pin down rings-first's 1.3 % of cue kinds (play edges or not) with W9 | the bound explained, not only lowered | R4 |
 | W20 | assign | `tools/bench/test/*` | the 52 test changes of the table above | 593 of 593 but the 8 skipped | this review, R4, sound M6 |
 
+After the fixes in this repository (`docs/dev/status-v0.13-merge.md`, steps 12 to 19) the list stands as written, W11
+with this repository's half of M1 done. The table above was measured at e101f7c: since then hover-height's and the
+corridor's tasks each have one more line with three plays, tunnel-gaps' task plays the open-way chime three times, the
+last checkpoint of the corridor and of every tunnel no longer chimes (the fanfare alone ends them), and the corridor's
+intro has four lines. W20 runs the simulator's tests against the tip it moves the gitlink to, and takes its numbers
+there.
+
 ## Before `main`, in this repository
+
+Done on `s13-merge` after this review: items 1 to 3 below, each with a test that fails without it, and the checks with
+fresh evidence (`docs/dev/status-v0.13-merge.md`, steps 12 to 19, "Final status after the review").
 
 For the lead, on `s13-merge`, before it becomes `main` (wave 2 changes only the simulator):
 
