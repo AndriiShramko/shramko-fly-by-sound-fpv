@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import type { Goal, LessonDef, SpeechLine } from '../src/contract';
 import { LOCALES } from '../src/contract';
 import { createTranslator, DICTS, LESSONS, lessonKeys } from '../src/i18n';
-import { getLesson, lessonPaths, lessonsOnPath, nextLesson, parseLesson, SHIPPED_LESSON_IDS, validateLesson, validatePaths, writeLesson } from '../src/lesson';
+import { createLessonRunner, getLesson, lessonPaths, lessonsOnPath, nextLesson, parseLesson, SHIPPED_LESSON_IDS, validateLesson, validatePaths, writeLesson } from '../src/lesson';
 import { createAnalyticWorld } from '../src/world';
 
 const DIR = fileURLToPath(new URL('../lessons/', import.meta.url));
@@ -206,5 +206,53 @@ describe('lesson format 2 and the files of format 1 (v0.12)', () => {
             expect(l.pass.required, id).toBeLessThanOrEqual(3);
             expect(l.pass.attempts, id).toBeLessThanOrEqual(3);
         }
+    });
+});
+
+describe('an intro line may place the sound it names on a side (review R11)', () => {
+    const file = (): Record<string, unknown> => JSON.parse(read('hover-turn.json')) as Record<string, unknown>;
+    const withCues = (cues: unknown): Record<string, unknown> => {
+        const f = file();
+        const intro = [...(f['intro'] as Record<string, unknown>[])];
+        intro[0] = { ...intro[0], cues };
+        return { ...f, intro };
+    };
+    /** the directions of the task's plays (the runner's repeat-cue events before the first attempt) */
+    const taskDirs = (lesson: LessonDef): (readonly number[] | null)[] => {
+        const run = createLessonRunner(lesson);
+        run.begin(0);
+        const dirs: (readonly number[] | null)[] = [];
+        for (let t = 0; t < 120000 && run.phase === 'intro'; t += 20) {
+            for (const a of run.takeActions()) {
+                if (a.kind === 'say') run.spoken(t);
+                if (a.kind === 'cue' && a.event.kind === 'repeat-cue') dirs.push(a.event.dir ?? null);
+            }
+            run.step({ t, tick: t, pos: lesson.start.pos, vel: [0, 0, 0], quat: [1, 0, 0, 0], rate: [0, 0, 0], yawDeg: 0, pitchDeg: 0, rollDeg: 0, sticks: [0, 0, 0, 0], armed: true, touched: false, paused: false }, null);
+        }
+        return dirs;
+    };
+
+    it('hover-turn: "A sound will come from one side" and the hum three times from the left; control: a plain cue id plays from its default (straight ahead)', () => {
+        expect(getLesson('hover-turn').intro[0]?.cues).toEqual([{ cue: 'target.hum', from: 'left' }]);
+        expect(taskDirs(getLesson('hover-turn'))).toEqual([
+            [-1, 0, 0],
+            [-1, 0, 0],
+            [-1, 0, 0]
+        ]);
+        const plain = validateLesson(withCues(['target.hum']));
+        if (!plain.ok) throw new Error(JSON.stringify(plain.issues));
+        expect(taskDirs(plain.value)).toEqual([null, null, null]);
+    });
+
+    it('the loader takes a cue id or { cue, from } and refuses an unknown side, an unknown cue and a repeat', () => {
+        expect(validateLesson(withCues([{ cue: 'target.hum', from: 'right' }, 'height.tone'])).ok).toBe(true);
+        const issues = (cues: unknown): string[] => {
+            const r = validateLesson(withCues(cues));
+            return r.ok ? [] : r.issues.map((i) => i.path);
+        };
+        expect(issues([{ cue: 'target.hum', from: 'sideways' }])).toContain('intro[0].cues[0].from');
+        expect(issues([{ cue: 'target.nothing', from: 'left' }])).toContain('intro[0].cues[0].cue');
+        expect(issues([{ cue: 'target.hum', from: 'left', loud: true }])).toContain('intro[0].cues[0].loud');
+        expect(issues([{ cue: 'target.hum', from: 'left' }, { cue: 'target.hum', from: 'left' }])).toContain('intro[0].cues');
     });
 });

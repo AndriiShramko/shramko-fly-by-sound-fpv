@@ -108,3 +108,46 @@ describe('a touch or a short R: back to 1 m before the last checkpoint passed, f
 function p_close(a: Vec3, b: Vec3): void {
     expect(Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2])).toBeLessThan(1.5);
 }
+
+describe('a failed attempt of a course that re-centres: the next one begins where it got to (review R9)', () => {
+    /** the corridor with a short time limit: the only way an attempt of it fails now */
+    const timed = (onTouch: 'bump' | 'bump-recentre') => {
+        const shipped = getLesson('corridor');
+        return { ...shipped, attemptLimitS: 40, assists: { ...shipped.assists, onTouch } };
+    };
+
+    it('the attempt that ran out of time after cp-2: the next one 1 m before cp-2, the line says so, the path flown counts on', () => {
+        const p = new ScriptedPilot(timed('bump-recentre'));
+        p.begin();
+        p.until(() => p.run.phase === 'flying', 60);
+        p.flyTo([0, 2, -60]); // past cp-2 (-50 m)
+        p.until(() => p.run.phase === 'between', 60); // the time runs out
+        expect(p.lessonWhat()).toContain('attempt-fail');
+        expect(p.said()).toContain('lesson.corridor.retry'); // "Let's try again from the last checkpoint."
+        p.until(() => p.run.attempt === 2, 30);
+        expect(places(p).at(-1)).toEqual({ kind: 'place', pose: { pos: [0, 2, -50 + RESPAWN_BEFORE_M], yawDeg: 0 }, to: 'checkpoint' });
+        expect(p.of('reset').at(-1)).toMatchObject({ to: 'checkpoint', checkpointId: 'cp-2' });
+        // the path flown to cp-2 counts on, as after a touch: 7 m more meet its first goal (50 m flown) again
+        p.flyTo([0, 2, -56]);
+        expect(p.of('goal').filter((g) => g.index === 0 && g.what === 'met')).toHaveLength(2);
+        // and a stage passed before is not said again
+        expect(p.said().filter((k) => k === 'fly.stage')).toHaveLength(1);
+    }, 60000);
+
+    it('control: a course that does not re-centre, and B back to the task, still begin the next attempt at the start', () => {
+        const p = new ScriptedPilot(timed('bump'));
+        p.begin();
+        p.until(() => p.run.phase === 'flying', 60);
+        p.flyTo([0, 2, -60]);
+        p.until(() => p.run.attempt === 2, 90);
+        expect(places(p).at(-1)).toMatchObject({ pose: getLesson('corridor').start, to: 'start' });
+        const q = new ScriptedPilot(timed('bump-recentre'));
+        q.begin();
+        q.until(() => q.run.phase === 'flying', 60);
+        q.flyTo([0, 2, -60]);
+        q.until(() => q.run.phase === 'between', 60);
+        q.press((run, t) => run.previous(t)); // B: the task again, then the next attempt
+        q.until(() => q.run.attempt === 2, 60);
+        expect(places(q).at(-1)).toMatchObject({ pose: getLesson('corridor').start, to: 'start' });
+    }, 60000);
+});

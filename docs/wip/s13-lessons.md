@@ -26,9 +26,9 @@ Review fixes (`docs/wip/s13-lessons-review.md`, one commit per fix or small grou
 - [x] R6 a stage said once: from the world's list when it marks stages, else from the lesson's checkpoints
 - [x] R7 a lesson that moves on by itself is saved skipped, not passed
 - [ ] R8 pause: the host contract
-- [ ] R9 the corridor's retry line and where the next attempt starts
-- [ ] R10 the schedule's repeat rule pinned to 3 plays
-- [ ] R11 an intro cue from the side its line names
+- [x] R9 the corridor's retry line and where the next attempt starts
+- [x] R10 the schedule's repeat rule pinned to 3 plays
+- [x] R11 an intro cue from the side its line names
 - [ ] R12 wording of the new lines in ru, pl, en
 - [ ] R13 v0.12 recordings played back
 - [ ] R14 public docs
@@ -86,7 +86,8 @@ From `@shramko/sonic-fpv` (all in `src/lesson/*` unless said):
 - Contract (`src/contract.ts`, additions only): `CueEvent` kinds `repeat-cue` { cue, dir?, index?, of?, durS? }, `praise`,
   `stage` { stage? }, `wrong-way` { dir? }, `wrong-side` { dir? } (the host passes them to `engine.cue` as any cue action;
   every field either lane gives them, review R2);
-  `LessonProgress.skipped?`; `IntroLine` (`intro` items may carry `cues`); `Checkpoint.stage?`; `FORMATS.lesson` is
+  `LessonProgress.skipped?`; `IntroLine` (`intro` items may carry `cues`: cue ids or `IntroCue` { cue, from }, review
+  R11); `Checkpoint.stage?`; `FORMATS.lesson` is
   'shramko-sonic-lesson/2' (format 1 files are migrated on load); `PassRule` fields keep their names with format 2 meaning.
 - Events: the runner writes a lesson event `leave` when the pilot leaves for another lesson.
 - Replay: `REPLAY_KEY_ACTIONS` adds `previous`, `repeat`, `next-lesson`, `previous-lesson`; the host records each key event
@@ -375,6 +376,27 @@ walls line) go through the same queue, so the fix (wait for the report) also wai
   but is saved `passed: false, skipped: true` (unless it was passed before), as a lesson left with N; Z then says that
   it moves on, not the pass line. Test (`test/pass-rule.test.ts`, every shipped lesson that does not block, a pilot who
   does nothing); the old rule fails it.
+
+### Review R9, R10 and R11
+
+- R9: the review's two ways were "start the next attempt at the last checkpoint, or say 'from the start'". The first is
+  what the owner asked ("do not throw the pilot back so far") and what M41-20 says ("never to the far start"): when an
+  attempt of a lesson that re-centres on a touch (the corridor, the tunnels of lane s13-worlds) fails (only its time
+  limit fails it now), the next attempt begins 1 m before the furthest point it passed, facing along the track, with
+  the path flown there and the stages already said kept; the line "Let's try again from the last checkpoint" is then
+  true. B back to the task, and a long R in the pause, still begin the next attempt at the start. Tests
+  (`test/respawn.test.ts`): the corridor with a 40 s limit run out after cp-2 begins attempt 2 1 m before cp-2 (reset
+  event to cp-2), its 50 m goal met again 7 m on, stage 1 not said twice; controls: the same course with a plain bump,
+  and B in the pause, begin at the start. Without the rule the test fails.
+- R10: the schedule's repeat rule takes its number from `NAMED_SOUND_PLAYS` = 3 (M41-5, `src/lesson/schedule.ts`), not
+  from the runner's `REPEAT_PLAYS`. With `REPEAT_PLAYS` set to 2 on purpose the whole-lesson schedule test now fails
+  (it stayed green before); a test also takes the third play off every named sound of each ears lesson's schedule and
+  expects 'not-repeated'.
+- R11: an intro line's `cues` may hold `{ cue, from }` (from: left, right, front, back, up, down; contract `IntroCue`,
+  validated) beside plain cue ids: the cue plays from that side. hover-turn's "A sound will come from one side" plays the
+  hum three times from the left. Tests (`test/lessons.test.ts`): its task's plays come from [-1, 0, 0]; control: the
+  same line with the plain id plays them from the cue's default (dir null, ahead); the loader refuses an unknown side,
+  an unknown cue, an unknown key and a repeat.
 
 ## Needs from the simulator
 

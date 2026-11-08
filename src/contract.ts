@@ -366,7 +366,13 @@ export interface Checkpoint {
 
 /** A line of a lesson's intro (format 2): `cues` are the sounds it names, each played three times after the line. */
 export interface IntroLine extends SpeechLine {
-    readonly cues?: readonly CueId[];
+    readonly cues?: readonly (CueId | IntroCue)[];
+}
+
+/** A sound an intro line names, played from the side the line speaks of (listener frame) instead of the cue's default. */
+export interface IntroCue {
+    readonly cue: CueId;
+    readonly from: 'left' | 'right' | 'front' | 'back' | 'up' | 'down';
 }
 
 /** A lesson is data (spec section 3). Every lesson can be opened directly; the ladder only recommends. */

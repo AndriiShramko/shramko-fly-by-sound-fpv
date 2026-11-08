@@ -16,7 +16,7 @@ import { DICTS } from '../i18n/dicts';
 import { createTranslator } from '../i18n/translator';
 import { yawQuat } from '../util/vec';
 import { createLessonRunner, type DemoScene, type LessonSession, type Question, type RunnerAction, type RunnerOptions } from './runner';
-import { REPEAT_PLAYS, sceneSilentReason } from './sounds';
+import { sceneSilentReason } from './sounds';
 
 /** How long a line takes to say, s. */
 export type SpeechModel = (text: string, line: SpeechLine) => number;
@@ -337,10 +337,15 @@ export interface ScheduleIssue {
 
 /** How much speech may overlap a sound before it counts as under it, ms (one frame of a host and the gap of a voice). */
 export const OVERLAP_SLACK_MS = 50;
+/**
+ * How many times a named sound must play in its step: the owner's "once, a second time, a third time" (M41-5). Pinned
+ * here, not taken from the runner's REPEAT_PLAYS, so a runner that plays fewer fails the check (review R10).
+ */
+export const NAMED_SOUND_PLAYS = 3;
 
 /**
  * The checks of a lesson's schedule: no sound plays under speech; every question has an audible sound of its
- * step before its lines begin; every named sound of a step plays REPEAT_PLAYS times; every scene can be heard
+ * step before its lines begin; every named sound of a step plays NAMED_SOUND_PLAYS times; every scene can be heard
  * with the lesson's layers. One-off notes (a chime, the fanfare of a pass) are not checked: they come with
  * the lesson's own events, not with a step.
  */
@@ -360,14 +365,14 @@ export function checkSchedule(s: Schedule, lesson: LessonDef): ScheduleIssue[] {
         const before = sounds.filter((p) => p.step === q.step && p.attempt === q.attempt && p.end <= (q.linesStart ?? q.at) + OVERLAP_SLACK_MS && audible(p));
         if (before.length === 0) issues.push({ rule: 'question-without-sound', at: q.at, detail: `question ${q.id} at ${(q.at / 1000).toFixed(2)} s has no sound of its step heard before it` });
     }
-    // a named sound plays REPEAT_PLAYS times in its step (a scene the game replays after a wrong answer is an extra play)
+    // a named sound plays NAMED_SOUND_PLAYS times in its step (a scene the game replays after a wrong answer is an extra play)
     const groups = new Map<string, Play[]>();
     for (const p of sounds) {
         const k = `${p.attempt}:${p.step}:${p.cue}`;
         groups.set(k, [...(groups.get(k) ?? []), p]);
     }
     for (const [k, list] of groups) {
-        if (list.length < REPEAT_PLAYS) issues.push({ rule: 'not-repeated', at: (list[0] as Play).start, detail: `${k.split(':')[2]} in step ${k.split(':')[1]} plays ${list.length} time${list.length === 1 ? '' : 's'}, not ${REPEAT_PLAYS}` });
+        if (list.length < NAMED_SOUND_PLAYS) issues.push({ rule: 'not-repeated', at: (list[0] as Play).start, detail: `${k.split(':')[2]} in step ${k.split(':')[1]} plays ${list.length} time${list.length === 1 ? '' : 's'}, not ${NAMED_SOUND_PLAYS}` });
     }
     return issues.sort((a, b) => a.at - b.at);
 }

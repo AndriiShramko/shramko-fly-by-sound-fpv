@@ -23,7 +23,10 @@
   "intro": [
     {
       "cues": [
-        "target.hum"
+        {
+          "cue": "target.hum",
+          "from": "left"
+        }
       ],
       "key": "lesson.hover-turn.intro.1"
     },

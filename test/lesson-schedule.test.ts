@@ -10,7 +10,7 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import type { LessonDef } from '../src/contract';
 import { CuePlanner } from '../src/cues';
-import { checkSchedule, createLessonRunner, estimateSpeech, getLesson, lessonSchedule, measuredSpeech, SHIPPED_LESSON_IDS, speechOverlapMs, validateLesson, type DemoScene, type Question, type Schedule, type ScheduleOptions } from '../src/lesson';
+import { checkSchedule, createLessonRunner, estimateSpeech, getLesson, lessonSchedule, measuredSpeech, NAMED_SOUND_PLAYS, REPEAT_PLAYS, SHIPPED_LESSON_IDS, speechOverlapMs, validateLesson, type DemoScene, type Question, type Schedule, type ScheduleOptions } from '../src/lesson';
 import { getBuiltinTheme } from '../src/theme';
 
 const david = (JSON.parse(readFileSync(new URL('./fixtures/tts-en-david.json', import.meta.url), 'utf8')) as { seconds: Record<string, number> }).seconds;
@@ -108,6 +108,16 @@ describe('control: the v0.12 timing fails the same check (a line ends at the ear
             const r = rules(s, id);
             expect(r.filter((x) => x === 'under-speech'), id).toEqual([]);
             expect(r, id).toContain('not-repeated');
+        }
+    }, 120000);
+
+    it("two plays of each named sound instead of three fail the repeat rule in every ears lesson (it does not follow the runner's own number, review R10)", () => {
+        expect(REPEAT_PLAYS).toBe(NAMED_SOUND_PLAYS);
+        for (const id of EARS) {
+            const s = schedule(id, { speech: measuredSpeech(david) });
+            const two = { ...s, plays: s.plays.filter((p) => p.index === null || p.index < 3) };
+            expect(rules(s, id), id).not.toContain('not-repeated');
+            expect(rules(two, id), id).toContain('not-repeated');
         }
     }, 120000);
 

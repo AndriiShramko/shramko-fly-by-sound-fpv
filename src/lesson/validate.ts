@@ -3,7 +3,7 @@
 // code, so the loader is strict: unknown and missing keys are refused, every number has a range,
 // every spoken line must be a key of the locale catalogue, a lesson without a world asks only
 // questions, and a lesson with a world flies.
-import type { Checkpoint, Goal, IntroLine, LessonAssists, LessonDef, LessonLayers, LessonWorldRef, PassRule, Pose, SpeechLine } from '../contract';
+import type { Checkpoint, Goal, IntroCue, IntroLine, LessonAssists, LessonDef, LessonLayers, LessonWorldRef, PassRule, Pose, SpeechLine } from '../contract';
 import { FORMATS, LAYER_IDS, MODULES, WORLD_GENERATORS } from '../contract';
 import { CUE_IDS, requiredKeys } from '../i18n/catalog';
 import { canonicalPretty } from '../util/canonical';
@@ -51,13 +51,30 @@ function introLine(c: Collector, v: unknown, path: string): IntroLine | undefine
     const line = speechLine(c, rest, path);
     const cues = c.array(raw, joinPath(path, 'cues'), { min: 1, max: 4 });
     if (cues === null) return undefined;
-    if (!cues.every((x) => typeof x === 'string' && (CUE_IDS as readonly string[]).includes(x))) {
-        c.add(joinPath(path, 'cues'), 'must list cue ids of src/i18n/catalog.ts CUE_IDS');
-        return undefined;
+    const before = c.issues.length;
+    // each a cue id, or { cue, from }: the cue played from the side the line names (review R11)
+    const out: (string | IntroCue)[] = [];
+    for (const [i, x] of cues.entries()) {
+        const at = joinPath(joinPath(path, 'cues'), i);
+        if (typeof x === 'string') {
+            if (!(CUE_IDS as readonly string[]).includes(x)) c.add(at, 'must be a cue id of src/i18n/catalog.ts CUE_IDS');
+            out.push(x);
+            continue;
+        }
+        const r2 = c.record(x, at);
+        if (r2 === null) continue;
+        c.keys(r2, at, ['cue', 'from']);
+        if (typeof r2.cue !== 'string' || !(CUE_IDS as readonly string[]).includes(r2.cue)) c.add(joinPath(at, 'cue'), 'must be a cue id of src/i18n/catalog.ts CUE_IDS');
+        if (typeof r2.from !== 'string' || !(INTRO_SIDES as readonly string[]).includes(r2.from)) c.add(joinPath(at, 'from'), `must be one of ${INTRO_SIDES.join(', ')}`);
+        out.push({ cue: r2.cue as string, from: r2.from as IntroCue['from'] });
     }
-    if (new Set(cues).size !== cues.length) c.add(joinPath(path, 'cues'), 'must not repeat a cue');
-    return line === undefined ? undefined : { ...line, cues: cues as string[] };
+    const names = out.map((x) => (typeof x === 'string' ? x : `${x.cue}:${x.from}`));
+    if (new Set(names).size !== names.length) c.add(joinPath(path, 'cues'), 'must not repeat a cue');
+    return line === undefined || c.issues.length > before ? undefined : { ...line, cues: out };
 }
+
+/** The sides an intro line's cue may come from. */
+export const INTRO_SIDES: readonly IntroCue['from'][] = ['left', 'right', 'front', 'back', 'up', 'down'];
 
 function lines(c: Collector, v: unknown, path: string, min: number, max: number): SpeechLine[] | undefined {
     const arr = c.array(v, path, { min, max });

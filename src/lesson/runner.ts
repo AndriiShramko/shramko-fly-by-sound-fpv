@@ -65,11 +65,13 @@
 // world's checkpoint list), facing along the track (a checkpoint's own pose yaw, a world point's dir), and
 // the attempt's flown path goes back to what it was there, so a stretch flown twice is not counted twice. A
 // long R still goes back to the start; with no point passed yet a short R goes to the start of the attempt.
+// When an attempt of such a lesson fails (its time ran out), the next one begins at that point too, not at
+// the far start (review R9).
 //
 // Never silence (M41-10, the runner's part). Between attempts target() keeps giving the first target of the
 // next attempt (the gate, the zone, the sound to turn to), so the target layer goes on sounding while the
 // attempt's lines are said and the pause runs; a step never waits in silence without a line said first.
-import type { Checkpoint, CueEvent, CueId, FlightSample, Goal, LessonDef, LessonProgress, LessonRunner, Locale, MaterialClass, Pose, SessionEvent, SonicFrameInput, SonicObject, SonicWorld, SpeechLine, Vec3 } from '../contract';
+import type { Checkpoint, CueEvent, CueId, FlightSample, Goal, IntroCue, LessonDef, LessonProgress, LessonRunner, Locale, MaterialClass, Pose, SessionEvent, SonicFrameInput, SonicObject, SonicWorld, SpeechLine, Vec3 } from '../contract';
 import { DICTS } from '../i18n/dicts';
 import { createTranslator, type Dicts, type Translator } from '../i18n/translator';
 import { createRng } from '../util/rng';
@@ -284,6 +286,9 @@ export const LOCATE_SHARE = 0.8;
  */
 export const TURN_OFFSETS = [0, 180, 90, -135] as const;
 
+/** Where an intro line's cue comes from, listener frame (x right, y up, -z ahead). */
+const SIDE_DIRS: Readonly<Record<IntroCue['from'], Vec3>> = { left: [-1, 0, 0], right: [1, 0, 0], front: [0, 0, -1], back: [0, 0, 1], up: [0, 1, 0], down: [0, -1, 0] };
+
 const SIDES: readonly { readonly dir: Vec3; readonly sector: 'left' | 'right' | 'front' | 'back' }[] = [
     { dir: [-1, 0, 0], sector: 'left' },
     { dir: [1, 0, 0], sector: 'right' },
@@ -400,6 +405,8 @@ class Runner implements LessonSession {
     private left = false;
     /** the lesson ended by moving on after failures in a row (a lesson that does not block), not by a pass */
     private movedOn = false;
+    /** a failed attempt of a course that re-centres: the furthest point it passed, where the next attempt begins */
+    private resumeFrom: Runner['passedPoint'] = null;
     /** Z while flying: the task is said again; the goals and the attempt's clock wait from listenT0 */
     private listening = false;
     private listenT0 = 0;
@@ -699,7 +706,8 @@ class Runner implements LessonSession {
             if (l.cues === undefined || l.cues.length === 0) continue;
             steps.push({ kind: 'say', lines });
             lines = [];
-            for (const cue of l.cues) steps.push({ kind: 'sound', cue, dir: null, plays: REPEAT_PLAYS });
+            // a cue the line places on a side plays from there (review R11: "a sound will come from one side"); else its own default
+            for (const c of l.cues) steps.push(typeof c === 'string' ? { kind: 'sound', cue: c, dir: null, plays: REPEAT_PLAYS } : { kind: 'sound', cue: c.cue, dir: SIDE_DIRS[c.from], plays: REPEAT_PLAYS });
         }
         if (lines.length > 0) steps.push({ kind: 'say', lines });
         return { kind: this.ears ? 'intro' : 'task', steps };
@@ -718,15 +726,20 @@ class Runner implements LessonSession {
     }
 
     private startAttempt(t: number, first: boolean): void {
+        // a course that re-centres goes on from the last point the failed attempt passed (review R9, M41-20)
+        const resume = first ? null : this.resumeFrom;
+        this.resumeFrom = null;
         this.attemptNo++;
         this.attemptT0 = t;
         this.touchCount = 0;
         this.pathM = 0;
         this.goalIndex = 0;
         this.shapeOutcome = null;
-        this.lastCheckpoint = null;
-        this.passedPoint = null;
-        this.reached.clear();
+        if (resume === null) {
+            this.lastCheckpoint = null;
+            this.passedPoint = null;
+            this.reached.clear();
+        } else this.passedPoint = resume;
         this.earsAnswers = new Map();
         this.goalScores = [];
         this.backSince = null;
@@ -734,9 +747,17 @@ class Runner implements LessonSession {
         this.pausedMs = 0;
         this.phaseValue = 'flying';
         if (!first && !this.ears && this.returnsToStart()) {
-            const pose = this.startPose(this.attemptNo);
-            this.actions.push({ kind: 'place', pose, to: 'start' });
-            this.emit({ t, kind: 'reset', to: 'start', checkpointId: null });
+            if (resume !== null) {
+                // the path flown to that point counts again, so the course's distance goals stay where they were
+                const back = this.respawn();
+                this.actions.push({ kind: 'place', pose: back.pose, to: back.to });
+                this.emit({ t, kind: 'reset', to: back.to, checkpointId: back.id });
+                this.prev = null; // the jump is not flight
+            } else {
+                const pose = this.startPose(this.attemptNo);
+                this.actions.push({ kind: 'place', pose, to: 'start' });
+                this.emit({ t, kind: 'reset', to: 'start', checkpointId: null });
+            }
         }
         this.lessonEvent('attempt-start', t);
         if (this.ears) {
@@ -1038,7 +1059,12 @@ class Runner implements LessonSession {
             this.counted++;
             this.failRun = 0;
             this.timedLine(t);
-        } else this.failRun++;
+        } else {
+            this.failRun++;
+            // a course that re-centres on a touch (the corridor, the tunnels) does not throw the pilot back to its far start
+            // when an attempt fails (its time ran out): the next one begins where this one got to (review R9, M41-20)
+            if (this.lesson.assists.onTouch === 'bump-recentre') this.resumeFrom = this.passedPoint;
+        }
         this.lessonEvent(ok ? 'attempt-pass' : 'attempt-fail', t);
         this.tracker = null;
         if (ok && this.counted >= rule.required) {
@@ -1497,6 +1523,7 @@ class Runner implements LessonSession {
     /** B while flying (or after an attempt, or after the pass): the task again; the attempt is dropped, not counted. */
     private backToTask(t: number): void {
         this.abandonQuestion(t);
+        this.resumeFrom = null; // the attempt after the task begins at the start
         this.tracker = null;
         this.listening = false;
         this.phaseValue = 'intro';
@@ -1548,6 +1575,7 @@ class Runner implements LessonSession {
         this.emit({ t, kind: 'reset', to, checkpointId: back === null ? null : back.id });
         this.prev = null;
         this.backSince = null;
+        if (to === 'start') this.resumeFrom = null; // a long R in the pause: the next attempt from the start too
         if (to === 'start' && this.phaseValue === 'flying') {
             // the same attempt again from the start (a manual reset is not a failure)
             this.attemptT0 = t;
