@@ -18,12 +18,13 @@ import {
 } from '../src/replay';
 import type { SessionPackage } from '../src/session';
 import { quatRotate, yawQuat } from '../src/util/vec';
+import type { AnalyticWorldInfo } from '../src/world';
 import { RecordingHost, type HostOptions } from './helpers/record';
 
 const gatesOf = (host: RecordingHost): SonicObject[] => (host.world?.objects() ?? []).filter((o) => o.order !== null);
 
 /** Flies through every gate in order along its axis, with a contact at gate number `touchAtGate` (0-based). */
-function flyCourse(host: RecordingHost, speed = 6, touchAtGate = -1): void {
+function flyCourse(host: RecordingHost, speed = host.lesson.assists.maxSpeedMps ?? 4, touchAtGate = -1): void {
     gatesOf(host).forEach((g, k) => {
         const f = quatRotate(g.quat, [0, 0, -1]);
         host.flyTo([g.pos[0] - f[0] * 5, g.pos[1] - f[1] * 5, g.pos[2] - f[2] * 5], speed);
@@ -40,7 +41,7 @@ async function ringsCourse(options: HostOptions = {}): Promise<{ host: Recording
     const host = new RecordingHost(getLesson('rings-course'), options);
     host.begin();
     host.until(() => host.runner.phase === 'flying', 120);
-    flyCourse(host, 6, 2);
+    flyCourse(host, undefined, 2);
     host.until(() => host.runner.attempt === 2 && host.runner.phase === 'flying', 120);
     flyCourse(host);
     host.until(() => host.runner.phase === 'passed', 60);
@@ -66,17 +67,19 @@ async function wallsHall(options: HostOptions = {}): Promise<{ host: RecordingHo
     host.hold(0.5);
     host.press(REPLAY_KEY_ACTIONS.next);
     host.until(() => host.runner.phase === 'flying', 120);
-    host.flyTo([0, 1.5, -27.5], 3);
+    // 2.5 m from the front wall of the room, back to its middle, a touch, 2 m on, the resets, and the wall again
+    const front = (host.world as AnalyticWorldInfo).landmarks.find((l) => l.id === 'wall-front')!.pos[2];
+    host.flyTo([0, 1.5, front + 2.5], 3);
     host.hold(1.2);
     host.press(REPLAY_KEY_ACTIONS.repeat);
     host.until(() => host.runner.phase === 'flying', 60);
-    host.flyTo([0, 1.5, -20], 3);
+    host.flyTo([0, 1.5, 0], 3);
     host.touch();
-    host.flyTo([0, 1.5, -24], 3);
+    host.flyTo([0, 1.5, -2], 3);
     host.press(REPLAY_KEY_ACTIONS.resetCheckpoint);
     host.hold(0.5);
     host.press(REPLAY_KEY_ACTIONS.resetStart);
-    host.flyTo([0, 1.5, -27.5], 3);
+    host.flyTo([0, 1.5, front + 2.5], 3);
     host.hold(1.5);
     host.hold(3);
     return { host, pkg: (await host.toPackage()).pkg };

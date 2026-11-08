@@ -17,7 +17,7 @@ const fixture = (name: string): Uint8Array => new Uint8Array(readFileSync(join(R
 
 const gatesOf = (host: RecordingHost): SonicObject[] => (host.world?.objects() ?? []).filter((o) => o.order !== null);
 
-function flyCourse(host: RecordingHost, speed = 6, touchAtGate = -1): void {
+function flyCourse(host: RecordingHost, speed = host.lesson.assists.maxSpeedMps ?? 4, touchAtGate = -1): void {
     gatesOf(host).forEach((g, k) => {
         const f = quatRotate(g.quat, [0, 0, -1]);
         host.flyTo([g.pos[0] - f[0] * 5, g.pos[1] - f[1] * 5, g.pos[2] - f[2] * 5], speed);
@@ -80,7 +80,7 @@ describe('the report of a recorded flight: rings-course, a failed attempt then a
         host = new RecordingHost(getLesson('rings-course'));
         host.begin();
         host.until(() => host.runner.phase === 'flying', 120);
-        flyCourse(host, 6, 2);
+        flyCourse(host, undefined, 2);
         host.until(() => host.runner.attempt === 2 && host.runner.phase === 'flying', 120);
         flyCourse(host);
         host.until(() => host.runner.phase === 'passed', 60);

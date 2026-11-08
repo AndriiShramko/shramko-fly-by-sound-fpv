@@ -31,12 +31,25 @@ export interface ListParam {
     readonly max: number;
     readonly maxLength: number;
 }
-export type ParamDef = NumberParam | EnumParam | ListParam;
+/**
+ * Heights (version 2 of the gate generators): a list of metres like a ListParam, or level names joined
+ * by commas ("floor,middle,ceiling"), each one of `levels`. Resolved as given (the names without
+ * spaces); absent: an empty list.
+ */
+export interface HeightsParam {
+    readonly kind: 'heights';
+    readonly min: number;
+    readonly max: number;
+    readonly maxLength: number;
+    readonly levels: readonly string[];
+}
+export type ParamDef = NumberParam | EnumParam | ListParam | HeightsParam;
 export type Schema = Readonly<Record<string, ParamDef>>;
 
 export const num = (def: number, min: number, max: number, integer = false): NumberParam => ({ kind: 'number', def, min, max, integer });
 export const oneOf = (def: string, ...values: string[]): EnumParam => ({ kind: 'enum', def, values });
 export const list = (min: number, max: number, maxLength: number): ListParam => ({ kind: 'list', min, max, maxLength });
+export const heights = (min: number, max: number, maxLength: number, levels: readonly string[]): HeightsParam => ({ kind: 'heights', min, max, maxLength, levels });
 
 /** Checks `given` against `schema` and fills every default; throws WorldSpecError. */
 export function resolveWith(schema: Schema, generator: WorldGenerator, given: AnalyticWorldSpec['params']): ResolvedParams {
@@ -68,6 +81,20 @@ export function resolveWith(schema: Schema, generator: WorldGenerator, given: An
                 else if (!Array.isArray(v) || v.length > def.maxLength) throw new WorldSpecError(`${where} must be a list of at most ${def.maxLength} numbers`);
                 else if (!v.every((x) => typeof x === 'number' && Number.isFinite(x) && x >= def.min && x <= def.max)) {
                     throw new WorldSpecError(`${where} must hold numbers between ${def.min} and ${def.max}`);
+                } else out[name] = [...v];
+                break;
+            }
+            case 'heights': {
+                if (v === undefined) out[name] = [];
+                else if (typeof v === 'string') {
+                    const names = v.split(',').map((x) => x.trim());
+                    if (names.length > def.maxLength || !names.every((x) => def.levels.includes(x))) {
+                        throw new WorldSpecError(`${where} must be at most ${def.maxLength} of ${def.levels.join(', ')} joined by commas, or a list of metres`);
+                    }
+                    out[name] = names.join(',');
+                } else if (!Array.isArray(v) || v.length > def.maxLength) throw new WorldSpecError(`${where} must be a list of at most ${def.maxLength} heights in metres, or level names joined by commas`);
+                else if (!v.every((x) => typeof x === 'number' && Number.isFinite(x) && x >= def.min && x <= def.max)) {
+                    throw new WorldSpecError(`${where} must hold heights between ${def.min} and ${def.max} m`);
                 } else out[name] = [...v];
                 break;
             }

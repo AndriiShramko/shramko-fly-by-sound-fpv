@@ -97,14 +97,14 @@ describe('the point mass', () => {
         let touches = 0;
         let worst = Infinity;
         for (let i = 0; i < 60 * 12; i++) {
-            // forward into the wall for 6 s, back off for 2 s, then down onto the floor
-            const sticks = i < 60 * 6 ? stick({ pitch: 1 }) : i < 60 * 8 ? stick({ pitch: -1 }) : stick({ throttle: -1 });
+            // forward into the wall for 6 s, back off for 0.6 s (about 4 m: the room is 12 m deep), then down onto the floor
+            const sticks = i < 60 * 6 ? stick({ pitch: 1 }) : i < 60 * 6.6 ? stick({ pitch: -1 }) : stick({ throttle: -1 });
             m.step(1 / 60, sticks);
             if (m.sample(i * 16, i * 16).touched) touches++;
             worst = Math.min(worst, world.sdf(...m.pos));
         }
         expect(worst).toBeGreaterThan(0.12 - 1e-3);
-        expect(m.pos[2]).toBeGreaterThan(-30); // the front wall is at z = -30
+        expect(m.pos[2]).toBeGreaterThan(world.landmarks.find((l) => l.id === 'wall-front')!.pos[2]); // never through the front wall
         expect(touches).toBe(2); // the wall, then the floor
         expect(m.pos[1]).toBeGreaterThan(0.1);
     });

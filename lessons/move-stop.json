@@ -25,7 +25,7 @@
     {
       "key": "lesson.move-stop.intro.1",
       "params": {
-        "metres": 30
+        "metres": 9
       }
     },
     {
@@ -79,7 +79,7 @@
       "generator": "open",
       "params": {
         "startHeightM": 1.5,
-        "zoneDistanceM": 30,
+        "zoneDistanceM": 9,
         "zoneSizeM": 6
       },
       "seed": 0,

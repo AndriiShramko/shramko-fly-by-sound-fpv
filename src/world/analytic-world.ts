@@ -42,7 +42,7 @@ export interface AnalyticWorldInfo extends AnalyticWorld {
 /** Generators whose worlds are a course of gates: their track goes through the gates in order. */
 const GATE_GENERATORS: readonly WorldGenerator[] = ['rings', 'squares', 'cube-frames'];
 
-/** A complete spec of a generator at `version` (the current one by default): defaults for everything not given. */
+/** A complete spec of a generator at `version` (GENERATOR_VERSION, 1, by default): defaults for everything not given. */
 export function makeSpec(generator: WorldGenerator, params: AnalyticWorldSpec['params'] = {}, seed = 0, version: number = GENERATOR_VERSION[generator]): AnalyticWorldSpec {
     return { generator, version, seed, params: resolveParams(generator, params, version) };
 }
@@ -61,7 +61,7 @@ export function createAnalyticWorld(spec: AnalyticWorldSpec): AnalyticWorldInfo 
     // every version a generator ever published still builds, exactly as it did (a v0.12 recording's walls)
     if (!buildsVersion(generator, spec.version)) {
         const known = GENERATOR_VERSIONS[generator];
-        throw new WorldSpecError(`generator '${generator}' builds ${known.length === 1 ? 'version' : 'versions'} ${known.join(', ')} here (current ${GENERATOR_VERSION[generator]}), the spec asks for ${String(spec.version)}`);
+        throw new WorldSpecError(`generator '${generator}' builds ${known.length === 1 ? 'version' : 'versions'} ${known.join(', ')} here, the spec asks for ${String(spec.version)}`);
     }
     const version = spec.version;
     if (!Number.isInteger(spec.seed) || Math.abs(spec.seed) > Number.MAX_SAFE_INTEGER) throw new WorldSpecError(`seed must be an integer, got ${String(spec.seed)}`);

@@ -62,7 +62,7 @@
     }
   },
   "start": {
-    "pos": [0, 3, 72],
+    "pos": [0, 2.5, 11.75],
     "yawDeg": 0
   },
   "title": {
@@ -74,13 +74,17 @@
     "spec": {
       "generator": "rings",
       "params": {
-        "aheadM": 12,
+        "aheadM": 5,
+        "depthM": 26.5,
+        "gateY": 2.5,
+        "heightM": 4.5,
         "layout": "line",
         "sizes": [3, 2, 1.5, 1],
-        "spacingM": 14
+        "spacingM": 5,
+        "widthM": 9
       },
       "seed": 0,
-      "version": 1
+      "version": 2
     }
   }
 }

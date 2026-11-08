@@ -65,7 +65,7 @@
     }
   },
   "start": {
-    "pos": [0, 3, 72],
+    "pos": [0, 3, 4.75],
     "yawDeg": 0
   },
   "title": {
@@ -77,12 +77,15 @@
     "spec": {
       "generator": "squares",
       "params": {
-        "aheadM": 12,
+        "aheadM": 5.5,
+        "depthM": 12.5,
+        "heightM": 5.2,
         "layout": "single",
-        "sizeM": 3
+        "sizeM": 3,
+        "widthM": 10
       },
       "seed": 0,
-      "version": 1
+      "version": 2
     }
   }
 }

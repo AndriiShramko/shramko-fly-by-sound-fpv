@@ -10,7 +10,7 @@ navigation and truth bot `test/helpers/truth.ts`). No push. Every step one commi
 - [x] 2. Versions that keep old recordings: every generator builds every version it published
 - [x] 3. The hollow for the simulator: the cavity boxes in the analytic world
 - [x] 4. The world's checkpoint list (M41-20)
-- [ ] 5. Micro-drone scale (M41-18): version 2 of the room generators, the lessons' world, start and assists
+- [x] 5. Micro-drone scale (M41-18): version 2 of the room generators, the lessons' world, start and assists
 - [ ] 6. Tunnels (M41-21): corridor version 2 and the tunnel lessons
 - [ ] 7. Rings at different heights (M41-22): the heights parameter and lesson rings-heights
 - [ ] 8. All checks, final status
@@ -178,6 +178,67 @@ lesson with a goal other than hold-height, approach-stop or around): the owner's
 - The truth bot of lane s13-lessons now flies the corridor along the world's checkpoints (its `worldTrack`, found by
   feature detection) instead of its own corridor line, and still passes it in exactly r attempts with no touch.
 
+### Step 5: micro-drone scale (M41-18)
+
+- Version 2 of hall, pillars, rings, squares and cube-frames (`src/world/rooms-v2.ts`): ranges down to rooms of a few
+  metres (width and depth from 2 m, height from 1.5 m), defaults at that scale (hall 10 x 12 x 3.2; the pillars' and
+  gates' rooms just large enough for each of their layouts), the start `startBackM` (1.5 m) in front of the back wall,
+  pillars 1 m from the walls (scattered ones 1.5 m apart, 2 m in front of the start), gates 1 m from the walls and
+  0.3 m from the floor and the ceiling, and gates at `heights` (step 7's parameter, built here so the version is
+  complete: a list of metres or levels floor, middle, ceiling; a new parameter kind in `src/world/params.ts`). The
+  hollow is still one box centred on (0, h/2, 0), so the simulator's mirror of the halls stays right for them.
+- `GENERATOR_VERSION` (what `makeSpec` writes without a version) stays 1 for every generator: the ears lessons' scenes
+  (`src/lesson/runner.ts:1346,1365`) and tests of the other lanes build `makeSpec('hall')` and mean v0.12's 40 x 60 x
+  12 hall. `NEWEST_VERSION` names the newest (2 for the five rooms); lesson files always name their version.
+- The lessons (world and start; no assists changed: every speed and climb cap stays):
+
+| Lesson | World now | Start | Ahead | Left | Right | Ceiling | Legs (s) |
+|---|---|---|---|---|---|---|---|
+| walls-hall | hall v2 10 x 12 x 3.2 | (0, 1.5, 0) | 2.81 s (5.88 m) | 2.47 s (4.88 m) | 2.47 s | 1.95 s (1.58 m) | |
+| walls-pillar | pillars v2 single, r 0.3, 5.5 m ahead, 10 x 12.5 x 3.2 | (0, 1.5, 4.75) | 2.54 s (pillar) | 2.47 s | 2.47 s | 1.95 s | 2.54, 2.64 |
+| walls-row | pillars v2 row of 5, gaps 1.7, r 0.3, 5.3 m ahead, 12 x 13 x 3.2 | (0, 1.5, 5) | 2.47 s (pillar-3) | 2.81 s | 2.81 s | 1.95 s | 2.47, 2.87 |
+| rings-first | rings v2 single, 5.5 m ahead, 10 x 12.5 x 5.2 | (0, 3, 4.75) | (through) | 2.47 s | 2.47 s | 1.76 s | 2.68, 2.64 |
+| rings-line | rings v2 line of 3, spacing 6, 10 x 24.5 x 5.2 | (0, 3, 10.75) | (through) | 2.47 s | 2.47 s | 1.76 s | 2.68, 2.85, 2.85, 2.64 |
+| rings-small | rings v2 line 3 2 1.5 1, spacing 5, gateY 2.5, 9 x 26.5 x 4.5 | (0, 2.5, 11.75) | (through) | 2.56 s | 2.56 s | 2.25 s | 2.8 x 4, 2.76 |
+| rings-course | rings v2 course of 6, spacing 7, seed 7, 15 x 43.5 x 5.5 | (0, 3, 20.25) | (through) | 2.77 s | 2.77 s | 1.96 s | 2.43 to 2.69, 2.17 |
+| shapes-square | squares v2 single, 10 x 12.5 x 5.2 | (0, 3, 4.75) | (through) | 2.47 s | 2.47 s | 1.76 s | 2.68, 2.64 |
+| shapes-series | squares v2 turn of 4, 15 degrees (was 40), spacing 6, 10 x 30.5 x 5.2 | (0, 3, 13.75) | (through) | 2.47 s | 2.47 s | 1.76 s | 2.68, 2.85 x 3, 2.74 |
+| shapes-cube | cube-frames v2 single, 10 x 12.5 x 5.2 | (0, 3, 4.75) | (through) | 2.47 s | 2.47 s | 1.76 s | 2.68, 2.64 |
+| hover-turn | rings v2 single, the ring 4 m left and 0.5 m ahead (82.9 degrees, was 83.2), 14 x 10 x 5.2 | (0, 3, 1) | hover lesson, 0.5 m/s | | | | ring 4.0 m away (was 25.2) |
+| move-speed | open v1, zone 7 m ahead (was 14), 6 m (was 16); fly 4 m first (was 6) | (0, 1.5, 0) | zone's near face 2.13 s (was 2.81) | | | | |
+| move-stop | open v1, zone 9 m ahead (was 30), 6 m | (0, 1.5, 0) | zone's near face 2.40 s (was 7.65) | | | | |
+| corridor | corridor v1 2.5 x 2.5 m (was 5 x 4), straight 15 (was 50), sections 6 (was 15), steps 1.25, pillars r 0.3 | (0, 1.25, 0) | 7.7 s (pillar, 20.6 m) | 1.13 s | 1.13 s | 1.12 s | a section every 2.85 s |
+
+  "(through)": the ray straight ahead passes through the gate; the legs say what comes ahead (the start to the first
+  gate, gate to gate, the last to the far wall). Hover lessons (hover-height, hover-turn: goals hold-height, turn-to)
+  fly at 0.5 m/s: a wall 2 to 3 s away would stand 1 to 1.5 m off, inside hover-turn's 3 m ring, so the rule does not
+  apply to them; hover-turn's ring is now 4 m away on the same bearing (the runner's turned starts put it in front and
+  behind as before). The first room without obstacles, walls-hall (384 m3), is the smallest room of the ladder
+  (walls-pillar 400, walls-row 499, the gate rooms 650 to 3589). The corridor is not a room: its side walls and ceiling
+  were already near; its sections now come every 2.85 s and its first straight takes 5.8 s (was 17.5 s).
+- Numbers of lesson files that follow the geometry, moved with it (their meaning stays lane s13-lessons'): walls-row
+  `goals[0].metres` 22 -> 9; move-speed `goals[0].metres` 6 -> 4 (the zone's near face); move-stop
+  `intro[0].params.metres` 30 -> 9 (the zone's distance, said aloud); corridor `goals` 50 / 240 -> 15 / 100 (the
+  straight, then 115 of the 126 m track, as v0.12 had 290 of 335) and its five `checkpoints` (`at`, `pose.pos`) to the
+  new starts of the sections. Lesson versions stay 2 (none released since v0.12, whose recordings are version 1 and are
+  reported so).
+- Tests (`test/world-scale.test.ts`): every room lesson's walls and legs in 2 to 3 s and its ceiling in 1.5 to 2.5 s;
+  walls-hall the smallest room; the zones in 2 to 3 s; hover-turn's ring within 5 m on the same bearing (within 1
+  degree); the corridor's sections in 2 to 3 s and its straight under 6 s; the goals follow the corridor's track; the
+  truth bot passes each of the 14 changed lessons in at most 2 x r attempts with no touch. Controls: every room lesson
+  at its v0.12 size fails the same check (`test/fixtures/v012-lesson-geometry.json`, the v0.12 files' world, start,
+  assists and goals); v0.12's walls-hall was as large as walls-pillar's room; v0.12's move-stop zone took 7.7 s,
+  hover-turn's ring was 25 m away, the corridor took 5.7 s per section and 17.5 s for its straight.
+  `test/world-rooms-v2.test.ts`: version 2 in closed form (the hall's six walls, the pillars' placing and margins, a
+  gate 0.3 m above the floor that version 1 refuses, levels and metres, a course that keeps its draws, five ways to give
+  bad heights), goldens of nine version-2 worlds and their control.
+- Tests of other lanes that flew v0.12's numbers now take them from the worlds (no expectation changed except where a
+  number was the room's): `test/runner.test.ts` (zone, front wall, pillar, gap of the row, ring, cube, corridor
+  checkpoint), `test/progress.test.ts`, `test/pass-rule.test.ts`, `test/navigation.test.ts`, `test/demo.test.ts` (backs
+  off 0.6 s instead of 2 s: the room is 12 m deep), `test/replay.test.ts` and `test/report.test.ts` (the walls-hall
+  flight inside the room; rings-course flown at its own cap of 4 m/s instead of 6: at 6 m/s the v0.12 sampler's replay
+  agreed on 94.9 % of the frames in the smaller room, under the 95 % rule; at 4 m/s 95.2 %, at 3 m/s 96.1 %).
+
 ## Needs from the simulator
 
 1. Draw the room from the package's boxes (`apps/fly/src/sonic/primitives.ts:215-231`, `cavityBoxes`), and delete the
@@ -198,8 +259,33 @@ lesson with a goal other than hold-height, approach-stop or around): the owner's
 
 ## Needs from other lanes
 
-(filled per step)
+Lane s13-lessons (owner of the strings, goals and the truth bot):
+
+1. walls-hall's title and first line say "The big hall" and "You are in a big, empty hall"; it is now the smallest room
+   (10 x 12 x 3.2 m). Proposed: en "A small room" / "You are in a small, empty room. The walls, the floor and the
+   ceiling make knocks, thuds and puffs when you come near."; ru "Маленькая комната" / "Ты в маленькой пустой комнате.
+   Стены, пол и потолок дают стуки, глухие удары и дуновения, когда ты приближаешься."; pl "Mały pokój" / "Jesteś w
+   małym, pustym pokoju. Ściany, podłoga i sufit wydają stuknięcia, łoskoty i powiewy, gdy się zbliżasz."; es "Una sala
+   pequeña" / "Estás en una sala pequeña y vacía. Las paredes, el suelo y el techo hacen golpes, golpes graves y soplos
+   cuando te acercas."
+2. walls-hall's goal `approach-stop` `stopWithinM: 3` is now 60 % of the room's half width (5 m): two metres of
+   flight toward a side wall and a stop pass it. 1.5 m keeps the v0.12 task ("fly to the wall, stop before it").
+3. The truth bot's pass-gates flight goes 4 m before and 4 m past every gate (`test/helpers/truth.ts`); with gates 5 to
+   7 m apart it flies back between two gates (rings-small: 3 m back, 1.2 s at 2.5 m/s), which a wrong-way rule of more
+   than 1 s (M41-15) would hear. The world's checkpoints (1.5 m before, 1 m past each gate) are a track to fly.
+4. corridor's `attemptLimitS` 900 s was for a 335 m corridor; the track is 126 m now (about 50 s at 3 m/s).
+
+Lane s13-sound: the rings-course replay check now flies at the lesson's cap (4 m/s) and agrees on 95.2 % of the frames
+with the v0.12 sampler (side walls 7.4 m away flicker in and out of the three hazard voices); their time-to-contact
+rule and `pathMissM` filter are expected to raise it. Nothing to do unless it drops under 95 % after the merge.
 
 ## For the lead's merge
 
-(filled per step)
+- `src/contract.ts`: added `CavityBox`, `WorldCheckpoint`, `AnalyticWorld.cavities?`, `AnalyticWorld.checkpoints?`
+  (nothing else changed).
+- Lesson files (step 5): `world` and `start` are this lane's; besides them `goals[*].metres` of walls-row, move-speed
+  and corridor, move-stop's `intro[0].params.metres`, and corridor's `checkpoints[*].at` and `.pose.pos` moved with the
+  geometry (see step 5). Merge by field: lane s13-lessons' `pass`, `intro` (`cues`), `speech`, `checkpoints` meaning
+  and lane s13-sound's `layers` do not touch these lines.
+- Tests of other lanes edited only to take positions from the worlds (step 5 lists them); when lane s13-lessons or
+  s13-sound adds a flight with v0.12's numbers (z = 72, -27.5, -55, a zone at 30 m ...), it needs the same treatment.

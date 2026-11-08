@@ -61,7 +61,7 @@
     }
   },
   "start": {
-    "pos": [0, 1.5, 22],
+    "pos": [0, 1.5, 4.75],
     "yawDeg": 0
   },
   "title": {
@@ -73,11 +73,15 @@
     "spec": {
       "generator": "pillars",
       "params": {
-        "aheadM": 15,
-        "layout": "single"
+        "aheadM": 5.5,
+        "depthM": 12.5,
+        "heightM": 3.2,
+        "layout": "single",
+        "radiusM": 0.3,
+        "widthM": 10
       },
       "seed": 0,
-      "version": 1
+      "version": 2
     }
   }
 }

@@ -64,7 +64,8 @@ describe('a flying lesson: the task (step 1) and flying (step 2)', () => {
         const p = slowSpeech('rings-first');
         p.begin();
         p.press((run, t) => run.next(t));
-        p.flyTo([0, 3, 66]);
+        const ring = p.object('ring-1').pos;
+        p.flyTo([ring[0], ring[1], ring[2] + 2]);
         const from = p.actions.length;
         p.press((run, t) => run.previous(t));
         expect(p.run.view()).toMatchObject({ step: 1, stepKind: 'task', phase: 'intro', counted: 0, failsInARow: 0 });

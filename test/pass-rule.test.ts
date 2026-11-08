@@ -172,8 +172,9 @@ describe('format 2: r counted attempts in total pass a lesson (M41-8)', () => {
         ring.begin();
         for (let k = 0; k < 3; k++) {
             ring.until(() => ring.run.phase === 'flying', 60);
-            ring.flyTo([1.9, 3, 66]);
-            ring.flyTo([1.9, 3, 55]);
+            const at = ring.object('ring-1').pos;
+            ring.flyTo([at[0] + 1.9, at[1], at[2] + 4]);
+            ring.flyTo([at[0] + 1.9, at[1], at[2] - 3.5]);
             ring.until(() => ring.run.phase !== 'flying', 10);
         }
         ring.until(() => ring.said().includes('fly.offer-next'), 30);

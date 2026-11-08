@@ -89,9 +89,9 @@ describe('every version a generator published still builds', () => {
         for (const version of [0, 99, 1.5, -1]) {
             const build = (): unknown => createAnalyticWorld({ ...spec, version });
             expect(build).toThrow(WorldSpecError);
-            expect(build).toThrow(new RegExp(`builds versions? ${GENERATOR_VERSIONS.hall.join(', ')} here .*asks for ${version}`));
+            expect(build).toThrow(new RegExp(`builds versions? ${GENERATOR_VERSIONS.hall.join(', ')} here.*asks for ${version}`));
         }
-        expect(() => makeSpec('hall', {}, 0, 99)).toThrow(/builds versions? .* here .*asks for 99/);
+        expect(() => makeSpec('hall', {}, 0, 99)).toThrow(/builds versions? .* here.*asks for 99/);
         expect(buildsVersion('hall', 99)).toBe(false);
         expect(buildsVersion('hall', '1')).toBe(false);
     });
@@ -151,6 +151,6 @@ describe('a session recorded with v0.12', () => {
         }
         expect(err).toBeInstanceOf(ReplayError);
         expect((err as ReplayError).code).toBe('world');
-        expect((err as Error).message).toMatch(/cannot be built: generator 'hall' builds versions? .* here .*asks for 99/);
+        expect((err as Error).message).toMatch(/cannot be built: generator 'hall' builds versions? .* here.*asks for 99/);
     });
 });

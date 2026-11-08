@@ -11,46 +11,46 @@
   "attemptLimitS": 900,
   "checkpoints": [
     {
-      "at": [0, 2, 0],
+      "at": [0, 1.25, 0],
       "id": "cp-1",
       "pose": {
-        "pos": [0, 2, 0],
+        "pos": [0, 1.25, 0],
         "yawDeg": 0
       },
       "radiusM": 2.5
     },
     {
-      "at": [0, 2, -50],
+      "at": [0, 1.25, -15],
       "id": "cp-2",
       "pose": {
-        "pos": [0, 2, -50],
+        "pos": [0, 1.25, -15],
         "yawDeg": 0
       },
       "radiusM": 2.5
     },
     {
-      "at": [0, 2, -80],
+      "at": [0, 1.25, -27],
       "id": "cp-3",
       "pose": {
-        "pos": [0, 2, -80],
+        "pos": [0, 1.25, -27],
         "yawDeg": 0
       },
       "radiusM": 2.5
     },
     {
-      "at": [45, 2, -125],
+      "at": [18, 1.25, -45],
       "id": "cp-4",
       "pose": {
-        "pos": [45, 2, -125],
+        "pos": [18, 1.25, -45],
         "yawDeg": 0
       },
       "radiusM": 2.5
     },
     {
-      "at": [45, 2, -200],
+      "at": [18, 1.25, -75],
       "id": "cp-5",
       "pose": {
-        "pos": [45, 2, -200],
+        "pos": [18, 1.25, -75],
         "yawDeg": 0
       },
       "radiusM": 2.5
@@ -61,11 +61,11 @@
   "goals": [
     {
       "kind": "fly-distance",
-      "metres": 50
+      "metres": 15
     },
     {
       "kind": "fly-distance",
-      "metres": 240
+      "metres": 100
     }
   ],
   "id": "corridor",
@@ -116,7 +116,7 @@
     }
   },
   "start": {
-    "pos": [0, 2, 0],
+    "pos": [0, 1.25, 0],
     "yawDeg": 0
   },
   "title": {
@@ -128,8 +128,14 @@
     "spec": {
       "generator": "corridor",
       "params": {
+        "heightM": 2.5,
         "layout": "full",
-        "straightM": 50
+        "obstacleRadiusM": 0.3,
+        "riseM": 1.25,
+        "segmentM": 6,
+        "startHeightM": 1.25,
+        "straightM": 15,
+        "widthM": 2.5
       },
       "seed": 0,
       "version": 1
