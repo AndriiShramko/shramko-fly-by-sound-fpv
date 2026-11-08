@@ -1,9 +1,9 @@
 {
  "format": "shramko-listen-evidence/1",
- "key": "ca2ea78c02fbf9da990b2b5b13abb7e25a036549c6358b7b9f1c52176610c1df",
+ "key": "67e227c5d9adff93f5ac7e13c6b53da5f09e3cdd1ea8ad7320d23b57d4663b13",
  "inputs": {
-  "hash": "ca2ea78c02fbf9da990b2b5b13abb7e25a036549c6358b7b9f1c52176610c1df",
-  "files": 109,
+  "hash": "67e227c5d9adff93f5ac7e13c6b53da5f09e3cdd1ea8ad7320d23b57d4663b13",
+  "files": 112,
   "driver": 2,
   "measure": 2,
   "chrome": "156.0.8078.80",
@@ -15,7 +15,7 @@
    "pyloudnorm": "0.2.0"
   }
  },
- "date": "2026-11-08T13:50:35.264Z",
+ "date": "2026-11-08T14:33:29.301Z",
  "id": "VL-pitch",
  "claim": "the pitch track of the height stem is continuous while the height changes smoothly (a climb from 0.5 to 4.5 m at 0.5 m/s): no change over 25 cents between hops 10 ms apart, and the track follows the planned glide (control: the v0.12 stepped mapping jumps)",
  "thresholds": {

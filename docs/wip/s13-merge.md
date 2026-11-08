@@ -65,11 +65,14 @@ and the corridor's goal (s13-lessons' "For the lead's merge" item 2, review R5) 
   `7z` for 7-Zip's command line. No drive-letter folder is left but `GPU_LOCK`'s default `C:/dev/.gpu-lock` in
   section 6.5, which is the default in the code itself (`tools/listen.ts`, the proofs on `main`), so it stays.
   `test/docs.test.ts` 8 of 8.
-- [ ] 5. Full checks on the final commit: typecheck, test, locale lint, layout check, proof:audio, listen. On 8eae637
-  so far: `pnpm typecheck` clean; `pnpm test` 36 files, 756 tests, all pass (9.4 s); locale lint 0 problems (4
-  languages, 469 keys); layout check 0 problems; `GPU_LOCK=C:/dev/.gpu-lock pnpm proof:audio` 3 files, 9 proofs,
-  48.8 s, all pass (headless Chrome 156.0.8078.80; the five audio proofs pass shipped and fail their broken
-  controls; both evidence files rewritten, only their dates changed). `pnpm listen`: next.
+- [x] 5. Full checks on the final code (8eae637; the commits after it hold only evidence and this doc), all passing:
+  `pnpm typecheck` clean; `pnpm test` 36 files, 756 tests (9.4 s); locale lint 0 problems (4 languages, 469 keys);
+  layout check 0 problems; `GPU_LOCK=C:/dev/.gpu-lock pnpm proof:audio` 3 files, 9 proofs, 48.8 s (headless Chrome
+  156.0.8078.80; the five audio proofs pass and their broken controls fail; both evidence files rewritten, only their
+  dates changed; 371afd8); `pnpm listen` with `SHRAMKO_LISTEN_PY` (the environment of `tools/listen/requirements.txt`,
+  Python 3.11.9), `SHRAMKO_LISTEN_CACHE` on the data disk and `GPU_LOCK` as the lane ran it: 24 of 24 renders, 8 of 8
+  checks valid and passing, 88.6 s, fresh for inputs 67e227c5d9ad (112 files; s13-sound's last run was ca2ea78c02fb).
+  Its numbers did not move from s13-sound's (table in "Final status").
 - [ ] 6. Final status: what merged, the conflicts, the merge items with their commits, the checks with numbers, what
   waits for s13-worlds, what each lane needs from the simulator
 
