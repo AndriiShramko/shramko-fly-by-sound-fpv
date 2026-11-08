@@ -11,7 +11,7 @@
   "attemptLimitS": 30,
   "checkpoints": [],
   "fastPath": false,
-  "format": "shramko-sonic-lesson/1",
+  "format": "shramko-sonic-lesson/2",
   "goals": [
     {
       "kind": "turn-to",
@@ -42,11 +42,10 @@
   "module": 1,
   "order": 6,
   "pass": {
-    "attempts": 5,
+    "attempts": 3,
     "blocking": true,
-    "blocks": 1,
     "maxTouches": null,
-    "required": 4
+    "required": 3
   },
   "speech": {
     "hints": [
@@ -68,7 +67,7 @@
   "title": {
     "key": "lesson.hover-turn.title"
   },
-  "version": 1,
+  "version": 2,
   "world": {
     "kind": "analytic",
     "spec": {

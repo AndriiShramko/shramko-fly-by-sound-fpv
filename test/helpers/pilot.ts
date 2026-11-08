@@ -20,10 +20,14 @@ export class ScriptedPilot {
     yaw: number;
     readonly events: SessionEvent[] = [];
     readonly actions: RunnerAction[] = [];
+    /** events and actions in the order they came */
+    readonly log: ({ readonly event: SessionEvent } | { readonly action: RunnerAction })[] = [];
     readonly run: LessonSession;
     readonly world: SonicWorld | null;
     readonly analytic: AnalyticWorldInfo | null;
     readonly lesson: LessonDef;
+    /** the objects the runner flies with (a scan lesson's gates, else the world's) */
+    private readonly given: readonly SonicObject[] | undefined;
     /** how many times the runner placed the craft */
     placed = 0;
     lastScene: DemoScene | null = null;
@@ -38,6 +42,7 @@ export class ScriptedPilot {
         this.run = createLessonRunner(lesson, options);
         this.analytic = lesson.world.kind === 'analytic' ? createAnalyticWorld(lesson.world.spec) : null;
         this.world = world !== undefined ? world : this.analytic;
+        this.given = options.objects;
         const start = options.start ?? lesson.start;
         this.pos = start.pos;
         this.yaw = start.yawDeg;
@@ -48,6 +53,7 @@ export class ScriptedPilot {
             const a = this.run.takeActions();
             if (a.length === 0) return;
             this.actions.push(...a);
+            for (const action of a) this.log.push({ action });
             for (const x of a) {
                 if (x.kind === 'place') {
                     this.pos = x.pose.pos;
@@ -59,13 +65,27 @@ export class ScriptedPilot {
                 }
                 if (x.kind === 'scene' && x.scene !== null) this.lastScene = x.scene;
             }
-            if (a.some((x) => x.kind === 'say')) this.events.push(...this.run.spoken(this.t));
-            for (const x of a) if (x.kind === 'ask' && this.answerer !== null) this.events.push(...this.run.answer(this.answerer(x.question, this.lastScene), 'key', this.t));
+            if (a.some((x) => x.kind === 'say')) this.record(this.run.spoken(this.t));
+            for (const x of a) if (x.kind === 'ask' && this.answerer !== null) this.record(this.run.answer(this.answerer(x.question, this.lastScene), 'key', this.t));
+        }
+    }
+
+    /** events the runner gave: kept in order with the actions */
+    record(list: readonly SessionEvent[]): void {
+        for (const event of list) {
+            this.events.push(event);
+            this.log.push({ event });
         }
     }
 
     begin(): void {
-        this.events.push(...this.run.begin(this.t));
+        this.record(this.run.begin(this.t));
+        this.take();
+    }
+
+    /** a key of the pilot: the runner's call, then what it asks for */
+    press(call: (run: LessonSession, t: number) => readonly SessionEvent[]): void {
+        this.record(call(this.run, this.t));
         this.take();
     }
 
@@ -95,7 +115,7 @@ export class ScriptedPilot {
 
     tick(): void {
         this.t += DT_MS;
-        this.events.push(...this.run.step(this.sample(this.contact()), this.world));
+        this.record(this.run.step(this.sample(this.contact()), this.world));
         this.take();
     }
 
@@ -197,9 +217,14 @@ export class ScriptedPilot {
         return this.actions.filter((a): a is Extract<RunnerAction, { kind: 'say' }> => a.kind === 'say').map((a) => a.line.key);
     }
 
+    /** the gates, zones and pillars the runner knows */
+    objects(): readonly SonicObject[] {
+        return this.given ?? this.world?.objects() ?? [];
+    }
+
     /** the object of a goal or a gate by id */
     object(id: string): SonicObject {
-        const o = (this.world?.objects() ?? []).find((x) => x.id === id);
+        const o = this.objects().find((x) => x.id === id);
         if (o === undefined) throw new Error(`no object ${id}`);
         return o;
     }

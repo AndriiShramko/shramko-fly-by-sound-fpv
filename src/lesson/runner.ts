@@ -14,11 +14,12 @@
 //
 // An attempt of a lesson without a world (module 0, the ears) is a script: narrated scenes, the
 // headphone check, the glossary, the game "what is it, where is it, is it moving". An attempt of a
-// flying lesson tracks its goals in order (goals.ts). A block is `pass.attempts` attempts; it
-// passes with `pass.required` successes (an attempt succeeds when every goal is met with at most
-// `pass.maxTouches` touches) and ends early once that is reached or out of reach. A blocking lesson
-// is passed after `pass.blocks` passed blocks in a row; a non-blocking one (the game, the shapes,
-// free flight) is done after `pass.blocks` blocks whatever the score, so it never holds anyone back.
+// flying lesson tracks its goals in order (goals.ts). An attempt counts when every goal is met with
+// at most `pass.maxTouches` touches; `pass.required` counted attempts in total pass the lesson, and
+// failures in between do not reset the count (lesson format 2, v0.13: the v0.12 rule of blocks in a
+// row let a pilot fail for ever, docs/wip/s13-lessons.md F1). After `pass.attempts` failures in a row
+// the pilot hears why and, in a blocking lesson, that N goes on to the next lesson; a lesson that does
+// not block (the game, the shapes, free flight) moves on by itself then, so it never holds anyone back.
 import type { Checkpoint, CueEvent, CueId, FlightSample, Goal, LessonDef, LessonProgress, LessonRunner, Locale, MaterialClass, Pose, SessionEvent, SonicFrameInput, SonicObject, SonicWorld, SpeechLine, Vec3 } from '../contract';
 import { DICTS } from '../i18n/dicts';
 import { createTranslator, type Dicts, type Translator } from '../i18n/translator';
@@ -92,6 +93,26 @@ export interface RunnerOptions {
     readonly floorY?: number;
     /** dice of the game's rounds */
     readonly seed?: number;
+    /** the names of the host's keys, as the lines say them ("Press N to go on"); default N, B, Z */
+    readonly keys?: { readonly next?: string; readonly previous?: string; readonly repeat?: string };
+    /** for the negative controls of the tests only: each one brings back a rule of v0.12 that a check must catch */
+    readonly testHooks?: RunnerTestHooks;
+}
+
+/** For the tests' negative controls only. */
+export interface RunnerTestHooks {
+    /**
+     * The block rule of v0.12 with the lesson's v0.12 numbers: `required` successes in a block of `attempts`, `blocks`
+     * blocks in a row, a block that can no longer pass starts again from zero; no reason and no offer to go on.
+     */
+    readonly passRule?: V012PassRule;
+}
+
+/** A lesson's pass rule as v0.12 shipped it (format 1). */
+export interface V012PassRule {
+    readonly attempts: number;
+    readonly required: number;
+    readonly blocks: number;
 }
 
 // ------------------------------------------------------------------ numbers
@@ -185,15 +206,25 @@ class Runner implements LessonSession {
     private interruptNext = false;
     private earsScore = { what: 0, whatAsked: 0, where: 0, whereAsked: 0, moving: 0, movingAsked: 0, answers: [] as (number | null)[] };
     // progress
+    /** attempts and counted attempts of this lesson version, earlier sessions included */
     private attemptsDone: number;
     private successes: number;
-    private blockOk = 0;
-    private blockDone = 0;
-    private consecutive: number;
-    private blocksPlayed = 0;
+    /** counted attempts toward the pass: this sitting's, plus an unfinished earlier sitting's of the same version */
+    private counted: number;
+    /** failed attempts in a row */
+    private failRun = 0;
+    /** the go-on offer was made in this sitting */
+    private offered = false;
+    /** the lesson was passed by its rule (not only ended, as a lesson that does not block may be) */
+    private passedByRule = false;
     private passedValue: boolean;
     private bestTimeMs: number | null;
     private lastAtT = 0;
+    // the v0.12 block rule (testHooks.passRule only)
+    private blockOk = 0;
+    private blockDone = 0;
+    private consecutive = 0;
+    private blocksPlayed = 0;
     // scenes
     private scene: { readonly scene: DemoScene; readonly t0: number } | null = null;
     private readonly sceneWorlds = new Map<string, AnalyticWorldInfo>();
@@ -204,11 +235,24 @@ class Runner implements LessonSession {
         this.tr = createTranslator(options.locale ?? 'en', options.dicts ?? DICTS);
         const p = options.progress ?? null;
         const same = p !== null && p.lessonId === lesson.id;
-        this.attemptsDone = same ? p.attempts : 0;
-        this.successes = same ? p.successes : 0;
-        this.consecutive = same ? p.blocksPassed : 0;
+        // counts carry on within one version of the lesson only: another version has another rule
+        const sameVersion = same && p.version === lesson.version;
+        this.attemptsDone = sameVersion ? p.attempts : 0;
+        this.successes = sameVersion ? p.successes : 0;
         this.passedValue = same ? p.passed : false;
+        this.passedByRule = sameVersion && p.passed && p.blocksPassed > 0;
+        // a lesson passed before is practised afresh; an unfinished one goes on from its count
+        this.counted = sameVersion && !p.passed ? Math.min(p.successes, lesson.pass.required - 1) : 0;
+        this.consecutive = sameVersion ? p.blocksPassed : 0;
         this.bestTimeMs = same ? p.bestTimeMs : null;
+    }
+
+    private get hooks(): RunnerTestHooks {
+        return this.o.testHooks ?? {};
+    }
+
+    private key(which: 'next' | 'previous' | 'repeat'): string {
+        return this.o.keys?.[which] ?? { next: 'N', previous: 'B', repeat: 'Z' }[which];
     }
 
     get phase(): Phase {
@@ -478,7 +522,7 @@ class Runner implements LessonSession {
             if (outcome === null) break;
             this.emit({ t, kind: 'goal', index: this.goalIndex, what: outcome });
             if (outcome === 'missed') {
-                this.endAttempt(false, t);
+                this.endAttempt(false, t, this.whyMissed(false));
                 return;
             }
             this.goalIndex++;
@@ -491,8 +535,17 @@ class Runner implements LessonSession {
         const limit = this.lesson.attemptLimitS;
         if (this.phaseValue === 'flying' && limit !== null && (t - this.attemptT0) / 1000 >= limit) {
             this.emit({ t, kind: 'goal', index: this.goalIndex, what: 'missed' });
-            this.endAttempt(false, t);
+            this.endAttempt(false, t, this.whyMissed(true));
         }
+    }
+
+    /** What went wrong in the attempt now ending: the time ran out, and what the current goal says (at most two short lines). */
+    private whyMissed(outOfTime: boolean): SpeechLine[] {
+        const goal = this.tracker === null ? null : this.tracker.reason();
+        const out: SpeechLine[] = [];
+        if (outOfTime) out.push({ key: 'reason.time' });
+        if (goal !== null) out.push(goal);
+        return out;
     }
 
     private touchMaterial(p: Vec3): MaterialClass {
@@ -514,27 +567,103 @@ class Runner implements LessonSession {
         return best === null ? 'wall' : best.m;
     }
 
-    // -------------------------------------------------------------- attempts and blocks
+    // -------------------------------------------------------------- attempts and the pass rule
 
-    private endAttempt(goalsMet: boolean, t: number): void {
+    /**
+     * An attempt ends. Format 2: it counts when every goal was met with at most `maxTouches` touches;
+     * `required` counted attempts in total pass the lesson (failures in between do not reset the count).
+     * After `attempts` failures in a row the pilot hears why (`why`: the goal's reason) and, in a blocking
+     * lesson, that N goes on to the next lesson; a lesson that does not block moves on by itself then.
+     */
+    private endAttempt(goalsMet: boolean, t: number, why: readonly SpeechLine[] = []): void {
+        if (this.hooks.passRule !== undefined) {
+            this.endAttemptV012(goalsMet, t, this.hooks.passRule);
+            return;
+        }
+        const rule = this.lesson.pass;
+        const touchesOk = rule.maxTouches === null || this.touchCount <= rule.maxTouches;
+        const ok = goalsMet && touchesOk;
+        this.attemptsDone++;
+        if (ok) {
+            this.successes++;
+            this.counted++;
+            this.failRun = 0;
+            this.timedLine(t);
+        } else this.failRun++;
+        this.lessonEvent(ok ? 'attempt-pass' : 'attempt-fail', t);
+        this.tracker = null;
+        if (ok && this.counted >= rule.required) {
+            this.pass(t);
+            return;
+        }
+        const touches: SpeechLine = rule.maxTouches === 0 ? { key: 'reason.touches-none' } : { key: 'reason.touches', params: { n: this.touchCount, limit: rule.maxTouches ?? 0 } };
+        const reasons: SpeechLine[] = ok ? [] : goalsMet ? [touches] : [...why];
+        const offerNow = !ok && this.failRun % rule.attempts === 0;
+        if (offerNow && !rule.blocking) {
+            this.moveOn(t, reasons);
+            return;
+        }
+        this.phaseValue = 'between';
+        if (ok) {
+            if (!this.ears) this.actions.push({ kind: 'cue', event: { kind: 'checkpoint' } });
+        } else if (offerNow) {
+            this.offered = true;
+            this.push({ kind: 'say', lines: [...reasons, { key: 'fly.offer-next', params: { key: this.key('next') } }] });
+        } else {
+            const hints = this.lesson.speech.hints;
+            const hint = hints.length === 0 ? [] : [hints[(this.attemptsDone - 1) % hints.length] as SpeechLine];
+            this.push({ kind: 'say', lines: [this.lesson.speech.retry, ...hint] });
+        }
+        this.push({ kind: 'wait', s: BETWEEN_S });
+    }
+
+    /** A timed course: the time of a counted attempt, and whether it is the best one. */
+    private timedLine(t: number): void {
+        if (!this.lesson.goals.some((g) => g.kind === 'timed-course')) return;
+        const ms = Math.round(t - this.attemptT0);
+        const better = this.bestTimeMs === null || ms < this.bestTimeMs;
+        if (better) this.bestTimeMs = ms;
+        this.actions.push({ kind: 'say', line: { key: better ? 'fly.best-time' : 'fly.time', params: { time: this.tr.duration(ms) } }, interrupt: false });
+    }
+
+    /** The lesson is passed by its rule: the fanfare and the pass line. */
+    private pass(t: number): void {
+        this.passedValue = true;
+        this.passedByRule = true;
+        this.phaseValue = 'passed';
+        // the report counts a `passed` as a pass when the lesson event just before it says the rule was met
+        this.lessonEvent('block-pass', t);
+        this.lessonEvent('passed', t);
+        this.script.length = 0;
+        this.current = null;
+        this.actions.push({ kind: 'cue', event: { kind: 'fanfare' } });
+        this.actions.push({ kind: 'say', line: this.lesson.speech.pass, interrupt: false });
+    }
+
+    /** A lesson that does not block ends after `attempts` failures in a row: it never holds anyone back. */
+    private moveOn(t: number, reasons: readonly SpeechLine[]): void {
+        this.passedValue = true;
+        this.phaseValue = 'passed';
+        this.lessonEvent('passed', t);
+        this.script.length = 0;
+        this.current = null;
+        this.actions.push({ kind: 'cue', event: { kind: 'checkpoint' } });
+        for (const line of [...reasons, { key: 'fly.moving-on' }]) this.actions.push({ kind: 'say', line, interrupt: false });
+    }
+
+    /** The block rule of v0.12, kept only for the negative controls (testHooks.passRule). */
+    private endAttemptV012(goalsMet: boolean, t: number, rule: V012PassRule): void {
         const touchesOk = this.lesson.pass.maxTouches === null || this.touchCount <= this.lesson.pass.maxTouches;
         const ok = goalsMet && touchesOk;
         this.attemptsDone++;
         this.blockDone++;
-        const timed = this.lesson.goals.some((g) => g.kind === 'timed-course');
         if (ok) {
             this.successes++;
             this.blockOk++;
-            if (timed) {
-                const ms = Math.round(t - this.attemptT0);
-                const better = this.bestTimeMs === null || ms < this.bestTimeMs;
-                if (better) this.bestTimeMs = ms;
-                this.actions.push({ kind: 'say', line: { key: better ? 'fly.best-time' : 'fly.time', params: { time: this.tr.duration(ms) } }, interrupt: false });
-            }
+            this.timedLine(t);
         }
         this.lessonEvent(ok ? 'attempt-pass' : 'attempt-fail', t);
         this.tracker = null;
-        const rule = this.lesson.pass;
         const left = rule.attempts - this.blockDone;
         let blockOver = false;
         let blockPassed = false;
@@ -551,10 +680,11 @@ class Runner implements LessonSession {
                 this.consecutive++;
                 this.lessonEvent('block-pass', t);
             } else this.consecutive = 0;
-            done = rule.blocking ? this.consecutive >= rule.blocks : this.blocksPlayed >= rule.blocks;
+            done = this.lesson.pass.blocking ? this.consecutive >= rule.blocks : this.blocksPlayed >= rule.blocks;
         }
         if (done) {
             this.passedValue = true;
+            this.passedByRule = blockPassed;
             this.phaseValue = 'passed';
             this.lessonEvent('passed', t);
             this.script.length = 0;
@@ -836,7 +966,9 @@ class Runner implements LessonSession {
 
     progress(): LessonProgress {
         const lastAt = new Date((this.o.sessionStartMs ?? 0) + Math.max(this.lastAtT, 0)).toISOString();
-        return { lessonId: this.lesson.id, version: this.lesson.version, attempts: this.attemptsDone, successes: this.successes, blocksPassed: this.consecutive, passed: this.passedValue, bestTimeMs: this.bestTimeMs, lastAt };
+        // blocksPassed: 1 once the lesson was passed by its rule (format 2 has no blocks), the blocks in a row under the v0.12 control
+        const blocksPassed = this.hooks.passRule !== undefined ? this.consecutive : this.passedByRule ? 1 : 0;
+        return { lessonId: this.lesson.id, version: this.lesson.version, attempts: this.attemptsDone, successes: this.successes, blocksPassed, passed: this.passedValue, bestTimeMs: this.bestTimeMs, lastAt };
     }
 
     demoFrame(t: number): SonicFrameInput | null {

@@ -251,18 +251,40 @@ function goal(c: Collector, v: unknown, path: string): Goal | undefined {
     }
 }
 
-function passRule(c: Collector, v: unknown, path: string): PassRule | undefined {
+/** The lesson format files were written in before v0.13: its pass rule counted blocks of attempts in a row. */
+export const LESSON_FORMAT_V1 = 'shramko-sonic-lesson/1';
+/** At most this many counted attempts pass a lesson, and at most this many failures in a row come before the go-on offer. */
+export const MAX_REQUIRED = 3;
+export const MAX_FAILS_IN_A_ROW = 3;
+
+/** A format 1 rule ("required of attempts in blocks blocks in a row") as format 2 ("required in total, the offer after attempts failures in a row"). */
+export function migratePassRule(v1: { readonly attempts: number; readonly required: number; readonly blocks: number; readonly maxTouches: number | null; readonly blocking: boolean }): PassRule {
+    const required = Math.max(1, Math.min(MAX_REQUIRED, v1.required * v1.blocks));
+    const attempts = v1.blocking ? MAX_FAILS_IN_A_ROW : Math.max(1, Math.min(MAX_FAILS_IN_A_ROW, v1.attempts * v1.blocks));
+    return { attempts, required, blocks: 1, maxTouches: v1.maxTouches, blocking: v1.blocking };
+}
+
+function passRule(c: Collector, v: unknown, path: string, format: 1 | 2): PassRule | undefined {
     const r = c.record(v, path);
     if (r === null) return undefined;
-    c.keys(r, path, ['attempts', 'required', 'blocks', 'maxTouches', 'blocking']);
-    const attempts = c.number(r.attempts, joinPath(path, 'attempts'), { integer: true, min: 1, max: 100 });
-    const required = c.number(r.required, joinPath(path, 'required'), { integer: true, min: 1, max: 100 });
-    const blocks = c.number(r.blocks, joinPath(path, 'blocks'), { integer: true, min: 1, max: 20 });
+    if (format === 1) {
+        c.keys(r, path, ['attempts', 'required', 'blocks', 'maxTouches', 'blocking']);
+        const attempts = c.number(r.attempts, joinPath(path, 'attempts'), { integer: true, min: 1, max: 100 });
+        const required = c.number(r.required, joinPath(path, 'required'), { integer: true, min: 1, max: 100 });
+        const blocks = c.number(r.blocks, joinPath(path, 'blocks'), { integer: true, min: 1, max: 20 });
+        const maxTouches = orNull(r.maxTouches, () => c.number(r.maxTouches, joinPath(path, 'maxTouches'), { integer: true, min: 0, max: 100 }));
+        const blocking = c.boolean(r.blocking, joinPath(path, 'blocking'));
+        if (attempts !== undefined && required !== undefined && required > attempts) c.add(joinPath(path, 'required'), `must not exceed attempts (${attempts})`);
+        if (attempts === undefined || required === undefined || blocks === undefined || maxTouches === undefined || blocking === undefined) return undefined;
+        return migratePassRule({ attempts, required, blocks, maxTouches, blocking });
+    }
+    c.keys(r, path, ['attempts', 'required', 'maxTouches', 'blocking']);
+    const attempts = c.number(r.attempts, joinPath(path, 'attempts'), { integer: true, min: 1, max: MAX_FAILS_IN_A_ROW });
+    const required = c.number(r.required, joinPath(path, 'required'), { integer: true, min: 1, max: MAX_REQUIRED });
     const maxTouches = orNull(r.maxTouches, () => c.number(r.maxTouches, joinPath(path, 'maxTouches'), { integer: true, min: 0, max: 100 }));
     const blocking = c.boolean(r.blocking, joinPath(path, 'blocking'));
-    if (attempts !== undefined && required !== undefined && required > attempts) c.add(joinPath(path, 'required'), `must not exceed attempts (${attempts})`);
-    if (attempts === undefined || required === undefined || blocks === undefined || maxTouches === undefined || blocking === undefined) return undefined;
-    return { attempts, required, blocks, maxTouches, blocking };
+    if (attempts === undefined || required === undefined || maxTouches === undefined || blocking === undefined) return undefined;
+    return { attempts, required, blocks: 1, maxTouches, blocking };
 }
 
 function checkpoint(c: Collector, v: unknown, path: string): Checkpoint | undefined {
@@ -283,7 +305,9 @@ export function validateLesson(input: unknown): Validation<LessonDef> {
     const r = c.record(input, '');
     if (r === null) return c.result(undefined as never);
     c.keys(r, '', TOP);
-    if (r.format !== FORMATS.lesson && r.format !== undefined) c.add('format', `must be '${FORMATS.lesson}', got ${JSON.stringify(r.format)}`);
+    // format 1 (v0.12 and before) is read and migrated to format 2 (its pass rule counted blocks of attempts in a row)
+    const format: 1 | 2 = r.format === LESSON_FORMAT_V1 ? 1 : 2;
+    if (r.format !== FORMATS.lesson && r.format !== LESSON_FORMAT_V1 && r.format !== undefined) c.add('format', `must be '${FORMATS.lesson}' (or '${LESSON_FORMAT_V1}', migrated on load), got ${JSON.stringify(r.format)}`);
     const id = c.string(r.id, 'id', { min: 1, max: 40, pattern: LESSON_ID, patternHint: 'must be lower-case letters and digits in groups joined by single hyphens' });
     const version = c.number(r.version, 'version', { integer: true, min: 1 });
     const module = c.number(r.module, 'module', { integer: true, min: 0, max: MODULES.length - 1 });
@@ -307,7 +331,7 @@ export function validateLesson(input: unknown): Validation<LessonDef> {
             if (out.length === arr.length) goals = out;
         }
     }
-    const pass = r.pass === undefined ? undefined : passRule(c, r.pass, 'pass');
+    const pass = r.pass === undefined ? undefined : passRule(c, r.pass, 'pass', format);
     let checkpoints: Checkpoint[] | undefined;
     if (r.checkpoints !== undefined) {
         const arr = c.array(r.checkpoints, 'checkpoints', { max: 50 });
@@ -372,9 +396,10 @@ export function parseLesson(text: string): Validation<LessonDef> {
     return validateLesson(value);
 }
 
-/** The canonical text of a lesson file (sorted keys, two spaces, one final newline). */
+/** The canonical text of a lesson file in format 2 (sorted keys, two spaces, one final newline; the pass rule has no `blocks`). */
 export function writeLesson(lesson: LessonDef): string {
-    return `${canonicalPretty(lesson)}\n`;
+    const { blocks: _blocks, ...pass } = lesson.pass;
+    return `${canonicalPretty({ ...lesson, format: FORMATS.lesson, pass })}\n`;
 }
 
 // ------------------------------------------------------------------ paths

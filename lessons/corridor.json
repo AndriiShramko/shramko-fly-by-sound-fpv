@@ -57,7 +57,7 @@
     }
   ],
   "fastPath": true,
-  "format": "shramko-sonic-lesson/1",
+  "format": "shramko-sonic-lesson/2",
   "goals": [
     {
       "kind": "fly-distance",
@@ -97,11 +97,10 @@
   "module": 4,
   "order": 12,
   "pass": {
-    "attempts": 4,
+    "attempts": 3,
     "blocking": true,
-    "blocks": 1,
-    "maxTouches": 2,
-    "required": 3
+    "maxTouches": null,
+    "required": 1
   },
   "speech": {
     "hints": [
@@ -123,7 +122,7 @@
   "title": {
     "key": "lesson.corridor.title"
   },
-  "version": 1,
+  "version": 2,
   "world": {
     "kind": "analytic",
     "spec": {

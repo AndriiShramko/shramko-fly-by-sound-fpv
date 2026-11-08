@@ -184,7 +184,7 @@ describe('review D3: the headphone check is about left and right, not about fron
 });
 
 describe('review D4: the report does not call an optional lesson passed when no attempt was', () => {
-    // shapes-square is not blocking: after its block of 3 attempts the runner ends it ("passed") whatever the score
+    // shapes-square is not blocking: after 3 failed attempts in a row the runner ends it ("passed") whatever the score
     const run = async (fly: boolean): Promise<Report> => {
         const host = new RecordingHost(getLesson('shapes-square'));
         host.begin();
@@ -206,7 +206,7 @@ describe('review D4: the report does not call an optional lesson passed when no 
 
     it('a block in which every attempt failed is not a pass', async () => {
         const r = await run(false);
-        expect(r.attempts.map((a) => a.result)).toEqual(['fail', 'fail']); // 2 of 3 needed: the block ends once it is out of reach
+        expect(r.attempts.map((a) => a.result)).toEqual(['fail', 'fail', 'fail']); // 2 counted needed: it moves on after 3 failures in a row
         expect(r.outcome.success).toBe(false);
         expect(r.outcome.status).toBe('not-passed');
         expect(r.outcome.passedAtMs).toBeNull();

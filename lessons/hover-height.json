@@ -11,7 +11,7 @@
   "attemptLimitS": 60,
   "checkpoints": [],
   "fastPath": true,
-  "format": "shramko-sonic-lesson/1",
+  "format": "shramko-sonic-lesson/2",
   "goals": [
     {
       "bandM": [2, 3],
@@ -46,11 +46,10 @@
   "module": 1,
   "order": 5,
   "pass": {
-    "attempts": 5,
+    "attempts": 3,
     "blocking": true,
-    "blocks": 1,
     "maxTouches": null,
-    "required": 4
+    "required": 3
   },
   "speech": {
     "hints": [
@@ -72,7 +71,7 @@
   "title": {
     "key": "lesson.hover-height.title"
   },
-  "version": 1,
+  "version": 2,
   "world": {
     "kind": "analytic",
     "spec": {

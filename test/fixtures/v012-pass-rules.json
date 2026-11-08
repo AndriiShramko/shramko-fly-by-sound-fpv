@@ -1,0 +1,152 @@
+{
+  "about": "The pass rules the lessons shipped with in v0.12 (lesson format 1, git main 7d4b4b9): the numbers the v0.12 block rule control runs with (RunnerOptions.testHooks.passRule).",
+  "rules": {
+    "ears-headphones": {
+      "attempts": 1,
+      "blocking": true,
+      "blocks": 1,
+      "maxTouches": null,
+      "required": 1
+    },
+    "ears-glossary": {
+      "attempts": 1,
+      "blocking": false,
+      "blocks": 1,
+      "maxTouches": null,
+      "required": 1
+    },
+    "ears-walls": {
+      "attempts": 1,
+      "blocking": false,
+      "blocks": 1,
+      "maxTouches": null,
+      "required": 1
+    },
+    "ears-shapes": {
+      "attempts": 1,
+      "blocking": false,
+      "blocks": 1,
+      "maxTouches": null,
+      "required": 1
+    },
+    "ears-game": {
+      "attempts": 1,
+      "blocking": false,
+      "blocks": 2,
+      "maxTouches": null,
+      "required": 1
+    },
+    "hover-height": {
+      "attempts": 5,
+      "blocking": true,
+      "blocks": 1,
+      "maxTouches": null,
+      "required": 4
+    },
+    "hover-turn": {
+      "attempts": 5,
+      "blocking": true,
+      "blocks": 1,
+      "maxTouches": null,
+      "required": 4
+    },
+    "move-speed": {
+      "attempts": 5,
+      "blocking": true,
+      "blocks": 1,
+      "maxTouches": null,
+      "required": 4
+    },
+    "move-stop": {
+      "attempts": 10,
+      "blocking": true,
+      "blocks": 1,
+      "maxTouches": null,
+      "required": 8
+    },
+    "walls-hall": {
+      "attempts": 10,
+      "blocking": true,
+      "blocks": 1,
+      "maxTouches": 1,
+      "required": 8
+    },
+    "walls-pillar": {
+      "attempts": 5,
+      "blocking": true,
+      "blocks": 1,
+      "maxTouches": 1,
+      "required": 4
+    },
+    "walls-row": {
+      "attempts": 5,
+      "blocking": true,
+      "blocks": 1,
+      "maxTouches": 0,
+      "required": 4
+    },
+    "corridor": {
+      "attempts": 4,
+      "blocking": true,
+      "blocks": 1,
+      "maxTouches": 2,
+      "required": 3
+    },
+    "rings-first": {
+      "attempts": 10,
+      "blocking": true,
+      "blocks": 1,
+      "maxTouches": null,
+      "required": 8
+    },
+    "rings-line": {
+      "attempts": 5,
+      "blocking": true,
+      "blocks": 1,
+      "maxTouches": null,
+      "required": 4
+    },
+    "rings-small": {
+      "attempts": 5,
+      "blocking": true,
+      "blocks": 1,
+      "maxTouches": null,
+      "required": 3
+    },
+    "rings-course": {
+      "attempts": 3,
+      "blocking": true,
+      "blocks": 1,
+      "maxTouches": 0,
+      "required": 1
+    },
+    "shapes-square": {
+      "attempts": 3,
+      "blocking": false,
+      "blocks": 1,
+      "maxTouches": null,
+      "required": 2
+    },
+    "shapes-series": {
+      "attempts": 3,
+      "blocking": false,
+      "blocks": 1,
+      "maxTouches": null,
+      "required": 2
+    },
+    "shapes-cube": {
+      "attempts": 3,
+      "blocking": false,
+      "blocks": 1,
+      "maxTouches": null,
+      "required": 2
+    },
+    "free-garden": {
+      "attempts": 3,
+      "blocking": false,
+      "blocks": 1,
+      "maxTouches": null,
+      "required": 1
+    }
+  }
+}

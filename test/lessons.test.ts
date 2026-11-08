@@ -158,3 +158,53 @@ describe('the lesson loader refuses a bad lesson with its reason (negative contr
         expect(validatePaths({ ...p, fast: [...p.fast, 'no-such'] }).ok).toBe(false);
     });
 });
+
+describe('lesson format 2 and the files of format 1 (v0.12)', () => {
+    const current = (id: string): Record<string, unknown> => JSON.parse(read(`${id}.json`)) as Record<string, unknown>;
+    /** the file as v0.12 wrote it: format 1, its block rule */
+    const asV1 = (id: string, pass: Record<string, unknown>): Record<string, unknown> => ({ ...current(id), format: 'shramko-sonic-lesson/1', version: 1, pass });
+
+    it('reads a format 1 file and migrates its block rule: r = min(3, required x blocks), the offer after 3 failures in a row', () => {
+        const turn = validateLesson(asV1('hover-turn', { attempts: 5, required: 4, blocks: 1, maxTouches: null, blocking: true }));
+        expect(turn.ok).toBe(true);
+        if (!turn.ok) return;
+        expect(turn.value.format).toBe('shramko-sonic-lesson/2');
+        expect(turn.value.pass).toEqual({ attempts: 3, required: 3, blocks: 1, maxTouches: null, blocking: true });
+        // a lesson that does not block: its attempts, at most 3, are the failures in a row after which it moves on
+        const game = validateLesson(asV1('ears-game', { attempts: 1, required: 1, blocks: 2, maxTouches: null, blocking: false }));
+        expect(game.ok && game.value.pass).toEqual({ attempts: 2, required: 2, blocks: 1, maxTouches: null, blocking: false });
+        const course = validateLesson(asV1('rings-course', { attempts: 3, required: 1, blocks: 1, maxTouches: 0, blocking: true }));
+        expect(course.ok && course.value.pass).toEqual({ attempts: 3, required: 1, blocks: 1, maxTouches: 0, blocking: true });
+        const old = validateLesson(asV1('hover-height', { attempts: 10, required: 8, blocks: 1, maxTouches: null, blocking: true }));
+        expect(old.ok && old.value.pass.required).toBe(3);
+        // and a migrated lesson is written back in format 2, which reads as the same lesson
+        if (old.ok) {
+            const again = parseLesson(writeLesson(old.value));
+            expect(again.ok && again.value).toEqual(old.value);
+            expect(writeLesson(old.value)).toContain('"format": "shramko-sonic-lesson/2"');
+            expect(writeLesson(old.value)).not.toContain('"blocks"');
+        }
+    });
+
+    it('refuses a format 2 rule that would trap a pilot: more than 3 to pass, more than 3 failures before the offer, blocks', () => {
+        const paths = (pass: Record<string, unknown>): string[] => {
+            const r = validateLesson({ ...current('hover-turn'), pass });
+            return r.ok ? [] : r.issues.map((i) => i.path);
+        };
+        expect(paths({ attempts: 3, required: 3, maxTouches: null, blocking: true })).toEqual([]);
+        expect(paths({ attempts: 3, required: 4, maxTouches: null, blocking: true })).toContain('pass.required');
+        expect(paths({ attempts: 4, required: 3, maxTouches: null, blocking: true })).toContain('pass.attempts');
+        expect(paths({ attempts: 3, required: 3, blocks: 1, maxTouches: null, blocking: true })).toContain('pass.blocks');
+        expect(validateLesson({ ...current('hover-turn'), format: 'shramko-sonic-lesson/9' }).ok).toBe(false);
+    });
+
+    it('every shipped lesson is format 2, version 2 (v0.12 recordings of version 1 are told apart by the replay)', () => {
+        for (const id of SHIPPED_LESSON_IDS) {
+            const l = getLesson(id);
+            expect(current(id)['format'], id).toBe('shramko-sonic-lesson/2');
+            expect(l.version, id).toBe(2);
+            expect(l.pass.required, id).toBeLessThanOrEqual(3);
+            expect(l.pass.attempts, id).toBeLessThanOrEqual(3);
+        }
+    });
+});

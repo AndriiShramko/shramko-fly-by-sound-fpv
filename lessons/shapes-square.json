@@ -11,7 +11,7 @@
   "attemptLimitS": 60,
   "checkpoints": [],
   "fastPath": false,
-  "format": "shramko-sonic-lesson/1",
+  "format": "shramko-sonic-lesson/2",
   "goals": [
     {
       "gateIds": [
@@ -48,7 +48,6 @@
   "pass": {
     "attempts": 3,
     "blocking": false,
-    "blocks": 1,
     "maxTouches": null,
     "required": 2
   },
@@ -72,7 +71,7 @@
   "title": {
     "key": "lesson.shapes-square.title"
   },
-  "version": 1,
+  "version": 2,
   "world": {
     "kind": "analytic",
     "spec": {

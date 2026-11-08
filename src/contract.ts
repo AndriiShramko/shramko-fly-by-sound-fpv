@@ -45,7 +45,8 @@ export interface SpeechLine {
 
 /** Format identifiers of every file this contract describes; a breaking change is a new number. */
 export const FORMATS = {
-    lesson: 'shramko-sonic-lesson/1',
+    /** format 2 (v0.13): the pass rule counts in total; files of format 1 are migrated on load (src/lesson/validate.ts) */
+    lesson: 'shramko-sonic-lesson/2',
     track: 'shramko-sonic-track/1',
     theme: 'shramko-sonic-theme/1',
     prefs: 'shramko-sonic-prefs/1',
@@ -332,14 +333,23 @@ export type Goal =
     | { readonly kind: 'name-shape'; readonly objectId: string }
     | { readonly kind: 'timed-course'; readonly laps: number };
 
-/** "k of n attempts, in b blocks in a row, with at most m touches each". */
+/**
+ * Lesson format 2: "r counted attempts in total, with at most m touches each". Failures in between do
+ * not reset the count. After `attempts` failed attempts in a row the pilot hears why; a blocking
+ * lesson then offers the next lesson (and offers it again after every further `attempts` in a row), a
+ * lesson that does not block moves on by itself. Format 1 ("k of n attempts in b blocks in a row") is
+ * migrated on load: required = min(3, required x blocks), attempts = 3 (blocking) or min(3, attempts x blocks).
+ */
 export interface PassRule {
+    /** failed attempts in a row after which the pilot hears why and is offered to go on (1 to 3) */
     readonly attempts: number;
+    /** counted attempts in total that pass the lesson (1 to 3) */
     readonly required: number;
+    /** format 1 only (blocks in a row); 1 in format 2 */
     readonly blocks: number;
-    /** touches allowed in a successful attempt; null = any */
+    /** touches allowed in a counted attempt; null = any */
     readonly maxTouches: number | null;
-    /** false: the lesson never blocks progress (the "what is it, where is it" game) */
+    /** false: the lesson never holds anyone back (the game, the shapes, free flight) */
     readonly blocking: boolean;
 }
 

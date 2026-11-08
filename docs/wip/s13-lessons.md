@@ -6,7 +6,7 @@ from `main` 7d4b4b9. No push. Every step one commit with this Status in it.
 ## Status
 
 - [x] 1. Lane doc, facts of M41-8 and M41-9 reproduced in Node (`test/pass-rule.test.ts`, `test/lesson-schedule.test.ts`)
-- [ ] 2. Pass rule: r counted attempts in total, the reason and the go-on offer after 3 failures in a row, lesson format 2
+- [x] 2. Pass rule: r counted attempts in total, the reason and the go-on offer after 3 failures in a row, lesson format 2
 - [ ] 3. Progress line after every attempt and the progress view (I, the host's panel)
 - [ ] 4. Navigation: next step, previous step, next lesson (skipped), previous lesson, repeat the task
 - [ ] 5. Every named sound three times with no speech over it; validator rule and schedule check
@@ -85,6 +85,32 @@ lesson's layers on while frames run and silences them while the flight is paused
 `runner.spoken(t)` with a `speech.end` marker whenever its whole queue runs empty (`bridge.ts` 377-418, 443-451). That is
 all a scene needs to sound; no host defect causes M41-9. The host's own lines (the recorder's notices, I, the coarse
 walls line) go through the same queue, so the fix (wait for the report) also waits for them.
+
+## Done
+
+### Step 2: the pass rule (M41-8)
+
+- Lesson format 2 (`FORMATS.lesson`, `src/lesson/validate.ts`): `pass` is `{ required, attempts, maxTouches, blocking }`.
+  `required` (1 to 3) counted attempts in total pass the lesson, failures in between do not reset; `attempts` (1 to 3)
+  failures in a row bring the reason and, in a blocking lesson, "Press N to go on to the next lesson" (again after
+  every further `attempts` in a row), while a lesson that does not block moves on by itself ("Let's go on to the next
+  lesson"). Format 1 files are read and migrated: required = min(3, required x blocks), attempts = 3 (blocking) or
+  min(3, attempts x blocks). `LessonDef.pass.blocks` stays in the type, always 1.
+- Every shipped lesson is format 2 and version 2. hover-*, move-*, walls-*, rings-first/line/small: 3 counted;
+  corridor and rings-course 1 (corridor: touches no longer fail it, a touch sends the craft back to the last checkpoint);
+  shapes-*: 2 (do not block); ears-headphones 1; ears-game 1 (moves on after 2 failed games).
+- Each goal says why it was not met (`GoalTracker.reason()`): above or below the band and for what share of the time,
+  the sound still left or right or behind, past or short of the zone, stopped too far, part of the circle, metres flown,
+  the gate missed, touches, the time. Spoken before the offer.
+- Tests (`test/pass-rule.test.ts`, truth bot `test/helpers/truth.ts`): the truth bot passes every shipped flying lesson
+  in exactly r attempts with no touch; a pilot who fails every other attempt passes each in at most 2 x r; an idle pilot
+  never runs more than 3 failed attempts in a row without the reason and the offer, in every shipped lesson; the
+  front/back pilot passes hover-turn at attempt 5; 200 coin pilots (6 in 10) pass hover-height in 5 at the median.
+  Controls (the v0.12 block rule with the v0.12 numbers, `test/fixtures/v012-pass-rules.json`): the front/back pilot
+  never passes in 15, the every-other pilot never passes hover-turn, an idle pilot gets no offer, the coin pilots need 9
+  at the median. Migration: `test/lessons.test.ts`.
+- Replays: a v0.12 recording (lesson version 1) replayed now is reported "lesson X is version 2 here, the session was
+  flown with 1" (`test/replay.test.ts`); it does not verify, by design: the rules changed.
 
 ## Needs from the simulator
 
