@@ -58,7 +58,13 @@ and the corridor's goal (s13-lessons' "For the lead's merge" item 2, review R5) 
   intro.1, measured 8.64 s as in the fixture): 4.56, 4.92 and 7.515 s; the schedule test's recorded fact is now 263
   of the 376 English lines longer than the estimate (262 before, with the old lines). No person has heard the new
   lines yet; es, pl and ru have no local voice on this machine (s13-sound's M4).
-- [ ] 4f. `docs/design/virtual-listener.md` section 14 without the build machine's folders
+- [x] 4f. `docs/design/virtual-listener.md` without the build machine's install folders (review m8 of s13-sound). The
+  install steps are the document's section 8, "Install" (it has sections 0 to 13 and Sources; the "section 14" of the
+  merge brief is that one): the commands, the environment line and the probe environments now use `<venv>`,
+  `<cache>`, `<tools>` and `<downloads>`, defined above the block as `tools/listen/requirements.txt` has them, and
+  `7z` for 7-Zip's command line. No drive-letter folder is left but `GPU_LOCK`'s default `C:/dev/.gpu-lock` in
+  section 6.5, which is the default in the code itself (`tools/listen.ts`, the proofs on `main`), so it stays.
+  `test/docs.test.ts` 8 of 8.
 - [ ] 5. Full checks on the final commit: typecheck, test, locale lint, layout check, proof:audio, listen
 - [ ] 6. Final status: what merged, the conflicts, the merge items with their commits, the checks with numbers, what
   waits for s13-worlds, what each lane needs from the simulator

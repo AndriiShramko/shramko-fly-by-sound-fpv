@@ -372,25 +372,25 @@ All the code is this repository's own, under its MIT licence. Rules:
 
 ## 8. Install
 
-On the build machine (Windows 10, no admin rights, everything on the data disk; Node 22 and Python 3.11 on the path):
+On the build machine (Windows 10, no admin rights, everything on the data disk; Node 22 and Python 3.11 on the path). The folders are placeholders, as in `tools/listen/requirements.txt`: `<venv>` the Python environment, `<cache>` the rig's cache, `<tools>` Octave and AMT, `<downloads>` a scratch folder, all on the data disk; `7z` is 7-Zip's command line.
 
 ```
-python -m venv U:/venvs/shramko-listen
-U:/venvs/shramko-listen/Scripts/python -m pip install -r tools/listen/requirements.lock
-U:/venvs/shramko-listen/Scripts/python -m pip install --no-deps pyclarity==0.9.0
-U:/venvs/shramko-listen/Scripts/python -m pip install --no-deps -e tools/listen
-curl -L -o U:/Temp/octave.7z https://ftp.man.poznan.pl/gnu/octave/windows/octave-9.4.0-w64-64.7z
-"C:/Program Files/7-Zip/7z.exe" x U:/Temp/octave.7z -oU:/tools
-curl -L -o U:/Temp/amt.zip "https://downloads.sourceforge.net/project/amtoolbox/AMT%201.x/amtoolbox-full-1.6.0.zip"
-unzip U:/Temp/amt.zip -d U:/tools/amt
-U:/venvs/shramko-listen/Scripts/python -X utf8 -m shramko_listen panel fetch
-U:/venvs/shramko-listen/Scripts/python -X utf8 -m shramko_listen whisper fetch
-U:/venvs/shramko-listen/Scripts/python -X utf8 -m shramko_listen doctor
+python -m venv <venv>
+<venv>/Scripts/python -m pip install -r tools/listen/requirements.lock
+<venv>/Scripts/python -m pip install --no-deps pyclarity==0.9.0
+<venv>/Scripts/python -m pip install --no-deps -e tools/listen
+curl -L -o <downloads>/octave.7z https://ftp.man.poznan.pl/gnu/octave/windows/octave-9.4.0-w64-64.7z
+7z x <downloads>/octave.7z -o<tools>
+curl -L -o <downloads>/amt.zip "https://downloads.sourceforge.net/project/amtoolbox/AMT%201.x/amtoolbox-full-1.6.0.zip"
+unzip <downloads>/amt.zip -d <tools>/amt
+<venv>/Scripts/python -X utf8 -m shramko_listen panel fetch
+<venv>/Scripts/python -X utf8 -m shramko_listen whisper fetch
+<venv>/Scripts/python -X utf8 -m shramko_listen doctor
 ```
 
 - `requirements.lock` pins: numpy 2.4.6, scipy 1.17.1, numba 0.68.1, soundfile 0.14.0, matplotlib 3.11.2, sofar 1.3.0, pyfar 0.8.1, spaudiopy 0.2.0, bayesian_listener 0.3.0, mosqito 1.2.1, pystoi 0.4.1, pyloudnorm 0.2.0, jiwer 4.0.0, faster-whisper 1.2.1, ctranslate2 4.8.5, dissonant 0.1.1. Each was installed in one of the two probe environments; together they resolve without a conflict (`pip install --dry-run` on 2026-11-08: 71 packages). `pyclarity` goes in with `--no-deps`: its declared dependencies pull torch, hydra and about twenty more.
-- Environment: `SHRAMKO_LISTEN_CACHE=U:/cache/shramko-listen`, `SHRAMKO_LISTEN_PY=U:/venvs/shramko-listen/Scripts/python.exe`, `SHRAMKO_OCTAVE=U:/tools/octave-9.4.0-w64-64/mingw64/bin/octave-cli.exe`, `SHRAMKO_AMT=U:/tools/amt/amtoolbox-1.6.0`; `HF_HOME` and `PIP_CACHE_DIR` on the data disk too.
-- Sizes: Octave 436 MB to fetch (249 s from the Poznan mirror; ftp.gnu.org gave 0.3 MB/s), 2.5 GB unpacked; AMT 14 MB, 35 MB unpacked; the environment about 3.3 GB (the two probe environments were 2.6 GB and 0.67 GB); Whisper large-v3 2.9 GB; the 26-head panel 65 MB (SONICOM not measured yet); renders up to about 40 GB per full tier (estimate). The probe environments (`U:/venvs/vl-research`, `U:/venvs/vl-spatial`) and their pip cache (1.5 GB) can go once this one works.
+- Environment: `SHRAMKO_LISTEN_CACHE=<cache>`, `SHRAMKO_LISTEN_PY=<venv>/Scripts/python.exe`, `SHRAMKO_OCTAVE=<tools>/octave-9.4.0-w64-64/mingw64/bin/octave-cli.exe`, `SHRAMKO_AMT=<tools>/amt/amtoolbox-1.6.0`; `HF_HOME` and `PIP_CACHE_DIR` on the data disk too.
+- Sizes: Octave 436 MB to fetch (249 s from the Poznan mirror; ftp.gnu.org gave 0.3 MB/s), 2.5 GB unpacked; AMT 14 MB, 35 MB unpacked; the environment about 3.3 GB (the two probe environments were 2.6 GB and 0.67 GB); Whisper large-v3 2.9 GB; the 26-head panel 65 MB (SONICOM not measured yet); renders up to about 40 GB per full tier (estimate). The two probe environments (`vl-research` and `vl-spatial`, beside `<venv>`) and their pip cache (1.5 GB) can go once this one works.
 - Traps found by the probes: run Python with `-X utf8` (`bayesian_listener` crashes on a cp1252 console); MoSQITo 1.2.1 imports matplotlib without declaring it; `dissonant.pitch_to_freq(60)` returns 14 080 Hz; SOFAload's "Invalid UTF-8" warnings are harmless; the AMT page gives S = 1 for `baumgartner2014`, the code's default is 0.7; `ctranslate2` 4.8.5 carries cuDNN 9 and the machine has CUDA 12.6 and 12.9, so the nvidia wheels (1.25 GB) are not needed here; Chrome's HRTF slices must be requested 1 degree above; PowerShell files ASCII only.
 
 ## 9. Speed and cost, measured and estimated
