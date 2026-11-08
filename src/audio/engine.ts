@@ -88,7 +88,10 @@ const HARMONY_GAIN = 0.8;
 // at any volume of the simulator's slider within a few dB, so one level sits it under the cues; the pilot's own
 // motor level (SonicPrefs.motorGainDb) comes after it; it ducks under speech by the theme's duckDb and under an
 // urgent hazard as the other layers do.
-/** Low-pass cutoff of the motor, Hz (second order). */
+/**
+ * Low-pass cutoff of the motor, Hz (fourth order since review E5 of lane s13-elev: the second order left a micro motor
+ * 5.7 to 9 dB under the breath of air over the floor, the ceiling and the chime at 4 to 5 kHz, not the 12 dB above).
+ */
 export const MOTOR_LOWPASS_HZ = 2000;
 /** High-pass cutoff of the motor, Hz (fourth order, two second-order sections): a micro rotor's turning note goes, its whine stays. */
 export const MOTOR_HIGHPASS_HZ = 1100;
@@ -580,10 +583,13 @@ export class FlyBySoundEngine implements SonicEngine {
             f.Q.value = q;
             return f;
         }) as [BiquadFilterNode, BiquadFilterNode];
-        const motorLp = ctx.createBiquadFilter();
-        motorLp.type = 'lowpass';
-        motorLp.frequency.value = MOTOR_LOWPASS_HZ;
-        motorLp.Q.value = Math.SQRT1_2;
+        const [motorLp, motorLp2] = BUTTERWORTH_4_Q.map((q) => {
+            const f = ctx.createBiquadFilter();
+            f.type = 'lowpass';
+            f.frequency.value = MOTOR_LOWPASS_HZ;
+            f.Q.value = q;
+            return f;
+        }) as [BiquadFilterNode, BiquadFilterNode];
         const leveller = ctx.createDynamicsCompressor();
         leveller.threshold.value = MOTOR_LEVELLER.thresholdDb;
         leveller.knee.value = MOTOR_LEVELLER.kneeDb;
@@ -599,7 +605,8 @@ export class FlyBySoundEngine implements SonicEngine {
         else motorIn.connect(motorHp);
         motorHp.connect(motorHp2);
         motorHp2.connect(motorLp);
-        motorLp.connect(leveller);
+        motorLp.connect(motorLp2);
+        motorLp2.connect(leveller);
         leveller.connect(motorLevel);
         motorLevel.connect(motorGate);
         motorGate.connect(motorDuck);

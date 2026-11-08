@@ -292,7 +292,8 @@ function scenarioOf(req: RenderRequest): Scenario {
             return {
                 seconds: GAPS_HOLD_S + total / GAPS_SPEED + 0.5,
                 layers: GAPS.layers,
-                prefs: base,
+                // 'direction-off': Sound from above and below off, so no voice has the breath (the breath's own effect)
+                prefs: { ...base, heightDirection: req.variant !== 'direction-off' },
                 world: GAPS.world,
                 frame: (t) => {
                     const { pos, vel } = alongGaps((t - GAPS_HOLD_S) * GAPS_SPEED, GAPS_SPEED);

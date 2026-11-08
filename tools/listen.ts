@@ -66,6 +66,7 @@ export function jobs(): Job[] {
     // review E5 of lane s13-elev: tunnel-gaps flown, the chime above and below, the ceiling and the floor with their
     // breath, under speech and over the motor, in each theme (VL-6); its stems, every craft's motor and the control (VL-2)
     for (const theme of ['soft', 'clear', 'race'] as const) add(`gaps-${theme}`, { scenario: 'gaps-flight', theme, variant: null, solo: null });
+    for (const theme of ['soft', 'clear', 'race'] as const) add(`gaps-${theme}-direction-off`, { scenario: 'gaps-flight', theme, variant: 'direction-off', solo: null });
     for (const s of GAPS_STEMS) add(`gaps-soft-solo-${s}`, { scenario: 'gaps-flight', theme: 'soft', variant: null, solo: [s] });
     add('gaps-soft-motor-raw-60-solo-motor', { scenario: 'gaps-flight', theme: 'soft', variant: 'motor-raw-60', solo: ['motor'] });
     for (const craft of CRAFT_IDS) if (craft !== DEFAULT_CRAFT) add(`gaps-soft-solo-motor-${craft}`, { scenario: 'gaps-flight', theme: 'soft', variant: null, solo: ['motor'], craft });

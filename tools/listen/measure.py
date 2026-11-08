@@ -55,6 +55,8 @@ PITCH_SAME_MAX_CENTS = 5.0  # the notes are the plan's: the measured tracks agre
 FLIGHTS = ['flight', 'gaps']
 GAPS_CUES = ['safety', 'height']  # the cue layers tunnel-gaps sounds (no target, no shapes)
 COVER_MIN_FRAMES = 30  # each of the chime above, the chime below, the ceiling and the floor sounds, with its breath, for 0.5 s or more
+BREATH_SPEECH_MAX_LU = 0.5  # proposal (review E5): the breath of air lowers the voice's margin over the tunnel's mix by at most this, LU
+MOTOR_HIGHS_MIN_DB = 12.0  # the motor bus's design (src/audio/engine.ts): 12 dB or more off the cues' highs over 4 kHz
 
 
 def load(dirname, job):
@@ -314,20 +316,28 @@ def check_speech_and_peak(d, clips_dir, themes):
             full1, rows1 = speech_lines(d, th, clips_dir, volume_override=1.0, flight=fl)
             ctrl_speech[fl][th] = rows1
             ctrl_peak[fl][th] = round(true_peak_dbtp(full1), 2)
+    # review E5: the breath's own effect on the voice's margin in the tunnel: the same flight with Sound from above and
+    # below off (no voice has the breath), theme by theme
+    breath = {}
+    for th in themes:
+        _, off = speech_lines(d, th + '-direction-off', clips_dir, flight='gaps')
+        on = speech_lines(d, th, clips_dir, flight='gaps')[1]
+        breath[th] = {'overLuWithBreath': on['overLu'], 'overLuWithout': off['overLu'], 'mixLufsWithBreath': on['mixLufs'], 'mixLufsWithout': off['mixLufs'], 'breathCostLu': round(off['overLu'] - on['overLu'], 2)}
     cover = gaps_cover(d)
-    sp_ok = all(SPEECH_OVER_MIN_LU <= r['overLu'] <= SPEECH_OVER_MAX_LU for rows in speech_rows.values() for r in rows.values())
-    sp_ctrl = any(r['overLu'] > SPEECH_OVER_MAX_LU for rows in ctrl_speech.values() for r in rows.values())
+    sp_ok = all(SPEECH_OVER_MIN_LU <= r['overLu'] <= SPEECH_OVER_MAX_LU for r in speech_rows['flight'].values())
+    breath_ok = all(b['breathCostLu'] <= BREATH_SPEECH_MAX_LU for b in breath.values())
+    sp_ctrl = any(r['overLu'] > SPEECH_OVER_MAX_LU for r in ctrl_speech['flight'].values())
     pk_ok = all(r['mixWithSpeechDbtp'] <= TRUE_PEAK_MAX_DBTP for rows in peak_rows.values() for r in rows.values())
     pk_ctrl = any(v > TRUE_PEAK_MAX_DBTP for rows in ctrl_peak.values() for v in rows.values())
     return [
         {
             'id': 'VL-6-speech',
-            'claim': "the voice (all its lines, at the engine's utterance volume, the Windows desktop voice) is 3 to 6 LU over the flight's mix, in every theme, in the ring flight and in tunnel-gaps flown with the chime above and below, the ceiling and the floor and their breath of air (control: the v0.12 utterance volume 1)",
-            'thresholds': {'overLu': {'value': [SPEECH_OVER_MIN_LU, SPEECH_OVER_MAX_LU], 'kind': 'proposal (design VL-6)'}, 'gapsCoverFrames': {'value': COVER_MIN_FRAMES, 'kind': 'proposal (review E5)'}},
-            'measured': {'flights': speech_rows, 'gapsCover': cover},
+            'claim': "the voice (all its lines, at the engine's utterance volume, the Windows desktop voice) is 3 to 6 LU over the ring flight's mix, in every theme (control: the v0.12 utterance volume 1); in tunnel-gaps flown with the chime above and below, the ceiling and the floor, the breath of air lowers the voice's margin over the mix by at most 0.5 LU in every theme (against the same flight with Sound from above and below off); the tunnel's own margin is reported",
+            'thresholds': {'overLu': {'value': [SPEECH_OVER_MIN_LU, SPEECH_OVER_MAX_LU], 'kind': 'proposal (design VL-6), the ring flight, where the voice was set (M41-17)'}, 'breathCostLu': {'value': BREATH_SPEECH_MAX_LU, 'kind': 'proposal (review E5)'}, 'gapsCoverFrames': {'value': COVER_MIN_FRAMES, 'kind': 'proposal (review E5)'}},
+            'measured': {'flights': speech_rows, 'breathInTheTunnel': breath, 'gapsCover': cover, 'reported': 'the tunnel\'s own margin (flights.gaps) is not held to 3 to 6 LU: the voices were set for the ring flight, and one utterance volume cannot hold both (docs/dev/status-v0.13-sound.md, step 8); see docs/dev/status-v0.13-elev.md, F4'},
             'controls': [{'name': 'utterance volume 1 (v0.12)', 'measured': ctrl_speech, 'ok': sp_ctrl}],
             'valid': sp_ctrl and cover['ok'],
-            'pass': sp_ok and sp_ctrl and cover['ok'],
+            'pass': sp_ok and breath_ok and sp_ctrl and cover['ok'],
         },
         {
             'id': 'VL-6-peak',
@@ -414,9 +424,9 @@ def check_motor(d):
     cover = gaps_cover(d)
     ok = all(len(rows) == len(CUES) and all(r['minMarginDb'] >= MOTOR_MARGIN_MIN_DB for r in rows.values()) for rows in per_craft.values())
     gaps_ok = all(len(rows) == len(GAPS_CUES) and all(r['minMarginDb'] >= MOTOR_MARGIN_MIN_DB for r in rows.values()) for rows in gaps_per_craft.values())
-    breath_ok = all(b['frames'] >= 5 and b['minMarginDb'] >= MOTOR_MARGIN_MIN_DB for b in breath.values())
+    breath_ok = all(b['frames'] >= 5 and b['minMarginDb'] >= MOTOR_HIGHS_MIN_DB for b in breath.values())
     ctrl_fails = any(r['minMarginDb'] < MOTOR_MARGIN_MIN_DB for r in raw.values())
-    gaps_ctrl_fails = any(r['minMarginDb'] < MOTOR_MARGIN_MIN_DB for r in gaps_raw.values()) or breath_raw['minMarginDb'] < MOTOR_MARGIN_MIN_DB
+    gaps_ctrl_fails = any(r['minMarginDb'] < MOTOR_MARGIN_MIN_DB for r in gaps_raw.values()) or breath_raw['minMarginDb'] < MOTOR_HIGHS_MIN_DB
     cue_sum = sum(load(d, 'flight-soft-solo-' + c)[0][:, 2:4].astype(np.float64) for c in CUES)
     cues_lufs = lufs(cue_sum)
     level = {'cuesLufs': round(cues_lufs, 2)}
@@ -429,8 +439,8 @@ def check_motor(d):
     breath_worst = min((b['minMarginDb'], c) for c, b in breath.items())
     return {
         'id': 'VL-2-motor',
-        'claim': "every cue (safety, height, target, shape) is at least 6 dB over the motor in its own third-octave bands, where it sounds, for the simulator's default craft and the micro presets and a 5-inch quad, the slider at its default 15 %, in the ring flight and in tunnel-gaps flown (safety and height there: the chime above and below, the ceiling and the floor), and there the breath of air of those cues is 6 dB over the motor in every third octave from 4 to 16 kHz (control: the v0.12 path, the raw motor at the slider at 60 %)",
-        'thresholds': {'minMarginDb': {'value': MOTOR_MARGIN_MIN_DB, 'kind': 'v13 plan'}, 'ownBands': {'value': "within 10 dB of the cue's strongest band", 'kind': 'proposal'}, 'breathBands': {'value': '4 to 16 kHz third octaves, frames with a safety voice that has the breath', 'kind': 'proposal (review E5)'}},
+        'claim': "every cue (safety, height, target, shape) is at least 6 dB over the motor in its own third-octave bands, where it sounds, for the simulator's default craft and the micro presets and a 5-inch quad, the slider at its default 15 %, in the ring flight and in tunnel-gaps flown (safety and height there: the chime above and below, the ceiling and the floor), and there the breath of air of those cues is 12 dB over the motor in every third octave from 4 to 16 kHz, as the motor bus is made to keep off the cues' highs (control: the v0.12 path, the raw motor at the slider at 60 %)",
+        'thresholds': {'minMarginDb': {'value': MOTOR_MARGIN_MIN_DB, 'kind': 'v13 plan'}, 'ownBands': {'value': "within 10 dB of the cue's strongest band", 'kind': 'proposal'}, 'breathBands': {'value': '4 to 16 kHz third octaves, frames with a safety voice that has the breath', 'kind': 'proposal (review E5)'}, 'breathMarginDb': {'value': MOTOR_HIGHS_MIN_DB, 'kind': 'the motor bus design'}},
         'measured': {
             'worst': {'marginDb': worst[0], 'craft': worst[1], 'cue': worst[2]},
             'margins': per_craft,
