@@ -17,6 +17,11 @@
 //
 // The hover band (review M2): the height layer alone over a hover lesson's band, the craft held at heights in
 // and out of it, so the measurer can tell the target notes, the plain height tone and the out-of-band buzz apart.
+//
+// The free chime (lane s13-elev, owner's message 42): the open-way chime of a way above, then of a way below, played as
+// a lesson names it (repeat-cue from up, from down), the safety layer alone; with the up/down direction on (above and
+// below), off (both from ahead: v0.13) and each again with no HRTF panner (its dry twin), so the measurer can take the
+// HRTF's own response per elevation and the notes' pitch.
 import type { FlightSample, LessonLayers, SonicObject, SonicPrefs, SonicWorld, SpeechOut, Vec3 } from '../../src/contract';
 import { createSonicEngine, type EngineTestHooks, type FlyBySoundEngine, type SoloPart } from '../../src/audio';
 import { defaultPrefs } from '../../src/prefs/prefs';
@@ -150,6 +155,10 @@ const BODY = 0.12;
 
 const smooth = (x: number): number => (x <= 0 ? 0 : x >= 1 ? 1 : x * x * (3 - 2 * x));
 
+/** The free chime's two plays: from up at FREE_PLAYS_S[0], from down at [1], each FREE_PLAY_S long. */
+export const FREE_PLAYS_S: readonly number[] = [0.3, 3.6];
+export const FREE_PLAY_S = 2.5;
+
 /**
  * The hover band's held heights (hover-height's band, 2 to 3 m, its target the centre, 2.5 m), each for HOVER_HOLD_S:
  * the target, 5, 10, 20 and 30 cm under it, 2.05 m near the band's edge, 20 and 45 cm over it, then out of the band
@@ -214,6 +223,25 @@ function scenarioOf(req: RenderRequest): Scenario {
                 target: () => null,
                 say: [],
                 events: [],
+                motorVolume: null,
+                wallZ: null
+            };
+        }
+        case 'free-chime': {
+            // the chime a lesson plays for a way above, then for a way below: the safety layer alone, the craft still
+            const off = req.variant === 'direction-off' || req.variant === 'direction-off-dry';
+            return {
+                seconds: 6.5,
+                layers: { on: ['safety'], heightBandM: null, hazardVoices: 3 },
+                prefs: { ...base, heightDirection: !off },
+                world: null,
+                frame: () => ({ pos: [0, 1.5, 0], vel: [0, 0, 0], yawDeg: 0, motor: 0 }),
+                target: () => null,
+                say: [],
+                events: [
+                    { t: FREE_PLAYS_S[0] as number, run: (e) => e.cue({ kind: 'repeat-cue', cue: 'safety.free', dir: [0, 1, 0], index: 1, of: 1, durS: FREE_PLAY_S }) },
+                    { t: FREE_PLAYS_S[1] as number, run: (e) => e.cue({ kind: 'repeat-cue', cue: 'safety.free', dir: [0, -1, 0], index: 1, of: 1, durS: FREE_PLAY_S }) }
+                ],
                 motorVolume: null,
                 wallZ: null
             };
@@ -343,7 +371,8 @@ export async function render(req: RenderRequest): Promise<RenderResult> {
         ...(req.variant === 'stepped' ? { steppedHeight: true } : {}),
         ...(req.variant === 'seed-2' ? { noiseSeed: 2 } : {}),
         ...(req.variant === 'motor-raw-60' ? { motorBus: 'raw' as const } : {}),
-        ...(req.variant === 'target-steady' ? { targetTone: 'steady' as const } : {})
+        ...(req.variant === 'target-steady' ? { targetTone: 'steady' as const } : {}),
+        ...(req.variant === 'dry' || req.variant === 'direction-off-dry' ? { bypassPanner: true } : {})
     };
     const speech = new ClockSpeech(req.clips);
     const engine = createSonicEngine({
@@ -389,7 +418,8 @@ export async function render(req: RenderRequest): Promise<RenderResult> {
             freeSide: plan?.freeWay?.side ?? null,
             urgent: plan?.urgent ?? false,
             speaking: engine.speaking,
-            motor: f.motor
+            motor: f.motor,
+            chime: ((v) => (v === undefined ? null : { key: v.key, dir: v.dir, hz: v.hz, harmonyHz: v.harmonyHz ?? null }))(plan?.voices.find((v) => v.cue === 'safety.free'))
         });
     };
     tick(0);

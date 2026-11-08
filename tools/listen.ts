@@ -26,7 +26,7 @@ import { createTranslator } from '../src/i18n/translator';
 import { CRAFT_IDS, DEFAULT_CRAFT, type RenderRequest, type RenderResult, type SpeechClip } from '../test-audio/page/listen-types';
 
 /** Bump when the driver's jobs or file layout change. */
-export const DRIVER_VERSION = 2;
+export const DRIVER_VERSION = 3;
 
 const ROOT = process.cwd();
 const HASHED = ['src', 'themes', 'lessons', 'locales', 'test-audio/page/listen.ts', 'tools/listen.ts', 'tools/listen', 'package.json', 'pnpm-lock.yaml'];
@@ -59,6 +59,8 @@ export function jobs(): Job[] {
     for (const craft of CRAFT_IDS) if (craft !== DEFAULT_CRAFT) add(`flight-soft-solo-motor-${craft}`, { scenario: 'flight', theme: 'soft', variant: null, solo: ['motor'], craft });
     add('hover-band-soft', { scenario: 'hover-band', theme: 'soft', variant: null, solo: null });
     add('hover-band-soft-target-steady', { scenario: 'hover-band', theme: 'soft', variant: 'target-steady', solo: null });
+    // lane s13-elev: the open-way chime above and below, the up/down direction on and off, each with its dry twin
+    for (const variant of [null, 'dry', 'direction-off', 'direction-off-dry'] as const) add(`free-chime-soft${variant === null ? '' : `-${variant}`}`, { scenario: 'free-chime', theme: 'soft', variant, solo: null });
     return out;
 }
 

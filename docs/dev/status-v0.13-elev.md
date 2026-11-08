@@ -54,7 +54,9 @@ and below change with it. In the same lane: "wrong way" between gates, which the
   fly all eight gate lessons to their pass and are never told. Control: the 8 m rule of v0.13 (`testHooks.lineUp
   'fixed'`) never tells the turned pilot; `lineUpM` broken to 8 m fails 6 tests (`test/direction.test.ts`, 19 new)
 - [ ] E1-6 Measure: Node tests, the listener check of the placement (Chrome's HRTF, headless), the localization models
-  where runnable; all repository checks, the proofs and `pnpm listen`
+  where runnable; all repository checks, the proofs and `pnpm listen`. In progress: the Node tests are in (E1-2 to
+  E1-5); the rig has the check VL-1-elevation (scenario `free-chime`, four renders: the direction on and off, each with
+  its dry twin; `tools/listen/measure.py` `check_elevation`), not run yet
 - [ ] E1-7 This lane's E1 status final
 - [ ] E2-1 (the next agent's; its task names it)
 - [ ] E2-2 (the next agent's)

@@ -2,13 +2,17 @@
 // (test-audio/page/listen.ts, the browser). DOM-free, so both sides compile against it.
 import type { Vec3 } from '../../src/contract';
 
-export const RIG_VERSION = 2;
+export const RIG_VERSION = 3;
 export const RATE = 48000;
 
-export const SCENARIOS = ['height-climb', 'approach-1', 'approach-3', 'approach-5', 'flight', 'hover-band'] as const;
+export const SCENARIOS = ['height-climb', 'approach-1', 'approach-3', 'approach-5', 'flight', 'hover-band', 'free-chime'] as const;
 export type ScenarioId = (typeof SCENARIOS)[number];
-/** Controls (the engine or the host broken on purpose), each failing one check. */
-export const VARIANTS = ['stepped', 'distance-only', 'motor-raw-60', 'seed-2', 'target-steady'] as const;
+/**
+ * Controls (the engine or the host broken on purpose), each failing one check; and, for the free chime (lane s13-elev),
+ * 'direction-off' (SonicPrefs.heightDirection false: v0.13's placement, the check's control) and 'dry' (no HRTF panner:
+ * what goes into it, so a render over its dry twin is the HRTF's own response).
+ */
+export const VARIANTS = ['stepped', 'distance-only', 'motor-raw-60', 'seed-2', 'target-steady', 'direction-off', 'dry', 'direction-off-dry'] as const;
 export type Variant = (typeof VARIANTS)[number];
 
 /**
@@ -67,6 +71,8 @@ export interface TruthRow {
     readonly speaking: boolean;
     /** the motor stand-in's mean output, 0..1 */
     readonly motor: number;
+    /** lane s13-elev: the open-way chime's voice this frame (a flight's or a named play's): its key, direction, notes */
+    readonly chime?: { readonly key: string; readonly dir: Vec3; readonly hz: number; readonly harmonyHz: number | null } | null;
 }
 
 export interface SpeechSpan {

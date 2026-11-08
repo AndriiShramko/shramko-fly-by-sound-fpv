@@ -21,7 +21,7 @@ import pyloudnorm as pyln
 import soundfile as sf
 from scipy.signal import hilbert, resample_poly
 
-MEASURE_VERSION = 2
+MEASURE_VERSION = 3
 RATE = 48000
 
 # thresholds (kind: standard, calibrated on controls, proposal)
@@ -43,6 +43,14 @@ HOVER_HOLD_S = 2.5
 HOVER_BAND = (2.0, 3.0)
 # the crafts whose motor stems the rig renders (test-audio/page/listen-types.ts CRAFTS); the first is the default
 CRAFTS = ['pavo20pro-3s', 'meteor65pro-1s', 'air65-1s', 'pavopico-2s', 'five-inch']
+# lane s13-elev: the open-way chime above and below (test-audio/page/listen.ts FREE_PLAYS_S, FREE_PLAY_S)
+FREE_PLAYS_S = [0.3, 3.6]
+FREE_PLAY_S = 2.5
+FREE_TAIL_S = 0.6  # the last note's decay after a play
+ELEV_BANDS_HZ = [1000.0 * 2 ** (k / 3.0) for k in range(6, 13)]  # third octaves 4 to 16 kHz
+ELEV_DIFF_MIN_DB = 1.0  # proposal: the HRTF's response over the band changes by about a spectral-profile JND (1 dB rms over the bands and ears)
+AIR_TOP_MIN_DB = -30.0  # proposal: "energy up to about 16 kHz": the 16 kHz third octave within 30 dB of the cue's strongest band
+PITCH_SAME_MAX_CENTS = 5.0  # the notes are the plan's: the measured tracks agree within 5 cents
 
 
 def load(dirname, job):
@@ -464,6 +472,116 @@ def check_height_meanings(d):
     }
 
 
+def band_power(x, lo_hz, hi_hz):
+    """Power of a signal between two frequencies, by a Hann-windowed FFT of the whole stretch."""
+    n = len(x)
+    if n < 64:
+        return 0.0
+    spec = np.abs(np.fft.rfft(x * np.hanning(n))) ** 2
+    freqs = np.fft.rfftfreq(n, 1.0 / RATE)
+    return float(np.sum(spec[(freqs >= lo_hz) & (freqs < hi_hz)]))
+
+
+def third_octaves(x, centres):
+    return [band_power(x, c * 2 ** (-1 / 6.0), c * 2 ** (1 / 6.0)) for c in centres]
+
+
+def chime_play(d, job, k):
+    """One play of the free chime (k 0: the way above, 1: below): the pre-chain stereo of its stretch, and its chime voice's direction from the truth."""
+    x, meta = load(d, job)
+    t0 = FREE_PLAYS_S[k]
+    t1 = t0 + FREE_PLAY_S + FREE_TAIL_S
+    seg = x[int(t0 * RATE) : int(t1 * RATE), 2:4].astype(np.float64)
+    dirs = [r['chime']['dir'] for r in meta['truth'] if r.get('chime') and t0 <= r['t'] < t0 + FREE_PLAY_S]
+    return seg, (dirs[len(dirs) // 2] if dirs else None)
+
+
+def hrtf_response(d, job, dry_job, k):
+    """The HRTF's own response to a play, per ear and third octave from 4 to 16 kHz, dB: the render over its dry twin
+    (the same notes with no panner, both ears alike), so the cue's own spectrum and pitch drop out."""
+    b, direction = chime_play(d, job, k)
+    dry, _ = chime_play(d, dry_job, k)
+    ref = third_octaves(dry[:, 0], ELEV_BANDS_HZ)
+    out = []
+    for ear in range(2):
+        pw = third_octaves(b[:, ear], ELEV_BANDS_HZ)
+        out.append([10 * math.log10(max(pw[i], 1e-30) / max(ref[i], 1e-30)) for i in range(len(ELEV_BANDS_HZ))])
+    elev = None if direction is None else round(math.degrees(math.asin(max(-1.0, min(1.0, direction[1])))), 1)
+    return out, elev
+
+
+def rms_diff(a, b):
+    v = [(a[e][i] - b[e][i]) ** 2 for e in range(2) for i in range(len(ELEV_BANDS_HZ))]
+    return math.sqrt(sum(v) / len(v))
+
+
+def top_band_db(d, job, k):
+    """The 16 kHz third octave of a dry play against its strongest third octave (100 Hz to 16 kHz), dB."""
+    seg, _ = chime_play(d, job, k)
+    centres = [1000.0 * 2 ** (j / 3.0) for j in range(-10, 13)]
+    pw = third_octaves(seg[:, 0], centres)
+    return round(10 * math.log10(max(pw[-1], 1e-30) / max(max(pw), 1e-30)), 1)
+
+
+def chime_pitch(d, job, k):
+    seg, _ = chime_play(d, job, k)
+    mono = seg.mean(axis=1)
+    track = pitch_track(mono, 0.0, len(mono) / RATE - 0.1, hop=0.01, n=2048, fmin=300.0, fmax=2500.0)
+    # only the hops where a note sounds: within 30 dB of the play's loudest 10 ms
+    level = []
+    for t, _ in track:
+        i = int(t * RATE)
+        level.append(rms(mono[max(0, i - 240) : i + 240]))
+    top = max(level) if level else 0.0
+    return [(t, f) for (t, f), lv in zip(track, level) if lv > top * 10 ** (-30 / 20)]
+
+
+def check_elevation(d):
+    """The open-way chime of a way above and of a way below through Chrome's HRTF: with the direction on, the HRTF's
+    response over 4 to 16 kHz differs between above, ahead (the same chime with the direction off) and below; with it
+    off, the chime above and the chime below both come from ahead and their responses do not differ. The cue's own
+    spectrum and its pitch drop out (each render over its dry twin); the notes are the same either way."""
+    on_up, el_up = hrtf_response(d, 'free-chime-soft', 'free-chime-soft-dry', 0)
+    on_down, el_down = hrtf_response(d, 'free-chime-soft', 'free-chime-soft-dry', 1)
+    off_up, el_off_up = hrtf_response(d, 'free-chime-soft-direction-off', 'free-chime-soft-direction-off-dry', 0)
+    off_down, el_off_down = hrtf_response(d, 'free-chime-soft-direction-off', 'free-chime-soft-direction-off-dry', 1)
+    above_ahead = rms_diff(on_up, off_up)
+    below_ahead = rms_diff(on_down, off_down)
+    above_below = rms_diff(on_up, on_down)
+    control = rms_diff(off_up, off_down)
+    pitch = {}
+    worst = 0.0
+    for k, name in enumerate(['above', 'below']):
+        a = dict((round(t, 3), f) for t, f in chime_pitch(d, 'free-chime-soft-dry', k))
+        b = dict((round(t, 3), f) for t, f in chime_pitch(d, 'free-chime-soft-direction-off-dry', k))
+        both = sorted(set(a) & set(b))
+        cents = [abs(1200 * math.log2(a[t] / b[t])) for t in both]
+        worst = max(worst, max(cents) if cents else float('inf'))
+        pitch[name] = {'hops': len(both), 'maxCents': round(max(cents), 2) if cents else None, 'notesHz': sorted(set(round(f, -1) for f in a.values()))[:6]}
+    air = {name: {'on': top_band_db(d, 'free-chime-soft-dry', k), 'off': top_band_db(d, 'free-chime-soft-direction-off-dry', k)} for k, name in enumerate(['above', 'below'])}
+    rnd = lambda m: [[round(v, 2) for v in row] for row in m]
+    ok_place = above_ahead >= ELEV_DIFF_MIN_DB and below_ahead >= ELEV_DIFF_MIN_DB and above_below >= ELEV_DIFF_MIN_DB
+    ok_air = all(v['on'] >= AIR_TOP_MIN_DB for v in air.values())
+    ok_pitch = worst <= PITCH_SAME_MAX_CENTS
+    ctrl_fails = control < ELEV_DIFF_MIN_DB and all(v['off'] < AIR_TOP_MIN_DB for v in air.values())
+    return {
+        'id': 'VL-1-elevation',
+        'claim': 'the open-way chime of a way above and of a way below, rendered through Chrome\'s HRTF in headless Chrome as the engine plays it in a lesson: with the up/down direction on, the HRTF\'s response over 4 to 16 kHz (each render over its dry twin) differs by at least 1 dB rms between above, ahead and below, the chime carries energy up to 16 kHz, and its notes are the same as with the direction off (control: the direction off, both from ahead: no difference and no energy at 16 kHz)',
+        'thresholds': {'elevationDiffDb': {'value': ELEV_DIFF_MIN_DB, 'kind': 'proposal'}, 'airTopBandDb': {'value': AIR_TOP_MIN_DB, 'kind': 'proposal'}, 'pitchSameCents': {'value': PITCH_SAME_MAX_CENTS, 'kind': 'proposal'}},
+        'measured': {
+            'elevationDeg': {'above': el_up, 'below': el_down, 'directionOff': [el_off_up, el_off_down]},
+            'rmsDiffDb': {'aboveVsAhead': round(above_ahead, 2), 'belowVsAhead': round(below_ahead, 2), 'aboveVsBelow': round(above_below, 2)},
+            'bandsHz': [round(c) for c in ELEV_BANDS_HZ],
+            'responseDb': {'above': rnd(on_up), 'below': rnd(on_down), 'aheadAboveChime': rnd(off_up), 'aheadBelowChime': rnd(off_down)},
+            'top16kBandDb': air,
+            'pitch': pitch,
+        },
+        'controls': [{'name': 'the direction off (SonicPrefs.heightDirection false): the chime above and the chime below both from ahead, no breath', 'measured': {'rmsDiffDb': round(control, 2), 'top16kBandDb': {k: v['off'] for k, v in air.items()}}, 'ok': ctrl_fails}],
+        'valid': ctrl_fails,
+        'pass': ok_place and ok_air and ok_pitch and ctrl_fails,
+    }
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--renders', required=True)
@@ -476,6 +594,7 @@ def main():
     checks += check_speech_and_peak(a.renders, a.clips, themes)
     checks.append(check_motor(a.renders))
     checks.append(check_height_meanings(a.renders))
+    checks.append(check_elevation(a.renders))
     versions = {'python': sys.version.split()[0], 'numpy': np.__version__, 'scipy': __import__('scipy').__version__, 'soundfile': sf.__version__, 'pyloudnorm': getattr(pyln, '__version__', '0.2.0')}
     with open(a.out, 'w', encoding='utf8') as f:
         json.dump({'measure': MEASURE_VERSION, 'tools': versions, 'checks': checks}, f, indent=1)
