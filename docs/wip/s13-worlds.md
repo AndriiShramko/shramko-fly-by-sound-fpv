@@ -12,7 +12,7 @@ navigation and truth bot `test/helpers/truth.ts`). No push. Every step one commi
 - [x] 4. The world's checkpoint list (M41-20)
 - [x] 5. Micro-drone scale (M41-18): version 2 of the room generators, the lessons' world, start and assists
 - [x] 6. Tunnels (M41-21): corridor version 2 and the tunnel lessons
-- [ ] 7. Rings at different heights (M41-22): the heights parameter and lesson rings-heights
+- [x] 7. Rings at different heights (M41-22): the heights parameter and lesson rings-heights
 - [ ] 8. All checks, final status
 
 ## Ownership
@@ -288,6 +288,30 @@ lesson with a goal other than hold-height, approach-stop or around): the owner's
   `test/world-cavities.test.ts` and `test/world-track.test.ts` take every layout of version 2 too (its cavities are the
   shell; its tracks keep the gaps, dirs and free lines).
 
+### Step 7: rings at different heights (M41-22)
+
+- The `heights` parameter of version 2 of rings, squares and cube-frames (built in step 5): levels `floor` (0.3 m plus
+  the gate's own vertical reach above the floor), `ceiling` (the same under the ceiling), `middle` (half the room's
+  height), or a list of metres; one per gate, the last repeating; with heights the craft starts at the first gate's
+  height. A gate may sit exactly at its margin (the fit check allows a nanometre of rounding).
+- Lesson `rings-heights` (module 5, after rings-small, before rings-course; format 2, version 1; not on the fast path,
+  which keeps rings-first and rings-course): rings v2 `line` of five 2 m rings at middle, floor, ceiling, floor, middle
+  (2.5, 1.5, 3.5, 1.5, 2.5 m), 6 m apart, the first 5.5 m ahead, in a room 9 x 36.5 x 5 m; start (0, 2.5, 16.75);
+  caps 3 and 1.5 m/s (rings-line's). Legs 2.68, 2.85 (four times) and 2.65 s, side walls 2.3 s, ceiling 1.96 s; each
+  height change (1 or 2 m) fits its leg at the climb cap. Layers safety, target, height and voice (lane s13-sound
+  tunes them: the target tone of M41-12 is the next ring's centre). Goal: every ring in order; 3 counted attempts.
+  Intro (four languages): the rings at the floor, in the middle and under the ceiling; "the gliding one is your height,
+  the second, steady tone is the height of the next ring"; "when the two tones sound the same, you are at the right
+  height". It does not say "lower means climb": that flips with the pilot's height polarity (prefs), so the hint says
+  "move up or down until your tone matches the steady one".
+- Tests (`test/world-heights.test.ts`): the place on the ladder; every ring at its asked level, all three levels, a
+  span of 2 m and every leg changing the height by at least 1 m (the first at the start's height); every ring 1 m from
+  the walls and 0.3 m from the floor and the ceiling; each change fits its leg at the caps and the truth bot passes in
+  at most 2 x r with no touch, gates in order; the intro's two promises in English and a translation in the three
+  others; the same heights in squares and cube frames. Controls: rings-line's rings are all at one height (span 0); the
+  same rings 2 m apart make a climb that does not fit its leg. rings-heights is also a room lesson of
+  `test/world-scale.test.ts` (its table inside the rule).
+
 ## Needs from the simulator
 
 1. Draw the room from the package's boxes (`apps/fly/src/sonic/primitives.ts:215-231`, `cavityBoxes`), and delete the
@@ -328,6 +352,9 @@ Lane s13-lessons (owner of the strings, goals and the truth bot):
    checkpoints (M41-20), keep or drop them. Their intro lines carry no `cues` (format 2 at eee530b has none):
    tunnel-gaps' intro.2 names the open-way chime (`safety.free`, lane s13-sound) for the three plays of M41-5.
 
+Lane s13-sound: rings-heights has `layers` safety, target, height and voice: it is the lesson of the steady target
+tone (M41-12); check that the target tone follows the NEXT ring's centre and that the glide meets it in unison there.
+
 Lane s13-sound: the six tunnels have `layers` safety and voice, as the corridor; give them the height layer and the
 room bed as every flying lesson (their step 7). The free-way chime has its own lesson now: tunnel-gaps (3 x 3 m, free
 ways 1.2 m, as their box tunnels) and tunnel-long (2.4 m high, free ways 1.0 m, 0.7 m off the line).
@@ -346,8 +373,11 @@ rule and `pathMissM` filter are expected to raise it. Nothing to do unless it dr
   and lane s13-sound's `layers` do not touch these lines.
 - Registering the tunnels (step 6, additive): `src/lesson/library.ts` (six imports and entries), `lessons/paths.json`,
   `src/i18n/catalog.ts` (six `LESSONS` entries after corridor), `locales/{en,es,pl,ru}.json` (44 keys each after
-  `lesson.corridor.hint.1`), `README.md` and `llms.txt` (27 lessons, a fast path of 8). Not additive but needed: the
-  `order` of the eight lessons after corridor (their place on the full path).
+  `lesson.corridor.hint.1`), `README.md` and `llms.txt` (then 27 lessons, a fast path of 8). Not additive but needed:
+  the `order` of the eight lessons after corridor (their place on the full path).
+- Registering rings-heights (step 7, additive): `src/lesson/library.ts`, `lessons/paths.json` (full, after rings-small),
+  `src/i18n/catalog.ts`, the four locales (8 keys each after `lesson.rings-small.hint.1`), README and llms.txt (28
+  lessons); the `order` of rings-course to free-garden moved one on (23 to 27).
 - Tests of other lanes, step 6: `test/lessons.test.ts` (a lesson new in v0.13 is version 1), `test/pass-rule.test.ts`
   (the v0.12 rules fixture covers the lessons v0.12 shipped), `test/progress.test.ts` (the lesson count from the path);
   the list of new lessons is `test/helpers/new-lessons.ts`.

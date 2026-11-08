@@ -57,8 +57,8 @@ const ROOM_LESSONS = SHIPPED_LESSON_IDS.filter((id) => isRoomLesson(getLesson(id
 const CHANGED = ['hover-turn', 'move-speed', 'move-stop', 'walls-hall', 'walls-pillar', 'walls-row', 'corridor', 'rings-first', 'rings-line', 'rings-small', 'rings-course', 'shapes-square', 'shapes-series', 'shapes-cube'];
 
 describe('rooms at the scale of a micro drone (M41-18)', () => {
-    it('the room lessons are the ten that fly through a room', () => {
-        expect(ROOM_LESSONS).toEqual(['walls-hall', 'walls-pillar', 'walls-row', 'rings-first', 'rings-line', 'rings-small', 'rings-course', 'shapes-square', 'shapes-series', 'shapes-cube']);
+    it('the room lessons are the eleven that fly through a room', () => {
+        expect(ROOM_LESSONS).toEqual(['walls-hall', 'walls-pillar', 'walls-row', 'rings-first', 'rings-line', 'rings-small', 'rings-heights', 'rings-course', 'shapes-square', 'shapes-series', 'shapes-cube']);
     });
 
     it.each(ROOM_LESSONS)('%s: the walls and every leg 2 to 3 s away at full stick, the ceiling about 2 s', (id) => {
@@ -69,7 +69,7 @@ describe('rooms at the scale of a micro drone (M41-18)', () => {
         expect(l.start.pos).toEqual(worldOf(l)!.start.pos);
     });
 
-    it.each(ROOM_LESSONS)('control: %s at its v0.12 size fails the same check', (id) => {
+    it.each(ROOM_LESSONS.filter((id) => id in V012))('control: %s at its v0.12 size fails the same check', (id) => {
         const old = asV012(id);
         const row = scaleRow(old) as ScaleRow;
         expect(scaleProblems(row, hasGates(worldOf(old))).length, JSON.stringify(row)).toBeGreaterThan(0);

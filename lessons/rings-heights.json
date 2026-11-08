@@ -1,0 +1,95 @@
+{
+  "assists": {
+    "altitude": "hold",
+    "autoArm": true,
+    "control": "velocity",
+    "maxClimbMps": 1.5,
+    "maxSpeedMps": 3,
+    "maxYawDps": 90,
+    "onTouch": "bump"
+  },
+  "attemptLimitS": 150,
+  "checkpoints": [],
+  "fastPath": false,
+  "format": "shramko-sonic-lesson/2",
+  "goals": [
+    {
+      "gateIds": "all",
+      "inOrder": true,
+      "kind": "pass-gates"
+    }
+  ],
+  "id": "rings-heights",
+  "intro": [
+    {
+      "key": "lesson.rings-heights.intro.1"
+    },
+    {
+      "key": "lesson.rings-heights.intro.2"
+    },
+    {
+      "key": "lesson.rings-heights.intro.3"
+    },
+    {
+      "key": "lesson.rings-heights.goal.1"
+    }
+  ],
+  "layers": {
+    "hazardVoices": 2,
+    "heightBandM": null,
+    "on": [
+      "safety",
+      "target",
+      "height",
+      "voice"
+    ]
+  },
+  "module": 5,
+  "order": 22,
+  "pass": {
+    "attempts": 3,
+    "blocking": true,
+    "maxTouches": null,
+    "required": 3
+  },
+  "speech": {
+    "hints": [
+      {
+        "key": "lesson.rings-heights.hint.1"
+      }
+    ],
+    "pass": {
+      "key": "lesson.rings-heights.pass"
+    },
+    "retry": {
+      "key": "lesson.rings-heights.retry"
+    }
+  },
+  "start": {
+    "pos": [0, 2.5, 16.75],
+    "yawDeg": 0
+  },
+  "title": {
+    "key": "lesson.rings-heights.title"
+  },
+  "version": 1,
+  "world": {
+    "kind": "analytic",
+    "spec": {
+      "generator": "rings",
+      "params": {
+        "aheadM": 5.5,
+        "count": 5,
+        "depthM": 36.5,
+        "heightM": 5,
+        "heights": "middle,floor,ceiling,floor,middle",
+        "layout": "line",
+        "sizeM": 2,
+        "spacingM": 6,
+        "widthM": 9
+      },
+      "seed": 0,
+      "version": 2
+    }
+  }
+}

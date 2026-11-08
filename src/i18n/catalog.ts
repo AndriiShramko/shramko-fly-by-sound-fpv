@@ -81,6 +81,7 @@ export const LESSONS: readonly LessonSpec[] = [
     { id: 'rings-first', module: 5, intro: 3, goals: 1, hints: 1 },
     { id: 'rings-line', module: 5, intro: 2, goals: 1, hints: 1 },
     { id: 'rings-small', module: 5, intro: 2, goals: 1, hints: 1 },
+    { id: 'rings-heights', module: 5, intro: 3, goals: 1, hints: 1 },
     { id: 'rings-course', module: 5, intro: 2, goals: 1, hints: 1 },
     { id: 'shapes-square', module: 6, intro: 2, goals: 1, hints: 1 },
     { id: 'shapes-series', module: 6, intro: 2, goals: 1, hints: 1 },

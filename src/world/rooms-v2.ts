@@ -202,10 +202,11 @@ function buildGates(kind: 'ring' | 'square' | 'cube-frame', p: ResolvedParams, r
     };
 
     const z0 = startZ(p);
-    /** gate i at (gx, gy, gz) keeps WALL_MARGIN_M from the walls and FLOOR_MARGIN_M from the floor and the ceiling */
+    /** gate i at (gx, gy, gz) keeps WALL_MARGIN_M from the walls and FLOOR_MARGIN_M from the floor and the ceiling (to a nanometre: a level is placed exactly at its margin) */
     const fits = (gx: number, gy: number, gz: number, i: number): boolean => {
         const r = reach[i] as { side: number; vertical: number };
-        return Math.abs(gx) + r.side + WALL_MARGIN_M <= w / 2 && Math.abs(gz) + r.side + WALL_MARGIN_M <= d / 2 && gy - r.vertical >= FLOOR_MARGIN_M && gy + r.vertical + FLOOR_MARGIN_M <= h;
+        const e = 1e-9;
+        return Math.abs(gx) + r.side + WALL_MARGIN_M <= w / 2 + e && Math.abs(gz) + r.side + WALL_MARGIN_M <= d / 2 + e && gy - r.vertical >= FLOOR_MARGIN_M - e && gy + r.vertical + FLOOR_MARGIN_M <= h + e;
     };
 
     const gates: GateAt[] = [];

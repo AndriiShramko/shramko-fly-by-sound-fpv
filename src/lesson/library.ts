@@ -16,6 +16,7 @@ import moveStop from '../../lessons/move-stop.json';
 import paths from '../../lessons/paths.json';
 import ringsCourse from '../../lessons/rings-course.json';
 import ringsFirst from '../../lessons/rings-first.json';
+import ringsHeights from '../../lessons/rings-heights.json';
 import ringsLine from '../../lessons/rings-line.json';
 import ringsSmall from '../../lessons/rings-small.json';
 import shapesCube from '../../lessons/shapes-cube.json';
@@ -56,6 +57,7 @@ const SOURCES: Readonly<Record<string, unknown>> = {
     'rings-first': ringsFirst,
     'rings-line': ringsLine,
     'rings-small': ringsSmall,
+    'rings-heights': ringsHeights,
     'rings-course': ringsCourse,
     'shapes-square': shapesSquare,
     'shapes-series': shapesSeries,
