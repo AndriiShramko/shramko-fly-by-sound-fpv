@@ -1,7 +1,7 @@
 {
   "what": "Fly by Sound audio proofs: the real engine rendered offline in headless Chromium, each check also run on an engine broken on purpose (control), which must fail",
   "run": "pnpm proof:audio",
-  "date": "2026-11-08T11:59:58.031Z",
+  "date": "2026-11-08T12:04:30.597Z",
   "browser": "156.0.8078.80",
   "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36",
   "sampleRate": 48000,
@@ -136,7 +136,7 @@
       "shipped": {
         "ok": true,
         "measured": {
-          "peak": 0.50059,
+          "peak": 0.50047,
           "peakDbfs": -6.01,
           "ceilingDbfs": -6
         }
@@ -144,8 +144,8 @@
       "control": {
         "ok": false,
         "measured": {
-          "peak": 3.05399,
-          "peakDbfs": 9.7,
+          "peak": 2.96001,
+          "peakDbfs": 9.43,
           "ceilingDbfs": -6
         },
         "broken": "compressor and soft clipper removed"
@@ -160,19 +160,19 @@
         "measured": {
           "method": "rms of the render over rms of the same render without the fade, 25 ms windows",
           "start": {
-            "first50ms": 0.007,
+            "first50ms": 0.006,
             "middle": 0.512,
             "afterFade": 1,
             "monotonic": true,
             "every100ms": [
               0.003,
-              0.036,
-              0.117,
-              0.233,
+              0.037,
+              0.116,
+              0.234,
               0.377,
-              0.532,
+              0.533,
               0.685,
-              0.819,
+              0.818,
               0.922,
               0.984,
               1
@@ -185,12 +185,12 @@
             "monotonic": true,
             "every100ms": [
               0.002,
-              0.035,
-              0.115,
-              0.231,
-              0.375,
-              0.529,
-              0.684,
+              0.036,
+              0.114,
+              0.233,
+              0.374,
+              0.531,
+              0.683,
               0.817,
               0.921,
               0.983,

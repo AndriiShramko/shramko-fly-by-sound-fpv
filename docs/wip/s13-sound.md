@@ -35,7 +35,7 @@ Shared event kinds (plan, "Lanes"): the runner emits the cue events `wrong-way`,
 - [x] 10 The full checks: `pnpm typecheck` clean; `pnpm test` 25 files, 650 tests (the locale lint and the layout
   check run inside it: `test/locales.test.ts`, `test/layout.test.ts`); `pnpm proof:audio` 3 files, 9 tests, 39 s, every
   proof passing and every broken control failing; `pnpm listen` 7 of 7 checks valid and passing, fresh for inputs
-  41cfb8b444cc; the v0.12 recordings replay as recorded with an older build (`test/replay-v012.test.ts`)
+  61b845a05094; the v0.12 recordings replay as recorded with an older build (`test/replay-v012.test.ts`)
 
 ## Final status (2026-11-08)
 
@@ -52,7 +52,7 @@ Done, with commits (branch `s13-sound`, not pushed):
 | 7 | M41-10 never silence, the planner's part | 00efe02 |
 | 9 | the rig, its code and its first runs | 1452641, faa630b |
 | 8 | M41-17 speech level, and the rig's passing evidence | e5bdaae |
-| 10 | the full checks, the v0.12 replay test, the proofs' evidence | the commit of this line |
+| 10 | the full checks, the v0.12 replay test, the proofs' evidence | 2a35675, and the first-note fix after it |
 
 Left open, with reasons:
 
@@ -308,8 +308,8 @@ Measured, not guessed (the rig, step 9, and the clip maker `tools/listen/tts/sap
   soft -28.5, clear -25.2, race -27.6 LUFS. The voice (all three lines, integrated) at volume 1 is -17.3 LUFS: 11.2,
   7.9 and 10.2 LU over the mix (the probe's 11 to 14 LU, measured on other flights).
 - Set: the themes' `voice.volume` for 4.5 LU (the middle of 3 to 6): soft 0.74, clear 0.87, race 0.77. Measured
-  after: 4.68, 4.67 and 4.53 LU; the true peak of what reaches the ears (engine and voice) -6.91, -3.69 and
-  -6.11 dBTP (control, volume 1: -0.49, -0.47, -0.41 dBTP, over the limit). The pilot's own voice gain still
+  after (final run): 4.66, 4.65 and 4.73 LU; the true peak of what reaches the ears (engine and voice) -6.98, -3.73
+  and -6.27 dBTP (control, volume 1: -0.52, -0.50, -0.49 dBTP, over the limit). The pilot's own voice gain still
   scales it (`layerGainDb.voice`).
 - The master gain stays: the engine's own true peak is -10.9 (soft), -11.3 (clear) and -13.6 dBTP (race), at the
   output compressor's threshold of -10 dBFS (ceiling -6 minus 4): a louder master would start squeezing the cues'
@@ -323,6 +323,10 @@ Measured, not guessed (the rig, step 9, and the clip maker `tools/listen/tts/sap
   Playing pre-rendered clips through the engine's limiter (design, section 13) would make both exact.
 
 ### Step 9, the first measuring rig (VL-0, a cheap part of VL-2 and VL-6)
+
+Found by the rig and fixed in step 10: a ToneVoice's first note glided up from the oscillator's own 440 Hz while the
+voice faded in (the new target tone at its first frame, and the room's drone at every start since v0.12); the first
+note is now set at once.
 
 One command: `pnpm listen` (`node tools/run-tool.mjs listen`, `--force` to run again with nothing changed).
 Environment: `SHRAMKO_LISTEN_PY` (the Python of `tools/listen/requirements.txt`; on the build machine
@@ -343,16 +347,17 @@ Environment: `SHRAMKO_LISTEN_PY` (the Python of `tools/listen/requirements.txt`;
   under the sha256 of every input (106 files: src, themes, lessons, locales, the rig's own code, package.json, the
   lockfile); renders cached in `SHRAMKO_LISTEN_CACHE/renders/<hash>/`. Nothing changed and the last run passed:
   nothing runs.
-- The checks, each valid only when its control fails (measured 2026-11-08, Chrome 156.0.8078.80):
+- The checks, each valid only when its control fails (final run 2026-11-08, Chrome 156.0.8078.80, inputs
+  61b845a05094):
 
 | Check | Measured | Control |
 |---|---|---|
-| VL-0a two renders the same | max difference 2.4e-7 (float32 rounding; limit 1e-6) | noise seed 2: 0.045 |
-| VL-0b stems sum to the pre-chain mix | residual -127.9 dB (limit -90) | the height stem left out: -2.6 dB |
+| VL-0a two renders the same | max difference 1.8e-7 (float32 rounding; limit 1e-6) | noise seed 2: 0.045 |
+| VL-0b stems sum to the pre-chain mix | residual -127.6 dB (limit -90) | the height stem left out: -2.6 dB |
 | height pitch track continuous | largest change 3.7 cents per 10 ms in the climb (limit 25), 7.8 cents median behind the plan (the glide's smoothing) | v0.12 stepped tone: 118.7 cents |
 | hazard onset before impact | 2.475, 2.493, 2.475 s at 1, 3, 5 m/s (at least 2) | distance-only rule at 5 m/s: 1.18 s |
-| voice over the mix | soft 4.68, clear 4.67, race 4.53 LU (3 to 6) | volume 1: 11.2, 7.9, 10.2 LU |
-| true peak, engine and voice | -6.91, -3.69, -6.11 dBTP (at most -1) | volume 1: -0.49, -0.47, -0.41 |
+| voice over the mix | soft 4.66, clear 4.65, race 4.73 LU (3 to 6) | volume 1: 11.2, 7.9, 10.5 LU |
+| true peak, engine and voice | -6.98, -3.73, -6.27 dBTP (at most -1) | volume 1: -0.52, -0.50, -0.49 |
 | cues over the motor in their own third-octave bands | safety 28.3, height 24.8, target 18.3, shape 7.8 dB (at least 6); motor 14.5 LU under the cues | raw motor at 60 %: shape 0.6 dB |
 
 - What it cannot show: how any of it feels to a person; other heads than the HRTF's own (no panel yet); the voice

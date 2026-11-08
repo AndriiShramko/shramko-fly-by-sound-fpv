@@ -400,10 +400,14 @@ export class ToneVoice {
         this.beat.start(startAt);
     }
 
-    /** Glides to `hz` over about `glideS` from `at`; the low-pass follows (four times the note, at most 3 kHz). */
+    /**
+     * Glides to `hz` over about `glideS` from `at`; the low-pass follows (four times the note, at most 3 kHz). The
+     * first note is set at once: a voice that has none yet would glide up from the oscillator's own 440 Hz (the
+     * target tone and the room's drone swept in from there as they faded in).
+     */
     setNote(hz: number, at: number, glideS: number): void {
         if (Math.abs(hz - this.hz) < 1e-6) return;
-        const tc = Math.max(glideS, 0.001) / 3;
+        const tc = this.hz === 0 ? 0.0005 : Math.max(glideS, 0.001) / 3;
         for (const o of this.oscs) o.osc.frequency.setTargetAtTime(hz * o.ratio + o.offsetHz, at, tc);
         this.beat.frequency.setTargetAtTime(hz + this.beatHzValue, at, tc);
         this.lp.frequency.setTargetAtTime(Math.min(4 * hz, 3000), at, tc);

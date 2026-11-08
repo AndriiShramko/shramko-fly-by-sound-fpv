@@ -1,8 +1,8 @@
 {
  "format": "shramko-listen-evidence/1",
- "key": "41cfb8b444cc2c5bcc21cd41064d8a1f05befd5e030be275458dc53500fcf2e8",
+ "key": "61b845a0509414a2a8d86994e3cb1eeea2122f32b8f27afbd718c7b5ca1ca64b",
  "inputs": {
-  "hash": "41cfb8b444cc2c5bcc21cd41064d8a1f05befd5e030be275458dc53500fcf2e8",
+  "hash": "61b845a0509414a2a8d86994e3cb1eeea2122f32b8f27afbd718c7b5ca1ca64b",
   "files": 106,
   "driver": 1,
   "measure": 1,
@@ -15,7 +15,7 @@
    "pyloudnorm": "0.2.0"
   }
  },
- "date": "2026-11-08T11:56:22.073Z",
+ "date": "2026-11-08T12:04:04.427Z",
  "id": "VL-0b",
  "claim": "the solo stems (safety, height, target, shape, room, motor) sum to the pre-chain mix",
  "thresholds": {
@@ -29,7 +29,7 @@
   }
  },
  "measured": {
-  "residualDb": -127.9,
+  "residualDb": -127.6,
   "stemRmsDb": {
    "safety": -41.7,
    "height": -36.2,

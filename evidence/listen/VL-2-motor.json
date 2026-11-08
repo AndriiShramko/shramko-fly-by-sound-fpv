@@ -1,8 +1,8 @@
 {
  "format": "shramko-listen-evidence/1",
- "key": "41cfb8b444cc2c5bcc21cd41064d8a1f05befd5e030be275458dc53500fcf2e8",
+ "key": "61b845a0509414a2a8d86994e3cb1eeea2122f32b8f27afbd718c7b5ca1ca64b",
  "inputs": {
-  "hash": "41cfb8b444cc2c5bcc21cd41064d8a1f05befd5e030be275458dc53500fcf2e8",
+  "hash": "61b845a0509414a2a8d86994e3cb1eeea2122f32b8f27afbd718c7b5ca1ca64b",
   "files": 106,
   "driver": 1,
   "measure": 1,
@@ -15,7 +15,7 @@
    "pyloudnorm": "0.2.0"
   }
  },
- "date": "2026-11-08T11:56:22.073Z",
+ "date": "2026-11-08T12:04:04.427Z",
  "id": "VL-2-motor",
  "claim": "every cue (safety, height, target, shape) is at least 6 dB over the motor in its own third-octave bands, where it sounds (control: the v0.12 path, the raw motor at the slider at 60 %)",
  "thresholds": {
@@ -92,7 +92,7 @@
    }
   },
   "level": {
-   "cuesLufs": -29.98,
+   "cuesLufs": -29.99,
    "motorLufs": -44.51,
    "motorUnderCuesLu": 14.52,
    "rawMotor60Lufs": -36.91

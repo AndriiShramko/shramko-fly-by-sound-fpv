@@ -1,8 +1,8 @@
 {
  "format": "shramko-listen-evidence/1",
- "key": "41cfb8b444cc2c5bcc21cd41064d8a1f05befd5e030be275458dc53500fcf2e8",
+ "key": "61b845a0509414a2a8d86994e3cb1eeea2122f32b8f27afbd718c7b5ca1ca64b",
  "inputs": {
-  "hash": "41cfb8b444cc2c5bcc21cd41064d8a1f05befd5e030be275458dc53500fcf2e8",
+  "hash": "61b845a0509414a2a8d86994e3cb1eeea2122f32b8f27afbd718c7b5ca1ca64b",
   "files": 106,
   "driver": 1,
   "measure": 1,
@@ -15,7 +15,7 @@
    "pyloudnorm": "0.2.0"
   }
  },
- "date": "2026-11-08T11:56:22.073Z",
+ "date": "2026-11-08T12:04:04.427Z",
  "id": "VL-6-speech",
  "claim": "the voice (all its lines, at the engine's utterance volume, the Windows desktop voice) is 3 to 6 LU over the flight's mix, in every theme (control: the v0.12 utterance volume 1)",
  "thresholds": {
@@ -30,8 +30,8 @@
  "measured": {
   "soft": {
    "voiceLufs": -23.82,
-   "mixLufs": -28.49,
-   "overLu": 4.68,
+   "mixLufs": -28.48,
+   "overLu": 4.66,
    "volume": 0.74,
    "lines": [
     {
@@ -46,21 +46,21 @@
      "t0": 6.5,
      "volume": 0.74,
      "speechLufs": -22.96,
-     "over3sBeforeLu": 3.78
+     "over3sBeforeLu": 3.75
     },
     {
      "key": "fly.attempt",
      "t0": 11,
      "volume": 0.74,
      "speechLufs": -25.74,
-     "over3sBeforeLu": 10.89
+     "over3sBeforeLu": 10.86
     }
    ]
   },
   "clear": {
    "voiceLufs": -20.57,
-   "mixLufs": -25.24,
-   "overLu": 4.67,
+   "mixLufs": -25.22,
+   "overLu": 4.65,
    "volume": 0.87,
    "lines": [
     {
@@ -75,21 +75,21 @@
      "t0": 6.5,
      "volume": 0.87,
      "speechLufs": -19.71,
-     "over3sBeforeLu": 4.69
+     "over3sBeforeLu": 4.64
     },
     {
      "key": "fly.attempt",
      "t0": 11,
      "volume": 0.87,
      "speechLufs": -22.49,
-     "over3sBeforeLu": 13.23
+     "over3sBeforeLu": 13.21
     }
    ]
   },
   "race": {
    "voiceLufs": -23.07,
-   "mixLufs": -27.59,
-   "overLu": 4.53,
+   "mixLufs": -27.8,
+   "overLu": 4.73,
    "volume": 0.77,
    "lines": [
     {
@@ -104,14 +104,14 @@
      "t0": 6.5,
      "volume": 0.77,
      "speechLufs": -22.21,
-     "over3sBeforeLu": 3.77
+     "over3sBeforeLu": 4.19
     },
     {
      "key": "fly.attempt",
      "t0": 11,
      "volume": 0.77,
      "speechLufs": -24.99,
-     "over3sBeforeLu": 10.66
+     "over3sBeforeLu": 10.63
     }
    ]
   }
@@ -122,8 +122,8 @@
    "measured": {
     "soft": {
      "voiceLufs": -17.32,
-     "mixLufs": -28.49,
-     "overLu": 11.18,
+     "mixLufs": -28.48,
+     "overLu": 11.16,
      "volume": 1,
      "lines": [
       {
@@ -138,21 +138,21 @@
        "t0": 6.5,
        "volume": 1,
        "speechLufs": -16.46,
-       "over3sBeforeLu": 10.28
+       "over3sBeforeLu": 10.25
       },
       {
        "key": "fly.attempt",
        "t0": 11,
        "volume": 1,
        "speechLufs": -19.24,
-       "over3sBeforeLu": 17.39
+       "over3sBeforeLu": 17.36
       }
      ]
     },
     "clear": {
      "voiceLufs": -17.32,
-     "mixLufs": -25.24,
-     "overLu": 7.92,
+     "mixLufs": -25.22,
+     "overLu": 7.9,
      "volume": 1,
      "lines": [
       {
@@ -167,21 +167,21 @@
        "t0": 6.5,
        "volume": 1,
        "speechLufs": -16.46,
-       "over3sBeforeLu": 7.94
+       "over3sBeforeLu": 7.89
       },
       {
        "key": "fly.attempt",
        "t0": 11,
        "volume": 1,
        "speechLufs": -19.24,
-       "over3sBeforeLu": 16.48
+       "over3sBeforeLu": 16.46
       }
      ]
     },
     "race": {
      "voiceLufs": -17.32,
-     "mixLufs": -27.59,
-     "overLu": 10.28,
+     "mixLufs": -27.8,
+     "overLu": 10.48,
      "volume": 1,
      "lines": [
       {
@@ -196,14 +196,14 @@
        "t0": 6.5,
        "volume": 1,
        "speechLufs": -16.46,
-       "over3sBeforeLu": 9.52
+       "over3sBeforeLu": 9.94
       },
       {
        "key": "fly.attempt",
        "t0": 11,
        "volume": 1,
        "speechLufs": -19.24,
-       "over3sBeforeLu": 16.41
+       "over3sBeforeLu": 16.38
       }
      ]
     }
