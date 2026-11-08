@@ -4,10 +4,11 @@
 // flying back. Turn around.", at most once every 5 s; a gate crossed from its back side is told and not counted.
 import { describe, expect, it } from 'vitest';
 import type { CueEvent, SonicObject, SonicWorld, Vec3 } from '../src/contract';
-import { getLesson, lessonTrack, toLocal, worldCheckpoints, WRONG_WAY_EVERY_S, type RunnerAction } from '../src/lesson';
+import { getLesson, LINE_UP_M, lessonTrack, lineUpM, toLocal, worldCheckpoints, WRONG_WAY_EVERY_S, type RunnerAction } from '../src/lesson';
 import { quatRotate } from '../src/util/vec';
 import { createAnalyticWorld } from '../src/world';
 import { ScriptedPilot } from './helpers/pilot';
+import { playImperfect } from './helpers/imperfect';
 import { flyTruth, truthAnswerer } from './helpers/truth';
 
 type Say = Extract<RunnerAction, { kind: 'say' }>;
@@ -217,4 +218,81 @@ describe('a gate crossed from its back side', () => {
         expect(p.run.phase).toBe('passed');
         expect(lines(p, 'fly.wrong-way') + lines(p, 'fly.wrong-side')).toBe(0);
     }, 60000);
+});
+
+// Lane s13-elev (M41-15, the v0.13 merge review's open item 4): "wrong way" between gates. v0.13 judged flying back
+// only further than LINE_UP_M (8 m, set for rings 14 m apart) in front of the gate that counts next, so in the 5 to
+// 7 m legs of the v0.13 rooms a pilot who turned back toward the gate he had just passed was never told. The line-up
+// distance now follows the leg (lineUpM) and flying back is flying against the leg; the 8 m rule is the control.
+describe('turning back between two gates (lane s13-elev)', () => {
+    const COURSES = ['rings-line', 'rings-small', 'rings-heights', 'rings-course', 'shapes-series'] as const;
+
+    /**
+     * Passes gate 1 forward, flies on to `turnAt` (1 m past gate 1, or the middle of the leg to gate 2), turns round and
+     * flies back toward gate 1 at 2 m/s, through it to 2.5 m in front of it at its height (the climb cap would take the
+     * craft over a ring's opening on the straight line back from a lower gate): how far it flew back when "wrong way"
+     * was first told (Infinity: never), the leg, and the told cue.
+     */
+    function turnBack(id: (typeof COURSES)[number], turnAt: 'past-1m' | 'middle', hooks?: { lineUp: 'fixed' }): { metres: number; leg: number; dir: Vec3 | null } {
+        const p = new ScriptedPilot(getLesson(id), hooks === undefined ? {} : { testHooks: hooks });
+        p.begin();
+        p.until(() => p.run.phase === 'flying', 60);
+        const [r1, r2] = p.objects().filter((o) => o.order !== null).sort((a, b) => (a.order as number) - (b.order as number)) as [SonicObject, SonicObject];
+        const leg = Math.hypot(r2.pos[0] - r1.pos[0], r2.pos[1] - r1.pos[1], r2.pos[2] - r1.pos[2]);
+        p.flyTo(atGate(r1, [0, 0, 3]));
+        p.flyTo(atGate(r1, [0, 0, -1])); // gate 1, forward
+        expect(p.of('gate').map((g) => g.gateId)).toEqual([r1.id]);
+        const turn: Vec3 = turnAt === 'past-1m' ? p.pos : [(r1.pos[0] + r2.pos[0]) / 2, (r1.pos[1] + r2.pos[1]) / 2, (r1.pos[2] + r2.pos[2]) / 2];
+        p.flyTo(turn);
+        p.turnTo(p.yaw + 180);
+        const flat = Math.hypot(r1.pos[0] - r2.pos[0], r1.pos[2] - r2.pos[2]);
+        const u: Vec3 = [(r1.pos[0] - r2.pos[0]) / flat, 0, (r1.pos[2] - r2.pos[2]) / flat];
+        let metres = Infinity;
+        let dir: Vec3 | null = null;
+        const tick = p.tick.bind(p);
+        p.tick = () => {
+            tick();
+            const told = cueOf(p, 'wrong-way');
+            if (metres === Infinity && told.length > 0) {
+                metres = Math.hypot(p.pos[0] - turn[0], p.pos[1] - turn[1], p.pos[2] - turn[2]);
+                dir = (told[0] as Extract<CueEvent, { kind: 'wrong-way' }>).dir ?? null;
+            }
+        };
+        p.flyTo([r1.pos[0] + u[0] * 2.5, r1.pos[1], r1.pos[2] + u[2] * 2.5], 2, false);
+        expect(p.of('touch'), 'a clean flight').toEqual([]);
+        return { metres, leg, dir };
+    }
+
+    it.each(COURSES)('%s: turned back 1 m past a gate or halfway to the next, told within 3 m of flying back (2 m/s), the cue from where the next gate is', (id) => {
+        for (const at of ['past-1m', 'middle'] as const) {
+            const r = turnBack(id, at);
+            expect(r.leg, id).toBeLessThan(LINE_UP_M); // every leg of these rooms lies inside v0.13's 8 m
+            expect(r.metres, `${id} turned ${at}`).toBeLessThanOrEqual(3);
+            // a pilot who faces back hears it from behind: the way to the gate that counts next
+            expect((r.dir as Vec3 | null)?.[2] ?? 0, `${id} turned ${at}`).toBeGreaterThan(0.5);
+        }
+    }, 60000);
+
+    it.each(COURSES)('control: %s with the 8 m rule of v0.13 is never told on the way back to gate 1', (id) => {
+        for (const at of ['past-1m', 'middle'] as const) expect(turnBack(id, at, { lineUp: 'fixed' }).metres, `${id} turned ${at}`).toBe(Infinity);
+    }, 60000);
+
+    it('the line-up distance follows the leg: 8 m for 14 m and longer, in proportion below', () => {
+        expect(lineUpM(14)).toBe(LINE_UP_M);
+        expect(lineUpM(30)).toBe(LINE_UP_M);
+        expect(lineUpM(7)).toBeCloseTo(4, 9);
+        expect(lineUpM(5)).toBeCloseTo(40 / 14, 9);
+        expect(lineUpM(0)).toBe(LINE_UP_M);
+    });
+
+    // the truth bot is the test above ('flown by the truth bot to its pass'); the imperfect pilot flies the same line at
+    // 65 % of the cap, wobbling sideways by half its clearance in each gate and stopping 1.2 s every 3 m
+    it.each(['rings-first', 'rings-line', 'rings-small', 'rings-heights', 'rings-course', 'shapes-square', 'shapes-series', 'shapes-cube'])('%s flown by the imperfect pilot: never told the wrong way or the wrong side', (id) => {
+        const p = new ScriptedPilot(getLesson(id));
+        playImperfect(p);
+        expect(p.of('gate').length, `${id}: it flew the course`).toBeGreaterThan(0);
+        expect(cueOf(p, 'wrong-way')).toEqual([]);
+        expect(cueOf(p, 'wrong-side')).toEqual([]);
+        expect(lines(p, 'fly.wrong-way') + lines(p, 'fly.wrong-side')).toBe(0);
+    }, 120000);
 });

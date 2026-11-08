@@ -46,7 +46,13 @@ and below change with it. In the same lane: "wrong way" between gates, which the
   height polarity (lane s13-sound's review m2). English measured with the local voice: 18.07, 16.04, 10.23 and
   6.41 s (`test/fixtures/tts-en-david.json`). Tests: `test/named-sounds.test.ts` (the plays, the words per language,
   never "from ahead"), `test/world-tunnels.test.ts`, `test/lessons.test.ts` (the two versions)
-- [ ] E1-5 Wrong way between gates: the line-up distance scaled with the lesson's gate spacing (control: the 8 m rule)
+- [x] E1-5 Wrong way between gates (`src/lesson/runner.ts` `lineUpM`, `wayForward`): the line-up distance follows the
+  leg to the gate that counts next, `LINE_UP_M` x leg / `LINE_UP_SPACING_M` (8 m x leg / 14 m, at most 8 m), and flying
+  back is flying against the leg along the floor. Turned back 1 m past gate 1 or halfway to gate 2 and flown back at
+  2 m/s, a pilot is told after 2.04 m (1 m past) and 2.36 to 2.51 m (halfway) in rings-line, rings-small,
+  rings-heights, rings-course and shapes-series; the truth bot and the new imperfect pilot (`test/helpers/imperfect.ts`)
+  fly all eight gate lessons to their pass and are never told. Control: the 8 m rule of v0.13 (`testHooks.lineUp
+  'fixed'`) never tells the turned pilot; `lineUpM` broken to 8 m fails 6 tests (`test/direction.test.ts`, 19 new)
 - [ ] E1-6 Measure: Node tests, the listener check of the placement (Chrome's HRTF, headless), the localization models
   where runnable; all repository checks, the proofs and `pnpm listen`
 - [ ] E1-7 This lane's E1 status final
@@ -126,6 +132,23 @@ one exception).
   line's text), so its version stays 2.
 - The corridor's intro.3 is long now (16 s with the local voice, 11.5 before); it says left, right, above or below in
   one line, as the glossary does.
+
+### E1-5, the wrong way between gates
+
+- Why 8 m failed: it was set for rings 14 m apart (review R1: a pilot back from beside a missed ring ends about 5 m in
+  front of it), and every leg of the v0.13 rooms is 5 to 6.2 m (rings-small 5, rings-line and shapes-series 6,
+  rings-course's first 6.1, rings-heights 6.18 with its height step), so the whole gap between two gates lay inside it.
+- Scaled with the leg (the gate before, or the lesson's start for the first gate): 2.86 m for rings-small, 3.43 to
+  3.53 m for the others; 8 m from a leg of 14 m on. The truth bot flies back up to 3 m between two gates of
+  rings-small (from 4 m past one gate to 4 m before the next); it crosses the line-up distance for 1.14 m at 2.5 m/s,
+  0.46 s, under the second it takes to be told.
+- Against the leg, not away from the gate: with the radial rule of v0.13 and the shorter line-up distance, the review
+  R1 flight in rings-small (a pilot moving 3.5 m aside, 3 m in front of ring 2, to fly round it) was told "wrong way"
+  (that test failed); moving aside is not flying back. The cue still says where the gate is (its `dir`), and the
+  control `lineUp 'fixed'` is v0.13's rule exactly, both parts.
+- The imperfect pilot (65 % of the cap, a sideways wobble of half its clearance in each opening, 1.2 s still every
+  3 m) passes rings-first, rings-line, rings-small and rings-heights in 3 attempts, the shapes in 2, rings-course in 1,
+  with no touch.
 
 ## Needs from the simulator
 

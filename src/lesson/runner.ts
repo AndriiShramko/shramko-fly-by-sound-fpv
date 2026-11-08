@@ -59,9 +59,13 @@
 // checkpoints, or a course's gates) knows which way is forward: flying against it faster than
 // WRONG_WAY_MPS for more than WRONG_WAY_S gives the cue event 'wrong-way' and "You are flying back. Turn
 // around.", at most once every WRONG_WAY_EVERY_S. While the goal is a course of gates, forward is the way to
-// the gate that counts next, judged only in front of it further than LINE_UP_M (behind it or close to it the
-// pilot may be flying round to its front: a ring missed beside it is flown back to). A gate crossed from its
-// back side gives 'wrong-side' and its line, and is not counted.
+// the gate that counts next, judged only in front of it further than its line-up distance (behind it or close to
+// it the pilot may be flying round to its front: a ring missed beside it is flown back to). Lane s13-elev (M41-15):
+// the line-up distance follows the leg to that gate, LINE_UP_M for a leg of LINE_UP_SPACING_M or more and in
+// proportion below it, and flying back is flying against the leg (from the gate before, along the floor), so a
+// pilot who turns back toward the gate he just passed is told within a few metres in the 5 to 7 m legs of the v0.13
+// rooms, which the 8 m of v0.13 never did, and a pilot who moves aside to fly round a gate is not flying back. A
+// gate crossed from its back side gives 'wrong-side' and its line, and is not counted.
 //
 // Respawn (M41-20). A touch in a lesson that re-centres, or a short R, puts the craft RESPAWN_BEFORE_M
 // before the furthest point of the track passed in this attempt (a lesson checkpoint, or a point of the
@@ -89,7 +93,7 @@ import { createTranslator, type Dicts, type Translator } from '../i18n/translato
 import { createRng } from '../util/rng';
 import { distance as dist3, dot, normalize, sub, yawQuat } from '../util/vec';
 import { createAnalyticWorld, makeSpec, type AnalyticWorldInfo } from '../world/analytic-world';
-import { BODY_RADIUS_M, createTracker, toLocal, type GoalScore, type GoalTracker, type Outcome } from './goals';
+import { BODY_RADIUS_M, courseGates, createTracker, toLocal, type GoalScore, type GoalTracker, type Outcome } from './goals';
 import { getLesson, isShippedLesson, lessonAfter, lessonPaths } from './library';
 import { APPROACHES, GAME_SCENE_S, isGlossary, NARRATED_SCENE_S, playS, REPEAT_GAP_S, REPEAT_PLAYS, SHAPE_ORDER } from './sounds';
 import { lessonTrack, yawOf, type LessonTrack, type TrackPoint } from './track';
@@ -259,6 +263,8 @@ export interface RunnerTestHooks {
      * a sound or a scene starts at once and plays once (the cause of "press 1, press 2, but no sound").
      */
     readonly speechWait?: 'v012';
+    /** 'fixed': the line-up rule of v0.13, LINE_UP_M in front of the next gate whatever the leg to it (lane s13-elev's control) */
+    readonly lineUp?: 'fixed';
 }
 
 /** @internal A lesson's pass rule as v0.12 shipped it (format 1), for RunnerTestHooks.passRule only. */
@@ -284,8 +290,21 @@ export const WRONG_WAY_EVERY_S = 5;
 /**
  * In a course, this close in front of the gate that counts next a pilot may be turning to line up with it: flying
  * away from it there is not flying back, m (review R1; rings 14 m apart, a pilot back from beside one ends 5 m out).
+ * Since lane s13-elev the most it is: a shorter leg has a shorter one (lineUpM).
  */
 export const LINE_UP_M = 8;
+/** The leg LINE_UP_M was set for, m: the line-up distance is LINE_UP_M times the leg over this, at most LINE_UP_M. */
+export const LINE_UP_SPACING_M = 14;
+
+/**
+ * Lane s13-elev (M41-15): how close in front of the gate that counts next flying away from it is lining up, not
+ * flying back, for a leg of `legM` from the gate before it (or the start): 8 m for 14 m and longer, in proportion
+ * below (2.9 m for the 5 m legs of rings-small, 4 m for rings-course's 7 m). v0.13 took 8 m for every leg, and every
+ * gap between two gates of the v0.13 rooms (5 to 7 m) lay inside it, so turning back there was never told.
+ */
+export function lineUpM(legM: number): number {
+    return Number.isFinite(legM) && legM > 0 ? Math.min(LINE_UP_M, (LINE_UP_M * legM) / LINE_UP_SPACING_M) : LINE_UP_M;
+}
 /** A respawn puts the craft this far before the last point of the track it passed, m. */
 export const RESPAWN_BEFORE_M = 1;
 /** The craft further than this from the start when a course's first attempt begins goes back there first, m. */
@@ -1003,34 +1022,52 @@ class Runner implements LessonSession {
 
     /** M41-15: flying against the way forward for more than a second, told at most once every few seconds. */
     private checkDirection(s: FlightSample): void {
-        const dir = this.wayForward(s);
-        if (dir === null || dot(s.vel, dir) >= -WRONG_WAY_MPS) {
+        const way = this.wayForward(s);
+        if (way === null || dot(s.vel, way.against) >= -WRONG_WAY_MPS) {
             this.backSince = null;
             return;
         }
         this.backSince ??= s.t;
         if (s.t - this.backSince < WRONG_WAY_S * 1000 || s.t - this.lastWrongWay < WRONG_WAY_EVERY_S * 1000) return;
         this.lastWrongWay = s.t;
-        this.actions.push({ kind: 'cue', event: { kind: 'wrong-way', dir: this.toListener(dir) } });
+        this.actions.push({ kind: 'cue', event: { kind: 'wrong-way', dir: this.toListener(way.dir) } });
         this.actions.push({ kind: 'say', line: { key: 'fly.wrong-way' }, interrupt: false });
     }
 
     /**
      * The way forward where the craft is (unit, world frame), or null where nothing says it. While the goal is a
-     * course of gates it is the way to the gate that counts next, and only in front of that gate, further than
-     * LINE_UP_M from it: behind it, beside it or close in front of it a pilot may be on his way round to its front
-     * (review R1: a ring passed beside it is flown back to, its hum ahead). Elsewhere it is the way the track goes.
+     * course of gates it is the way to the gate that counts next, and only in front of that gate, further than its
+     * line-up distance (lineUpM of the leg to it): behind it, beside it or close in front of it a pilot may be on his
+     * way round to its front (review R1: a ring passed beside it is flown back to, its hum ahead). Elsewhere it is the
+     * way the track goes.
      */
-    private wayForward(s: FlightSample): Vec3 | null {
+    private wayForward(s: FlightSample): { readonly dir: Vec3; readonly against: Vec3 } | null {
         const goal = this.lesson.goals[this.goalIndex];
         if (goal !== undefined && (goal.kind === 'pass-gates' || goal.kind === 'timed-course')) {
             const gate = this.tracker?.target() ?? null;
             if (gate === null) return null;
             const to = sub(gate.pos, s.pos);
-            if (toLocal(gate, s.pos)[2] <= 0 || Math.hypot(to[0], to[1], to[2]) <= LINE_UP_M) return null;
-            return normalize(to);
+            const dir = normalize(to);
+            // the control: v0.13's rule, 8 m whatever the leg, flying back judged against the way to the gate
+            if (this.o.testHooks?.lineUp === 'fixed') return toLocal(gate, s.pos)[2] <= 0 || Math.hypot(to[0], to[1], to[2]) <= LINE_UP_M ? null : { dir, against: dir };
+            const leg = this.legTo(gate, goal.kind === 'pass-gates' ? goal.gateIds : 'all');
+            if (toLocal(gate, s.pos)[2] <= 0 || Math.hypot(to[0], to[1], to[2]) <= lineUpM(leg.metres)) return null;
+            return { dir, against: leg.along ?? dir };
         }
-        return this.track()?.dirAt(s.pos) ?? null;
+        const along = this.track()?.dirAt(s.pos) ?? null;
+        return along === null ? null : { dir: along, against: along };
+    }
+
+    /**
+     * The leg to a gate of the course (lane s13-elev): from the gate before it in the course, or from the lesson's start
+     * for the first one; its length (m) and its way along the floor (unit; null when the leg is all but vertical).
+     */
+    private legTo(gate: SonicObject, ids: readonly string[] | 'all'): { readonly metres: number; readonly along: Vec3 | null } {
+        const gates = courseGates(this.objects(), ids);
+        const i = gates.findIndex((g) => g.id === gate.id);
+        const from = i > 0 ? (gates[i - 1] as SonicObject).pos : (this.o.start ?? this.lesson.start).pos;
+        const flat: Vec3 = [gate.pos[0] - from[0], 0, gate.pos[2] - from[2]];
+        return { metres: dist3(from, gate.pos), along: Math.hypot(flat[0], flat[2]) >= 0.5 ? normalize(flat) : null };
     }
 
     /** The current goal, and the next ones as each is met, in order; then the attempt's time limit. */
