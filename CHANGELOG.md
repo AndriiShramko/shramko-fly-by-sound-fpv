@@ -43,8 +43,12 @@
     The glossary and the corridor say so in the four languages, tunnel-gaps' intro.3 plays the chime above and below
     (version 2), and walls-pillar names the chime at its pillar in a line of its own (version 3).
   - The wrong way between gates (M41-15): the distance in front of the next gate where flying away is lining up follows
-    the leg to it (`lineUpM`: 8 m for gates 14 m apart, 2.9 to 3.5 m in the v0.13 rooms), and flying back is flying
-    against the leg, so a pilot who turns back toward the gate he just passed is told within about 2.5 m.
+    the leg to it (`lineUpM`: 8 m for gates 14 m apart, 2.9 to 4 m in the v0.13 rooms, whose legs are 5 to 7 m), and
+    flying back is flying against the leg, so a pilot who turns back toward the gate he just passed is told within about
+    2.5 m. That holds on a leg once the craft has flown along it; before, v0.13's rule (8 m, flying away from the gate),
+    so the momentum carried out of a course that turns back after a gate (the Winter Garden) and backing away at the start
+    are not told. The leg begins at the gate passed last (a later lap's first gate: the course's last); a course in any
+    order keeps v0.13's rule.
   - Event sounds of their own for the wrong way, a gate passed from its back, praise (three figures in turn) and a
     stage (each a step higher); a named sound plays for as long as the runner gives it (`repeat-cue`, `durS`).
   - The motor is on by default and sits under the cues: `engine.motorInput` (a 1.1 to 2 kHz band, levelled, ducked),

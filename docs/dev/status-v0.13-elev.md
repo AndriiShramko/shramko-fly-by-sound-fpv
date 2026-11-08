@@ -115,7 +115,9 @@ the code, then fixed with a test and its control (section "Review fixes" below):
   `target-note-pan`, each with its control), and both found wrong on the shipped engine and fixed: the height tone now
   comes back 12 ms after a placed note (`HRTF_TAIL_S`; 6.5 ms left 2.3 to 2.8 ms of overlap), and a constant input 140 dB
   down keeps the target panner running between notes (Chrome had turned it only at the next note's onset)
-- [ ] F6 Review E7: rings-course in the numbers
+- [x] F6 Review E7: rings-course in the numbers: every leg of the gate lessons measured again, 5 to 7.05 m (rings-course
+  6.0, 6.10, 7.05, 6.46, 6.57, 7.05), line-up distances 2.86 to 4.03 m; the CHANGELOG and section E1-5 say so (and the
+  CHANGELOG the rule of F1)
 - [ ] F7 Every check again; final status of the review fixes
 
 ## E1-1 Audit: the cues of up and down in v0.13 (code as of 16c01a1)
@@ -193,10 +195,12 @@ one exception).
 ### E1-5, the wrong way between gates
 
 - Why 8 m failed: it was set for rings 14 m apart (review R1: a pilot back from beside a missed ring ends about 5 m in
-  front of it), and every leg of the v0.13 rooms is 5 to 6.2 m (rings-small 5, rings-line and shapes-series 6,
-  rings-course's first 6.1, rings-heights 6.18 with its height step), so the whole gap between two gates lay inside it.
-- Scaled with the leg (the gate before, or the lesson's start for the first gate): 2.86 m for rings-small, 3.43 to
-  3.53 m for the others; 8 m from a leg of 14 m on. The truth bot flies back up to 3 m between two gates of
+  front of it), and every leg of the v0.13 rooms is 5 to 7.05 m (rings-small 5; from the start to gate 1 5.5, 6 in
+  rings-course; rings-line and shapes-series 6; rings-heights 6.18 with its height step; rings-course 6.0, 6.10, 7.05,
+  6.46, 6.57 and 7.05: review E7), so the whole gap between two gates lay inside it.
+- Scaled with the leg (the gate before, or the lesson's start for the first gate): 2.86 m for rings-small, 3.14 to
+  3.53 m for the other rooms but rings-course, 3.43 to 4.03 m there; 8 m from a leg of 14 m on (since review E1, once
+  the leg is flown: section "Review fixes"). The truth bot flies back up to 3 m between two gates of
   rings-small (from 4 m past one gate to 4 m before the next); it crosses the line-up distance for 1.14 m at 2.5 m/s,
   0.46 s, under the second it takes to be told.
 - Against the leg, not away from the gate: with the radial rule of v0.13 and the shorter line-up distance, the review
