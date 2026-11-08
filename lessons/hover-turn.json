@@ -69,7 +69,7 @@
     }
   },
   "start": {
-    "pos": [0, 3, 72],
+    "pos": [0, 3, 1],
     "yawDeg": 0
   },
   "title": {
@@ -81,13 +81,17 @@
     "spec": {
       "generator": "rings",
       "params": {
-        "aheadM": 3,
+        "aheadM": 0.5,
+        "depthM": 10,
+        "heightM": 5.2,
         "layout": "single",
-        "offsetXM": -25,
-        "sizeM": 3
+        "offsetXM": -4,
+        "sizeM": 3,
+        "startBackM": 4,
+        "widthM": 14
       },
       "seed": 0,
-      "version": 1
+      "version": 2
     }
   }
 }

@@ -46,7 +46,7 @@
     ]
   },
   "module": 5,
-  "order": 14,
+  "order": 20,
   "pass": {
     "attempts": 3,
     "blocking": true,
@@ -67,7 +67,7 @@
     }
   },
   "start": {
-    "pos": [0, 3, 72],
+    "pos": [0, 3, 10.75],
     "yawDeg": 0
   },
   "title": {
@@ -79,14 +79,17 @@
     "spec": {
       "generator": "rings",
       "params": {
-        "aheadM": 12,
+        "aheadM": 5.5,
         "count": 3,
+        "depthM": 24.5,
+        "heightM": 5.2,
         "layout": "line",
         "sizeM": 3,
-        "spacingM": 14
+        "spacingM": 6,
+        "widthM": 10
       },
       "seed": 0,
-      "version": 1
+      "version": 2
     }
   }
 }

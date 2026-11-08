@@ -1,0 +1,109 @@
+{
+  "assists": {
+    "altitude": "hold",
+    "autoArm": true,
+    "control": "velocity",
+    "maxClimbMps": 1,
+    "maxSpeedMps": 2.5,
+    "maxYawDps": 120,
+    "onTouch": "bump-recentre"
+  },
+  "attemptLimitS": 150,
+  "checkpoints": [
+    {
+      "at": [0, 1, 0],
+      "id": "cp-1",
+      "pose": {
+        "pos": [0, 1, 0],
+        "yawDeg": 0
+      },
+      "radiusM": 1.4
+    },
+    {
+      "at": [20, 1, -26.5],
+      "id": "cp-2",
+      "pose": {
+        "pos": [20, 1, -26.5],
+        "yawDeg": 0
+      },
+      "radiusM": 1.4
+    }
+  ],
+  "fastPath": false,
+  "format": "shramko-sonic-lesson/2",
+  "goals": [
+    {
+      "kind": "fly-distance",
+      "metres": 39
+    }
+  ],
+  "id": "tunnel-bends",
+  "intro": [
+    {
+      "key": "lesson.tunnel-bends.intro.1"
+    },
+    {
+      "key": "lesson.tunnel-bends.intro.2"
+    },
+    {
+      "key": "lesson.tunnel-bends.goal.1"
+    }
+  ],
+  "layers": {
+    "hazardVoices": 3,
+    "heightBandM": null,
+    "on": [
+      "safety",
+      "height",
+      "room",
+      "voice"
+    ]
+  },
+  "module": 4,
+  "order": 16,
+  "pass": {
+    "attempts": 3,
+    "blocking": true,
+    "maxTouches": null,
+    "required": 1
+  },
+  "speech": {
+    "hints": [
+      {
+        "key": "lesson.tunnel-bends.hint.1"
+      }
+    ],
+    "pass": {
+      "key": "lesson.tunnel-bends.pass"
+    },
+    "retry": {
+      "key": "lesson.tunnel-bends.retry"
+    }
+  },
+  "start": {
+    "pos": [0, 1, 0],
+    "yawDeg": 0
+  },
+  "title": {
+    "key": "lesson.tunnel-bends.title"
+  },
+  "version": 1,
+  "world": {
+    "kind": "analytic",
+    "spec": {
+      "generator": "corridor",
+      "params": {
+        "bendCount": 10,
+        "endM": 4,
+        "heightM": 2,
+        "layout": "tunnel",
+        "segmentM": 4,
+        "startHeightM": 1,
+        "straightM": 4,
+        "widthM": 2
+      },
+      "seed": 0,
+      "version": 2
+    }
+  }
+}

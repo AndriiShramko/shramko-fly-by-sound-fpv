@@ -15,7 +15,7 @@
   "goals": [
     {
       "kind": "fly-distance",
-      "metres": 6
+      "metres": 4
     },
     {
       "kind": "reach-zone",
@@ -84,8 +84,8 @@
       "generator": "open",
       "params": {
         "startHeightM": 1.5,
-        "zoneDistanceM": 14,
-        "zoneSizeM": 16
+        "zoneDistanceM": 7,
+        "zoneSizeM": 6
       },
       "seed": 0,
       "version": 1

@@ -8,6 +8,22 @@ import { createAnalyticWorld } from '../src/world';
 
 const DT = 20; // ms: 50 Hz
 
+/** The world of a shipped lesson: flights are laid out from its objects and landmarks, not from fixed numbers. */
+function worldOf(lessonId: string): ReturnType<typeof createAnalyticWorld> {
+    const ref = getLesson(lessonId).world;
+    if (ref.kind !== 'analytic') throw new Error(`${lessonId} has no analytic world`);
+    return createAnalyticWorld(ref.spec);
+}
+const objectOf = (lessonId: string, id: string): SonicObject => {
+    const o = worldOf(lessonId).objects().find((x) => x.id === id);
+    if (o === undefined) throw new Error(`${lessonId} has no ${id}`);
+    return o;
+};
+/** `metres` further along -Z (past a gate that faces -Z; back along +Z when negative), `side` metres to the right. */
+const along = (p: Vec3, metres: number, side = 0): Vec3 => [p[0] + side, p[1], p[2] - metres];
+/** z of the front wall of a lesson's hall (its landmark). */
+const frontWallZ = (lessonId: string): number => worldOf(lessonId).landmarks.find((l) => l.id === 'wall-front')!.pos[2];
+
 /** A scripted pilot: flies the craft, speaks every line at once, obeys 'place', answers questions. */
 class Pilot {
     t = 0;
@@ -170,15 +186,16 @@ describe('every goal kind: a scripted pass and a near miss', () => {
     });
 
     it('reach-zone: stopping inside the zone passes, stopping 2 m short misses', () => {
+        const zone = objectOf('move-stop', 'zone-1');
         const pass = new Pilot(getLesson('move-stop'));
         pass.begin();
-        pass.flyTo([0, 1.5, -30], 4);
+        pass.flyTo(zone.pos, 4);
         pass.hold(1);
         expect(goalEvents(pass)).toEqual(['0:met']);
 
         const near = new Pilot(getLesson('move-stop'));
         near.begin();
-        near.flyTo([0, 1.5, -25], 4);
+        near.flyTo(along(zone.pos, -((zone.shape as { size: Vec3 }).size[2] / 2 + 2)), 4);
         near.hold(GIVE_UP_MS / 1000 + 0.5);
         expect(goalEvents(near)).toEqual(['0:missed']);
     });
@@ -191,16 +208,21 @@ describe('every goal kind: a scripted pass and a near miss', () => {
         expect(goalEvents(p)).toEqual(['0:met', '1:met']);
     });
 
-    it('approach-stop: stopping 2.5 m from a wall passes, stopping 6 m away misses', () => {
+    it('approach-stop: stopping within the goal distance of a wall passes, stopping 1 m outside it from the nearest one misses', () => {
+        const front = frontWallZ('walls-hall');
+        // the goal's distance (1.5 m in the room of v0.13, 10 x 12 m; 3 m in v0.12's hall): the hull's distance to the wall
+        const within = (getLesson('walls-hall').goals[0] as { stopWithinM: number }).stopWithinM;
         const pass = new Pilot(getLesson('walls-hall'));
         pass.begin();
-        pass.flyTo([0, 1.5, -27.5], 3);
+        pass.flyTo([0, 1.5, front + within - 0.3], 3);
         pass.hold(1);
         expect(goalEvents(pass)).toEqual(['0:met']);
 
+        // over 2 m of flight from the middle of the room (an approach needs 2 m), the goal's distance and 1 m from the
+        // front wall, 4 m from the side walls
         const near = new Pilot(getLesson('walls-hall'));
         near.begin();
-        near.flyTo([0, 1.5, -24], 3);
+        near.flyTo([1, 1.5, front + within + 1], 3);
         near.hold(GIVE_UP_MS / 1000 + 0.5);
         expect(goalEvents(near)).toEqual(['0:missed']);
     });
@@ -208,8 +230,9 @@ describe('every goal kind: a scripted pass and a near miss', () => {
     it('around: a full circle around the pillar passes, 300 degrees then waiting misses', () => {
         const lesson = getLesson('walls-pillar');
         const circle = (p: Pilot, degrees: number): void => {
-            const c: Vec3 = [0, 1.5, 7];
-            const r = 4;
+            const pillar = objectOf('walls-pillar', 'pillar-1');
+            const c: Vec3 = [pillar.pos[0], 1.5, pillar.pos[2]];
+            const r = 3;
             p.flyTo([c[0], 1.5, c[2] + r], 3);
             const n = Math.round(degrees / 1.5);
             for (let i = 1; i <= n; i++) {
@@ -231,26 +254,31 @@ describe('every goal kind: a scripted pass and a near miss', () => {
         expect(goalEvents(near)).toEqual(['0:missed']);
     });
 
-    it('fly-distance: 22 m between the pillars passes, 20 m and then waiting misses', () => {
+    it('fly-distance: the lesson\'s metres through a gap of the row pass, 2 m short and then waiting misses', () => {
         const lesson = getLesson('walls-row');
+        const metres = (lesson.goals[0] as Extract<LessonDef['goals'][number], { kind: 'fly-distance' }>).metres;
+        const gapX = (objectOf('walls-row', 'pillar-3').pos[0] + objectOf('walls-row', 'pillar-4').pos[0]) / 2;
+        const s = lesson.start.pos;
         const pass = new Pilot(lesson);
         pass.begin();
-        pass.flyTo([3.5, 1.5, 22], 2);
-        pass.flyTo([3.5, 1.5, 22 - 22], 3);
+        pass.flyTo([gapX, s[1], s[2]], 2);
+        pass.flyTo([gapX, s[1], s[2] - (metres - Math.abs(gapX) + 0.5)], 3);
         expect(goalEvents(pass)).toEqual(['0:met']);
 
         const near = new Pilot(lesson);
         near.begin();
-        near.flyTo([0, 1.5, 2], 3);
+        near.flyTo([gapX, s[1], s[2]], 2);
+        near.flyTo([gapX, s[1], s[2] - (metres - Math.abs(gapX) - 2)], 3);
         near.hold(lesson.attemptLimitS as number);
         expect(goalEvents(near)).toEqual(['0:missed']);
     });
 
     it('pass-gates: through the ring passes with a gate note; through its edge is a near miss', () => {
         const lesson = getLesson('rings-first');
+        const ring = objectOf('rings-first', 'ring-1');
         const pass = new Pilot(lesson);
         pass.begin();
-        pass.flyTo([0, 3, 55], 3);
+        pass.flyTo(along(ring.pos, 3.5), 3);
         expect(goalEvents(pass)).toEqual(['0:met']);
         expect(pass.of('gate').map((g) => g.gateId)).toEqual(['ring-1']);
         expect(pass.actions.some((a) => a.kind === 'cue' && a.event.kind === 'gate')).toBe(true);
@@ -258,8 +286,8 @@ describe('every goal kind: a scripted pass and a near miss', () => {
 
         const near = new Pilot(lesson);
         near.begin();
-        near.flyTo([1.9, 3, 66], 3);
-        near.flyTo([1.9, 3, 55], 3);
+        near.flyTo(along(ring.pos, -4, 1.9), 3);
+        near.flyTo(along(ring.pos, 3.5, 1.9), 3);
         expect(goalEvents(near)).toEqual(['0:missed']);
         expect(near.of('gate')).toEqual([]);
     });
@@ -267,7 +295,7 @@ describe('every goal kind: a scripted pass and a near miss', () => {
     it('pass-gates in order: a line of rings, each note higher', () => {
         const p = new Pilot(getLesson('rings-line'));
         p.begin();
-        p.flyTo([0, 3, 20], 4);
+        p.flyTo(along(objectOf('rings-line', 'ring-3').pos, 3.5), 4);
         expect(p.of('gate').map((g) => g.index)).toEqual([0, 1, 2]);
         expect(goalEvents(p)).toEqual(['0:met']);
         const notes = p.actions.filter((a) => a.kind === 'cue' && a.event.kind === 'gate').map((a) => (a as { event: { index: number; of: number } }).event);
@@ -284,7 +312,7 @@ describe('every goal kind: a scripted pass and a near miss', () => {
             const p = new Pilot(lesson);
             p.answerer = () => answer;
             p.begin();
-            p.flyTo([0, 3, 55], 3);
+            p.flyTo(along(objectOf('shapes-cube', 'cube-1').pos, 3.5), 3);
             p.hold(0.5);
             return p;
         };
@@ -419,10 +447,11 @@ describe('pass rules, touches, resets and progress', () => {
         const lesson = getLesson('rings-first');
         const p = new Pilot(lesson);
         p.begin();
-        const through = (): void => p.flyTo([0, 3, 55], 6);
+        const ring = objectOf('rings-first', 'ring-1');
+        const through = (): void => p.flyTo(along(ring.pos, 3.5), 6);
         const miss = (): void => {
-            p.flyTo([1.9, 3, 66], 6);
-            p.flyTo([1.9, 3, 55], 6);
+            p.flyTo(along(ring.pos, -4, 1.9), 6);
+            p.flyTo(along(ring.pos, 3.5, 1.9), 6);
         };
         for (const fly of [miss, through, miss, through, miss]) {
             fly();
@@ -441,14 +470,16 @@ describe('pass rules, touches, resets and progress', () => {
     });
 
     it('a goal met with more touches than the rule allows is a failed attempt', () => {
+        const front = frontWallZ('walls-hall');
+        const within = (getLesson('walls-hall').goals[0] as { stopWithinM: number }).stopWithinM;
         const p = new Pilot(getLesson('walls-hall'));
         p.begin();
-        p.flyTo([0, 1.5, -20], 3);
+        p.flyTo([0, 1.5, front + 4], 3);
         p.touched = true;
         p.tick();
         p.touched = true;
         p.tick();
-        p.flyTo([0, 1.5, -27.5], 3);
+        p.flyTo([0, 1.5, front + within - 0.3], 3);
         p.hold(1);
         expect(goalEvents(p)).toEqual(['0:met']);
         expect(p.of('touch').length).toBe(2);
@@ -460,7 +491,7 @@ describe('pass rules, touches, resets and progress', () => {
         const lesson = getLesson('corridor');
         const p = new Pilot(lesson);
         p.begin();
-        p.flyTo([0, 2, -55], 4);
+        p.flyTo(along(lesson.checkpoints[1]!.at, 2), 4);
         expect(p.of('checkpoint').map((c) => c.id)).toEqual(['cp-1', 'cp-2']);
         expect(goalEvents(p)).toEqual(['0:met']);
         p.touched = true;
@@ -477,7 +508,7 @@ describe('pass rules, touches, resets and progress', () => {
         const lesson = getLesson('corridor');
         const p = new Pilot(lesson);
         p.begin();
-        p.flyTo([0, 2, -55], 4);
+        p.flyTo(along(lesson.checkpoints[1]!.at, 2), 4);
         const cp = p.run.reset('checkpoint', p.t);
         expect(cp.pose).toEqual({ pos: [0, 2, -49], yawDeg: 0 });
         expect(cp.events[0]).toMatchObject({ kind: 'reset', to: 'checkpoint', checkpointId: 'cp-2' });
@@ -499,14 +530,14 @@ describe('pass rules, touches, resets and progress', () => {
         const lesson = getLesson('rings-first');
         const p = new Pilot(lesson, { progress: { lessonId: 'rings-first', version: 2, attempts: 4, successes: 1, blocksPassed: 0, passed: false, bestTimeMs: null, lastAt: '2026-11-01T10:00:00.000Z' }, sessionStartMs: Date.UTC(2026, 10, 7, 12) });
         p.begin();
-        p.flyTo([0, 3, 55], 3);
+        p.flyTo(along(objectOf('rings-first', 'ring-1').pos, 3.5), 3);
         const pr = p.run.progress();
         expect(pr).toMatchObject({ lessonId: 'rings-first', attempts: 5, successes: 2, passed: false });
         expect(pr.lastAt.startsWith('2026-11-07T12:00:')).toBe(true);
         // progress of another version of the lesson (v0.12's rule) is not counted on: only a pass is kept
         const old = new Pilot(lesson, { progress: { lessonId: 'rings-first', version: 1, attempts: 9, successes: 7, blocksPassed: 0, passed: false, bestTimeMs: null, lastAt: '2026-11-01T10:00:00.000Z' } });
         old.begin();
-        old.flyTo([0, 3, 55], 3);
+        old.flyTo(along(objectOf('rings-first', 'ring-1').pos, 3.5), 3);
         expect(old.run.progress()).toMatchObject({ version: 2, attempts: 1, successes: 1, passed: false });
     });
 
@@ -514,7 +545,7 @@ describe('pass rules, touches, resets and progress', () => {
         const flight = (): SessionEvent[] => {
             const p = new Pilot(getLesson('rings-line'));
             p.begin();
-            p.flyTo([0.3, 3.2, 20], 4);
+            p.flyTo(along(objectOf('rings-line', 'ring-3').pos, 3.5, 0.3), 4);
             p.hold(2);
             return p.events;
         };
@@ -530,7 +561,7 @@ describe('pass rules, touches, resets and progress', () => {
         const ref = getLesson('rings-line').world;
         if (ref.kind !== 'analytic') throw new Error('rings-line flies in an analytic world');
         const world = createAnalyticWorld(ref.spec);
-        run.step({ t: 30, tick: 30, pos: [0, 3, 72], vel: [0, 0, 0], quat: [1, 0, 0, 0], rate: [0, 0, 0], yawDeg: 0, pitchDeg: 0, rollDeg: 0, sticks: [0, 0, 0, 0], armed: true, touched: false, paused: false }, world);
+        run.step({ t: 30, tick: 30, pos: getLesson('rings-line').start.pos, vel: [0, 0, 0], quat: [1, 0, 0, 0], rate: [0, 0, 0], yawDeg: 0, pitchDeg: 0, rollDeg: 0, sticks: [0, 0, 0, 0], armed: true, touched: false, paused: false }, world);
         expect(run.target()?.id).toBe('ring-1');
     });
 });

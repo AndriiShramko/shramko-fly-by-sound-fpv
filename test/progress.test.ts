@@ -15,13 +15,14 @@ const progressLines = (p: ScriptedPilot): Say['line'][] => p.actions.filter((a):
 function ringsFirst(options = {}): ScriptedPilot {
     const p = new ScriptedPilot(getLesson('rings-first'), options);
     p.begin();
+    const ring = p.object('ring-1').pos;
     const miss = (): void => {
-        p.flyTo([1.9, 3, 66]);
-        p.flyTo([1.9, 3, 55]);
+        p.flyTo([ring[0] + 1.9, ring[1], ring[2] + 4]);
+        p.flyTo([ring[0] + 1.9, ring[1], ring[2] - 3.5]);
     };
     const through = (): void => {
-        p.flyTo([0, 3, 64]);
-        p.flyTo([0, 3, 56]);
+        p.flyTo([ring[0], ring[1], ring[2] + 3]);
+        p.flyTo([ring[0], ring[1], ring[2] - 3]);
     };
     for (const fly of [miss, through, through, through]) {
         p.until(() => p.run.phase === 'flying' || p.run.phase === 'passed', 60);
@@ -71,7 +72,8 @@ describe('the progress view (I and the host panel)', () => {
         p.until(() => p.run.phase === 'flying', 60);
         v = p.run.view();
         expect(v).toMatchObject({ step: 2, steps: 2, stepKind: 'fly', goal: 1, goals: 2, attempt: 1, counted: 0, required: 1, failsInARow: 0, offered: false });
-        p.flyTo([0, 2, -52]);
+        const cp2 = getLesson('corridor').checkpoints[1]!.at;
+        p.flyTo([cp2[0], cp2[1], cp2[2] - 2]);
         expect(p.run.view().goal).toBe(2);
     });
 
@@ -110,15 +112,16 @@ describe('the progress view (I and the host panel)', () => {
         const title = ru.text(getLesson('hover-height').title);
         const run = createLessonRunner(getLesson('hover-height'), { locale: 'ru' });
         run.begin(0);
-        expect(run.statusLine()).toEqual({ key: 'status.progress-step', params: { title, lesson: 6, lessons: 21, step: 1, steps: 2 } });
+        const lessons = lessonPaths().full.length;
+        expect(run.statusLine()).toEqual({ key: 'status.progress-step', params: { title, lesson: 6, lessons, step: 1, steps: 2 } });
         const p = new ScriptedPilot(getLesson('hover-height'), { locale: 'ru' });
         p.begin();
         p.until(() => p.run.attempt === 2 && p.run.phase === 'flying', 400);
         const line = p.run.statusLine();
         expect(line.key).toBe('status.progress');
         // the Russian line, as the locale file has it: the title in Russian and the numbers in their places
-        expect(ru.text(line)).toBe((DICTS.ru['status.progress'] as string).replace('{lesson}', '6').replace('{lessons}', '21').replace('{title}', title).replace('{step}', '2').replace('{steps}', '2').replace('{n}', '2').replace('{counted}', '0').replace('{required}', '3'));
+        expect(ru.text(line)).toBe((DICTS.ru['status.progress'] as string).replace('{lesson}', '6').replace('{lessons}', String(lessons)).replace('{title}', title).replace('{step}', '2').replace('{steps}', '2').replace('{n}', '2').replace('{counted}', '0').replace('{required}', '3'));
         expect(ru.text(line)).toContain(title);
-        expect(createTranslator('en', DICTS).text(statusLine(p.run.view(), 'Hold your height'))).toBe('Lesson 6 of 21: Hold your height. Step 2 of 2. Attempt 2. Counted 0 of 3.');
+        expect(createTranslator('en', DICTS).text(statusLine(p.run.view(), 'Hold your height'))).toBe(`Lesson 6 of ${lessons}: Hold your height. Step 2 of 2. Attempt 2. Counted 0 of 3.`);
     }, 60000);
 });

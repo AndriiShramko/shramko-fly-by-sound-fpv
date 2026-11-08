@@ -9,6 +9,7 @@ import { describe, expect, it } from 'vitest';
 import type { Goal, SonicObject } from '../src/contract';
 import { getLesson, SHIPPED_LESSON_IDS, type RunnerAction, type RunnerOptions, type V012PassRule } from '../src/lesson';
 import { createRng } from '../src/util/rng';
+import { NEW_LESSONS } from './helpers/new-lessons';
 import { ScriptedPilot } from './helpers/pilot';
 import { playLesson } from './helpers/truth';
 
@@ -175,8 +176,9 @@ describe('format 2: r counted attempts in total pass a lesson (M41-8)', () => {
         ring.begin();
         for (let k = 0; k < 3; k++) {
             ring.until(() => ring.run.phase === 'flying', 60);
-            ring.flyTo([1.9, 3, 66]);
-            ring.flyTo([1.9, 3, 55]);
+            const at = ring.object('ring-1').pos;
+            ring.flyTo([at[0] + 1.9, at[1], at[2] + 4]);
+            ring.flyTo([at[0] + 1.9, at[1], at[2] - 3.5]);
             ring.until(() => ring.run.phase !== 'flying', 10);
         }
         ring.until(() => ring.said().includes('fly.offer-next'), 30);
@@ -255,7 +257,7 @@ describe('control: the v0.12 block rule fails the same checks', () => {
 // the lessons' v0.12 numbers are the ones v0.12 shipped (a lesson changed since would make the control meaningless)
 describe('the v0.12 numbers of the control', () => {
     it('are the format 1 rules of every shipped lesson', () => {
-        expect(Object.keys(V012).sort()).toEqual([...SHIPPED_LESSON_IDS].sort());
+        expect(Object.keys(V012).sort()).toEqual(SHIPPED_LESSON_IDS.filter((id) => !NEW_LESSONS.includes(id)).sort());
         expect(V012['hover-turn']).toMatchObject({ attempts: 5, required: 4, blocks: 1 });
         expect(V012['hover-height']).toMatchObject({ attempts: 5, required: 4, blocks: 1 });
     });

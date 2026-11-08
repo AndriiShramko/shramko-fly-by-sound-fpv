@@ -15,7 +15,7 @@
   "goals": [
     {
       "kind": "fly-distance",
-      "metres": 22
+      "metres": 9
     }
   ],
   "id": "walls-row",
@@ -65,7 +65,7 @@
     }
   },
   "start": {
-    "pos": [0, 1.5, 22],
+    "pos": [0, 1.5, 5],
     "yawDeg": 0
   },
   "title": {
@@ -77,13 +77,17 @@
     "spec": {
       "generator": "pillars",
       "params": {
-        "aheadM": 15,
+        "aheadM": 5.3,
         "count": 5,
-        "gapM": 6,
-        "layout": "row"
+        "depthM": 13,
+        "gapM": 1.7,
+        "heightM": 3.2,
+        "layout": "row",
+        "radiusM": 0.3,
+        "widthM": 12
       },
       "seed": 0,
-      "version": 1
+      "version": 2
     }
   }
 }

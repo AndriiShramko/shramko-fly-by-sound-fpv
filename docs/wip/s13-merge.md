@@ -8,8 +8,10 @@ merges exactly two finished lanes, each reviewed once with every finding fixed:
 - s13-sound at 3c73658 (lane doc `docs/wip/s13-sound.md`: "Final status", "Needs from other lanes"), which contains
   `vl-spec` at 3044c7c (the virtual listener's design and rig).
 
-Lane s13-worlds is not merged here (it is still fixing its review); it merges after this branch in a step of its own,
-and the corridor's goal (s13-lessons' "For the lead's merge" item 2, review R5) waits for it. No push, no deploy.
+Lane s13-worlds was not merged in steps 1 to 6 (it was still fixing its review); it merges after them, in steps 7 to
+11, at 067278f (lane doc `docs/wip/s13-worlds.md`: "For the lead's merge", "Needs from other lanes", "Needs from the
+simulator", "Final status"; review `docs/wip/s13-worlds-review.md`), and the corridor's goal (s13-lessons' "For the
+lead's merge" item 2, review R5) is set then. No push, no deploy.
 
 ## Status
 
@@ -49,8 +51,9 @@ and the corridor's goal (s13-lessons' "For the lead's merge" item 2, review R5) 
   (both controls of the v0.12 file, the moved flight, the verdict table); any version difference told as older fails
   2. Full suite 756 of 756.
 - [x] 4e. The lines of walls-hall and the corridor say what the knocks of v0.13 mean (s13-sound review m4; the goal
-  stays `stopWithinM` 3). en: `lesson.walls-hall.intro.2` "Fly slowly toward a wall until you hear knocks, then
-  stop.", `lesson.walls-hall.hint.1` "Fly to the wall slowly. Stop as soon as you hear knocks.",
+  stayed `stopWithinM` 3 here; since the s13-worlds merge, step 7, it is 1.5). en: `lesson.walls-hall.intro.2` "Fly
+  slowly toward a wall until you hear knocks, then stop.", `lesson.walls-hall.hint.1` "Fly to the wall slowly. Stop as
+  soon as you hear knocks.",
   `lesson.corridor.intro.2` "Stay in the middle. Knocks from one side mean you are drifting toward that wall. Move
   away from it."; es, pl and ru say the same as people say it there (`locales/*.json`). Locale lint 0 problems (4
   languages, 469 keys), layout check 0 problems. The three English lines were measured again with the Windows voice
@@ -75,6 +78,31 @@ and the corridor's goal (s13-lessons' "For the lead's merge" item 2, review R5) 
   Its numbers did not move from s13-sound's (table in "Final status").
 - [x] 6. Final status: what merged, the conflicts, the merge items with their commits, the checks with numbers, what
   waits for s13-worlds, what each lane needs from the simulator ("Final status" below)
+
+Steps 7 to 11, lane s13-worlds:
+
+- [x] 7. Merge s13-worlds (067278f): conflicts in `lessons/corridor.json`, the four locales (walls-hall),
+  `test/lesson-schedule.test.ts` and `test/progress.test.ts`, each resolved as s13-worlds' "For the lead's merge" says
+  ("Conflicts and their resolution, step 7" below). walls-hall's lines read as one text in the four languages: a small
+  room, and `goal.1` now asks for a stop close to the wall (its goal is `stopWithinM` 1.5, s13-worlds' review M5; the
+  note of item 4e that the goal stays 3 m is superseded). After the merge: `pnpm typecheck` clean, `pnpm test` 1004 of
+  1030 (44 files, 20 s); the 26 that fail are step 8's: the seven merged cases of `test/world-track-end.test.ts` (item
+  a), 16 tests of s13-lessons that fly v0.12's numbers (item c; its `test/progress.test.ts` pair was already taken from
+  the world by s13-worlds' own edit, which git merged), s13-sound's two (item c) and `test/world-versions.test.ts`'s
+  line for a v0.12 recording, written before item d's verdict (item c).
+- [ ] 8a. The corridor and the six tunnels end on `track-end`; `test/world-track-end.test.ts` runs its 7 cases
+- [ ] 8b. `passWorldPoints` takes a point as passed with a micrometre of tolerance
+- [ ] 8c. Stale tests take their positions from the worlds; s13-sound's two; the v0.12 replays with item d's verdict
+- [ ] 8d. The corridor's `attemptLimitS` for its 126 m track; every tunnel's limit at 1 m/s
+- [ ] 8e. The open-way chime and the checkpoint chime with different words in the glossary, four languages
+- [ ] 8f. `ears-glossary` names s13-sound's six new cues
+- [ ] 8g. The truth bot in the ring lessons raises no wrong-way event
+- [ ] 8h. rings-heights: the target tone follows the next ring and the glide meets it in unison there
+- [ ] 8i. A recording that differs only in the world's id stays FAIL
+- [ ] 8j. CHANGELOG (Unreleased) for s13-sound and s13-worlds; README, llms.txt and AGENTS.md agree
+- [ ] 9. Full checks on the final code with fresh evidence
+- [ ] 10. The lanes' notes as public dev notes (`docs/dev/`); no build-machine folder in `docs/`, README, AGENTS, llms
+- [ ] 11. Final status of the whole merge
 
 ## Final status (2026-11-08)
 
@@ -184,3 +212,34 @@ Merged by git, checked by script against both lanes (the scripts compare every f
   version). `AGENTS.md`: both lanes' lines. `package.json`: s13-sound's `listen` script; no dependency changed, the
   lockfile is `main`'s.
 - `pnpm typecheck` on the merged tree before the commit: clean.
+
+## Conflicts and their resolution (step 7, s13-worlds at 067278f)
+
+Seven files conflicted; each is resolved as s13-worlds' "For the lead's merge" says (checked there in trial merges with
+each lane). Every other file both sides changed merged by itself and was checked as listed below the table.
+
+| File | Resolution |
+|---|---|
+| `lessons/corridor.json` (cp-3's and cp-5's pose, cp-6) | s13-worlds' world, start and checkpoint positions, cp-3 and cp-5 at yaw 90 (both sides had it); s13-lessons' `stage` 1 to 4 on cp-2 to cp-5 and its intro `cues` (merged by git); s13-lessons' cp-6 moved to the world's `end` landmark, `[36, 1.25, -93]`, yaw 0 (read from the built world: its landmarks are start, the five `section-*` and `end`; its own track is 54 points, 125.2 m, the last at z = -91.75). `layers` s13-sound's, `goals` s13-worlds' 15 and 120 m (both merged by git) until item 8a. |
+| `locales/{en,es,pl,ru}.json` (walls-hall's title, intro.1, intro.2) | title and intro.1 s13-worlds' ("A small room", "You are in a small, empty room. ..."); intro.2 item 4e's ("Fly slowly toward a wall until you hear knocks, then stop."). Read as one text with the goal of 1.5 m, `goal.1` said only "stop before you touch it", which a stop 3 m away keeps and the goal fails: it is now "Fly to each wall and stop close to it without touching it." (es "... y para cerca de ella sin tocarla.", pl "... zatrzymaj się blisko niej, nie dotykając jej.", ru "... остановись близко к ней, не коснувшись её."). The other lines (intro.3, pass, retry, hint.1) say nothing that a 1.5 m stop or a small room contradicts. |
+| `test/lesson-schedule.test.ts` | the merged branch's test with s13-worlds' `MEASURED_TEXT` in the fact "263 of the 376 English lines take the Windows voice longer than the estimate": item e's three lines were measured again (262 -> 263), s13-worlds' three (module 4's name, walls-hall's title and intro.1) count with the text that was measured. walls-hall's new `goal.1` was measured the same way (`measure-tts.ps1`'s method, Microsoft David Desktop): 3.975 s (the old text 3.415 s again, as in the fixture; the retry 3.77, the old intro.1 8.64, the old title 1.64 and module 4's old name 1.36 as well), written to `test/fixtures/tts-en-david.json`; neither text is longer than the estimate, so the count stays 263 (262 without `MEASURED_TEXT`). |
+| `test/progress.test.ts` | s13-lessons' form (the title through the translator, no Cyrillic in the test) with the lesson count from the path, `lessonPaths().full.length`, in its three places; s13-worlds' rings-first and corridor flights from the world merged by git. |
+
+Is walls-hall's text true for its goal? A probe with the merged planner (not committed: walls-hall's world and layers,
+each built-in theme alike) flew at the nearest wall and found the first knock (`safety.wall`) at 0.80, 1.25, 1.87, 2.50,
+3.11 and 3.73 m from the hull at 0.3, 0.5, 0.75, 1, 1.25 and 1.5 m/s. A pilot who stops at the first knock (a reaction
+of 0.6 or 0.3 s, then the assist's braking as `test/helpers/reach.ts` models it) stops 0.44 to 0.53 m from the wall at
+0.3 m/s, 0.63 to 0.78 at 0.5, 0.93 to 1.15 at 0.75, 1.22 to 1.52 at 1 (on the limit), 1.49 to 1.86 at 1.25 and 1.75 to
+2.2 m at 1.5 m/s. So "fly slowly, stop at the knocks" passes the 1.5 m goal up to about 0.75 to 1 m/s, a quarter to a
+third of the lesson's cap of 3 m/s, which is what "slowly" has to mean. A model, not a flight; no person has heard it.
+
+Merged by git and checked:
+
+- `src/contract.ts`: the union; every line s13-worlds added (`CavityBox`, `AnalyticWorld.cavities?`,
+  `AnalyticWorld.checkpoints?`, `WorldCheckpoint`) is in the file, and the merge removes no line of this branch's.
+- Registrations: `src/lesson/library.ts`, `lessons/paths.json`, `src/i18n/catalog.ts` and the locales hold the six
+  tunnels and rings-heights beside s13-lessons' and s13-sound's entries; 28 lesson files, the full path 28 and the fast
+  path 8 (tunnel-gaps after corridor), every `order` its place on the full path and every `fastPath` flag its path (a
+  script over the files); README and llms.txt say 28 lessons and a fast path of 8; `AGENTS.md` has s13-worlds' rule on
+  generators. Locale lint 0 problems (4 languages, 521 keys), layout check 0 problems.
+- `pnpm typecheck` clean before the commit.

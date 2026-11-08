@@ -1,0 +1,117 @@
+{
+  "assists": {
+    "altitude": "hold",
+    "autoArm": true,
+    "control": "velocity",
+    "maxClimbMps": 1.2,
+    "maxSpeedMps": 2.5,
+    "maxYawDps": 120,
+    "onTouch": "bump-recentre"
+  },
+  "attemptLimitS": 600,
+  "checkpoints": [
+    {
+      "at": [0, 1.2, 0],
+      "id": "cp-1",
+      "pose": {
+        "pos": [0, 1.2, 0],
+        "yawDeg": 0
+      },
+      "radiusM": 1.9
+    },
+    {
+      "at": [95.6, 1.2, -61],
+      "id": "cp-2",
+      "pose": {
+        "pos": [95.6, 1.2, -61],
+        "yawDeg": 90
+      },
+      "radiusM": 1.3
+    }
+  ],
+  "fastPath": false,
+  "format": "shramko-sonic-lesson/2",
+  "goals": [
+    {
+      "kind": "fly-distance",
+      "metres": 148
+    }
+  ],
+  "id": "tunnel-long",
+  "intro": [
+    {
+      "key": "lesson.tunnel-long.intro.1"
+    },
+    {
+      "key": "lesson.tunnel-long.intro.2"
+    },
+    {
+      "key": "lesson.tunnel-long.intro.3"
+    },
+    {
+      "key": "lesson.tunnel-long.goal.1"
+    }
+  ],
+  "layers": {
+    "hazardVoices": 3,
+    "heightBandM": null,
+    "on": [
+      "safety",
+      "height",
+      "room",
+      "voice"
+    ]
+  },
+  "module": 4,
+  "order": 18,
+  "pass": {
+    "attempts": 3,
+    "blocking": true,
+    "maxTouches": null,
+    "required": 1
+  },
+  "speech": {
+    "hints": [
+      {
+        "key": "lesson.tunnel-long.hint.1"
+      }
+    ],
+    "pass": {
+      "key": "lesson.tunnel-long.pass"
+    },
+    "retry": {
+      "key": "lesson.tunnel-long.retry"
+    }
+  },
+  "start": {
+    "pos": [0, 1.2, 0],
+    "yawDeg": 0
+  },
+  "title": {
+    "key": "lesson.tunnel-long.title"
+  },
+  "version": 1,
+  "world": {
+    "kind": "analytic",
+    "spec": {
+      "generator": "corridor",
+      "params": {
+        "endM": 5,
+        "gapM": 0.7,
+        "gaps": "right,up,down,up,down",
+        "heightM": 2.4,
+        "layout": "long",
+        "obstacleRunM": 5.5,
+        "segmentM": 5,
+        "stageBends": [2, 3, 4, 4, 6],
+        "stageGaps": [0, 0, 1, 2, 2],
+        "stageWidths": [3, 2.4, 1.8, 1.4, 1.2],
+        "startHeightM": 1.2,
+        "straightM": 6,
+        "voxelM": 0.05
+      },
+      "seed": 0,
+      "version": 2
+    }
+  }
+}

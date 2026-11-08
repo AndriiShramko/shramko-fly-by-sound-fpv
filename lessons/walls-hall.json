@@ -16,7 +16,7 @@
     {
       "kind": "approach-stop",
       "objectId": null,
-      "stopWithinM": 3
+      "stopWithinM": 1.5
     }
   ],
   "id": "walls-hall",
@@ -85,9 +85,13 @@
     "kind": "analytic",
     "spec": {
       "generator": "hall",
-      "params": {},
+      "params": {
+        "depthM": 12,
+        "heightM": 3.2,
+        "widthM": 10
+      },
       "seed": 0,
-      "version": 1
+      "version": 2
     }
   }
 }

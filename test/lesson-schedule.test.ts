@@ -15,6 +15,15 @@ import { checkSchedule, estimateSpeech, lessonSchedule, measuredSpeech, NAMED_SO
 import { getBuiltinTheme } from '../src/theme';
 
 const david = (JSON.parse(readFileSync(new URL('./fixtures/tts-en-david.json', import.meta.url), 'utf8')) as { seconds: Record<string, number> }).seconds;
+/**
+ * The English of lines measured above whose text changed since (lane s13-worlds, review M5 and m3: the first room is
+ * small, module 4 holds the tunnels): a measured length belongs to the text that was measured.
+ */
+const MEASURED_TEXT: Readonly<Record<string, string>> = {
+    'module.4.name': 'Corridor',
+    'lesson.walls-hall.title': 'The big hall',
+    'lesson.walls-hall.intro.1': 'You are in a big, empty hall. The walls, the floor and the ceiling make knocks, thuds and puffs when you come near.'
+};
 const EARS = ['ears-headphones', 'ears-glossary', 'ears-walls', 'ears-shapes', 'ears-game'] as const;
 
 /** the right answers: the headphone check (left, right, then behind), the game (what the scene was, where, whether it moved) */
@@ -125,11 +134,15 @@ describe('control: the v0.12 timing fails the same check (a line ends at the ear
     it('the fact as measured: 263 of the 376 English lines take the Windows voice longer than the estimate', () => {
         const en = JSON.parse(readFileSync(new URL('../locales/en.json', import.meta.url), 'utf8')) as Record<string, string>;
         const keys = Object.keys(david);
+        const longer = keys.filter((k) => (david[k] as number) > 0.7 + 0.065 * (MEASURED_TEXT[k] ?? (en[k] as string)).length);
         expect(keys.length).toBe(376);
         // 262 until merge s13-merge reworded walls-hall's intro.2 and hint.1 and the corridor's intro.2 (review m4 of
         // lane s13-sound); those three were measured again with the same voice and method (walls-hall's intro.1, not
-        // changed, measured 8.64 s again, as in the fixture)
-        expect(keys.filter((k) => (david[k] as number) > 0.7 + 0.065 * (en[k] as string).length).length).toBe(263);
+        // changed then, measured 8.64 s again, as in the fixture). walls-hall's goal.1, reworded at the s13-worlds merge
+        // for its 1.5 m stop, was measured again the same way (3.975 s; it is not longer than the estimate, nor was its
+        // old text). The lines lane s13-worlds reworded after they were measured are taken with the text that was
+        // measured (MEASURED_TEXT).
+        expect(longer.length).toBe(263);
         // and under v0.12 the first sound of the check plays partly under the line before it
         const s = schedule('ears-headphones', { speech: measuredSpeech(david), runner: v012 });
         const first = s.plays.find((p) => p.kind !== 'one-off');

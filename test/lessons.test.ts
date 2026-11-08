@@ -6,6 +6,7 @@ import { LOCALES } from '../src/contract';
 import { createTranslator, DICTS, LESSONS, lessonKeys } from '../src/i18n';
 import { createLessonRunner, getLesson, lessonPaths, lessonsOnPath, nextLesson, parseLesson, SHIPPED_LESSON_IDS, validateLesson, validatePaths, writeLesson } from '../src/lesson';
 import { createAnalyticWorld } from '../src/world';
+import { NEW_LESSONS } from './helpers/new-lessons';
 
 const DIR = fileURLToPath(new URL('../lessons/', import.meta.url));
 const read = (name: string): string => readFileSync(`${DIR}${name}`, 'utf8');
@@ -202,7 +203,8 @@ describe('lesson format 2 and the files of format 1 (v0.12)', () => {
         for (const id of SHIPPED_LESSON_IDS) {
             const l = getLesson(id);
             expect(current(id)['format'], id).toBe('shramko-sonic-lesson/2');
-            expect(l.version, id).toBe(2);
+            // a lesson new in v0.13 has no v0.12 recording to be told apart from: it starts at 1
+            expect(l.version, id).toBe(NEW_LESSONS.includes(id) ? 1 : 2);
             expect(l.pass.required, id).toBeLessThanOrEqual(3);
             expect(l.pass.attempts, id).toBeLessThanOrEqual(3);
         }

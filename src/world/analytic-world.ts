@@ -2,11 +2,12 @@
 // union of solids, each with a signed distance function (sdf.ts, parts.ts); rays are sphere
 // traced against it; the simulator builds its collider from `solidAt` and names the walls by
 // `digest`, so a flight log replays on the same walls.
-import type { AnalyticWorld, AnalyticWorldSpec, MaterialClass, Pose, RayHit, SonicObject, Vec3, WorldGenerator } from '../contract';
+import type { AnalyticWorld, AnalyticWorldSpec, CavityBox, MaterialClass, Pose, RayHit, SonicObject, Vec3, WorldCheckpoint, WorldGenerator } from '../contract';
 import { canonicalJson } from '../util/canonical';
 import { sha256Hex } from '../util/sha256';
-import { buildWorld, GENERATOR_VERSION, isWorldGenerator, resolveParams, WorldSpecError, type Landmark, type ResolvedParams } from './generators';
+import { buildsVersion, buildWorld, GENERATOR_VERSION, GENERATOR_VERSIONS, isWorldGenerator, resolveParams, WorldSpecError, type Landmark, type ResolvedParams } from './generators';
 import { objectPart, type Part } from './parts';
+import { densify, gateNodes } from './track';
 
 /** A ray that comes this close to a surface (metres) has hit it. */
 export const HIT_EPSILON_M = 2e-4;
@@ -34,11 +35,16 @@ export interface AnalyticWorldInfo extends AnalyticWorld {
     readonly floorY: number;
     /** named points: start, wall middles, corridor sections, ... (positions at the start height) */
     readonly landmarks: readonly Landmark[];
+    /** the boxes of the room's hollow (the shell exactly); null for the open world */
+    readonly cavities: readonly CavityBox[] | null;
 }
 
-/** A complete spec of a generator at the current version: defaults for everything not given. */
-export function makeSpec(generator: WorldGenerator, params: AnalyticWorldSpec['params'] = {}, seed = 0): AnalyticWorldSpec {
-    return { generator, version: GENERATOR_VERSION[generator], seed, params: resolveParams(generator, params) };
+/** Generators whose worlds are a course of gates: their track goes through the gates in order. */
+const GATE_GENERATORS: readonly WorldGenerator[] = ['rings', 'squares', 'cube-frames'];
+
+/** A complete spec of a generator at `version` (GENERATOR_VERSION, 1, by default): defaults for everything not given. */
+export function makeSpec(generator: WorldGenerator, params: AnalyticWorldSpec['params'] = {}, seed = 0, version: number = GENERATOR_VERSION[generator]): AnalyticWorldSpec {
+    return { generator, version, seed, params: resolveParams(generator, params, version) };
 }
 
 function classify(normal: Vec3 | null): MaterialClass {
@@ -52,21 +58,28 @@ function classify(normal: Vec3 | null): MaterialClass {
 export function createAnalyticWorld(spec: AnalyticWorldSpec): AnalyticWorldInfo {
     if (typeof spec.generator !== 'string' || !isWorldGenerator(spec.generator)) throw new WorldSpecError(`unknown generator '${String(spec.generator)}'`);
     const generator = spec.generator;
-    if (spec.version !== GENERATOR_VERSION[generator]) {
-        throw new WorldSpecError(`generator '${generator}' is at version ${GENERATOR_VERSION[generator]} here, the spec asks for ${String(spec.version)}`);
+    // every version a generator ever published still builds, exactly as it did (a v0.12 recording's walls)
+    if (!buildsVersion(generator, spec.version)) {
+        const known = GENERATOR_VERSIONS[generator];
+        throw new WorldSpecError(`generator '${generator}' builds ${known.length === 1 ? 'version' : 'versions'} ${known.join(', ')} here, the spec asks for ${String(spec.version)}`);
     }
+    const version = spec.version;
     if (!Number.isInteger(spec.seed) || Math.abs(spec.seed) > Number.MAX_SAFE_INTEGER) throw new WorldSpecError(`seed must be an integer, got ${String(spec.seed)}`);
-    const resolved = resolveParams(generator, spec.params);
-    const full: AnalyticWorldSpec = { generator, version: spec.version, seed: spec.seed, params: resolved };
+    const resolved = resolveParams(generator, spec.params, version);
+    const full: AnalyticWorldSpec = { generator, version, seed: spec.seed, params: resolved };
     const digest = sha256Hex(canonicalJson(full));
 
-    const built = buildWorld(generator, resolved, spec.seed);
+    const built = buildWorld(generator, resolved, spec.seed, version);
     const objects: SonicObject[] = [...built.objects].sort((a, b) => {
         if (a.order !== null && b.order !== null) return a.order - b.order;
         if (a.order !== null) return -1;
         if (b.order !== null) return 1;
         return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
     });
+    // the track: the builder's own (a corridor), or through the gates in order (a course)
+    const nodes = built.track ?? (GATE_GENERATORS.includes(generator) ? gateNodes(built.start.pos, objects) : []);
+    const checkpoints: readonly WorldCheckpoint[] | null = nodes.length > 0 ? densify(nodes) : null;
+
     const parts: Part[] = [built.shell];
     for (const o of objects) {
         const part = objectPart(o);
@@ -158,7 +171,7 @@ export function createAnalyticWorld(spec: AnalyticWorldSpec): AnalyticWorldInfo 
     return {
         kind: 'analytic',
         id: `${generator}-${digest.slice(0, 8)}`,
-        version: spec.version,
+        version,
         bounds: built.bounds,
         castRay,
         objects: () => objects,
@@ -170,6 +183,8 @@ export function createAnalyticWorld(spec: AnalyticWorldSpec): AnalyticWorldInfo 
         resolved,
         start: built.start,
         floorY: 0,
-        landmarks: built.landmarks
+        landmarks: built.landmarks,
+        cavities: built.shell.cavities === undefined ? null : built.shell.cavities.map((b) => ({ ...b })),
+        ...(checkpoints === null ? {} : { checkpoints })
     };
 }

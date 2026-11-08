@@ -1,0 +1,618 @@
+{
+  "build": "sound repo 7d4b4b9 (ShramkoGSFPV v0.12): world, start, assists and goals of each lesson with an analytic world",
+  "lessons": {
+    "hover-height": {
+      "world": {
+        "kind": "analytic",
+        "spec": {
+          "generator": "open",
+          "params": {
+            "startHeightM": 1
+          },
+          "seed": 0,
+          "version": 1
+        }
+      },
+      "start": {
+        "pos": [
+          0,
+          1,
+          0
+        ],
+        "yawDeg": 0
+      },
+      "assists": {
+        "altitude": "hold",
+        "autoArm": true,
+        "control": "velocity",
+        "maxClimbMps": 1,
+        "maxSpeedMps": 0.5,
+        "maxYawDps": 60,
+        "onTouch": "bump"
+      },
+      "goals": [
+        {
+          "bandM": [
+            2,
+            3
+          ],
+          "kind": "hold-height",
+          "seconds": 20,
+          "shareMin": 0.8
+        }
+      ]
+    },
+    "hover-turn": {
+      "world": {
+        "kind": "analytic",
+        "spec": {
+          "generator": "rings",
+          "params": {
+            "aheadM": 3,
+            "layout": "single",
+            "offsetXM": -25,
+            "sizeM": 3
+          },
+          "seed": 0,
+          "version": 1
+        }
+      },
+      "start": {
+        "pos": [
+          0,
+          3,
+          72
+        ],
+        "yawDeg": 0
+      },
+      "assists": {
+        "altitude": "hold",
+        "autoArm": true,
+        "control": "velocity",
+        "maxClimbMps": 0.5,
+        "maxSpeedMps": 0.5,
+        "maxYawDps": 90,
+        "onTouch": "bump"
+      },
+      "goals": [
+        {
+          "kind": "turn-to",
+          "objectId": "ring-1",
+          "toleranceDeg": 12
+        }
+      ]
+    },
+    "move-speed": {
+      "world": {
+        "kind": "analytic",
+        "spec": {
+          "generator": "open",
+          "params": {
+            "startHeightM": 1.5,
+            "zoneDistanceM": 14,
+            "zoneSizeM": 16
+          },
+          "seed": 0,
+          "version": 1
+        }
+      },
+      "start": {
+        "pos": [
+          0,
+          1.5,
+          0
+        ],
+        "yawDeg": 0
+      },
+      "assists": {
+        "altitude": "hold",
+        "autoArm": true,
+        "control": "velocity",
+        "maxClimbMps": 1,
+        "maxSpeedMps": 3,
+        "maxYawDps": 60,
+        "onTouch": "bump"
+      },
+      "goals": [
+        {
+          "kind": "fly-distance",
+          "metres": 6
+        },
+        {
+          "kind": "reach-zone",
+          "stop": true,
+          "stopBelowMps": 0.3,
+          "zoneId": "zone-1"
+        }
+      ]
+    },
+    "move-stop": {
+      "world": {
+        "kind": "analytic",
+        "spec": {
+          "generator": "open",
+          "params": {
+            "startHeightM": 1.5,
+            "zoneDistanceM": 30,
+            "zoneSizeM": 6
+          },
+          "seed": 0,
+          "version": 1
+        }
+      },
+      "start": {
+        "pos": [
+          0,
+          1.5,
+          0
+        ],
+        "yawDeg": 0
+      },
+      "assists": {
+        "altitude": "hold",
+        "autoArm": true,
+        "control": "velocity",
+        "maxClimbMps": 1,
+        "maxSpeedMps": 4,
+        "maxYawDps": 60,
+        "onTouch": "bump"
+      },
+      "goals": [
+        {
+          "kind": "reach-zone",
+          "stop": true,
+          "stopBelowMps": 0.3,
+          "zoneId": "zone-1"
+        }
+      ]
+    },
+    "walls-hall": {
+      "world": {
+        "kind": "analytic",
+        "spec": {
+          "generator": "hall",
+          "params": {},
+          "seed": 0,
+          "version": 1
+        }
+      },
+      "start": {
+        "pos": [
+          0,
+          1.5,
+          0
+        ],
+        "yawDeg": 0
+      },
+      "assists": {
+        "altitude": "hold",
+        "autoArm": true,
+        "control": "velocity",
+        "maxClimbMps": 1,
+        "maxSpeedMps": 3,
+        "maxYawDps": 90,
+        "onTouch": "bump"
+      },
+      "goals": [
+        {
+          "kind": "approach-stop",
+          "objectId": null,
+          "stopWithinM": 3
+        }
+      ]
+    },
+    "walls-pillar": {
+      "world": {
+        "kind": "analytic",
+        "spec": {
+          "generator": "pillars",
+          "params": {
+            "aheadM": 15,
+            "layout": "single"
+          },
+          "seed": 0,
+          "version": 1
+        }
+      },
+      "start": {
+        "pos": [
+          0,
+          1.5,
+          22
+        ],
+        "yawDeg": 0
+      },
+      "assists": {
+        "altitude": "hold",
+        "autoArm": true,
+        "control": "velocity",
+        "maxClimbMps": 1,
+        "maxSpeedMps": 3,
+        "maxYawDps": 90,
+        "onTouch": "bump"
+      },
+      "goals": [
+        {
+          "kind": "around",
+          "objectId": "pillar-1"
+        }
+      ]
+    },
+    "walls-row": {
+      "world": {
+        "kind": "analytic",
+        "spec": {
+          "generator": "pillars",
+          "params": {
+            "aheadM": 15,
+            "count": 5,
+            "gapM": 6,
+            "layout": "row"
+          },
+          "seed": 0,
+          "version": 1
+        }
+      },
+      "start": {
+        "pos": [
+          0,
+          1.5,
+          22
+        ],
+        "yawDeg": 0
+      },
+      "assists": {
+        "altitude": "hold",
+        "autoArm": true,
+        "control": "velocity",
+        "maxClimbMps": 1,
+        "maxSpeedMps": 3,
+        "maxYawDps": 90,
+        "onTouch": "bump"
+      },
+      "goals": [
+        {
+          "kind": "fly-distance",
+          "metres": 22
+        }
+      ]
+    },
+    "corridor": {
+      "world": {
+        "kind": "analytic",
+        "spec": {
+          "generator": "corridor",
+          "params": {
+            "layout": "full",
+            "straightM": 50
+          },
+          "seed": 0,
+          "version": 1
+        }
+      },
+      "start": {
+        "pos": [
+          0,
+          2,
+          0
+        ],
+        "yawDeg": 0
+      },
+      "assists": {
+        "altitude": "hold",
+        "autoArm": true,
+        "control": "velocity",
+        "maxClimbMps": 1.5,
+        "maxSpeedMps": 3,
+        "maxYawDps": 90,
+        "onTouch": "bump-recentre"
+      },
+      "goals": [
+        {
+          "kind": "fly-distance",
+          "metres": 50
+        },
+        {
+          "kind": "fly-distance",
+          "metres": 240
+        }
+      ]
+    },
+    "rings-first": {
+      "world": {
+        "kind": "analytic",
+        "spec": {
+          "generator": "rings",
+          "params": {
+            "aheadM": 12,
+            "layout": "single",
+            "sizeM": 3
+          },
+          "seed": 0,
+          "version": 1
+        }
+      },
+      "start": {
+        "pos": [
+          0,
+          3,
+          72
+        ],
+        "yawDeg": 0
+      },
+      "assists": {
+        "altitude": "hold",
+        "autoArm": true,
+        "control": "velocity",
+        "maxClimbMps": 1.5,
+        "maxSpeedMps": 3,
+        "maxYawDps": 90,
+        "onTouch": "bump"
+      },
+      "goals": [
+        {
+          "gateIds": [
+            "ring-1"
+          ],
+          "inOrder": true,
+          "kind": "pass-gates"
+        }
+      ]
+    },
+    "rings-line": {
+      "world": {
+        "kind": "analytic",
+        "spec": {
+          "generator": "rings",
+          "params": {
+            "aheadM": 12,
+            "count": 3,
+            "layout": "line",
+            "sizeM": 3,
+            "spacingM": 14
+          },
+          "seed": 0,
+          "version": 1
+        }
+      },
+      "start": {
+        "pos": [
+          0,
+          3,
+          72
+        ],
+        "yawDeg": 0
+      },
+      "assists": {
+        "altitude": "hold",
+        "autoArm": true,
+        "control": "velocity",
+        "maxClimbMps": 1.5,
+        "maxSpeedMps": 3,
+        "maxYawDps": 90,
+        "onTouch": "bump"
+      },
+      "goals": [
+        {
+          "gateIds": "all",
+          "inOrder": true,
+          "kind": "pass-gates"
+        }
+      ]
+    },
+    "rings-small": {
+      "world": {
+        "kind": "analytic",
+        "spec": {
+          "generator": "rings",
+          "params": {
+            "aheadM": 12,
+            "layout": "line",
+            "sizes": [
+              3,
+              2,
+              1.5,
+              1
+            ],
+            "spacingM": 14
+          },
+          "seed": 0,
+          "version": 1
+        }
+      },
+      "start": {
+        "pos": [
+          0,
+          3,
+          72
+        ],
+        "yawDeg": 0
+      },
+      "assists": {
+        "altitude": "hold",
+        "autoArm": true,
+        "control": "velocity",
+        "maxClimbMps": 1,
+        "maxSpeedMps": 2.5,
+        "maxYawDps": 90,
+        "onTouch": "bump"
+      },
+      "goals": [
+        {
+          "gateIds": "all",
+          "inOrder": true,
+          "kind": "pass-gates"
+        }
+      ]
+    },
+    "rings-course": {
+      "world": {
+        "kind": "analytic",
+        "spec": {
+          "generator": "rings",
+          "params": {
+            "aheadM": 12,
+            "count": 6,
+            "layout": "course",
+            "sizeM": 3,
+            "spacingM": 16
+          },
+          "seed": 7,
+          "version": 1
+        }
+      },
+      "start": {
+        "pos": [
+          0,
+          3,
+          72
+        ],
+        "yawDeg": 0
+      },
+      "assists": {
+        "altitude": "hold",
+        "autoArm": true,
+        "control": "velocity",
+        "maxClimbMps": 1.5,
+        "maxSpeedMps": 4,
+        "maxYawDps": 120,
+        "onTouch": "bump"
+      },
+      "goals": [
+        {
+          "gateIds": "all",
+          "inOrder": true,
+          "kind": "pass-gates"
+        }
+      ]
+    },
+    "shapes-square": {
+      "world": {
+        "kind": "analytic",
+        "spec": {
+          "generator": "squares",
+          "params": {
+            "aheadM": 12,
+            "layout": "single",
+            "sizeM": 3
+          },
+          "seed": 0,
+          "version": 1
+        }
+      },
+      "start": {
+        "pos": [
+          0,
+          3,
+          72
+        ],
+        "yawDeg": 0
+      },
+      "assists": {
+        "altitude": "hold",
+        "autoArm": true,
+        "control": "velocity",
+        "maxClimbMps": 1.5,
+        "maxSpeedMps": 3,
+        "maxYawDps": 90,
+        "onTouch": "bump"
+      },
+      "goals": [
+        {
+          "gateIds": [
+            "square-1"
+          ],
+          "inOrder": true,
+          "kind": "pass-gates"
+        }
+      ]
+    },
+    "shapes-series": {
+      "world": {
+        "kind": "analytic",
+        "spec": {
+          "generator": "squares",
+          "params": {
+            "aheadM": 12,
+            "count": 4,
+            "layout": "turn",
+            "sizeM": 3,
+            "spacingM": 14,
+            "turnDeg": 40
+          },
+          "seed": 0,
+          "version": 1
+        }
+      },
+      "start": {
+        "pos": [
+          0,
+          3,
+          72
+        ],
+        "yawDeg": 0
+      },
+      "assists": {
+        "altitude": "hold",
+        "autoArm": true,
+        "control": "velocity",
+        "maxClimbMps": 1.5,
+        "maxSpeedMps": 3,
+        "maxYawDps": 90,
+        "onTouch": "bump"
+      },
+      "goals": [
+        {
+          "gateIds": "all",
+          "inOrder": true,
+          "kind": "pass-gates"
+        }
+      ]
+    },
+    "shapes-cube": {
+      "world": {
+        "kind": "analytic",
+        "spec": {
+          "generator": "cube-frames",
+          "params": {
+            "aheadM": 12,
+            "layout": "single",
+            "sizeM": 3
+          },
+          "seed": 0,
+          "version": 1
+        }
+      },
+      "start": {
+        "pos": [
+          0,
+          3,
+          72
+        ],
+        "yawDeg": 0
+      },
+      "assists": {
+        "altitude": "hold",
+        "autoArm": true,
+        "control": "velocity",
+        "maxClimbMps": 1.5,
+        "maxSpeedMps": 3,
+        "maxYawDps": 90,
+        "onTouch": "bump"
+      },
+      "goals": [
+        {
+          "gateIds": [
+            "cube-1"
+          ],
+          "inOrder": true,
+          "kind": "pass-gates"
+        },
+        {
+          "kind": "name-shape",
+          "objectId": "cube-1"
+        }
+      ]
+    }
+  }
+}

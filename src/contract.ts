@@ -160,6 +160,20 @@ export interface AnalyticWorldSpec {
 }
 
 /**
+ * One box of a lesson world's hollow (v0.13, lane s13-worlds): centre and half extents, world metres.
+ * The room (floor, walls, ceiling, a corridor's tunnel) is solid everywhere outside the union of its
+ * boxes; the objects stand inside it.
+ */
+export interface CavityBox {
+    readonly cx: number;
+    readonly cy: number;
+    readonly cz: number;
+    readonly hx: number;
+    readonly hy: number;
+    readonly hz: number;
+}
+
+/**
  * An analytic world built from its spec. The simulator builds its collider from `solidAt` (one
  * voxel per call) and names the walls by `digest`, so a flight log replays on the same walls.
  */
@@ -174,6 +188,31 @@ export interface AnalyticWorld extends SonicWorld {
     solidAt(x: number, y: number, z: number): boolean;
     /** the voxel size the simulator should build the collider at, metres */
     readonly voxelM: number;
+    /**
+     * v0.13: the boxes of the room's hollow, the shell exactly (objects not included); null for the open
+     * world, whose shell is the ground (and a ceiling slab with `ceilingM`). For every generator and
+     * version; absent only from a world made by an older package. The simulator draws the room from it.
+     */
+    readonly cavities?: readonly CavityBox[] | null;
+    /**
+     * v0.13 (M41-20): the world's track as checkpoints in order, for a world with a track (a corridor, a
+     * course of gates); absent otherwise.
+     */
+    readonly checkpoints?: readonly WorldCheckpoint[];
+}
+
+/**
+ * A checkpoint of a lesson world's track (v0.13, M41-20, lane s13-worlds), so a respawn lands near the
+ * crash. Consecutive ones are at most 6 m apart along the whole track, one is about 1.5 m before each
+ * gate facing it, and the straight line between two consecutive ones is free.
+ */
+export interface WorldCheckpoint {
+    /** on the track's centre line at flying height (through the free way past an obstacle), world frame */
+    readonly pos: Vec3;
+    /** unit vector along the track there: horizontal (y = 0), the heading a respawn faces */
+    readonly dir: Vec3;
+    /** k (1-based) only on the checkpoint that ends stage k */
+    readonly stage?: number;
 }
 
 export interface TrackRef {
