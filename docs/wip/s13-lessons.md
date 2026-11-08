@@ -30,9 +30,10 @@ Review fixes (`docs/wip/s13-lessons-review.md`, one commit per fix or small grou
 - [x] R10 the schedule's repeat rule pinned to 3 plays
 - [x] R11 an intro cue from the side its line names
 - [x] R12 wording of the new lines in ru, pl, en
-- [ ] R13 v0.12 recordings played back
+- [x] R13 v0.12 recordings played back: left open for the simulator's player, its fix specified ("Needs from the simulator" item 7)
 - [x] R14 public docs
 - [x] R15 test machinery marked internal
+- [x] Found while measuring R4: a course's first attempt begins at its start (with R9 a pilot could be trapped for good)
 - [ ] Checks after the fixes, final status
 
 ## Final status (2026-11-08)
@@ -75,24 +76,28 @@ From `@shramko/sonic-fpv` (all in `src/lesson/*` unless said):
 
 - `createLessonRunner(lesson, options)`: new options `path: 'full' | 'fast'` (the pilot's path: lesson index, the next
   lesson a pass names), `speechRate: number` (prefs.speechRate: how long a host that never reports speech is waited for),
-  `keys: { next, previous, repeat }` (the key names lines say; default N, B, Z).
+  `keys: { next, previous, repeat }` (the key names lines say; default N, B, Z), `returnTo: string | null` (the lesson
+  the pilot left with G; review R3).
 - `LessonSession` (beside begin, step, takeActions, spoken, answer, reset, demoFrame, target, progress):
-  `next(t)` N, `previous(t)` B, `repeat(t)` Z, `nextLesson(t)` and `previousLesson(t)` (the lesson menu), `view():
-  LessonView`, `statusLine(): SpeechLine` (I). Each returns the events like the other calls.
-- `RunnerAction`: new `{ kind: 'go', to: 'next' | 'previous' }` (open `lessonAfter(id, path)` / `lessonBefore(id, path)`, the
-  start screen when null); `scene` actions carry `play: { index, of }`.
+  `next(t)` N, `previous(t)` B, `repeat(t)` Z, `nextLesson(t)` and `previousLesson(t)` (the lesson menu), `pause(t)` and
+  `resume(t)` (review R8), `view(): LessonView`, `statusLine(): SpeechLine` (I). Each returns the events like the other
+  calls.
+- `RunnerAction`: new `{ kind: 'go', to: 'next' | 'previous' }` ('next': the host's `advance()`, the lesson G left first,
+  else `lessonAfter(id, path)`; 'previous': the lesson G left first, else `lessonBefore(id, path)`; the start screen when
+  null; review R3); `scene` actions carry `play: { index, of }`.
 - `LessonView`: lessonId, title, lessonIndex, lessonCount, path, step, steps, stepKind ('task' | 'fly' | 'intro' | 'sound'
   | 'scene' | 'trial' | 'round'), goal, goals, attempt, counted, required, failsInARow, offered, touches, maxTouches, phase,
-  passed, skipped, listening, playing ({ cue, index, of } or null). `statusLine(view, title)` is the pure form.
+  passed, skipped, listening, paused, playing ({ cue, index, of } or null). `statusLine(view, title)` is the pure form.
 - Contract (`src/contract.ts`, additions only): `CueEvent` kinds `repeat-cue` { cue, dir?, index?, of?, durS? }, `praise`,
   `stage` { stage? }, `wrong-way` { dir? }, `wrong-side` { dir? } (the host passes them to `engine.cue` as any cue action;
   every field either lane gives them, review R2);
   `LessonProgress.skipped?`; `IntroLine` (`intro` items may carry `cues`: cue ids or `IntroCue` { cue, from }, review
-  R11); `Checkpoint.stage?`; `FORMATS.lesson` is
-  'shramko-sonic-lesson/2' (format 1 files are migrated on load); `PassRule` fields keep their names with format 2 meaning.
+  R11); `Checkpoint.stage?`; `Goal` kind `track-end` (review R5); `FORMATS.lesson` is 'shramko-sonic-lesson/2' (format 1
+  files are migrated on load); `PassRule` fields keep their names with format 2 meaning.
 - Events: the runner writes a lesson event `leave` when the pilot leaves for another lesson.
 - Replay: `REPLAY_KEY_ACTIONS` adds `previous`, `repeat`, `next-lesson`, `previous-lesson`; the host records each key event
-  with its action before the runner's call, as it does for N and R.
+  with its action before the runner's call, as it does for N and R. The replay also takes the `session` pause and resume
+  events (review R8).
 - Timing contract: the runner now waits for `spoken(t)` (the host's whole speech queue empty) before a sound or the next
   step; the simulator's bridge already reports it.
 - Pause (review R8): `pause(t)` when the flight pauses (the lesson menu, the simulator's pause), `resume(t)` when it goes
@@ -463,6 +468,22 @@ walls line) go through the same queue, so the fix (wait for the report) also wai
   cp-6, with no touch, after stages 1 to 4, saying "You flew the whole corridor."; control: the shipped goals pass
   before cp-5, stages 1 to 3 only (the review's finding, measured).
 
+### Found while measuring R4: a course's first attempt begins at its start
+
+- The simulator's corridor test (`tools/bench/test/sonic-lessons.test.ts` module 4, its scripted pilot through the real
+  flight model) against the reviewed commit e0d1f0a and against R5's commit, with a diagnostic of its events (a scratch
+  test outside both repositories): the pilot flies on while the task is said, 170 m of the corridor (the first attempt
+  begins at (46, 2, -121), near cp-4), so the attempt's 240 m cannot be met before the dead end. At e0d1f0a it touches
+  the end wall every 36 s for 15 minutes (respawn at cp-5), fails, and passes in attempt 2, which begins at the start.
+  With R9 attempt 2 resumed at the furthest point passed, so the pilot was trapped for good (238 touches in 40 minutes;
+  with cp-6 a touch every 9.5 s at the end). The defect was v0.12's (an attempt counted from wherever the task left the
+  craft); R9 made it permanent.
+- Fix: the first attempt of a lesson whose attempts return to the start places the craft at the start too when it is
+  more than `START_SLACK_M` (1 m) from it as the attempt begins; a pilot who waited is not moved. Test
+  (`test/respawn.test.ts`): a pilot who flies 40 m at 1 m/s while the corridor's task is said is placed at the start at
+  "Go." and then passes the corridor in that attempt; control: a pilot who waits is not moved. Without the rule the
+  test fails.
+
 ## Needs from the simulator
 
 All in `C:/dev/gsfpv-v03/apps/fly/src/sonic/` (read only here; lane v13-host):
@@ -495,6 +516,13 @@ All in `C:/dev/gsfpv-v03/apps/fly/src/sonic/` (read only here; lane v13-host):
    pauses the flight and speaks through the same queue; without this the lesson says its next lines or starts its
    next sound over the menu, a question asked before the menu times out during it, an attempt's time limit runs on,
    and a pause in hover-height's band counts as time held (the simulator's own pause does the same today).
+7. Replays of an older lesson version (review R13), `apps/fly/src/sonic-session/replay-player.ts`: when the replay's
+   notes hold `lesson-version` (a v0.12 recording: "lesson X is version 2 here, the session was flown with 1", `exact`
+   false), speak the recorded `speech` events' `text` at their `t` (not the speech.end markers) instead of the
+   re-derived say actions, and say once that the lesson was flown with an older version. Why: the runner of v0.13
+   re-derives other lines (the pass rule, the progress lines, the three plays), so the player says lines the pilot never
+   heard. Not done in the package: the voice and the timeline are the player's, and the recorded text is already in the
+   package's events; keeping the v1 lesson files would not help, the runner's rules changed too.
 
 
 ## Needs from other lanes

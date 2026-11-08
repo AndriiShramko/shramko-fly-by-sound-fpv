@@ -285,6 +285,8 @@ export const WRONG_WAY_EVERY_S = 5;
 export const LINE_UP_M = 8;
 /** A respawn puts the craft this far before the last point of the track it passed, m. */
 export const RESPAWN_BEFORE_M = 1;
+/** The craft further than this from the start when a course's first attempt begins goes back there first, m. */
+export const START_SLACK_M = 1;
 /** A point of the world's checkpoint list is passed by crossing its plane forward this close to it, m. */
 export const PASS_POINT_M = 4;
 /** A gate's back side is told at most this often, s (a craft that hovers on the plane would cross it to and fro). */
@@ -769,7 +771,12 @@ class Runner implements LessonSession {
         this.listening = false;
         this.pausedMs = 0;
         this.phaseValue = 'flying';
-        if (!first && !this.ears && this.returnsToStart()) {
+        // the first attempt of a course begins at its start too when the craft left it while the task was said: what the
+        // attempt counts (the distance flown, the gates) is the course's, not what is left of it (a pilot who flew 170 m
+        // of the corridor during its task could never meet its 240 m before the dead end, and every touch there sent him
+        // back to cp-5 for ever: the simulator's corridor pilot, found after the fix of review R9)
+        const left = first && this.prev !== null && dist3(this.prev.pos, this.startPose(1).pos) > START_SLACK_M;
+        if ((!first || left) && !this.ears && this.returnsToStart()) {
             if (resume !== null) {
                 // the path flown to that point counts again, so the course's distance goals stay where they were
                 const back = this.respawn();

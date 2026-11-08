@@ -151,3 +151,27 @@ describe('a failed attempt of a course that re-centres: the next one begins wher
         expect(places(q).at(-1)).toMatchObject({ pose: getLesson('corridor').start, to: 'start' });
     }, 60000);
 });
+
+describe("a course's first attempt begins at its start (found with the simulator's corridor pilot)", () => {
+    it('a pilot who flew on while the task was said goes back to the start at "Go."; the corridor is then passed in that attempt', () => {
+        const p = new ScriptedPilot(getLesson('corridor'));
+        p.begin();
+        // the task is said (lines, then each named sound three times): the pilot flies on meanwhile, slowly
+        p.flyTo([0, 2, -40], 1);
+        expect(p.run.attempt).toBe(1);
+        const atGo = places(p).at(-1);
+        expect(atGo).toEqual({ kind: 'place', pose: getLesson('corridor').start, to: 'start' });
+        expect(p.of('reset')).toHaveLength(1);
+        // what the attempt counts is the corridor from its start: flown along its line, it is passed in this attempt
+        for (const q of line(p)) if (p.run.phase === 'flying') p.flyTo(q);
+        expect(p.lessonWhat()).toContain('passed');
+        expect(p.run.attempt).toBe(1);
+    }, 60000);
+
+    it('control: a pilot who waits at the start during the task is not moved', () => {
+        const p = corridor();
+        expect(p.run.attempt).toBe(1);
+        expect(places(p)).toHaveLength(1); // only begin()'s
+        expect(p.of('reset')).toHaveLength(0);
+    }, 60000);
+});
