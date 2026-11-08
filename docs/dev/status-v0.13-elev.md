@@ -110,9 +110,12 @@ the code, then fixed with a test and its control (section "Review fixes" below):
   name as a word of its own; its control, v0.13's key lines said by their voices, loses the key in 4 Spanish, 1 Polish
   and 7 Russian lines), the percent records for Polish and Russian; `pnpm listen:words` PASS (217fe5790a33), the
   English, Spanish, Polish and Russian lines that name a key all heard with it
-- [ ] F4 Review E5: VL-6 and VL-2 hear the floor, the ceiling and the chime with their breaths (parts 1 and 2
-  committed: the rig's gaps flight, the motor's fourth-order low-pass, VL-6 and VL-2 over the tunnel; `pnpm listen`
-  PASS, 9 of 9, inputs 543c687b88a2; the controls by hand next)
+- [x] F4 Review E5: VL-6 and VL-2 hear the floor, the ceiling and the chime with their breaths: the rig flies tunnel-gaps
+  along its track (the chime above and below, the ceiling and the floor, each with its breath, 152 to 205 frames);
+  measured there, the motor masked the breath's lowest bands (5.7 dB at 4 kHz), so the motor's low-pass is now fourth
+  order (the breath 17.8 dB or more over every craft's motor from 4 to 16 kHz); the breath costs the voice 0.10 to
+  0.17 LU of its margin; the tunnel's own voice margin (1.93 to 2.88 LU, under 3) is reported, not held; `pnpm listen`
+  PASS, 9 of 9 (543c687b88a2)
 - [x] F5 Review E6: the target note's two timings measured (two new audio proofs, `target-note-gap` and
   `target-note-pan`, each with its control), and both found wrong on the shipped engine and fixed: the height tone now
   comes back 12 ms after a placed note (`HRTF_TAIL_S`; 6.5 ms left 2.3 to 2.8 ms of overlap), and a constant input 140 dB
@@ -238,8 +241,9 @@ reverb return in the renders and one ear's reference for both, gave 3.58, 2.87 a
 control (its bands over 8 kHz hold almost nothing of the chime without its breath), so the check takes the direct
 sound alone (`EngineTestHooks.reverb`, test-only) and each ear over its own twin.
 
-The other eight checks of the rig hold on the new engine (the target note panned and with its breath, the floor and
-ceiling with theirs): the voice 4.67, 4.60, 4.80 LU over the mix (v0.13: 4.76, 4.66, 4.64); true peak -6.99, -3.74,
+The other eight checks of the rig hold on the new engine (the target note panned and with its breath; review E5: the
+rig's flights then held no chime, floor or ceiling, so their breaths were not measured until F4, section "Review
+fixes"): the voice 4.67, 4.60, 4.80 LU over the mix (v0.13: 4.76, 4.66, 4.64); true peak -6.99, -3.74,
 -6.26 dBTP (unchanged); every cue at least 15.0 dB over the motor (unchanged; the height layer's own bands stay 400
 and 500 Hz, 40 dB over it); the height layer in its band modulated at most 1.0 % (1.1 %), its buzz out of the band
 42.8 %; the height glide 3.7 cents a hop at most; two renders within 1.8e-7; stems summing to -131.6 dB.
@@ -618,6 +622,57 @@ rykcie" (0.18). The design's VL-4 asks at most 2 % of a lesson's words: counted 
 (`lesson.<id>.*`), nine are over it by one to three words: English rings-line (3.4 %), Spanish rings-first (4.2 %),
 move-speed (3.1 %) and ears-game (2.7 %), Polish move-speed (3.3 %), shapes-cube (3.2 %) and ears-headphones (3.1 %),
 Russian shapes-square (2.9 %) and move-stop (2.1 %). The check's bound is per line; a lesson bound is open.
+
+### F4, VL-6 and VL-2 with the floor, the ceiling and the chime (review E5)
+
+Tried first: the truth of the rig's ring flight, frame by frame (a new field: every voice and whether it has the
+breath), holds the gate's hum, the ring's shape and a wall, never the chime, the floor or the ceiling; the climb renders
+the height layer alone. It holds: before this step VL-6 and VL-2 said nothing of those breaths, and section E1-6 below
+said they did.
+
+The rig (`test-audio/page/listen.ts`, `tools/listen.ts`, `tools/listen/measure.py`; rig 4, driver 4, measure 4):
+
+- The gaps flight: tunnel-gaps flown along its world's own track (the start, then its checkpoints through the four free
+  ways: above, right, below, left) at 2 m/s after a still second, 18.9 s, the lesson's layers, the default craft's motor
+  at 15 %, three spoken lines (1.2 s; 5 s over the way above and the ceiling; 10.5 s over the way below and the floor).
+  Rendered in the three themes, the same with Sound from above and below off, its stems (safety, height, room, motor),
+  every craft's motor and the raw motor at 60 % (the control).
+- Cover, the condition of VL-6 and VL-2: the flight sounds the chime above (152 frames), the chime below (160), the
+  ceiling (203) and the floor (205), each with its breath (at least 30 each). Control by hand: the same count on the
+  flight with the setting off is 0 of each.
+
+What the first run found, and fixed:
+
+- The motor masked the breath's lowest bands: the breath (the safety stem's third octaves from 4 to 16 kHz, in the
+  frames with a breath) stood 5.7 dB over the Air65's motor at 4 kHz, 9.2 over the Meteor65's, 8.3 over the Pavo Pico's
+  at 5 kHz, where the motor bus is made to keep 12 dB or more off the cues' highs over 4 kHz. Its second-order low-pass
+  at 2 kHz is now fourth order (two Butterworth sections, as its high-pass): the breath is 17.8 to 36.8 dB over every
+  craft's motor in every band from 4 to 16 kHz (VL-2 holds it to 12 dB); the raw motor (the control) 4.5 dB. The cues'
+  own bands are unchanged: every cue at least 15.0 dB over the motor in the ring flight, 41.7 dB in the tunnel.
+- The voice in the tunnel: 1.95 to 2.91 LU over the mix, under VL-6's 3 to 6. Without the breath it is 2.03 to 3.00
+  LU, so the breath costs 0.10 to 0.17 LU (VL-6 holds it to 0.5; control by hand: the breath 10 dB louder costs 0.65 to
+  0.88 LU and fails, restored); the rest is the tunnel: its walls, obstacles, floor and ceiling make its mix 1.7 to 2.6
+  LU louder than the ring flight's, where the voices were set to 4.5 LU (M41-17). VL-6-speech keeps 3 to 6 LU on the
+  ring flight and reports the tunnel's margin.
+
+The run (`pnpm listen`, 543c687b88a2, 9 of 9 valid and passing; 43 renders):
+
+| Check | Ring flight | Tunnel-gaps |
+|---|---|---|
+| voice over the mix, LU (soft, clear, race) | 4.61, 4.56, 4.74 | 2.88, 1.99, 1.93 (reported); 3.00, 2.16, 2.03 with the setting off |
+| the breath's cost to it, LU | | 0.12, 0.17, 0.10 (at most 0.5) |
+| true peak with speech, dBTP | -6.96, -3.72, -6.19 | -4.89, -1.98, -4.53 (control, volume 1: +0.26, +0.55, +0.17) |
+| every cue over every craft's motor, dB | 15.0 or more | 41.7 or more |
+| the breath over every craft's motor, 4 to 16 kHz, dB | | 17.8 or more (raw motor: 4.5) |
+
+The other checks, as before: VL-1-elevation 3.57, 3.05 and 4.94 dB (control 0.57), VL-0a 1.2e-7, VL-0b -131.8 dB,
+VL-pitch 3.7 cents a hop at most, VL-onset 2.475 to 2.493 s, VL-3-height passing.
+
+Open (the owner's): in a busy tunnel the voice sits 2 to 3 LU over the mix. Under every line the engine ducks the cues
+by 12 dB, so the voice is far over what sounds with it, but the line over the way below is only -0.39 to 1.01 LU over
+the 3 s before it. Raising the voices about 1.1 dB would put both flights within 3 to 6 LU, the clear theme's tunnel
+peak (-1.98 dBTP) then near -1; a voice level that follows the mix, or the voice through the engine's limiter (design
+section 13), would hold it everywhere.
 
 ### F5, the target note's two timings (review E6)
 
