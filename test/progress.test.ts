@@ -114,6 +114,8 @@ describe('the progress view (I and the host panel)', () => {
         run.begin(0);
         const lessons = lessonPaths().full.length;
         expect(run.statusLine()).toEqual({ key: 'status.progress-step', params: { title, lesson: 6, lessons, step: 1, steps: 2 } });
+        // the Russian title as the locale file has it, "Hold your height" (lane s13-worlds' literal, written as escapes)
+        expect(title).toBe('\u0414\u0435\u0440\u0436\u0438 \u0432\u044b\u0441\u043e\u0442\u0443');
         const p = new ScriptedPilot(getLesson('hover-height'), { locale: 'ru' });
         p.begin();
         p.until(() => p.run.attempt === 2 && p.run.phase === 'flying', 400);
@@ -122,6 +124,8 @@ describe('the progress view (I and the host panel)', () => {
         // the Russian line, as the locale file has it: the title in Russian and the numbers in their places
         expect(ru.text(line)).toBe((DICTS.ru['status.progress'] as string).replace('{lesson}', '6').replace('{lessons}', String(lessons)).replace('{title}', title).replace('{step}', '2').replace('{steps}', '2').replace('{n}', '2').replace('{counted}', '0').replace('{required}', '3'));
         expect(ru.text(line)).toContain(title);
+        // and the sentence a Russian pilot hears, word for word (review n1 of the merge: s13-worlds' literal, kept as escapes)
+        expect(ru.text(line)).toBe(`\u0423\u0440\u043e\u043a 6 \u0438\u0437 ${lessons}: \u0414\u0435\u0440\u0436\u0438 \u0432\u044b\u0441\u043e\u0442\u0443. \u0428\u0430\u0433 2 \u0438\u0437 2. \u041f\u043e\u043f\u044b\u0442\u043a\u0430 2. \u0417\u0430\u0441\u0447\u0438\u0442\u0430\u043d\u043e 0 \u0438\u0437 3.`);
         expect(createTranslator('en', DICTS).text(statusLine(p.run.view(), 'Hold your height'))).toBe(`Lesson 6 of ${lessons}: Hold your height. Step 2 of 2. Attempt 2. Counted 0 of 3.`);
     }, 60000);
 });

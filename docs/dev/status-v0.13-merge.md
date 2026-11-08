@@ -293,7 +293,7 @@ simulator's part stays in the review's wave 2 list.
 - [x] 15. m1. The corridor's checkpoints line and its plays; the chime of a track's last checkpoint (one commit with 14)
 - [x] 16. m2. The stale lesson counts in `CITATION.cff`, `src/contract.ts` and `docs/testing/test-protocol.md`
 - [x] 17. m3. Tests for the six tunnels' respawn and the open-way chime at the shipped obstacles
-- [ ] 18. n1. s13-worlds' Russian sentence in `test/progress.test.ts`, as `\u` escapes
+- [x] 18. n1. s13-worlds' Russian sentence in `test/progress.test.ts`, as `\u` escapes
 - [ ] 19. All checks on the final code with fresh evidence; the final status
 
 ## Review fixes (steps 12 to 19)
@@ -417,6 +417,16 @@ One commit: both change the corridor's intro.
 - Broken on purpose, then restored: `RESPAWN_BEFORE_M` 6.5 fails all seven respawn cases ("corridor w3: expected 5.5
   to be less than 1e-9"; before, one test failed); left and right swapped in `FREE_SIDE_AXES` fails the chime
   ("tunnel-gaps block-2: expected [ 'left' ] to deeply equal [ 'right' ]"). Full suite 1062 of 1062, typecheck clean.
+
+### 18. n1: the Russian status line word for word
+
+- Tried first: the merged test builds the Russian line from the locale's own template, so it holds the composition
+  (the title, the numbers in their places) but not the words; a template reworded in `locales/ru.json` ("credited"
+  said another way) still passed. The nit holds.
+- Fix, `test/progress.test.ts`: s13-worlds' literal is back beside the composition, as `\u` escapes (the file stays
+  ASCII): the title "Hold your height" in Russian, and the whole sentence "Lesson 6 of 28: Hold your height. Step 2 of
+  2. Attempt 2. Counted 0 of 3." in Russian. Broken on purpose (that one word of the template changed), then restored:
+  the literal fails, the composition alone would not. Full suite 1062 of 1062.
 
 ## Final status (2026-11-08, the whole merge)
 
