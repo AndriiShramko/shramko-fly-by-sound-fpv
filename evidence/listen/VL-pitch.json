@@ -1,0 +1,59 @@
+{
+ "format": "shramko-listen-evidence/1",
+ "key": "41cfb8b444cc2c5bcc21cd41064d8a1f05befd5e030be275458dc53500fcf2e8",
+ "inputs": {
+  "hash": "41cfb8b444cc2c5bcc21cd41064d8a1f05befd5e030be275458dc53500fcf2e8",
+  "files": 106,
+  "driver": 1,
+  "measure": 1,
+  "chrome": "156.0.8078.80",
+  "tools": {
+   "python": "3.11.9",
+   "numpy": "2.4.6",
+   "scipy": "1.17.1",
+   "soundfile": "0.14.0",
+   "pyloudnorm": "0.2.0"
+  }
+ },
+ "date": "2026-11-08T11:56:22.073Z",
+ "id": "VL-pitch",
+ "claim": "the pitch track of the height stem is continuous while the height changes smoothly (a climb from 0.5 to 4.5 m at 0.5 m/s): no change over 25 cents between hops 10 ms apart, and the track follows the planned glide (control: the v0.12 stepped mapping jumps)",
+ "thresholds": {
+  "maxStepCents": {
+   "value": 25,
+   "kind": "proposal"
+  },
+  "medianOffPlanCents": {
+   "value": 15,
+   "kind": "proposal"
+  }
+ },
+ "measured": {
+  "hops": 752,
+  "maxStepCents": 3.7,
+  "p99StepCents": 3.5,
+  "medianOffPlanCents": 7.84,
+  "rangeHz": [
+   228,
+   638.1
+  ]
+ },
+ "controls": [
+  {
+   "name": "v0.12 stepped height tone (rounded to whole notes)",
+   "measured": {
+    "hops": 752,
+    "maxStepCents": 118.7,
+    "p99StepCents": 41.6,
+    "medianOffPlanCents": 0.56,
+    "rangeHz": [
+     219.8,
+     659.5
+    ]
+   },
+   "ok": true
+  }
+ ],
+ "valid": true,
+ "pass": true
+}

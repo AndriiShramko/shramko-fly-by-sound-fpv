@@ -1,0 +1,41 @@
+{
+ "format": "shramko-listen-evidence/1",
+ "key": "41cfb8b444cc2c5bcc21cd41064d8a1f05befd5e030be275458dc53500fcf2e8",
+ "inputs": {
+  "hash": "41cfb8b444cc2c5bcc21cd41064d8a1f05befd5e030be275458dc53500fcf2e8",
+  "files": 106,
+  "driver": 1,
+  "measure": 1,
+  "chrome": "156.0.8078.80",
+  "tools": {
+   "python": "3.11.9",
+   "numpy": "2.4.6",
+   "scipy": "1.17.1",
+   "soundfile": "0.14.0",
+   "pyloudnorm": "0.2.0"
+  }
+ },
+ "date": "2026-11-08T11:56:22.073Z",
+ "id": "VL-0a",
+ "claim": "two renders of one scenario are the same within float32 rounding (control: another noise seed differs by more than 1e-3)",
+ "thresholds": {
+  "maxAbsDiff": {
+   "value": 0.000001,
+   "kind": "design, float32 rounding allowed"
+  }
+ },
+ "measured": {
+  "maxAbsDiff": 2.384185791015625e-7
+ },
+ "controls": [
+  {
+   "name": "noise seed 2",
+   "measured": {
+    "maxAbsDiff": 0.044558
+   },
+   "ok": true
+  }
+ ],
+ "valid": true,
+ "pass": true
+}

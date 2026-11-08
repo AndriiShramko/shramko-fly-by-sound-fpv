@@ -1,0 +1,61 @@
+{
+ "format": "shramko-listen-evidence/1",
+ "key": "41cfb8b444cc2c5bcc21cd41064d8a1f05befd5e030be275458dc53500fcf2e8",
+ "inputs": {
+  "hash": "41cfb8b444cc2c5bcc21cd41064d8a1f05befd5e030be275458dc53500fcf2e8",
+  "files": 106,
+  "driver": 1,
+  "measure": 1,
+  "chrome": "156.0.8078.80",
+  "tools": {
+   "python": "3.11.9",
+   "numpy": "2.4.6",
+   "scipy": "1.17.1",
+   "soundfile": "0.14.0",
+   "pyloudnorm": "0.2.0"
+  }
+ },
+ "date": "2026-11-08T11:56:22.073Z",
+ "id": "VL-onset",
+ "claim": "the hazard stem starts at least 2 s before impact when flying straight at a wall at 1, 3 and 5 m/s (control: a distance-only rule, v0.12 front 6 m, starts later at 5 m/s)",
+ "thresholds": {
+  "ttcAtOnsetS": {
+   "value": 2,
+   "kind": "owner (v13 plan, M41-13)"
+  }
+ },
+ "measured": {
+  "1 m/s": {
+   "onsetS": 1.825,
+   "hullAtOnsetM": 2.47,
+   "ttcAtOnsetS": 2.475,
+   "speedMps": 1
+  },
+  "3 m/s": {
+   "onsetS": 1.807,
+   "hullAtOnsetM": 7.48,
+   "ttcAtOnsetS": 2.493,
+   "speedMps": 3
+  },
+  "5 m/s": {
+   "onsetS": 1.825,
+   "hullAtOnsetM": 12.37,
+   "ttcAtOnsetS": 2.475,
+   "speedMps": 5
+  }
+ },
+ "controls": [
+  {
+   "name": "distance-only rule at 5 m/s",
+   "measured": {
+    "onsetS": 3.124,
+    "hullAtOnsetM": 5.88,
+    "ttcAtOnsetS": 1.176,
+    "speedMps": 5
+   },
+   "ok": true
+  }
+ ],
+ "valid": true,
+ "pass": true
+}

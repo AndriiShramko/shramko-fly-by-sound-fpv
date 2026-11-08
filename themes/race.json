@@ -96,7 +96,7 @@
       "gainDb": -3,
       "params": {
         "pitch": 1,
-        "volume": 1
+        "volume": 0.77
       },
       "timbre": "sine"
     }

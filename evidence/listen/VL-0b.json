@@ -1,0 +1,53 @@
+{
+ "format": "shramko-listen-evidence/1",
+ "key": "41cfb8b444cc2c5bcc21cd41064d8a1f05befd5e030be275458dc53500fcf2e8",
+ "inputs": {
+  "hash": "41cfb8b444cc2c5bcc21cd41064d8a1f05befd5e030be275458dc53500fcf2e8",
+  "files": 106,
+  "driver": 1,
+  "measure": 1,
+  "chrome": "156.0.8078.80",
+  "tools": {
+   "python": "3.11.9",
+   "numpy": "2.4.6",
+   "scipy": "1.17.1",
+   "soundfile": "0.14.0",
+   "pyloudnorm": "0.2.0"
+  }
+ },
+ "date": "2026-11-08T11:56:22.073Z",
+ "id": "VL-0b",
+ "claim": "the solo stems (safety, height, target, shape, room, motor) sum to the pre-chain mix",
+ "thresholds": {
+  "residualDb": {
+   "value": -90,
+   "kind": "design"
+  },
+  "controlResidualDb": {
+   "value": -30,
+   "kind": "design"
+  }
+ },
+ "measured": {
+  "residualDb": -127.9,
+  "stemRmsDb": {
+   "safety": -41.7,
+   "height": -36.2,
+   "target": -41.8,
+   "shape": -44.3,
+   "room": -54.3,
+   "motor": -47.5
+  }
+ },
+ "controls": [
+  {
+   "name": "the height stem left out of the sum",
+   "measured": {
+    "residualDb": -2.6
+   },
+   "ok": true
+  }
+ ],
+ "valid": true,
+ "pass": true
+}

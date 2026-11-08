@@ -1,0 +1,57 @@
+{
+ "format": "shramko-listen-evidence/1",
+ "key": "41cfb8b444cc2c5bcc21cd41064d8a1f05befd5e030be275458dc53500fcf2e8",
+ "inputs": {
+  "hash": "41cfb8b444cc2c5bcc21cd41064d8a1f05befd5e030be275458dc53500fcf2e8",
+  "files": 106,
+  "driver": 1,
+  "measure": 1,
+  "chrome": "156.0.8078.80",
+  "tools": {
+   "python": "3.11.9",
+   "numpy": "2.4.6",
+   "scipy": "1.17.1",
+   "soundfile": "0.14.0",
+   "pyloudnorm": "0.2.0"
+  }
+ },
+ "date": "2026-11-08T11:56:22.073Z",
+ "id": "VL-6-peak",
+ "claim": "the true peak of what reaches the ears (the engine and the voice) is at most -1 dBTP in every theme (control: the v0.12 utterance volume 1)",
+ "thresholds": {
+  "truePeakDbtp": {
+   "value": -1,
+   "kind": "standard (EBU R128)"
+  }
+ },
+ "measured": {
+  "soft": {
+   "mixWithSpeechDbtp": -6.91,
+   "engineOnlyDbtp": -10.85,
+   "engineLufs": -28.57
+  },
+  "clear": {
+   "mixWithSpeechDbtp": -3.69,
+   "engineOnlyDbtp": -11.29,
+   "engineLufs": -25.48
+  },
+  "race": {
+   "mixWithSpeechDbtp": -6.11,
+   "engineOnlyDbtp": -13.58,
+   "engineLufs": -27.84
+  }
+ },
+ "controls": [
+  {
+   "name": "utterance volume 1 (v0.12)",
+   "measured": {
+    "soft": -0.49,
+    "clear": -0.47,
+    "race": -0.41
+   },
+   "ok": true
+  }
+ ],
+ "valid": true,
+ "pass": true
+}

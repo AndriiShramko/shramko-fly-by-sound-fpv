@@ -20,6 +20,8 @@ Shramko Fly by Sound: the sound engine, lessons and session format that let blin
 | `src/survey/`, `src/prefs/`, `src/util/` | Surveys, pilot preferences, helpers (sha256, rng, vectors). |
 | `lessons/`, `themes/` | Lessons and themes as JSON. |
 | `tools/` | Report tool, layout check, locale lint (run through `node tools/run-tool.mjs`). |
+| `tools/listen.ts`, `tools/listen/`, `test-audio/page/listen*.ts` | The virtual listener's first rig: scripted flights rendered through the real engine, stems, truth, measurements (`measure.py`), clip maker. |
+| `evidence/` | Audio proofs, demo check, and `evidence/listen/` (the rig's checks, keyed by the hash of their inputs). |
 | `demo/` | Stand-alone demo and Sound Lab. |
 | `test/`, `test-audio/` | Node tests; browser proofs in headless Chrome. |
 
@@ -34,7 +36,8 @@ Shramko Fly by Sound: the sound engine, lessons and session format that let blin
 - **Hosts must record the replay markers:** a `lesson open` event, `key` events with `reset.checkpoint`, `reset.start` or `next`, and a `speech` event with key `speech.end` whenever they call `runner.spoken(t)` (`REPLAY_KEY_ACTIONS`, `SPEECH_END_KEY` in `src/replay`). Without them the replay check fails on times.
 - **Hosts pass `say.interrupt` to speech and send `setLayers({ on: [] })` when frames stop**, or the demo keeps sounding.
 - **Privacy is enforced in code:** the session writer throws for a minor's package that claims `send` or `speechRecognition` without a confirmed guardian. Do not weaken it.
-- **Every claim about sound needs a measurement** in `test-audio/` with a negative control (an engine broken on purpose must fail). How it feels is for human ears; say so instead of guessing.
+- **Every claim about sound needs a measurement** in `test-audio/` or `pnpm listen` with a negative control (an engine broken on purpose must fail). How it feels is for human ears; say so instead of guessing.
+- **A change of the engine, a theme or a lesson re-runs `pnpm listen`** (its evidence is keyed by the hash of every input, so stale evidence shows). It needs the Python environment of `tools/listen/requirements.txt` (`SHRAMKO_LISTEN_PY`), a cache on a data disk (`SHRAMKO_LISTEN_CACHE`), and takes the GPU lock (`GPU_LOCK`) while headless Chrome renders.
 - **Never commit** keys, `.env` files, `.cache/`, or recordings of real testers (`voice.webm`, session packages with voice). Test fixtures are synthetic.
 
 ## Checks before a PR
@@ -44,4 +47,5 @@ pnpm install --frozen-lockfile
 pnpm typecheck
 pnpm test          # Node tests
 pnpm proof:audio   # headless Chrome; set GPU_LOCK to a lock directory if your machine shares the GPU
+pnpm listen        # the virtual listener's checks (needs SHRAMKO_LISTEN_PY; renders cached in SHRAMKO_LISTEN_CACHE)
 ```

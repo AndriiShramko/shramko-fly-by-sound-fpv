@@ -1,0 +1,65 @@
+{
+ "format": "shramko-listen-index/1",
+ "key": "41cfb8b444cc2c5bcc21cd41064d8a1f05befd5e030be275458dc53500fcf2e8",
+ "pass": true,
+ "inputs": {
+  "hash": "41cfb8b444cc2c5bcc21cd41064d8a1f05befd5e030be275458dc53500fcf2e8",
+  "files": 106,
+  "driver": 1,
+  "measure": 1,
+  "chrome": "156.0.8078.80",
+  "tools": {
+   "python": "3.11.9",
+   "numpy": "2.4.6",
+   "scipy": "1.17.1",
+   "soundfile": "0.14.0",
+   "pyloudnorm": "0.2.0"
+  }
+ },
+ "date": "2026-11-08T11:56:22.073Z",
+ "run": "pnpm listen",
+ "checks": [
+  {
+   "id": "VL-0a",
+   "valid": true,
+   "pass": true,
+   "file": "VL-0a.json"
+  },
+  {
+   "id": "VL-0b",
+   "valid": true,
+   "pass": true,
+   "file": "VL-0b.json"
+  },
+  {
+   "id": "VL-pitch",
+   "valid": true,
+   "pass": true,
+   "file": "VL-pitch.json"
+  },
+  {
+   "id": "VL-onset",
+   "valid": true,
+   "pass": true,
+   "file": "VL-onset.json"
+  },
+  {
+   "id": "VL-6-speech",
+   "valid": true,
+   "pass": true,
+   "file": "VL-6-speech.json"
+  },
+  {
+   "id": "VL-6-peak",
+   "valid": true,
+   "pass": true,
+   "file": "VL-6-peak.json"
+  },
+  {
+   "id": "VL-2-motor",
+   "valid": true,
+   "pass": true,
+   "file": "VL-2-motor.json"
+  }
+ ]
+}

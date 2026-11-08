@@ -28,9 +28,10 @@ Shared event kinds (plan, "Lanes"): the runner emits the cue events `wrong-way`,
 - [x] 6 Motor (M41-16): on by default, under the cues, ducked under speech (engine motor bus, prefs default and
   migration, `test/prefs.test.ts`; the level is measured and calibrated by the rig in step 9)
 - [x] 7 Never silence (M41-10), the planner's part (lesson layers, the pad swirl; `test/silence.test.ts`, 3 tests)
-- [ ] 8 Speech level (M41-17): speech 3 to 6 LU over the mix, true peak at most -1 dBTP
-- [ ] 9 The first measuring rig of the virtual listener (VL-0, part of VL-2 and VL-6): in progress (the rig runs;
-  every check passes but the speech level and the true peak, which step 8 sets from its numbers)
+- [x] 8 Speech level (M41-17): speech 3 to 6 LU over the mix, true peak at most -1 dBTP (themes' `voice.volume`
+  from the rig's measurements; `evidence/listen/VL-6-speech.json`, `VL-6-peak.json`)
+- [x] 9 The first measuring rig of the virtual listener (VL-0, part of VL-2 and VL-6): `pnpm listen`, 7 checks with
+  their controls, all valid and passing (`evidence/listen/`)
 - [ ] 10 The full checks
 
 ## How v0.12 sounds: facts with file and line (code as of 7d4b4b9)
@@ -232,6 +233,70 @@ Shared event kinds (plan, "Lanes"): the runner emits the cue events `wrong-way`,
   (still used by soft's shape trace) now dips 6 dB (second triangle a quarter of the pad, was half).
 - Note for VL-3c (at most two streams in modules 0 to 2): hover-turn and move-stop now carry the height tone and the
   bed besides their own layer. The bed is the owner's request (silence must mean something is wrong).
+
+### Step 8, speech level (M41-17)
+
+Measured, not guessed (the rig, step 9, and the clip maker `tools/listen/tts/sapi-clips.ps1`):
+
+- The Windows desktop voice (SAPI, Microsoft David Desktop: the local voice family Chrome's speechSynthesis offers on
+  Windows) at volume 100: the hint line is -16.5 LUFS with a true peak of -0.46 dBTP. Its volume law, measured at
+  100, 90, 80, 70, 60, 50, 40, 25 and 10: 0.25 dB per step, linear in dB (50 is -12.5 dB, 25 is -18.8 dB, 10 is
+  -22.5 dB). That Chrome hands `utterance.volume` x 100 to that voice is an assumption: the browser's voice cannot be
+  captured (design, section 2.6).
+- The flight's mix (the ring flight of the rig, the motor at the simulator's 15 %, from the end of the fade-in):
+  soft -28.5, clear -25.2, race -27.6 LUFS. The voice (all three lines, integrated) at volume 1 is -17.3 LUFS: 11.2,
+  7.9 and 10.2 LU over the mix (the probe's 11 to 14 LU, measured on other flights).
+- Set: the themes' `voice.volume` for 4.5 LU (the middle of 3 to 6): soft 0.74, clear 0.87, race 0.77. Measured
+  after: 4.68, 4.67 and 4.53 LU; the true peak of what reaches the ears (engine and voice) -6.91, -3.69 and
+  -6.11 dBTP (control, volume 1: -0.49, -0.47, -0.41 dBTP, over the limit). The pilot's own voice gain still
+  scales it (`layerGainDb.voice`).
+- The master gain stays: the engine's own true peak is -10.9 (soft), -11.3 (clear) and -13.6 dBTP (race), at the
+  output compressor's threshold of -10 dBFS (ceiling -6 minus 4): a louder master would start squeezing the cues'
+  pulses, so the voice's volume is the knob that moves.
+- Per line (information, `VL-6-speech.json`): against the 3 s before it a line sits 3.8 to 4.7 LU over a busy
+  moment and 10.7 to 13.2 LU over a quiet one (the turn after the ring: only the height tone, the bed and the
+  motor). One utterance volume cannot hold 3 to 6 LU against both; the engine's 12 dB duck lowers the cues under
+  every line anyway.
+- Not measured: the voice and level Chrome really uses (the engine asks for en-GB; on a machine with only en-US
+  local voices Chrome may take a network voice, whose level is unknown); how loud a person sets the headphones.
+  Playing pre-rendered clips through the engine's limiter (design, section 13) would make both exact.
+
+### Step 9, the first measuring rig (VL-0, a cheap part of VL-2 and VL-6)
+
+One command: `pnpm listen` (`node tools/run-tool.mjs listen`, `--force` to run again with nothing changed).
+Environment: `SHRAMKO_LISTEN_PY` (the Python of `tools/listen/requirements.txt`; on the build machine
+`U:/venvs/shramko-listen/Scripts/python.exe`), `SHRAMKO_LISTEN_CACHE` (on the build machine
+`U:/cache/shramko-listen`; default `.cache/listen`), `GPU_LOCK` (default `C:/dev/.gpu-lock`).
+
+- Render (`test-audio/page/listen.ts`, `test-audio/page/listen-types.ts`): scripted flights through the real engine,
+  OfflineAudioContext at 48 kHz, frames at 60 Hz by suspend and resume, four channels (the ears after the output
+  chain, the master before it), solo stems (the engine's `solo` hook feeds what it leaves out into a silent node, so
+  every voice is processed as in the mix), the truth per frame (height, target height and tone, hazards with
+  distance and time to contact, the free way, urgent, speaking, the motor), speech that keeps the time of its clip,
+  and a motor stand-in that follows the simulator's motor recipe. Scenarios: a climb (0.5 to 4.5 m at 0.5 m/s), three
+  approaches at 1, 3 and 5 m/s, a 16 s ring flight (ring at 3 m, a height dip, a gate note, praise, a turn, a run at
+  a wall at 4 m/s, three spoken lines). Controls: v0.12 stepped height, the distance-only sampler, the raw motor at
+  60 %, another noise seed.
+- Driver (`tools/listen.ts`): clips by `tools/listen/tts/sapi-clips.ps1`, 18 renders in headless Chrome under the GPU
+  lock (about 40 s), `tools/listen/measure.py` (about 10 s), evidence `evidence/listen/<check>.json` and `index.json`
+  under the sha256 of every input (106 files: src, themes, lessons, locales, the rig's own code, package.json, the
+  lockfile); renders cached in `SHRAMKO_LISTEN_CACHE/renders/<hash>/`. Nothing changed and the last run passed:
+  nothing runs.
+- The checks, each valid only when its control fails (measured 2026-11-08, Chrome 156.0.8078.80):
+
+| Check | Measured | Control |
+|---|---|---|
+| VL-0a two renders the same | max difference 2.4e-7 (float32 rounding; limit 1e-6) | noise seed 2: 0.045 |
+| VL-0b stems sum to the pre-chain mix | residual -127.9 dB (limit -90) | the height stem left out: -2.6 dB |
+| height pitch track continuous | largest change 3.7 cents per 10 ms in the climb (limit 25), 7.8 cents median behind the plan (the glide's smoothing) | v0.12 stepped tone: 118.7 cents |
+| hazard onset before impact | 2.475, 2.493, 2.475 s at 1, 3, 5 m/s (at least 2) | distance-only rule at 5 m/s: 1.18 s |
+| voice over the mix | soft 4.68, clear 4.67, race 4.53 LU (3 to 6) | volume 1: 11.2, 7.9, 10.2 LU |
+| true peak, engine and voice | -6.91, -3.69, -6.11 dBTP (at most -1) | volume 1: -0.49, -0.47, -0.41 |
+| cues over the motor in their own third-octave bands | safety 28.3, height 24.8, target 18.3, shape 7.8 dB (at least 6); motor 14.5 LU under the cues | raw motor at 60 %: shape 0.6 dB |
+
+- What it cannot show: how any of it feels to a person; other heads than the HRTF's own (no panel yet); the voice
+  Chrome really uses; masking between cues (VL-2's glimpses), telling cues apart (VL-3), intelligibility (VL-4) and
+  music (VL-5) are not built yet. The design's later steps (panel, bots, clips through Web Audio) are untouched.
 
 ## Needs from the simulator
 
