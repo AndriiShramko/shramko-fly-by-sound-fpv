@@ -30,6 +30,15 @@
       "key": "lesson.walls-pillar.intro.2"
     },
     {
+      "cues": [
+        {
+          "cue": "safety.free",
+          "from": "left"
+        }
+      ],
+      "key": "lesson.walls-pillar.intro.3"
+    },
+    {
       "key": "lesson.walls-pillar.goal.1"
     }
   ],
@@ -72,7 +81,7 @@
   "title": {
     "key": "lesson.walls-pillar.title"
   },
-  "version": 2,
+  "version": 3,
   "world": {
     "kind": "analytic",
     "spec": {

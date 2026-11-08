@@ -37,8 +37,15 @@ and below change with it. In the same lane: "wrong way" between gates, which the
   voice, `test/fixtures/tts-en-david.json`); `test/prefs.test.ts`. Control: the default broken to false fails 7 tests
   (the defaults, the setting's own test, the chime and target directions in `test/elevation.test.ts`, the freeway
   test)
-- [ ] E1-4 Words: the glossary and the lesson lines say "from above or below"; tunnel-gaps intro.3 plays the chime
-  above and below; walls-pillar names its chime
+- [x] E1-4 Words, in en, es, pl and ru: the glossary (`cue.safety.free.glossary`: "From above, notes moving like your
+  height tone in a climb: the way is above. From below, the other way: below.") and the corridor's intro.3 ("left,
+  right, above or below. Above, they move like your height tone in a climb, below the other way.") no longer say
+  "from ahead"; tunnel-gaps' intro.3 says the chime comes from above or below and plays it from up and from down
+  (version 2); walls-pillar's new intro.3 names the chime at its pillar and plays it from the left (version 3). "Rise
+  or fall" is said as "moving like your height tone in a climb, or the other way", so the lines hold for either
+  height polarity (lane s13-sound's review m2). English measured with the local voice: 18.07, 16.04, 10.23 and
+  6.41 s (`test/fixtures/tts-en-david.json`). Tests: `test/named-sounds.test.ts` (the plays, the words per language,
+  never "from ahead"), `test/world-tunnels.test.ts`, `test/lessons.test.ts` (the two versions)
 - [ ] E1-5 Wrong way between gates: the line-up distance scaled with the lesson's gate spacing (control: the 8 m rule)
 - [ ] E1-6 Measure: Node tests, the listener check of the placement (Chrome's HRTF, headless), the localization models
   where runnable; all repository checks, the proofs and `pnpm listen`
@@ -110,6 +117,15 @@ one exception).
 - Unchanged by construction and held by the tests: every note, interval, period, note length, level, roughness, beat
   and Doppler of every voice, the height plans but for the target's `dir` and `airDb`, the one-off notes, the voice
   slots and what is dropped, in all seven flights with the setting on against off.
+
+### E1-4, the words
+
+- Lesson versions: tunnel-gaps 1 to 2 and walls-pillar 2 to 3, because `main` 16c01a1 is public and the simulator's
+  wave 2 pins it: a recording of that build in either lesson would re-derive other plays and lines here and read
+  FAIL; with the new version it reads "recorded with an older build". The corridor's lesson file is unchanged (only its
+  line's text), so its version stays 2.
+- The corridor's intro.3 is long now (16 s with the local voice, 11.5 before); it says left, right, above or below in
+  one line, as the glossary does.
 
 ## Needs from the simulator
 

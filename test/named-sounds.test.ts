@@ -8,7 +8,9 @@
 // And a line that names a sound plays it: the open-way chime in the corridor and in tunnel-gaps, and what the
 // corridor's checkpoints sound like now (the stage figure; the reset after a touch), not the checkpoint chime.
 import { describe, expect, it } from 'vitest';
-import type { CueId, LessonDef } from '../src/contract';
+import type { CueId, LessonDef, Locale } from '../src/contract';
+import { LOCALES } from '../src/contract';
+import { DICTS } from '../src/i18n/dicts';
 import { CuePlanner } from '../src/cues';
 import { getLesson, lessonPaths } from '../src/lesson';
 import { defaultPrefs } from '../src/prefs';
@@ -90,6 +92,39 @@ describe('a sound heard while flying is named where the pilot first hears it (re
         const free = [{ cue: 'safety.free', from: 'left' }];
         expect(cuesOf(getLesson('corridor'), 'lesson.corridor.intro.3')).toEqual(free);
         expect(cuesOf(getLesson('tunnel-gaps'), 'lesson.tunnel-gaps.intro.2')).toEqual(free);
+    });
+
+    it('tunnel-gaps\' intro.3 plays the chime above and below that it describes, and walls-pillar names its chime with a play (lane s13-elev)', () => {
+        expect(cuesOf(getLesson('tunnel-gaps'), 'lesson.tunnel-gaps.intro.3')).toEqual([
+            { cue: 'safety.free', from: 'up' },
+            { cue: 'safety.free', from: 'down' }
+        ]);
+        const pillar = getLesson('walls-pillar');
+        const line = pillar.intro.find((x) => (x.cues ?? []).some((c) => (typeof c === 'string' ? c : c.cue) === 'safety.free'));
+        expect(line?.key).toBe('lesson.walls-pillar.intro.3');
+        expect(line?.cues).toEqual([{ cue: 'safety.free', from: 'left' }]);
+        // after the line that sets the task, before the goal
+        expect(pillar.intro.map((x) => x.key)).toEqual(['lesson.walls-pillar.intro.1', 'lesson.walls-pillar.intro.2', 'lesson.walls-pillar.intro.3', 'lesson.walls-pillar.goal.1']);
+    });
+
+    it('the glossary and the corridor say the chime of a way above or below comes from above or below, in every language, never from ahead (lane s13-elev)', () => {
+        const WORDS: Readonly<Record<Locale, { readonly above: RegExp; readonly below: RegExp; readonly corridor: RegExp; readonly ahead: RegExp }>> = {
+            en: { above: /From above, notes moving like your height tone in a climb/, below: /From below, the other way/, corridor: /left, right, above or below/, ahead: /from ahead|ahead if it goes up or down/i },
+            es: { above: /Desde arriba, notas que se mueven como tu tono de altura al subir/, below: /Desde abajo, al rev/, corridor: /izquierda, derecha, arriba o abajo/, ahead: /de frente/i },
+            pl: { above: /Z góry nuty idące jak twój dźwięk wysokości przy wznoszeniu/, below: /Z dołu, w drugą stronę/, corridor: /z góry albo z dołu/, ahead: /z przodu/i },
+            ru: { above: /Сверху ноты идут/, below: /Снизу и наоборот/, corridor: /сверху или снизу/, ahead: /спереди/i }
+        };
+        for (const locale of LOCALES) {
+            const glossary = DICTS[locale]['cue.safety.free.glossary'] as string;
+            const corridor = DICTS[locale]['lesson.corridor.intro.3'] as string;
+            const w = WORDS[locale];
+            expect(glossary, locale).toMatch(w.above);
+            expect(glossary, locale).toMatch(w.below);
+            expect(glossary, locale).not.toMatch(w.ahead);
+            expect(corridor, locale).toMatch(w.corridor);
+            // its first sentence says what blocks the way ahead; the rest must not place the way above or below there
+            expect(corridor.replace(/^[^.]*\./, ''), locale).not.toMatch(w.ahead);
+        }
     });
 
     it('the corridor names what its checkpoints sound like: the stage figure, and the reset after a touch (review m1)', () => {

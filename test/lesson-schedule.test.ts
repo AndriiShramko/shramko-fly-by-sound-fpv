@@ -134,11 +134,11 @@ describe('control: the v0.12 timing fails the same check (a line ends at the ear
         }
     }, 120000);
 
-    it('the fact as measured: 265 of the 382 English lines take the Windows voice longer than the estimate', () => {
+    it('the fact as measured: 267 of the 385 English lines take the Windows voice longer than the estimate', () => {
         const en = JSON.parse(readFileSync(new URL('../locales/en.json', import.meta.url), 'utf8')) as Record<string, string>;
         const keys = Object.keys(david);
         const longer = keys.filter((k) => (david[k] as number) > 0.7 + 0.065 * (MEASURED_TEXT[k] ?? (en[k] as string)).length);
-        expect(keys.length).toBe(382);
+        expect(keys.length).toBe(385);
         // 262 until merge s13-merge reworded walls-hall's intro.2 and hint.1 and the corridor's intro.2 (review m4 of
         // lane s13-sound); those three were measured again with the same voice and method (walls-hall's intro.1, not
         // changed then, measured 8.64 s again, as in the fixture). walls-hall's goal.1, reworded at the s13-worlds merge
@@ -153,7 +153,10 @@ describe('control: the v0.12 timing fails the same check (a line ends at the ear
         // it replaced, 6.755 s, was 0.01 s longer than its own) and its intro.4 the stages and the reset (9.64 s, longer
         // than 9.02 s): 380 lines, 265 longer. Lane s13-elev added the setting of up and down by direction, measured the
         // same way: its name 2.33 s (its estimate 2.39 s) and its description 13.275 s (14.09 s): 382 lines, 265 longer.
-        expect(longer.length).toBe(265);
+        // Then its words for the chime above and below (from above or below, not from ahead): the glossary's line 18.07 s
+        // (longer than its estimate, 16.17 s), the corridor's intro.3 again 16.035 s (longer than 15.195 s; its text before
+        // was not), tunnel-gaps' intro.3 10.23 s (11.035 s) and walls-pillar's new intro.3 6.41 s (7.655 s): 385, 267 longer.
+        expect(longer.length).toBe(267);
         // and under v0.12 the first sound of the check plays partly under the line before it
         const s = schedule('ears-headphones', { speech: measuredSpeech(david), runner: v012 });
         const first = s.plays.find((p) => p.kind !== 'one-off');

@@ -34,12 +34,14 @@
     along the path tell a collision course.
   - The open-way chime (`safety.free`): when an obstacle ahead is closer than about 3 s, a pair of quick notes repeats
     from the free side; left and right by direction, above and below by contour (like the height tone in a climb, with
-    the pilot's height polarity). None at a gate.
+    the pilot's height polarity) and, with the item below, from above or below too. None at a gate.
   - Up and down by direction too (lane s13-elev, owner's message 42), on top of the pitch that carries them: the
     open-way chime for a way above or below comes from the middle of that way (`FreeWay.dir`, `middleM`), the target
     note from the next gate's centre or the band's middle 2 m ahead, the floor and the ceiling from below and above as
     before, and each carries a breath of air from 4 to 16 kHz where the HRTF tells height. Notes, intervals and rhythm
     are unchanged. `SonicPrefs.heightDirection` (on by default) turns it off and gives back the placement without it.
+    The glossary and the corridor say so in the four languages, tunnel-gaps' intro.3 plays the chime above and below
+    (version 2), and walls-pillar names the chime at its pillar in a line of its own (version 3).
   - Event sounds of their own for the wrong way, a gate passed from its back, praise (three figures in turn) and a
     stage (each a step higher); a named sound plays for as long as the runner gives it (`repeat-cue`, `durS`).
   - The motor is on by default and sits under the cues: `engine.motorInput` (a 1.1 to 2 kHz band, levelled, ducked),
