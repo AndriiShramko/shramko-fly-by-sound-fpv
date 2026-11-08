@@ -16,6 +16,16 @@ from `main` 7d4b4b9. No push. Every step one commit with this Status in it.
 - [x] 9. Never silence between attempts (M41-10, runner side)
 - [x] 10. Strings in four languages, speech lint, all checks
 
+Review fixes (`docs/wip/s13-lessons-review.md`, one commit per fix or small group):
+
+- [x] R1 wrong way in a course: judged against the gate that counts next, not the track
+- [ ] R2 shared cue events: payloads that take lane s13-sound's, the play length checked against the planner
+- [ ] R3 G's way back: 'go next' is the host's advance(), a lesson opened by G is not marked skipped
+- [ ] R4 the simulator's tests the gitlink move breaks, listed
+- [ ] R5 the corridor ends at its end: a goal 'track-end'
+- [ ] R6 to R15 minors
+- [ ] Checks after the fixes, final status
+
 ## Final status (2026-11-08)
 
 Done, one commit per step (branch `s13-lessons`, not pushed): step 1 7f83292, 2 318a8c5, 3 91c6dd5, 4 eee530b, 5 4b276e8,
@@ -265,6 +275,12 @@ walls line) go through the same queue, so the fix (wait for the report) also wai
   gate along its axis). `dirAt(p)` is the way the track goes near p (null further than 15 m from it).
 - Flying against the track faster than 0.5 m/s for more than 1 s: the cue event `{ kind: 'wrong-way', dir }` (dir: the
   way the track goes, listener frame) and "You are flying back. Turn around." (`fly.wrong-way`), at most once every 5 s.
+- Review R1: while the goal is a course of gates, forward is the way to the gate that counts next, judged only in front
+  of it and further than `LINE_UP_M` (8 m); behind it, beside it or close in front of it the pilot may be flying round
+  to its front. The probe of the review is a test: ring 2 passed 6 m beside it, 11 m back at 3 m/s, then through it
+  from the front, in rings-line, rings-small and rings-course: never told, ring 2 counts (it was told once in each with
+  the track rule). Controls: the same way back along the corridor is told; flying back from the next gate toward the
+  start is told, the cue toward that gate.
 - A gate that counts next crossed through its opening from its back side: `{ kind: 'wrong-side', dir }` (dir: where the
   gate is) and "That gate was passed from the wrong side. Go back and fly it from the front." (`fly.wrong-side`), at most
   every 3 s; not counted (a forward crossing still counts). `gateCrossingBack` in goals.ts, a `wrongSide` callback in the

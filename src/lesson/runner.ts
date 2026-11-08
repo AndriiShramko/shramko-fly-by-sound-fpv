@@ -52,8 +52,10 @@
 // Direction (M41-15). A lesson with a track (track.ts: the world's checkpoint list, the lesson's
 // checkpoints, or a course's gates) knows which way is forward: flying against it faster than
 // WRONG_WAY_MPS for more than WRONG_WAY_S gives the cue event 'wrong-way' and "You are flying back. Turn
-// around.", at most once every WRONG_WAY_EVERY_S; a gate crossed from its back side gives 'wrong-side' and
-// its line, and is not counted.
+// around.", at most once every WRONG_WAY_EVERY_S. While the goal is a course of gates, forward is the way to
+// the gate that counts next, judged only in front of it further than LINE_UP_M (behind it or close to it the
+// pilot may be flying round to its front: a ring missed beside it is flown back to). A gate crossed from its
+// back side gives 'wrong-side' and its line, and is not counted.
 //
 // Respawn (M41-20). A touch in a lesson that re-centres, or a short R, puts the craft RESPAWN_BEFORE_M
 // before the furthest point of the track passed in this attempt (a lesson checkpoint, or a point of the
@@ -70,7 +72,7 @@ import { createTranslator, type Dicts, type Translator } from '../i18n/translato
 import { createRng } from '../util/rng';
 import { distance as dist3, dot, normalize, sub, yawQuat } from '../util/vec';
 import { createAnalyticWorld, makeSpec, type AnalyticWorldInfo } from '../world/analytic-world';
-import { BODY_RADIUS_M, createTracker, type GoalScore, type GoalTracker, type Outcome } from './goals';
+import { BODY_RADIUS_M, createTracker, toLocal, type GoalScore, type GoalTracker, type Outcome } from './goals';
 import { lessonAfter, lessonPaths } from './library';
 import { APPROACHES, GAME_SCENE_S, isGlossary, NARRATED_SCENE_S, playS, REPEAT_GAP_S, REPEAT_PLAYS, SHAPE_ORDER } from './sounds';
 import { lessonTrack, yawOf, type LessonTrack, type TrackPoint } from './track';
@@ -245,6 +247,11 @@ export const WRONG_WAY_MPS = 0.5;
 /** ... for longer than this, s, is flying the wrong way; it is said at most once every WRONG_WAY_EVERY_S. */
 export const WRONG_WAY_S = 1;
 export const WRONG_WAY_EVERY_S = 5;
+/**
+ * In a course, this close in front of the gate that counts next a pilot may be turning to line up with it: flying
+ * away from it there is not flying back, m (review R1; rings 14 m apart, a pilot back from beside one ends 5 m out).
+ */
+export const LINE_UP_M = 8;
 /** A respawn puts the craft this far before the last point of the track it passed, m. */
 export const RESPAWN_BEFORE_M = 1;
 /** A point of the world's checkpoint list is passed by crossing its plane forward this close to it, m. */
@@ -882,9 +889,9 @@ class Runner implements LessonSession {
         return normalize(worldToListener(headingBasis(p.yawDeg), w));
     }
 
-    /** M41-15: flying against the track for more than a second, told at most once every few seconds. */
+    /** M41-15: flying against the way forward for more than a second, told at most once every few seconds. */
     private checkDirection(s: FlightSample): void {
-        const dir = this.track()?.dirAt(s.pos) ?? null;
+        const dir = this.wayForward(s);
         if (dir === null || dot(s.vel, dir) >= -WRONG_WAY_MPS) {
             this.backSince = null;
             return;
@@ -894,6 +901,24 @@ class Runner implements LessonSession {
         this.lastWrongWay = s.t;
         this.actions.push({ kind: 'cue', event: { kind: 'wrong-way', dir: this.toListener(dir) } });
         this.actions.push({ kind: 'say', line: { key: 'fly.wrong-way' }, interrupt: false });
+    }
+
+    /**
+     * The way forward where the craft is (unit, world frame), or null where nothing says it. While the goal is a
+     * course of gates it is the way to the gate that counts next, and only in front of that gate, further than
+     * LINE_UP_M from it: behind it, beside it or close in front of it a pilot may be on his way round to its front
+     * (review R1: a ring passed beside it is flown back to, its hum ahead). Elsewhere it is the way the track goes.
+     */
+    private wayForward(s: FlightSample): Vec3 | null {
+        const goal = this.lesson.goals[this.goalIndex];
+        if (goal !== undefined && (goal.kind === 'pass-gates' || goal.kind === 'timed-course')) {
+            const gate = this.tracker?.target() ?? null;
+            if (gate === null) return null;
+            const to = sub(gate.pos, s.pos);
+            if (toLocal(gate, s.pos)[2] <= 0 || Math.hypot(to[0], to[1], to[2]) <= LINE_UP_M) return null;
+            return normalize(to);
+        }
+        return this.track()?.dirAt(s.pos) ?? null;
     }
 
     /** The current goal, and the next ones as each is met, in order; then the attempt's time limit. */
