@@ -295,6 +295,8 @@ simulator's part stays in the review's wave 2 list.
 - [x] 17. m3. Tests for the six tunnels' respawn and the open-way chime at the shipped obstacles
 - [x] 18. n1. s13-worlds' Russian sentence in `test/progress.test.ts`, as `\u` escapes
 - [ ] 19. All checks on the final code with fresh evidence; the final status
+  - part 1 (done): `CHANGELOG.md` (Unreleased) says what the fixes change for a pilot and for a host's recorder;
+    AGENTS.md's glossary rule names `test/named-sounds.test.ts`
 
 ## Review fixes (steps 12 to 19)
 

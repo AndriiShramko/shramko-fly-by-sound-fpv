@@ -14,6 +14,11 @@
     a track or to the next gate, and a gate crossed from its back; a touch or a failed attempt in a corridor goes back
     to the last point passed, not to the far start, and every attempt of a course begins at its start (the first one
     too); the target keeps sounding between attempts; the lesson waits while the flight is paused.
+  - The sounds with no words of their own are named where a path first meets them, and played three times: the
+    target note in hover-height (the fast path's first flight), the open-way chime in the corridor and in tunnel-gaps;
+    rings-heights calls the target a short note. The corridor names its stages and the reset after a touch, and the
+    end of the corridor and of every tunnel is the fanfare alone: the last checkpoint of a lesson that ends on
+    `track-end` no longer chimes half a second before it.
   - Runner API: `next`, `previous`, `repeat` (N, B, Z), `nextLesson`, `previousLesson`, `pause`, `resume`, `view()`,
     `statusLine()`; the action `{ kind: 'go', to }`; options `path`, `speechRate`, `keys`, `returnTo` (a lesson opened
     with G leads back); `lessonAfter`, `lessonBefore`. Contract additions: cue events `repeat-cue`, `praise`, `stage`,
@@ -60,6 +65,9 @@
   recorded with an older build (the versions), so this build cannot verify it" when a recording does not re-derive
   and names a lesson or theme version older than this build's, none newer. The same build not re-deriving is still
   FAIL. `ReplayNote` carries `recorded` and `here` for the two version notes; the report's `replayCheck` has `verdict`.
+  A frame's touch counts after the points of the track it crossed, so a recording with a touch in the corridor or a
+  tunnel re-derives where the live run put the craft back; a host's recorder must keep every sample with a touch as a
+  frame, also between two due ones.
 - Live in the simulator: ShramkoGSFPV v0.12 (2026-11-08) ships this engine as its submodule at 1eea4d5; the mode starts at https://gsfpv.flyreelstudio.eu/en/sound/ (es, pl, ru too). Ordinary pages of the simulator load none of it.
 - Spoken lines asked for by the simulator's recorder: `survey.howto` no longer tells the pilot to say the number (that works only with speech recognition on, now `survey.howto-voice`); new `survey.mic-on` (the microphone stays on during the questions), `send.none` (nothing to send) and `send.cancelled` (not sent, the flight stays on the device). English, Spanish, Polish and Russian.
 
