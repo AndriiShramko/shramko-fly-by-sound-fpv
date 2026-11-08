@@ -203,6 +203,47 @@ describe('tunnels (M41-21)', () => {
         expect(getLesson('tunnel-gaps').world.kind === 'analytic' && (getLesson('tunnel-gaps').world as { spec: AnalyticWorldSpec }).spec.params['gaps']).toBe('up,right,down,left');
     });
 
+    it('every obstacle stands in the middle of the tunnel: it reaches 0.2 m past the line a craft flies down the middle (review M9); control: the first obstacle of the long tunnel as it was', () => {
+        /**
+         * How far the solid of `block` reaches past the tunnel's middle at flying height: minus the least distance the
+         * world gives on the line along the run through the middle of its cavity box at the start's height, over the
+         * obstacle's depth (inside a box the distance is exact). Negative: the line passes beside the obstacle.
+         */
+        const cover = (w: Pick<AnalyticWorldInfo, 'sdf' | 'cavities' | 'checkpoints' | 'start'>, block: Pick<SonicObject, 'pos' | 'shape'>): number => {
+            const list = w.checkpoints as WorldCheckpoint[];
+            const near = list.reduce((a, b) => (Math.hypot(b.pos[0] - block.pos[0], b.pos[2] - block.pos[2]) < Math.hypot(a.pos[0] - block.pos[0], a.pos[2] - block.pos[2]) ? b : a));
+            const h = near.dir;
+            const box = (w.cavities ?? []).find((b) => Math.abs(block.pos[0] - b.cx) <= b.hx && Math.abs(block.pos[2] - b.cz) <= b.hz)!;
+            const alongX = Math.abs(h[0]) > 0.5;
+            const size = (block.shape as { size: Vec3 }).size;
+            const depth = alongX ? size[0] : size[2];
+            const y0 = w.start.pos[1];
+            let least = Infinity;
+            for (let t = -depth / 2; t <= depth / 2 + 1e-9; t += depth / 40) {
+                const p: Vec3 = alongX ? [block.pos[0] + t, y0, box.cz] : [box.cx, y0, block.pos[2] + t];
+                least = Math.min(least, w.sdf(...p));
+            }
+            return -least;
+        };
+        let blocks = 0;
+        for (const id of TUNNELS) {
+            const w = worldOf(getLesson(id));
+            for (const b of w.objects().filter((o) => o.id.startsWith('block-'))) {
+                blocks++;
+                expect(cover(w, b), `${id} ${b.id}`).toBeGreaterThanOrEqual(0.2 - 1e-6);
+            }
+        }
+        expect(blocks).toBe(9);
+        // control: block-1 of the long tunnel as the review found it (fef8869), rebuilt by hand in a straight tunnel of its
+        // stage (1.8 m wide, 2.4 m high, flown at 1.2 m): its way of 1 m on the right leaves the block 0.8 m of the width,
+        // 0.1 m short of the middle, so a craft flying the middle passes it
+        const straight = createAnalyticWorld(makeSpec('corridor', { layout: 'tunnel', widthM: 1.8, heightM: 2.4, startHeightM: 1.2, straightM: 10, bendCount: 0, endM: 1 }, 0, 2));
+        const e = 0.05;
+        const old = { c: [(-0.9 - e + (-0.9 + 0.8)) / 2, 1.2, -5] as Vec3, h: [(0.8 + e) / 2, 1.2 + e, 0.5] as Vec3 };
+        const asItWas = { ...withBlocks(straight, [old]), cavities: straight.cavities, checkpoints: straight.checkpoints };
+        expect(cover(asItWas, { pos: old.c, shape: { kind: 'box', size: [2 * old.h[0], 2 * old.h[1], 2 * old.h[2]] } })).toBeCloseTo(-0.1, 6);
+    });
+
     it('control: the same tunnel with a free way closed cannot be flown', () => {
         const w = worldOf(getLesson('tunnel-gaps'));
         expect(passable(w, BODY_RADIUS_M)).toBe(true);
@@ -270,7 +311,9 @@ describe('tunnels (M41-21)', () => {
     });
 
     it.each([
-        ['an obstacle thinner than 0.5 m beside a narrow free way', { layout: 'gaps', widthM: 1.5, gaps: 'left' }, /thinner than 0.5 m/],
+        ['an obstacle thinner than 0.5 m beside a wide free way', { layout: 'gaps', widthM: 1.5, gapM: 1.1, gaps: 'left' }, /thinner than 0.5 m/],
+        ['a free way that leaves the middle of the tunnel open (review M9: the first obstacle of the long tunnel as it was)', { layout: 'long', stageWidths: [3, 2.4, 1.8, 1.4, 1.2], stageBends: [2, 3, 4, 4, 6], stageGaps: [0, 0, 1, 2, 2], gaps: 'right,up,down,up,down', gapM: 1, heightM: 2.4, startHeightM: 1.2 }, /obstacle 1 \(free right, a way of 1 m\) reaches 0\.1 m short of the middle of the tunnel/],
+        ['a free way below that comes within 0.2 m of the flying height', { layout: 'gaps', widthM: 3, heightM: 3, startHeightM: 1.5, gapM: 1.4, gaps: 'down' }, /reaches only 0\.1 m past the middle/],
         ['an obstacle in a run too short to come up to it', { layout: 'gaps', obstacleRunM: 3, obstacleDepthM: 1 }, /needs a run of at least 4 m/],
         ['stage lists of different lengths', { layout: 'long', stageWidths: [3, 2], stageBends: [1], stageGaps: [0, 0] }, /as many stageBends and stageGaps as stageWidths/],
         ['an unknown free side', { layout: 'gaps', gaps: 'up,sideways' }, /up, down, left, right joined by commas/],

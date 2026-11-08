@@ -18,7 +18,7 @@ navigation and truth bot `test/helpers/truth.ts`). No push. Every step one commi
 Review fixes (`docs/wip/s13-worlds-review.md`; what was done and why: "Review fixes" below):
 
 - [x] B1. The tunnels' free sides exported as `OBSTACLE_FREE_SIDES` / `ObstacleFreeSide` (no clash with lane s13-sound)
-- [ ] M9. Every tunnel obstacle blocks the centre line by 0.2 m or more (the long tunnel's free ways 0.7 m)
+- [x] M9. Every tunnel obstacle blocks the centre line by 0.2 m or more (the long tunnel's free ways 0.7 m)
 - [ ] M3. rings-heights: no height passes rings of two levels
 - [ ] M1, M2, M8. The corridor's last goal, the tunnels' lesson checkpoints, `track-end` at the merge
 - [ ] M5, M7, m1, m2, m3. walls-hall's words and stop distance, the new lessons' layers, wording
@@ -270,15 +270,17 @@ lesson with a goal other than hold-height, approach-stop or around): the owner's
 | tunnel-narrower | 1.2 x 1.8 m, 4 bends, legs 4 m (voxel 0.05) | 2 / 0.8 | 2.76 s | 22.6 m | 0.42 m (corners: 0.6 / sqrt 2) | fly 20 m |
 | tunnel-bends | 2 x 2 m, 10 bends, legs 4 m | 2.5 / 1 | 2.40 s | 42.1 m | 0.73 m | fly 39 m |
 | tunnel-gaps | 3 x 3 m, free up, right, down, left, gaps 1.2 m | 2.5 / 1.2 | 3.0 s | 35.8 m | 0.60 m | fly 33 m |
-| tunnel-long | 2.4 m high, 5 stages | 2.5 / 1.2 | 2.80 s | 150.8 m (about 60 s at the cap) | 0.42 m | fly 148 m |
+| tunnel-long | 2.4 m high, 5 stages | 2.5 / 1.2 | 2.80 s | 151.7 m (about 60 s at the cap) | 0.34 m (review M9: free ways 0.7 m) | fly 148 m |
 
   The long tunnel's stages: widths 3, 2.4, 1.8, 1.4, 1.2 m; bends 2, 3, 4, 4, 6; obstacles 0, 0, 1, 2, 2 (free right,
-  up, down, up, down; gaps 1.0 m, the free way's centre 0.7 m off the line, the free-way probe's first offset). The
+  up, down, up, down; free ways 0.7 m since review M9, so each obstacle reaches 0.2 m (beside) or 0.5 m (above, below)
+  past the middle of the tunnel at flying height; they were 1.0 m, and the first one left the middle open). The
   measure of a stage (taken from the world, not the parameters): d = (1 + turns + 2 x obstacles) / (width / 2 - 0.12 m),
   width the least wall-to-wall distance across its checkpoints: 2.17, 3.70, 8.97, 15.52, 22.92 (s1..s5), and each part is
   no easier than the stage before (width not wider, turns and obstacles not fewer). Margins (the widest sphere that
-  follows the whole track, sampled on 52 points of it every 5 cm): the default drone (0.077 m) has 0.37 m to spare in
-  the narrowest tunnels and the largest preset (0.318 m, an 8-inch X8) 0.1 m at their corners; both pass every tunnel.
+  follows the whole track, sampled on 52 points of it every 5 cm): the default drone (0.077 m) has 0.27 m to spare in
+  the narrowest tunnels (the long tunnel's free ways of 0.7 m since review M9; 0.37 m at the 1.2 m tunnels' corners) and
+  the largest preset (0.318 m, an 8-inch X8) 0.03 m; both pass every tunnel.
 - The lessons' own checkpoints (the present runner's respawn, M41-20 until lane s13-lessons reads the world's): the
   start, the first point after each bend, 1.5 m before each obstacle on its free way, each stage's start; radius half
   the cross section's diagonal (and 0.6 m more before an obstacle, so a craft not yet off the middle reaches it). The
@@ -322,6 +324,38 @@ lesson with a goal other than hold-height, approach-stop or around): the owner's
   others; the same heights in squares and cube frames. Controls: rings-line's rings are all at one height (span 0); the
   same rings 2 m apart make a climb that does not fit its leg. rings-heights is also a room lesson of
   `test/world-scale.test.ts` (its table inside the rule).
+
+## Review fixes
+
+The review (`docs/wip/s13-worlds-review.md`, at fef8869 and 030f7d0): one blocker, nine majors, seven minors. Each fix
+below is one commit; the findings that are other lanes' or the lead's are answered under the merge notes.
+
+### B1: the free sides of a tunnel's obstacles under their own names
+
+`src/world/tunnels.ts` exported `FREE_SIDES` and `FreeSide`, the names lane s13-sound exports from `src/sense/freeway.ts`;
+`src/index.ts` re-exports both modules with `export *`, so the merge failed the typecheck (TS2308) and dropped the name.
+They are now `OBSTACLE_FREE_SIDES` / `ObstacleFreeSide` (the vocabulary of the `gaps` parameter; nothing outside
+`tunnels.ts` used them).
+
+### M9: every obstacle stands in the middle of the tunnel
+
+- Corridor version 2 (unpublished) refuses an obstacle that reaches less than `OBSTACLE_COVER_M` (0.2 m) past the middle
+  of the tunnel at flying height (`obstacleCoverM`: beside, half the width less the free way; above, the block's top
+  less the flying height; below, the flying height less its underside), naming the obstacle and the widest way it may
+  have. A craft flying the middle meets every obstacle, so the open-way chime, which listens straight ahead of the
+  nose, hears it.
+- tunnel-long's free ways are 0.7 m (were 1.0): the first obstacle (stage 3, 1.8 m wide, free right) now reaches 0.2 m
+  past the middle (it stopped 0.1 m short), the four above and below 0.5 m (were 0.2). One width for every obstacle of
+  the tunnel keeps the hardest window in the last stages (1.2 x 0.7 m). The default `gapM` is 0.7 (was 1.2, which the
+  rule refuses in the default 2 x 2.4 m tunnel) and the default `stageWidths` 3, 2.6, 2.2, 2, 1.8 (a side way of 0.7 m
+  needs 1.8 m). tunnel-gaps (3 x 3 m, ways 1.2 m) reaches 0.3 m past the middle at all four obstacles.
+- Still true: the truth bot passes tunnel-long at its caps with no touch; the widest sphere along its track is 0.344 m
+  (the X8, 0.318 m, still passes; the default drone has 0.27 m to spare); its stages stay each harder; its track is
+  151.7 m (was 150.8, the dodges are deeper).
+- Tests (`test/world-tunnels.test.ts`): every obstacle of the six tunnels (nine) reaches at least 0.2 m past the line
+  down the middle at flying height, measured on the world's own distance field along the run; refused: the long
+  tunnel's first obstacle as it was ("reaches 0.1 m short of the middle"), and a way below that comes within 0.1 m of
+  the flying height. Control: the review's block-1 rebuilt by hand in a straight tunnel of its stage measures -0.1 m.
 
 ## Needs from the simulator
 
@@ -379,7 +413,8 @@ tone (M41-12); check that the target tone follows the NEXT ring's centre and tha
 
 Lane s13-sound: the six tunnels have `layers` safety and voice, as the corridor; give them the height layer and the
 room bed as every flying lesson (their step 7). The free-way chime has its own lesson now: tunnel-gaps (3 x 3 m, free
-ways 1.2 m, as their box tunnels) and tunnel-long (2.4 m high, free ways 1.0 m, 0.7 m off the line).
+ways 1.2 m, as their box tunnels) and tunnel-long (2.4 m high, free ways 0.7 m since review M9: their middles 0.55 m
+beside the line, 0.85 m above or below it).
 
 Lane s13-sound: the rings-course replay check now flies at the lesson's cap (4 m/s) and agrees on 95.2 % of the frames
 with the v0.12 sampler (side walls 7.4 m away flicker in and out of the three hazard voices); their time-to-contact

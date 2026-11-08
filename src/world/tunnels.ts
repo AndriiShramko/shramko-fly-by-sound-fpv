@@ -14,7 +14,9 @@
 // An obstacle is a box (contract ObjectShape 'box', axis-aligned, which the simulator draws) that fills
 // the tunnel's cross section but for a free way `gapM` across: above it (up), under it (down), or beside it
 // (left, right of the tunnel's heading). It reaches 5 cm into the walls, floor or ceiling it stands on, so
-// no face of it lies on a face of the room. The track (src/world/track.ts) passes it through the free way.
+// no face of it lies on a face of the room, and at least OBSTACLE_COVER_M past the middle of the tunnel at
+// flying height, so a craft flying the middle meets it (a wider free way is refused). The track
+// (src/world/track.ts) passes it through the free way.
 import type { SonicObject, Vec3 } from '../contract';
 import { round6 } from '../util/vec';
 import { hollowBounds, n, object, requireInside, s, type Built, type Landmark } from './build';
@@ -29,6 +31,30 @@ export type ObstacleFreeSide = (typeof OBSTACLE_FREE_SIDES)[number];
 export const OBSTACLE_EMBED_M = 0.05;
 /** An obstacle is at least this thick across the tunnel, metres (a thinner one is no obstacle). */
 export const OBSTACLE_MIN_M = 0.5;
+/**
+ * An obstacle reaches at least this far past the tunnel's centre line at flying height, metres (review M9):
+ * a craft flying the middle of the tunnel meets it and must move to its free way, so the open-way chime
+ * (which listens straight ahead of the nose) hears it. A free way wider than half the tunnel less this
+ * would leave the middle open.
+ */
+export const OBSTACLE_COVER_M = 0.2;
+
+/**
+ * How far an obstacle that leaves `side` free reaches past the tunnel's centre line at flying height `y0`,
+ * metres (negative: it stops short of the line). Beside: half the width less the free way; above: the
+ * block's top less the flying height; below: the flying height less the block's underside.
+ */
+export function obstacleCoverM(side: ObstacleFreeSide, gapM: number, widthM: number, heightM: number, y0: number): number {
+    switch (side) {
+        case 'up':
+            return heightM - gapM - y0;
+        case 'down':
+            return y0 - gapM;
+        case 'left':
+        case 'right':
+            return widthM / 2 - gapM;
+    }
+}
 
 export const TUNNEL_SCHEMA: Schema = {
     voxelM: num(0.1, 0.02, 0.5),
@@ -41,10 +67,10 @@ export const TUNNEL_SCHEMA: Schema = {
     bendCount: num(2, 0, 40, true),
     endM: num(5, 1, 400),
     gaps: names('up,right,down,left', OBSTACLE_FREE_SIDES, 24),
-    gapM: num(1.2, 0.5, 10),
+    gapM: num(0.7, 0.5, 10),
     obstacleDepthM: num(1, 0.2, 10),
     obstacleRunM: num(5.5, 3, 80),
-    stageWidths: list(0.8, 30, 12, [3, 2.6, 2.2, 1.9, 1.7]),
+    stageWidths: list(0.8, 30, 12, [3, 2.6, 2.2, 2, 1.8]),
     stageBends: list(0, 40, 12, [2, 3, 4, 4, 6]),
     stageGaps: list(0, 20, 12, [0, 0, 1, 2, 2])
 };
@@ -106,6 +132,14 @@ export function buildTunnel(p: ResolvedParams): Built {
         if (depth + 2 * APPROACH_M > run) throw new WorldSpecError(`corridor: an obstacle ${depth} m deep needs a run of at least ${depth + 2 * APPROACH_M} m, got ${run}`);
         const across = side === 'left' || side === 'right' ? w - gapM : h - gapM;
         if (across < OBSTACLE_MIN_M) throw new WorldSpecError(`corridor: a free way of ${gapM} m ${side === 'up' || side === 'down' ? 'in a tunnel' : 'beside an obstacle in a tunnel'} ${side === 'up' || side === 'down' ? `${h} m high` : `${w} m wide`} leaves an obstacle thinner than ${OBSTACLE_MIN_M} m`);
+        const cover = obstacleCoverM(side, gapM, w, h, y0);
+        if (cover < OBSTACLE_COVER_M - 1e-9) {
+            const most = side === 'left' || side === 'right' ? w / 2 - OBSTACLE_COVER_M : side === 'up' ? h - y0 - OBSTACLE_COVER_M : y0 - OBSTACLE_COVER_M;
+            const reach = cover >= 0 ? `only ${round6(cover)} m past` : `${round6(-cover)} m short of`;
+            throw new WorldSpecError(
+                `corridor: obstacle ${obstacleNo + 1} (free ${side}, a way of ${gapM} m) reaches ${reach} the middle of the tunnel, so a craft flying the middle passes it unheard; it must reach ${OBSTACLE_COVER_M} m past it: in a tunnel ${w} m wide and ${h} m high, flown at ${y0} m, a way of at most ${round6(most)} m`
+            );
+        }
         const e = OBSTACLE_EMBED_M;
         // the block in the run's own frame: across (to the right of the heading), up, along
         let acrossSize = w + 2 * e, upSize = h + 2 * e, right = 0, cy = h / 2;
