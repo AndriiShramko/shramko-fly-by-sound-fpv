@@ -5,9 +5,10 @@
 // fields are lane s13-lessons' (review B2): wrong-way and wrong-side carry `dir`, stage `stage`, repeat-cue
 // `durS` (and `index` of `of`).
 import { describe, expect, it } from 'vitest';
-import type { CueEvent, FlightSample, LayerId, ThemeDef } from '../src/contract';
+import type { CueEvent, FlightSample, LayerId, Locale, ThemeDef } from '../src/contract';
+import { LOCALES } from '../src/contract';
 import { CuePlanner, eventCue, layerGainDb, PRAISE_FIGURES, REPEAT_PLAY_DEFAULT_S, type FramePlan, type NotePlan } from '../src/cues';
-import { CUE_IDS } from '../src/i18n';
+import { CUE_IDS, DICTS } from '../src/i18n';
 import { defaultPrefs } from '../src/prefs';
 import { applyCalm, BUILTIN_THEME_IDS, getBuiltinTheme, isInScale } from '../src/theme';
 import { yawQuat } from '../src/util/vec';
@@ -73,6 +74,34 @@ describe('the event sounds', () => {
                 const peak = plannedPeakDb(theme, planner(theme).cue(e, 0));
                 expect(peak, `${theme.id} ${e.kind}: ${peak.toFixed(1)} dB against ${safety} dB`).toBeLessThanOrEqual(safety - 3);
             }
+        }
+    });
+
+    it('the glossary tells the open-way chime from the checkpoint chime in every language: one repeats while the way is blocked, the other sounds once (s13-worlds review M8)', () => {
+        // how they sound: the open way is a voice that repeats its pair of notes (each note shorter than its period), from
+        // the free side; the checkpoint is two notes, low to high, once
+        const p = planner(getBuiltinTheme('soft'));
+        p.plan({ sample: still(0), world: null, target: null, floorY: 0 });
+        expect(p.cue({ kind: 'repeat-cue', cue: 'safety.free', dir: [1, 0, 0], durS: 2.5 }, 0)).toEqual([]);
+        const free = p.plan({ sample: still(100), world: null, target: null, floorY: 0 }).voices.find((v) => v.cue === 'safety.free');
+        expect(free?.periodS).toBeGreaterThan(free?.noteS ?? Infinity);
+        const chime = planner(getBuiltinTheme('soft')).cue({ kind: 'checkpoint' }, 0);
+        expect(chime).toHaveLength(2);
+        expect((chime[1] as NotePlan).noteIndex).toBeGreaterThan((chime[0] as NotePlan).noteIndex);
+        // what the glossary says: "again and again" for the one, "only once" for the other, never the other's words
+        const WORDS: Readonly<Record<Locale, { readonly again: RegExp; readonly once: RegExp }>> = {
+            en: { again: /again and again/, once: /only once/ },
+            es: { again: /una y otra vez/, once: /una sola vez/ },
+            pl: { again: /raz za razem/, once: /tylko raz/ },
+            ru: { again: /снова и снова/, once: /только раз/ }
+        };
+        for (const locale of LOCALES) {
+            const openWay = DICTS[locale]['cue.safety.free.glossary'] as string;
+            const checkpoint = DICTS[locale]['cue.target.checkpoint.glossary'] as string;
+            expect(openWay, locale).toMatch(WORDS[locale].again);
+            expect(checkpoint, locale).toMatch(WORDS[locale].once);
+            expect(openWay, locale).not.toMatch(WORDS[locale].once);
+            expect(checkpoint, locale).not.toMatch(WORDS[locale].again);
         }
     });
 

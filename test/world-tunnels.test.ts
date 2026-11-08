@@ -357,12 +357,15 @@ describe('tunnels (M41-21)', () => {
         expect(strictlyHarder(measure(wider))).toBe(false);
     });
 
-    it('tunnel-gaps tells the pilot that the open-way chime comes from the free side and that high means above', () => {
+    it('tunnel-gaps tells the pilot that the open-way chime comes from the free side and how a way above sounds', () => {
         const l = getLesson('tunnel-gaps');
         const en = createTranslator('en', DICTS);
         const text = l.intro.map((x) => en.text(x)).join(' ');
         expect(text).toMatch(/chime comes from the free side/);
-        expect(text).toMatch(/high chime means the way is above/i);
+        // by its contour, as the glossary says (lane s13-sound, review m2): a way above moves like the height tone in a
+        // climb, which is lower notes for a pilot whose height polarity is up-lower; "high" would be wrong for him
+        expect(text).toMatch(/moves like your height tone in a climb, the way is above/);
+        expect(text).not.toMatch(/high chime/i);
     });
 
     it.each([

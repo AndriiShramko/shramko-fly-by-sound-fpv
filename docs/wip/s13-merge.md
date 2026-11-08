@@ -142,8 +142,8 @@ Steps 7 to 11, lane s13-worlds:
     runner test's pilot logged each sample whose centre lay inside a solid of the lesson's world, over the whole suite):
     three tests still flew through walls, all passing, all s13-lessons' review R1 in `test/direction.test.ts`
     (rings-line 222 samples, rings-small 299, the course control 52: v0.12's 6 m beside a ring and 12 m back, in rooms 9
-    and 10 m wide). They now pass ring 2 beside it by its frame and 2.5 m on the side with more room, 3 m past it (short of ring
-    3), fly back to its front short of ring 1, and the control flies back to 0.6 m before the room's back wall (further
+    and 10 m wide). They now pass ring 2 beside it by its frame and 2.5 m on the side with more room, 3 m past it
+    (short of ring 3), fly back to its front short of ring 1, and the control flies back to 0.6 m before the room's back wall (further
     than `LINE_UP_M` from ring 2 for about 1.5 s). The probe then logs no sample in a wall. Broken on purpose once (the
     wrong way judged against the track in a course too, R1 undone), the three R1 cases fail; restored, 10 of 10.
 - [x] 8d. The corridor's `attemptLimitS` was v0.12's 900 s, set for v0.12's corridor (5 x 4 m, its world's track 323.5
@@ -156,7 +156,26 @@ Steps 7 to 11, lane s13-worlds:
   seconds per metre v0.12's, to 10 s). Broken on purpose twice, then restored: the corridor at 900 s as merged fails
   ("900 s against 348 s"), tunnel-long at 250 s fails ("149.8 m of track: expected 250 to be greater than or equal to
   299.5"). Full suite 1031 of 1031.
-- [ ] 8e. The open-way chime and the checkpoint chime with different words in the glossary, four languages
+- [x] 8e. The glossary tells the open-way chime from the checkpoint chime (s13-worlds review M8). Both are two notes;
+  what tells them apart is that the open way repeats its pair (every 0.6 s, 0.16 s notes) from the free side while
+  something blocks the way, and the checkpoint sounds its two notes once, low to high. The lines said "Two quick notes"
+  and "A short double chime" (ru "Две быстрые ноты", "Короткий двойной звон"), the same thing in other words. Now:
+  `cue.safety.free.glossary` "A pair of quick notes, again and again, while something blocks the way ahead. ..." (es
+  "Un par de notas rápidas, una y otra vez, ...", pl "Para szybkich nut, raz za razem, ...", ru "Пара быстрых нот, снова
+  и снова, ..."; the rest of each line as it was), `cue.target.checkpoint.glossary` "One chime from low to high, only
+  once, when you reach a checkpoint." (es "Una campanilla de grave a agudo, una sola vez, ...", pl "Jeden dzwonek od
+  niskiego do wysokiego, tylko raz, ...", ru "Один перезвон снизу вверх, только раз, ..."). A new test in
+  `test/events.test.ts` checks the sounds (the open-way voice's period longer than its note; the checkpoint two notes,
+  the second higher) and the words in the four languages ("again and again" for the one, "only once" for the other,
+  never the other's); on the merged lines it failed ("en: expected 'Two quick notes ...' to match /again and
+  again/"). Found while reading the lines that name the open-way chime: tunnel-gaps' intro.3 (s13-worlds) said "A high
+  chime means the way is above it, a low one below", by register, which s13-sound's review m2 replaced by the contour
+  with the pilot's height polarity (for a pilot with 'up-lower' a way above sounds lower); it now says "If the chime
+  moves like your height tone in a climb, the way is above it. If it moves the other way, below." in the four
+  languages, as the glossary does, and `test/world-tunnels.test.ts` checks that wording (no "high chime"). The English
+  checkpoint line was measured as goal.1 was: 5.175 s, longer than its estimate (the old line, 3.295 s, was shorter),
+  so the schedule test's fact is 264 of 376 lines (was 263). Locale lint 0 problems (521 keys), layout 0, full suite
+  1032 of 1032. No person has read the new lines aloud in Spanish, Polish or Russian.
 - [ ] 8f. `ears-glossary` names s13-sound's six new cues
 - [ ] 8g. The truth bot in the ring lessons raises no wrong-way event
 - [ ] 8h. rings-heights: the target tone follows the next ring and the glide meets it in unison there
