@@ -297,6 +297,11 @@ simulator's part stays in the review's wave 2 list.
 - [ ] 19. All checks on the final code with fresh evidence; the final status
   - part 1 (done): `CHANGELOG.md` (Unreleased) says what the fixes change for a pilot and for a host's recorder;
     AGENTS.md's glossary rule names `test/named-sounds.test.ts`
+  - part 2 (done, on 626d38e): `pnpm typecheck` clean (three projects); `pnpm test` 47 files, 1062 tests (17.3 s);
+    locale lint 0 problems (4 languages, 523 keys); layout check 0 problems; `GPU_LOCK=C:/dev/.gpu-lock pnpm
+    proof:audio` 3 files, 9 proofs, 48.6 s (headless Chrome 156.0.8078.80; the five audio proofs pass and their broken
+    controls fail, the demo's keyboard-only check passes; both evidence files rewritten: their dates, and the demo
+    flight's turn 61 degrees, was 60)
 
 ## Review fixes (steps 12 to 19)
 
