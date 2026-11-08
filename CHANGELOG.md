@@ -80,6 +80,15 @@
   - Contract additions: `AnalyticWorld.cavities` (`CavityBox`: the room's hollow, for the simulator to draw it) and
     `AnalyticWorld.checkpoints` (`WorldCheckpoint` `pos`, `dir`, `stage`: the world's track, a point every 5 m or
     less, which the runner follows for the respawn, the wrong way and the stages).
+- The engine forgets what is sounding when a host opens the next lesson or a replay seeks (lane s13-int, the simulator's
+  need at a new lesson): `SonicEngine.reset?()` (optional in the contract, so an older engine still type-checks) and
+  `FlyBySoundEngine.reset()`: the planner from nothing (the sampler's held sectors, the moving voices, previews, notes and
+  the open way), the last frame gone (the pump no longer plans on from the last lesson's frame, and a cue before the next
+  frame is stamped at 0, the host's new clock, as `CuePlanner.reset()` now stamps it too), the moving voices released at
+  once. Before, a host whose clock started again at every lesson heard the last lesson's hazard sectors for 0.3 s with
+  the new geometry (the sampler's hold for a clock that goes back), and a one-off note of the last lesson stayed listed
+  until the new clock reached its end. Node test `test/reset.test.ts` and the audio proof `engine-reset`, each with its
+  control (the same frames without the reset).
 - The replay check has a verdict of its own for a recording of an older build: `ReplayCheck.verdict` ('pass',
   'older-build', 'fail'; `replayVerdict(check)` for a check put together elsewhere) and the line "replay check:
   recorded with an older build (the versions), so this build cannot verify it" when a recording does not re-derive

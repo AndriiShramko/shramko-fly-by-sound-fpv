@@ -693,6 +693,16 @@ export interface SonicEngine {
      * absent on an older engine (connect to auxInput then).
      */
     readonly motorInput?: object | null;
+    /**
+     * v0.13 (lane s13-int, the simulator's need at a new lesson): forgets what is sounding, so the next frame plans from
+     * nothing: the hazard sectors the scene sampler holds, the moving voices, previews and notes, the open way, the last
+     * frame (a cue before the next frame is stamped at 0, the start of the host's new clock). Settings, layers and the
+     * audio graph stay. A host calls it when its frame clock starts again (a lesson opens) and when a replay seeks: without
+     * it the first 0.3 s of the next lesson voice the last one's sectors (the sampler holds an active sector holdMs on when
+     * the clock goes back) and a one-off note of the last lesson stays listed until the new clock reaches its end. Absent
+     * on an older engine.
+     */
+    reset?(): void;
 }
 
 /**

@@ -472,6 +472,57 @@ async function targetNotePan(): Promise<ProofResult> {
     return { name: 'target-note-pan', claim, shipped, control: { ...control, broken: 'the panner moved at the note\'s start, not 60 ms before it' }, pass: shipped.ok && !control.ok };
 }
 
+// ------------------------------------------------------------------ 8. a new lesson: the engine's reset (lane s13-int)
+
+async function engineReset(): Promise<ProofResult> {
+    const claim = 'a new lesson hears nothing of the last one: the craft flies at the left wall, then the host opens the next lesson (its frame clock back at 0, the craft at rest 3 m over the floor and 20 m from every wall, where a new engine voices no hazard) and calls engine.reset(); from the new lesson\'s first frame to the end of the sampler\'s hold (300 ms) no hazard of the last lesson is active and no moving voice holds one (the last lesson voiced the left wall up to the switch)';
+    const switchK = 60; // frames: the switch at 1 s of audio time
+    const switchS = switchK * FRAME_S;
+    const near: Vec3 = [-HALL_HALF_W + 0.5, 3, 0];
+    const middle: Vec3 = [0, 3, 0];
+    const run = async (resetAtSwitch: boolean): Promise<Check> => {
+        const hazards = (e: FlyBySoundEngine): { cues: string[]; voices: string[] } => ({
+            cues: e.activeCues().map((c) => c.id).filter((id) => /^safety\.(wall|floor|ceiling|object)/.test(id)),
+            voices: e.stats().movingKeys.filter((k) => k.startsWith('safety:'))
+        });
+        let before: { cues: string[]; voices: string[] } = { cues: [], voices: [] };
+        const after: { ms: number; cues: string[]; voices: string[] }[] = [];
+        // an action at frame k runs before that frame: it reads what frame k - 1 planned and played
+        const reads = Array.from({ length: 18 }, (_, k) => ({ t: (switchK + k + 1) * FRAME_S, run: (e: FlyBySoundEngine) => void after.push({ ms: Math.round(k * FRAME_S * 1000), ...hazards(e) }) }));
+        await render({
+            seconds: 1.5,
+            engine: {},
+            layers: safetyOnly,
+            // the last lesson: at the left wall at 1.5 m/s, 0.5 m from it at the switch; the next: at rest in the middle, its clock from 0
+            frame: (t) =>
+                t < switchS - 1e-9
+                    ? { sample: flight([near[0] + 1.5 * (switchS - t), near[1], near[2]], [-1.5, 0, 0], 0, 60 + t), world: hall, target: null, floorY: 0 }
+                    : { sample: flight(middle, [0, 0, 0], 0, t - switchS), world: hall, target: null, floorY: 0 },
+            at: [
+                {
+                    t: switchS,
+                    run: (e: FlyBySoundEngine) => {
+                        before = hazards(e);
+                        if (resetAtSwitch) e.reset();
+                    }
+                },
+                ...reads
+            ]
+        });
+        const held = after.filter((a) => a.cues.length > 0 || a.voices.length > 0);
+        // the scene holds: the last lesson voiced the left wall at the switch, and a new engine voices nothing in the middle
+        const fresh = createSonicEngine({ speech: null, pump: false });
+        fresh.setLayers(safetyOnly);
+        fresh.update({ sample: flight(middle, [0, 0, 0], 0, 0), world: hall, target: null, floorY: 0 });
+        const freshHazards = (fresh.plan?.cues ?? []).map((c) => c.id).filter((id) => id.startsWith('safety.'));
+        const scene = before.cues.includes('safety.wall:left') && freshHazards.length === 0;
+        return { ok: scene && held.length === 0, measured: { atSwitch: before, newEngineInTheMiddle: freshHazards, framesOfTheHoldWithTheLastLesson: held.length, of: after.length, first: after[0] ?? null } };
+    };
+    const shipped = await run(true);
+    const control = await run(false);
+    return { name: 'engine-reset', claim, shipped, control: { ...control, broken: 'no engine.reset() when the next lesson opens' }, pass: shipped.ok && !control.ok };
+}
+
 function round(x: number, digits = 2): number {
     const f = 10 ** digits;
     return Math.round(x * f) / f;
@@ -485,7 +536,7 @@ export interface ProofReport {
     readonly proofs: readonly ProofResult[];
 }
 
-export const PROOFS: Readonly<Record<string, () => Promise<ProofResult>>> = { direction, 'pulse-rate': pulseRate, ceiling, 'fade-in': fadeIn, 'voice-budget': voiceBudget, 'target-note-gap': targetNoteGap, 'target-note-pan': targetNotePan };
+export const PROOFS: Readonly<Record<string, () => Promise<ProofResult>>> = { direction, 'pulse-rate': pulseRate, ceiling, 'fade-in': fadeIn, 'voice-budget': voiceBudget, 'target-note-gap': targetNoteGap, 'target-note-pan': targetNotePan, 'engine-reset': engineReset };
 
 export async function runProofs(names: readonly string[] = Object.keys(PROOFS)): Promise<ProofReport> {
     const proofs: ProofResult[] = [];

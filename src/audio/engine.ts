@@ -457,6 +457,26 @@ export class FlyBySoundEngine implements SonicEngine {
         this.planner.setLayers(layers);
     }
 
+    /**
+     * Forgets what is sounding (SonicEngine.reset; lane s13-int): the planner from nothing (the sampler's held sectors, the
+     * moving voices, previews, notes, the open way), the last frame and its plan gone (the pump does not plan on from the
+     * last lesson's frame, and a cue before the next frame is stamped at 0, the host's new clock), the moving voices
+     * released at once, no target note until a frame asks for one, the urgent duck lifted. Settings, layers, speech and
+     * the graph stay. A host calls it when its frame clock starts again (a lesson opens) and when a replay seeks.
+     */
+    reset(): void {
+        this.planner.reset();
+        this.lastInput = null;
+        this.lastPlan = null;
+        const g = this.g;
+        if (g === null) return;
+        const now = g.ctx.currentTime;
+        for (const slot of g.moving) if (slot.key !== null) this.releaseSlot(slot, now);
+        this.stopTargetNotes(now);
+        g.speedTrain.last = null;
+        this.applyDucks();
+    }
+
     // -------------------------------------------------------------- the graph
 
     private build(ctx: BaseAudioContext): Graph {

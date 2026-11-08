@@ -419,7 +419,10 @@ export class CuePlanner {
         this.sampler.setMaxVoices(Math.max(0, Math.min(layers.hazardVoices, 3)));
     }
 
-    /** Forget the sounding hazards, previews and notes (a new lesson, a seek). */
+    /**
+     * Forget the sounding hazards, previews and notes (a new lesson, a seek): the next frame is planned as a new planner
+     * plans it, and a cue before that frame is stamped at 0 as a new planner stamps it (lane s13-int).
+     */
     reset(): void {
         this.sampler.reset();
         this.moving.clear();
@@ -431,6 +434,7 @@ export class CuePlanner {
         this.freeUntil = 0;
         this.freeLast = null;
         this.praiseCount = 0;
+        this.lastT = 0;
     }
 
     private pitch(layer: LayerId): number {
