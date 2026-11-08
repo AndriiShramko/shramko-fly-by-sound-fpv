@@ -2,10 +2,12 @@
 // the wrong way." A lesson with a track (the world's checkpoint list, the lesson's checkpoints, a course's
 // gates) tells a pilot who flies against it for more than a second: the cue event 'wrong-way' and "You are
 // flying back. Turn around.", at most once every 5 s; a gate crossed from its back side is told and not counted.
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import type { CueEvent, SonicObject, SonicWorld, Vec3 } from '../src/contract';
-import { getLesson, LINE_UP_M, lessonTrack, lineUpM, toLocal, worldCheckpoints, WRONG_WAY_EVERY_S, type RunnerAction } from '../src/lesson';
-import { quatRotate } from '../src/util/vec';
+import type { CueEvent, LessonDef, Pose, SonicObject, SonicWorld, TrackFile, Vec3 } from '../src/contract';
+import { getLesson, LINE_UP_M, lessonTrack, lineUpM, toLocal, worldCheckpoints, WRONG_WAY_EVERY_S, type RunnerAction, type RunnerTestHooks } from '../src/lesson';
+import { parseTrack, scanToFlown, trackToObjects } from '../src/track';
+import { quatRotate, yawQuat } from '../src/util/vec';
 import { createAnalyticWorld } from '../src/world';
 import { ScriptedPilot } from './helpers/pilot';
 import { playImperfect } from './helpers/imperfect';
@@ -295,4 +297,233 @@ describe('turning back between two gates (lane s13-elev)', () => {
         expect(cueOf(p, 'wrong-side')).toEqual([]);
         expect(lines(p, 'fly.wrong-way') + lines(p, 'fly.wrong-side')).toBe(0);
     }, 120000);
+});
+
+// Review E1, E3 and E8 of lane s13-elev (docs/dev/review-v0.13-elev.md). The leg's rule above holds on a leg only once
+// the craft has flown along it (faster than WRONG_WAY_MPS, since the gate before was passed or the attempt began);
+// before that v0.13's rule holds (further than LINE_UP_M in front of the gate, flying away from it). So the momentum
+// carried out of a course that turns back after a gate, and a pilot who backs away at the start, are told only where
+// v0.13 told them; the leg begins at the gate passed last (a later lap's first gate: the course's last); a course in any
+// order keeps v0.13's rule. The control of E1 and E3 is the lane's first rule (testHooks.lineUp 'no-progress').
+
+/**
+ * The simulator's Winter Garden ring track, the course free-garden flies, the last lesson of both paths (ShramkoGSFPV
+ * apps/fly/public/sonic/tracks/7a475d38-rings-v1.json at a8e98a9): eight rings through the scene transform [5, 0, 0, 0],
+ * four along +Z and four back along -Z. From ring 4 to ring 5 the course turns back 135 degrees, which the simulator's
+ * track check allows ("after a gate the course may turn back").
+ */
+const GARDEN: TrackFile = (() => {
+    const r = parseTrack(readFileSync(new URL('./fixtures/track-7a475d38-rings-v1.json', import.meta.url), 'utf8'));
+    if (!r.ok) throw new Error(`the Winter Garden track does not parse: ${JSON.stringify(r.issues)}`);
+    return r.value;
+})();
+
+/** A lesson over a course of gates given as the simulator gives a scan's track: the gates and the start through the transform. */
+function onCourse(lesson: LessonDef, objects: readonly SonicObject[], start: Pose, hooks?: RunnerTestHooks): ScriptedPilot {
+    const p = new ScriptedPilot(lesson, { objects, start, ...(hooks === undefined ? {} : { testHooks: hooks }) }, null);
+    p.begin();
+    p.until(() => p.run.phase === 'flying', 60);
+    return p;
+}
+
+/** free-garden over the Winter Garden, as the simulator runs it */
+const inGarden = (hooks?: RunnerTestHooks): ScriptedPilot => {
+    const start = GARDEN.start as Pose;
+    return onCourse(getLesson('free-garden'), trackToObjects(GARDEN), { pos: scanToFlown(GARDEN.transform, start.pos), yawDeg: start.yawDeg }, hooks);
+};
+
+const gatesOf = (p: ScriptedPilot): SonicObject[] => p.objects().filter((o) => o.order !== null).sort((a, b) => (a.order as number) - (b.order as number));
+
+/** For every "wrong way" told, the gate passed last before it ('start' before the first). */
+function toldAfter(p: ScriptedPilot): string[] {
+    let last = 'start';
+    const out: string[] = [];
+    for (const x of p.log) {
+        if ('event' in x && x.event.kind === 'gate') last = x.event.gateId;
+        if ('action' in x && x.action.kind === 'say' && x.action.line.key === 'fly.wrong-way') out.push(last);
+    }
+    return out;
+}
+
+/** The review's pilot: from 3 m in front of each gate straight through it to `past` m beyond it at `v` m/s, then on to the next. */
+function flyCourse(p: ScriptedPilot, v: number, past: number): void {
+    for (const g of gatesOf(p)) {
+        p.flyTo(atGate(g, [0, 0, 3]), v);
+        p.flyTo(atGate(g, [0, 0, -past]), v);
+    }
+}
+
+const flatDeg = (a: Vec3, b: Vec3): number => (Math.acos((a[0] * b[0] + a[2] * b[2]) / (Math.hypot(a[0], a[2]) * Math.hypot(b[0], b[2]))) * 180) / Math.PI;
+const between = (a: Vec3, b: Vec3): number => Math.hypot(b[0] - a[0], b[1] - a[1], b[2] - a[2]);
+
+describe('a course that turns back after a gate: free-garden on the Winter Garden (review E1 of lane s13-elev)', () => {
+    it("the track as the simulator hands it over: eight rings, the course turning back 135 degrees after ring 4, ring 4 further from ring 5 than the leg's line-up distance", () => {
+        const g = trackToObjects(GARDEN);
+        expect(g).toHaveLength(8);
+        const [r4, r5] = [g[3] as SonicObject, g[4] as SonicObject];
+        const leg = between(r4.pos, r5.pos);
+        expect(flatDeg(quatRotate(r4.quat, [0, 0, -1]), [r5.pos[0] - r4.pos[0], 0, r5.pos[2] - r4.pos[2]])).toBeGreaterThan(130);
+        expect(toLocal(r5, r4.pos)[2]).toBeGreaterThan(0); // at ring 4 the craft is in front of ring 5
+        expect(leg).toBeGreaterThan(lineUpM(leg));
+        expect(leg).toBeLessThan(LINE_UP_M);
+    });
+
+    it('flown through every ring and on 1.5 to 4 m past it at 1 to 3 m/s: told only where v0.13 told it too, never at 1.5 m/s or faster', () => {
+        for (const v of [1, 1.5, 2, 3]) {
+            for (const past of [1.5, 2, 2.5, 3, 4]) {
+                const p = inGarden();
+                flyCourse(p, v, past);
+                expect(p.of('gate').map((e) => e.gateId), `${v} m/s, ${past} m past`).toEqual(gatesOf(p).map((g) => g.id));
+                const v013 = inGarden({ lineUp: 'fixed' });
+                flyCourse(v013, v, past);
+                expect(toldAfter(p), `${v} m/s, ${past} m past`).toEqual(toldAfter(v013));
+                if (v >= 1.5) expect(toldAfter(p), `${v} m/s, ${past} m past`).toEqual([]);
+            }
+        }
+        // where v0.13 tells it: 4 m past ring 4 at 1 m/s, four seconds flying away from ring 5, further than 8 m from it
+        const slow = inGarden();
+        flyCourse(slow, 1, 4);
+        expect(toldAfter(slow)).toEqual(['ring-4']);
+    }, 120000);
+
+    it("control: the lane's first rule tells \"wrong way\" right after ring 4 (1.5 m past at 1 m/s, 2 m at 1.5, 2.5 m at 2, 4 m at 3)", () => {
+        for (const [v, past] of [
+            [1, 1.5],
+            [1.5, 2],
+            [2, 2.5],
+            [3, 4]
+        ] as const) {
+            const p = inGarden({ lineUp: 'no-progress' });
+            flyCourse(p, v, past);
+            expect(toldAfter(p), `${v} m/s, ${past} m past`).toContain('ring-4');
+        }
+    }, 60000);
+
+    it('on that leg, once the craft has flown along it, a turn back is told within 3 m, as between any two gates (v0.13: not)', () => {
+        for (const hooks of [undefined, { lineUp: 'fixed' } as const]) {
+            const p = inGarden(hooks);
+            const [, , , r4, r5] = gatesOf(p) as [SonicObject, SonicObject, SonicObject, SonicObject, SonicObject];
+            for (const g of gatesOf(p).slice(0, 4)) {
+                p.flyTo(atGate(g, [0, 0, 3]), 2);
+                p.flyTo(atGate(g, [0, 0, -1]), 2);
+            }
+            // 2 m toward ring 5's front, then round and back toward ring 4 for 3 m at 2 m/s
+            const aim = atGate(r5, [0, 0, 3]);
+            const d = between(p.pos, aim);
+            const at: Vec3 = [p.pos[0] + ((aim[0] - p.pos[0]) * 2) / d, p.pos[1] + ((aim[1] - p.pos[1]) * 2) / d, p.pos[2] + ((aim[2] - p.pos[2]) * 2) / d];
+            p.flyTo(at, 2);
+            p.turnTo(p.yaw + 180);
+            const back: Vec3 = [at[0] - ((aim[0] - at[0]) * 3) / between(at, aim), at[1], at[2] - ((aim[2] - at[2]) * 3) / between(at, aim)];
+            p.flyTo(back, 2, false);
+            expect(between(back, r5.pos)).toBeLessThan(LINE_UP_M);
+            expect(toldAfter(p), hooks === undefined ? 'shipped' : 'v0.13').toEqual(hooks === undefined ? [r4.id] : []);
+        }
+    }, 60000);
+});
+
+describe('the start of an attempt (review E3 of lane s13-elev)', () => {
+    const GATE_LESSONS = ['rings-first', 'rings-line', 'rings-small', 'rings-heights', 'rings-course', 'shapes-square', 'shapes-series', 'shapes-cube'] as const;
+
+    const atStart = (id: string, hooks?: RunnerTestHooks): ScriptedPilot => {
+        const p = new ScriptedPilot(getLesson(id), hooks === undefined ? {} : { testHooks: hooks });
+        p.begin();
+        p.until(() => p.run.phase === 'flying', 60);
+        return p;
+    };
+    /**
+     * backs straight away from gate 1, still facing it, as far as the room lets him: 1.2 m at 1 m/s (every start of these
+     * rooms is 5 to 6 m in front of gate 1 and 1.5 m from the wall behind it; the leg's line-up distance is 2.9 to 3.4 m)
+     */
+    const backAway = (p: ScriptedPilot): void => {
+        const g = gatesOf(p)[0] as SonicObject;
+        const d = Math.hypot(p.pos[0] - g.pos[0], p.pos[2] - g.pos[2]);
+        expect((p.world as SonicWorld).castRay(p.pos, [(p.pos[0] - g.pos[0]) / d, 0, (p.pos[2] - g.pos[2]) / d], 50)?.distance).toBeCloseTo(1.5, 6);
+        p.flyTo([p.pos[0] + ((p.pos[0] - g.pos[0]) * 1.2) / d, p.pos[1], p.pos[2] + ((p.pos[2] - g.pos[2]) * 1.2) / d], 1, false);
+    };
+
+    it.each(GATE_LESSONS)('%s: holding still 3 s, or backing away from gate 1 at 1 m/s to the wall behind (1.2 s), is never told (as in v0.13)', (id) => {
+        const still = atStart(id);
+        still.hold(3);
+        expect(lines(still, 'fly.wrong-way')).toBe(0);
+        const backing = atStart(id);
+        backAway(backing);
+        expect(backing.of('touch'), 'a clean flight').toEqual([]);
+        expect(lines(backing, 'fly.wrong-way')).toBe(0);
+    }, 60000);
+
+    it.each(GATE_LESSONS)("control: %s with the lane's first rule tells the pilot who backs away", (id) => {
+        const backing = atStart(id, { lineUp: 'no-progress' });
+        backAway(backing);
+        expect(lines(backing, 'fly.wrong-way')).toBe(1);
+    }, 60000);
+
+    it('a pilot who turns round at the start and flies away from gate 1 is told once further than 8 m from it, as in v0.13 (free-garden)', () => {
+        for (const hooks of [undefined, { lineUp: 'fixed' } as const]) {
+            const p = inGarden(hooks);
+            const g = gatesOf(p)[0] as SonicObject;
+            expect(between(p.pos, g.pos)).toBeCloseTo(8, 6); // the track's start, 8 m in front of ring 1
+            p.turnTo(p.yaw + 180);
+            p.flyTo([p.pos[0], p.pos[1], p.pos[2] - 6], 2, false); // 3 s away from it
+            expect(toldAfter(p), hooks === undefined ? 'shipped' : 'v0.13').toEqual(['start']);
+        }
+    }, 60000);
+});
+
+describe('the leg flown: a later lap, a course in any order (review E8 of lane s13-elev)', () => {
+    const ring = (id: string, pos: Vec3, yawDeg: number, order: number): SonicObject => ({ id, shape: { kind: 'ring', diameter: 1.5, tube: 0.05 }, pos, quat: yawQuat(yawDeg), order, solid: false, material: 'obstacle' });
+
+    it("the first gate of the second lap is reached from the course's last gate, not from the start: a turn back there is told", () => {
+        // a square loop of four rings 7.1 m apart, the start 30 m in front of ring 1 (that leg's line-up distance 8 m;
+        // the leg from ring 4, 4 m): free-garden's lesson with two laps
+        const loop = [ring('g1', [0, 1.5, 0], 0, 0), ring('g2', [5, 1.5, -5], 90, 1), ring('g3', [10, 1.5, 0], 180, 2), ring('g4', [5, 1.5, 5], -90, 3)];
+        const ways: readonly Vec3[] = [
+            [0, 0, -1],
+            [1, 0, 0],
+            [0, 0, 1],
+            [-1, 0, 0]
+        ];
+        loop.forEach((g, i) => {
+            const axis = quatRotate(g.quat, [0, 0, -1]);
+            const way = ways[i] as Vec3;
+            expect(Math.hypot(axis[0] - way[0], axis[2] - way[2]), g.id).toBeLessThan(1e-9);
+        });
+        const twoLaps: LessonDef = { ...getLesson('free-garden'), goals: [{ kind: 'timed-course', laps: 2 }] };
+        const p = onCourse(twoLaps, loop, { pos: [0, 1.5, 30], yawDeg: 0 });
+        for (const g of loop) {
+            p.flyTo(atGate(g, [0, 0, 3]), 3);
+            p.flyTo(atGate(g, [0, 0, -2]), 3);
+        }
+        expect(p.of('gate').map((e) => e.gateId)).toEqual(['g1', 'g2', 'g3', 'g4']);
+        expect(toldAfter(p)).toEqual([]);
+        // on toward ring 1 (along the leg from ring 4), 5 m in front of it, then back toward ring 4 for 1.75 s
+        p.flyTo([0, 1.5, 5], 2);
+        expect(lineUpM(between((loop[3] as SonicObject).pos, (loop[0] as SonicObject).pos))).toBeLessThan(5);
+        p.flyTo([3.5, 1.5, 5], 2, false);
+        expect(toldAfter(p)).toEqual(['g4']);
+    }, 60000);
+
+    it("a course in any order keeps v0.13's rule: through ring 2 first, round to ring 1's front and through it, never told", () => {
+        const anyOrder: LessonDef = { ...getLesson('rings-line'), goals: [{ kind: 'pass-gates', gateIds: 'all', inOrder: false }] };
+        const p = new ScriptedPilot(anyOrder);
+        p.begin();
+        p.until(() => p.run.phase === 'flying', 60);
+        const [r1, r2] = gatesOf(p) as [SonicObject, SonicObject];
+        const beside = (r1.shape as { diameter: number }).diameter / 2 + 2 * (r1.shape as { tube: number }).tube + 2.5;
+        const room = (sign: number): number => (p.analytic as NonNullable<typeof p.analytic>).sdf(...atGate(r1, [sign * beside, 0, 0]));
+        const side = room(1) >= room(-1) ? 1 : -1;
+        p.flyTo(atGate(r1, [side * beside, 0, 3]));
+        p.flyTo(atGate(r1, [side * beside, 0, -1])); // beside ring 1
+        p.flyTo(atGate(r2, [0, 0, 3]));
+        p.flyTo(atGate(r2, [0, 0, -1])); // through ring 2
+        expect(p.of('gate').map((e) => e.gateId)).toEqual([r2.id]);
+        // back beside the rings to 5 m in front of ring 1, round, and through it at 1 m/s
+        p.flyTo(atGate(r1, [side * beside, 0, -1]), 2);
+        p.flyTo(atGate(r1, [side * beside, 0, 5]), 2);
+        p.flyTo(atGate(r1, [0, 0, 5]), 2);
+        p.face(r1.pos);
+        p.flyTo(atGate(r1, [0, 0, -1]), 1);
+        expect(p.of('gate').map((e) => e.gateId)).toEqual([r2.id, r1.id]);
+        expect(p.of('touch'), 'a clean flight').toEqual([]);
+        expect(lines(p, 'fly.wrong-way') + lines(p, 'fly.wrong-side')).toBe(0);
+    }, 60000);
 });

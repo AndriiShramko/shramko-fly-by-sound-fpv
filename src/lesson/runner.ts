@@ -62,10 +62,15 @@
 // the gate that counts next, judged only in front of it further than its line-up distance (behind it or close to
 // it the pilot may be flying round to its front: a ring missed beside it is flown back to). Lane s13-elev (M41-15):
 // the line-up distance follows the leg to that gate, LINE_UP_M for a leg of LINE_UP_SPACING_M or more and in
-// proportion below it, and flying back is flying against the leg (from the gate before, along the floor), so a
+// proportion below it, and flying back is flying against the leg (from the gate passed last, along the floor), so a
 // pilot who turns back toward the gate he just passed is told within a few metres in the 5 to 7 m legs of the v0.13
-// rooms, which the 8 m of v0.13 never did, and a pilot who moves aside to fly round a gate is not flying back. A
-// gate crossed from its back side gives 'wrong-side' and its line, and is not counted.
+// rooms, which the 8 m of v0.13 never did, and a pilot who moves aside to fly round a gate is not flying back. That
+// rule holds on a leg only once the craft has flown along it (faster than WRONG_WAY_MPS, since the gate before was
+// passed or the attempt began); before, v0.13's rule holds (further than LINE_UP_M in front of the gate, flying away
+// from it), so the momentum carried out of a course that turns back after a gate (the Winter Garden's ring 4 to 5,
+// 135 degrees) and a pilot backing away at the start are told only where v0.13 told them (review E1 and E3 of the
+// lane). A course in any order has no legs: v0.13's rule, toward the gate whose hum sounds. A gate crossed from its
+// back side gives 'wrong-side' and its line, and is not counted.
 //
 // Respawn (M41-20). A touch in a lesson that re-centres, or a short R, puts the craft RESPAWN_BEFORE_M
 // before the furthest point of the track passed in this attempt (a lesson checkpoint, or a point of the
@@ -93,7 +98,7 @@ import { createTranslator, type Dicts, type Translator } from '../i18n/translato
 import { createRng } from '../util/rng';
 import { distance as dist3, dot, normalize, sub, yawQuat } from '../util/vec';
 import { createAnalyticWorld, makeSpec, type AnalyticWorldInfo } from '../world/analytic-world';
-import { BODY_RADIUS_M, courseGates, createTracker, toLocal, type GoalScore, type GoalTracker, type Outcome } from './goals';
+import { BODY_RADIUS_M, createTracker, toLocal, type GoalScore, type GoalTracker, type Outcome } from './goals';
 import { getLesson, isShippedLesson, lessonAfter, lessonPaths } from './library';
 import { APPROACHES, GAME_SCENE_S, isGlossary, NARRATED_SCENE_S, playS, REPEAT_GAP_S, REPEAT_PLAYS, SHAPE_ORDER } from './sounds';
 import { lessonTrack, yawOf, type LessonTrack, type TrackPoint } from './track';
@@ -263,8 +268,12 @@ export interface RunnerTestHooks {
      * a sound or a scene starts at once and plays once (the cause of "press 1, press 2, but no sound").
      */
     readonly speechWait?: 'v012';
-    /** 'fixed': the line-up rule of v0.13, LINE_UP_M in front of the next gate whatever the leg to it (lane s13-elev's control) */
-    readonly lineUp?: 'fixed';
+    /**
+     * 'fixed': the line-up rule of v0.13, LINE_UP_M in front of the next gate whatever the leg to it (lane s13-elev's
+     * control). 'no-progress': the lane's first rule (0dd3cd9), flying back judged against the leg from the pass of the
+     * gate before, whether or not the craft has flown along the leg since (the control of its review E1 and E3).
+     */
+    readonly lineUp?: 'fixed' | 'no-progress';
 }
 
 /** @internal A lesson's pass rule as v0.12 shipped it (format 1), for RunnerTestHooks.passRule only. */
@@ -434,6 +443,10 @@ class Runner implements LessonSession {
     private backSince: number | null = null;
     private lastWrongWay = -Infinity;
     private lastWrongSide = -Infinity;
+    // a course's leg (lane s13-elev, review E1, E3, E8): the gate passed last in this attempt (where the leg to the next
+    // one begins; null: the start), and whether the craft has flown along that leg since it began (or since it was placed)
+    private lastGate: SonicObject | null = null;
+    private legFlown = false;
     // respawn: the furthest point of the track passed in this attempt (its index on the track) and the path flown there
     private passedPoint: { readonly point: TrackPoint; readonly index: number; readonly pathM: number; readonly checkpoint: Checkpoint | null } | null = null;
     // progress
@@ -798,6 +811,8 @@ class Runner implements LessonSession {
         this.earsAnswers = new Map();
         this.goalScores = [];
         this.backSince = null;
+        this.lastGate = null;
+        this.legFlown = false;
         this.listening = false;
         this.pausedMs = 0;
         this.phaseValue = 'flying';
@@ -841,6 +856,9 @@ class Runner implements LessonSession {
             world: () => this.worldRef,
             attemptPathM: () => this.pathM,
             passedGate: (gate, index, of, missM, lapDone, at) => {
+                // the leg to the next gate begins here; nothing of it is flown yet
+                this.lastGate = gate;
+                this.legFlown = false;
                 this.emit({ t: at, kind: 'gate', gateId: gate.id, index, missM: Math.round(missM * 1000) / 1000 });
                 this.actions.push({ kind: 'cue', event: { kind: 'gate', index, of } });
                 if (lapDone) this.actions.push({ kind: 'cue', event: { kind: 'lap' } });
@@ -929,6 +947,7 @@ class Runner implements LessonSession {
                 this.emit({ t, kind: 'reset', to: back.to, checkpointId: back.id });
                 this.prev = null; // the jump is not flight
                 this.backSince = null;
+                this.legFlown = false;
             }
         }
         this.checkDirection(s);
@@ -1038,8 +1057,9 @@ class Runner implements LessonSession {
      * The way forward where the craft is (unit, world frame), or null where nothing says it. While the goal is a
      * course of gates it is the way to the gate that counts next, and only in front of that gate, further than its
      * line-up distance (lineUpM of the leg to it): behind it, beside it or close in front of it a pilot may be on his
-     * way round to its front (review R1: a ring passed beside it is flown back to, its hum ahead). Elsewhere it is the
-     * way the track goes.
+     * way round to its front (review R1: a ring passed beside it is flown back to, its hum ahead). The leg's rule holds
+     * once the craft has flown along the leg; before that, and in a course in any order, v0.13's rule (LINE_UP_M,
+     * flying away from the gate). Elsewhere it is the way the track goes.
      */
     private wayForward(s: FlightSample): { readonly dir: Vec3; readonly against: Vec3 } | null {
         const goal = this.lesson.goals[this.goalIndex];
@@ -1048,10 +1068,18 @@ class Runner implements LessonSession {
             if (gate === null) return null;
             const to = sub(gate.pos, s.pos);
             const dir = normalize(to);
-            // the control: v0.13's rule, 8 m whatever the leg, flying back judged against the way to the gate
-            if (this.o.testHooks?.lineUp === 'fixed') return toLocal(gate, s.pos)[2] <= 0 || Math.hypot(to[0], to[1], to[2]) <= LINE_UP_M ? null : { dir, against: dir };
-            const leg = this.legTo(gate, goal.kind === 'pass-gates' ? goal.gateIds : 'all');
-            if (toLocal(gate, s.pos)[2] <= 0 || Math.hypot(to[0], to[1], to[2]) <= lineUpM(leg.metres)) return null;
+            const ahead = toLocal(gate, s.pos)[2] > 0;
+            const away = Math.hypot(to[0], to[1], to[2]);
+            // v0.13's rule: further than LINE_UP_M in front of the gate, flying back is flying away from it (the 'fixed'
+            // control everywhere; a course in any order, whose next gate is wherever the pilot goes, has no legs)
+            const v013 = (): { readonly dir: Vec3; readonly against: Vec3 } | null => (!ahead || away <= LINE_UP_M ? null : { dir, against: dir });
+            const hook = this.o.testHooks?.lineUp;
+            if (hook === 'fixed' || (goal.kind === 'pass-gates' && !goal.inOrder)) return v013();
+            const leg = this.legTo(gate);
+            if (leg.along !== null && dot(s.vel, leg.along) > WRONG_WAY_MPS) this.legFlown = true;
+            // nothing of the leg flown yet: momentum out of a course that turns back, or backing away at the start
+            if (!this.legFlown && hook !== 'no-progress') return v013();
+            if (!ahead || away <= lineUpM(leg.metres)) return null;
             return { dir, against: leg.along ?? dir };
         }
         const along = this.track()?.dirAt(s.pos) ?? null;
@@ -1059,13 +1087,12 @@ class Runner implements LessonSession {
     }
 
     /**
-     * The leg to a gate of the course (lane s13-elev): from the gate before it in the course, or from the lesson's start
-     * for the first one; its length (m) and its way along the floor (unit; null when the leg is all but vertical).
+     * The leg to a gate of the course (lane s13-elev): from the gate passed last in this attempt (the gate before it,
+     * or the course's last for the first gate of a later lap), else from the lesson's start; its length (m) and its way
+     * along the floor (unit; null when the leg is all but vertical, or has no length: a course of one gate flown again).
      */
-    private legTo(gate: SonicObject, ids: readonly string[] | 'all'): { readonly metres: number; readonly along: Vec3 | null } {
-        const gates = courseGates(this.objects(), ids);
-        const i = gates.findIndex((g) => g.id === gate.id);
-        const from = i > 0 ? (gates[i - 1] as SonicObject).pos : (this.o.start ?? this.lesson.start).pos;
+    private legTo(gate: SonicObject): { readonly metres: number; readonly along: Vec3 | null } {
+        const from = this.lastGate !== null ? this.lastGate.pos : (this.o.start ?? this.lesson.start).pos;
         const flat: Vec3 = [gate.pos[0] - from[0], 0, gate.pos[2] - from[2]];
         return { metres: dist3(from, gate.pos), along: Math.hypot(flat[0], flat[2]) >= 0.5 ? normalize(flat) : null };
     }
@@ -1691,9 +1718,11 @@ class Runner implements LessonSession {
         this.emit({ t, kind: 'reset', to, checkpointId: back === null ? null : back.id });
         this.prev = null;
         this.backSince = null;
+        this.legFlown = false; // placed: the leg is flown again from where the craft is now
         if (to === 'start') this.resumeFrom = null; // a long R in the pause: the next attempt from the start too
         if (to === 'start' && this.phaseValue === 'flying') {
             // the same attempt again from the start (a manual reset is not a failure)
+            this.lastGate = null;
             this.attemptT0 = t;
             this.touchCount = 0;
             this.pathM = 0;

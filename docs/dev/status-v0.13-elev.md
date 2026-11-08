@@ -92,6 +92,23 @@ and below change with it. In the same lane: "wrong way" between gates, which the
   numbers within a render's noise of E1's), `pnpm listen:words` PASS, fresh (00c1d278316c). This lane's E2 status
   final (above)
 
+The review of the lane (`docs/dev/review-v0.13-elev.md`, dbce5fd, findings E1 to E8), each finding first tried against
+the code, then fixed with a test and its control (section "Review fixes" below):
+
+- [x] F1 Review E1, E3, E8, the wrong way between gates: the leg's rule holds on a leg only once the craft has flown along
+  it (faster than 0.5 m/s, since the gate before was passed or the attempt began); before that v0.13's rule (further
+  than 8 m in front of the gate, flying away from it). The leg begins at the gate passed last (a later lap's first gate:
+  the course's last); a course in any order keeps v0.13's rule. `test/direction.test.ts` (23 new, the Winter Garden track
+  as a fixture); the lane's first rule kept as the control `testHooks.lineUp 'no-progress'`
+- [ ] F2 Review E2: the lines of the chime above and below hold with the setting off, and the setting's description
+  says what it does
+- [ ] F3 Review E4: "the key" held by a Node test, a key rule in the words check with v0.13's key lines as its control,
+  the percent records for Polish and Russian
+- [ ] F4 Review E5: VL-6 and VL-2 hear the floor, the ceiling and the chime with their breaths
+- [ ] F5 Review E6: the target note's two timings measured, with their controls
+- [ ] F6 Review E7: rings-course in the numbers
+- [ ] F7 Every check again; final status of the review fixes
+
 ## E1-1 Audit: the cues of up and down in v0.13 (code as of 16c01a1)
 
 Chrome's HRTF (the engine's panners, `panningModel 'HRTF'`) takes the elevation slice at or below the direction, in
@@ -464,6 +481,50 @@ What stands out for the simulator's owner:
   `helpPrevious` says "Нажми".
 - A key's name alone ("Tab" in Polish and Russian, "Control and C") and a word alone ("Wznów", "Проводные") are
   heard worst, as in the package: nothing around them tells them.
+
+## Review fixes
+
+### F1, the wrong way between gates (review E1, E3, E8)
+
+Tried first: the reviewed rule, kept as `testHooks.lineUp 'no-progress'`, tells "You are flying back. Turn around." right
+after ring 4 of the Winter Garden in a correct flight (1.5 m past at 1 m/s, 2 m at 1.5, 2.5 m at 2, 4 m at 3), and tells
+a pilot who backs away from gate 1 at the start in all eight analytic gate lessons; its leg to gate 1 of a later lap ran
+from the start. All three hold.
+
+The rule now (`src/lesson/runner.ts` `wayForward`, `legTo`):
+
+- The leg's rule (its line-up distance `lineUpM`, flying back against the leg along the floor) holds on a leg only once
+  the craft has flown along it: its velocity along the leg over `WRONG_WAY_MPS` (0.5 m/s) at least once since the gate
+  before was passed, or since the attempt began or the craft was placed. Before that v0.13's rule holds: further than
+  `LINE_UP_M` (8 m) in front of the gate, flying away from it. So nothing is told before the leg is flown that v0.13 did
+  not tell, and a turn back after it is told within a few metres as before.
+- Why not the progress rule alone, as the review suggests: then a pilot who turns round at the start and flies away from
+  gate 1 is never told, however far he goes, the very case of M41-15; with v0.13's rule under it he is told once 8 m
+  away, as in v0.13.
+- The leg begins at the gate passed last in the attempt (the gate before it in a course flown in order, the course's last
+  for the first gate of a later lap), else at the lesson's start. A course in any order (`inOrder: false`) has no legs:
+  its next gate is wherever the pilot goes, so it keeps v0.13's rule toward the gate whose hum sounds. No shipped lesson
+  has laps or a course in any order.
+
+Measured (`test/direction.test.ts`, 23 new tests; the Winter Garden track is `test/fixtures/track-7a475d38-rings-v1.json`,
+the simulator's file at a8e98a9, flown as the simulator hands it over: `trackToObjects`, the start through the
+transform):
+
+| Flight | Shipped | v0.13 (`'fixed'`) | Control (`'no-progress'`) |
+|---|---|---|---|
+| Winter Garden, 3 m before each ring through it to 1.5, 2, 2.5, 3, 4 m past, at 1, 1.5, 2, 3 m/s (20 flights) | told once, 4 m past ring 4 at 1 m/s (4 s flying away, beyond 8 m from ring 5) | the same | told after ring 4 from 1.5 m past at 1 m/s, 2 m at 1.5, 2.5 m at 2, 4 m at 3 |
+| Winter Garden, 2 m along the leg from ring 4 to ring 5, then 3 m back at 2 m/s | told (after ring 4) | never | told |
+| the start of the 8 gate lessons, still 3 s | never | never | never |
+| the same, backing away from gate 1 at 1 m/s to 0.3 m before the wall behind (1.2 m; every start is 1.5 m from it) | never | never | told in all 8 |
+| free-garden's start (8 m in front of ring 1), turned round, 6 m away at 2 m/s | told once | told once | told |
+| a square loop of 4 rings, two laps: lap 2, 5 m in front of ring 1, back toward ring 4 for 1.75 s | told (the leg from ring 4: line-up 4.04 m) | never | |
+| rings-line in any order: ring 2 first, round to 5 m in front of ring 1, through it at 1 m/s | never | | |
+
+Controls broken by hand, each failing its test, then restored: no v0.13 rule before the leg is flown (2 tests fail: the
+Winter Garden at 1 m/s 4 m, the start turned round); the leg from the gate before in course order (the second lap
+fails); a course in any order judged by legs (it fails); progress never needed (9 fail: the Winter Garden and the eight
+starts). The review's suggestion "carried 2 s past the gate, never told" holds up to 2 m/s (4 m); at 3 m/s, 6 m past
+ring 4 and 11 m from ring 5, the pilot is told as v0.13 told him.
 
 ## Needs from the simulator
 
