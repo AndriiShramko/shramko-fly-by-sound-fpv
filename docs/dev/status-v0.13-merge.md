@@ -268,10 +268,10 @@ Steps 7 to 11, lane s13-worlds:
   simulator's own `docs/wip/v12-plan.md` and `v13-plan.md` stay, they are in ShramkoGSFPV, and so do four sentences of
   the sound lane's notes about whether `docs/wip/` would be published (review m8), which say what was true then.
   README's development section and AGENTS.md's map link the v0.13 notes. The build machine's folders in `docs/`, README,
-  AGENTS.md and llms.txt are placeholders: `C:/dev/gsfpv-v03` is `<simulator checkout>` (four places), the lanes' and
-  the merge's worktrees `<sound checkout>` (four), `U:/Temp` `<scratch>` (one); a grep for a drive letter, `/Users/` or
-  `~/` there finds only `GPU_LOCK`'s default `C:/dev/.gpu-lock`, the default in the code (`tools/listen.ts`, the
-  proofs), which stays. `test/docs.test.ts` 8 of 8.
+  AGENTS.md and llms.txt are placeholders: the simulator's checkout is `<simulator checkout>` (four places), the lanes'
+  and the merge's worktrees `<sound checkout>` (four), the scratch folder of the v0.12 fixtures `<scratch>` (one); a
+  grep for a drive-letter path, a user's folder or a home folder there finds only `GPU_LOCK`'s default
+  `C:/dev/.gpu-lock`, the default in the code (`tools/listen.ts`, the proofs), which stays. `test/docs.test.ts` 8 of 8.
   - part 1, before step 9 (done): the four comments in `src/` and `test/` that named a lane's note now name its public
     path (`docs/dev/status-v0.13-lessons.md`, `status-v0.13-worlds.md`), so the code step 9 checks is the final code
     (the listener's evidence is keyed by every file of `src/`; the rest of step 10 touches only `docs/`, README,
