@@ -122,7 +122,7 @@ describe('the pass and the stages', () => {
         const built = p.analytic;
         if (built === null) throw new Error('the corridor has a world');
         for (const q of corridorLine(built.resolved)) p.flyTo(q);
-        const stages = cues(p).filter((c): c is Extract<CueEvent, { kind: 'stage' }> => c.kind === 'stage').map((c) => c.index);
+        const stages = cues(p).filter((c): c is Extract<CueEvent, { kind: 'stage' }> => c.kind === 'stage').map((c) => c.stage);
         expect(stages).toEqual([1, 2, 3, 4]);
         expect(said(p).filter((l) => l.key === 'fly.stage').map((l) => l.params?.['n'])).toEqual([1, 2, 3, 4]);
         expect(p.of('checkpoint').map((c) => c.id)).toEqual(['cp-1', 'cp-2', 'cp-3', 'cp-4', 'cp-5']);

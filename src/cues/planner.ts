@@ -704,7 +704,7 @@ export class CuePlanner {
             // lane s13-lessons placeholder until lane s13-sound designs it: a play of a named sound sounds as its preview, for its length
             case 'repeat-cue':
             case 'preview': {
-                const dir = e.dir === null ? null : normalize(e.dir);
+                const dir = e.dir === null || e.dir === undefined ? null : normalize(e.dir);
                 const oneOff: Readonly<Record<string, CueEvent>> = {
                     'safety.touch': { kind: 'touch', material: 'wall', dir, speed: 2 },
                     'safety.reset': { kind: 'reset' },
@@ -717,7 +717,7 @@ export class CuePlanner {
                 if (event !== undefined) return this.cue(event, t).map((n) => ({ ...n, cue: e.cue }));
                 const material = e.cue.startsWith('safety.') ? (e.cue.slice(7) as MaterialClass) : null;
                 const fallback = material !== null && material in MATERIAL_DIR ? MATERIAL_DIR[material] : FRONT;
-                this.previews.push({ key: `preview:${++this.previewCount}`, cue: e.cue, dir: dir ?? fallback, t0: t, durS: e.kind === 'repeat-cue' ? e.durS : PREVIEW_S });
+                this.previews.push({ key: `preview:${++this.previewCount}`, cue: e.cue, dir: dir ?? fallback, t0: t, durS: e.kind === 'repeat-cue' ? (e.durS ?? PREVIEW_S) : PREVIEW_S });
                 return [];
             }
         }

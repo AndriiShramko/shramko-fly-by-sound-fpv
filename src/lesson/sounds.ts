@@ -13,18 +13,31 @@ export const REPEAT_PLAYS = 3;
 export const REPEAT_GAP_S = 1;
 /** One play of a continuous sound (a hazard coming closer, the hum, the height tone, a shape trace), s. */
 export const REPEAT_PLAY_S = 2.5;
-/** One play of a one-off sound (a ping, a note, a chime, the fanfare), s. */
-export const ONE_OFF_PLAY_S = 1.2;
+/**
+ * One play of each one-off sound (a ping, a note, a chime, the fanfare: src/cues/planner.ts plays them as notes),
+ * s: how long its notes last in every built-in theme, rounded up (measured 2026-11-08: touch 0.08 to 0.12, reset
+ * 0.34, gate note 0.20 to 0.32, lap 0.88 to 1.08, checkpoint 0.48, fanfare 1.19). The next play comes REPEAT_GAP_S
+ * after the slot, so about a second after the sound ends (review R2: one slot of 1.2 s left a ping 2.1 s of
+ * silence). test/repeat-plays.test.ts holds this table to the planner in every theme.
+ */
+export const ONE_OFF_PLAY_S: Readonly<Record<CueId, number>> = {
+    'safety.touch': 0.2,
+    'safety.reset': 0.4,
+    'target.note': 0.4,
+    'target.lap': 1.1,
+    'target.checkpoint': 0.5,
+    'target.fanfare': 1.2
+};
 /** A narrated scene of module 0 lasts this long, s; a scene of the game a little less. */
 export const NARRATED_SCENE_S = 4;
 export const GAME_SCENE_S = 3.5;
 
-/** The cues that are one short sound, not a sound that goes on (src/cues/planner.ts plays them as one-off notes). */
-export const ONE_OFF_CUES: readonly CueId[] = ['safety.touch', 'safety.reset', 'target.note', 'target.lap', 'target.checkpoint', 'target.fanfare'];
+/** The cues that are one short sound, not a sound that goes on. */
+export const ONE_OFF_CUES: readonly CueId[] = Object.keys(ONE_OFF_PLAY_S);
 
 /** How long one play of `cue` lasts, s. */
 export function playS(cue: CueId): number {
-    return ONE_OFF_CUES.includes(cue) ? ONE_OFF_PLAY_S : REPEAT_PLAY_S;
+    return ONE_OFF_PLAY_S[cue] ?? REPEAT_PLAY_S;
 }
 
 /** Where each wall-like cue comes from in the narrated scenes of ears-walls (spec: front, left, right, above, below). */

@@ -543,20 +543,23 @@ export type CueEvent =
     | { readonly kind: 'reset' }
     | { readonly kind: 'fanfare' }
     | { readonly kind: 'preview'; readonly cue: CueId; readonly dir: Vec3 | null }
+    // v0.13 (plan v13 "Lanes"): the lesson runner emits these five, the cue planner owns how each sounds. Each
+    // variant takes every field either lane gives it (the runner sets them all), so code of both lanes compiles.
     /**
-     * v0.13 (M41-5, emitted by the lesson runner, sounded by the cue planner): play `index` of `of` of a sound a
-     * step names, `durS` long; the runner sends one per play, about a second apart, with no speech over them.
-     * `dir` is listener frame, or null for the cue's own default.
+     * M41-5: one play of a sound a step names, the cue's own sound as the glossary plays it. The runner sends one
+     * per play (`index` of `of`), with no speech over them, the next one REPEAT_GAP_S (1 s) after this one's
+     * `durS` has run out; the planner sounds a continuous cue for `durS` (a one-off cue is its own notes, never
+     * longer than `durS`). `dir`: listener frame, or null or absent for the cue's own default.
      */
-    | { readonly kind: 'repeat-cue'; readonly cue: CueId; readonly dir: Vec3 | null; readonly index: number; readonly of: number; readonly durS: number }
-    /** v0.13 (M41-11): a counted attempt, said with a short praise line */
+    | { readonly kind: 'repeat-cue'; readonly cue: CueId; readonly dir?: Vec3 | null; readonly index?: number; readonly of?: number; readonly durS?: number }
+    /** M41-11: a counted attempt, said with a short praise line */
     | { readonly kind: 'praise' }
-    /** v0.13 (M41-11): stage `index` of a long course passed (a checkpoint that ends a stage), said "Stage k passed" */
-    | { readonly kind: 'stage'; readonly index: number }
-    /** v0.13 (M41-15): flying back along the track for more than a second; `dir`: the way the track goes, listener frame */
-    | { readonly kind: 'wrong-way'; readonly dir: Vec3 | null }
-    /** v0.13 (M41-15): a gate crossed from its back side (not counted); `dir`: where the gate is, listener frame */
-    | { readonly kind: 'wrong-side'; readonly dir: Vec3 | null };
+    /** M41-11: stage `stage` (1, 2, ...) of a long course passed (a checkpoint that ends a stage), said "Stage k passed" */
+    | { readonly kind: 'stage'; readonly stage?: number }
+    /** M41-15: flying back for more than a second; `dir`: the way forward (the track's, or toward the gate that counts next), listener frame */
+    | { readonly kind: 'wrong-way'; readonly dir?: Vec3 | null }
+    /** M41-15: a gate crossed from its back side (not counted); `dir`: where the gate is, listener frame */
+    | { readonly kind: 'wrong-side'; readonly dir?: Vec3 | null };
 
 /** A cue sounding now: what the recording stores and the captions may show. */
 export interface ActiveCue {

@@ -950,7 +950,7 @@ class Runner implements LessonSession {
 
     /** A checkpoint that ends a stage: the stage cue and "Stage k passed", said over the flight (it does not wait for other lines). */
     private stagePassed(stage: number): void {
-        this.actions.push({ kind: 'cue', event: { kind: 'stage', index: stage } });
+        this.actions.push({ kind: 'cue', event: { kind: 'stage', stage } });
         this.actions.push({ kind: 'say', line: { key: 'fly.stage', params: { n: stage } }, interrupt: false });
     }
 

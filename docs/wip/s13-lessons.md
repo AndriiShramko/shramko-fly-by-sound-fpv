@@ -19,7 +19,7 @@ from `main` 7d4b4b9. No push. Every step one commit with this Status in it.
 Review fixes (`docs/wip/s13-lessons-review.md`, one commit per fix or small group):
 
 - [x] R1 wrong way in a course: judged against the gate that counts next, not the track
-- [ ] R2 shared cue events: payloads that take lane s13-sound's, the play length checked against the planner
+- [x] R2 shared cue events: payloads that take lane s13-sound's, the play length checked against the planner
 - [ ] R3 G's way back: 'go next' is the host's advance(), a lesson opened by G is not marked skipped
 - [ ] R4 the simulator's tests the gitlink move breaks, listed
 - [ ] R5 the corridor ends at its end: a goal 'track-end'
@@ -74,8 +74,9 @@ From `@shramko/sonic-fpv` (all in `src/lesson/*` unless said):
 - `LessonView`: lessonId, title, lessonIndex, lessonCount, path, step, steps, stepKind ('task' | 'fly' | 'intro' | 'sound'
   | 'scene' | 'trial' | 'round'), goal, goals, attempt, counted, required, failsInARow, offered, touches, maxTouches, phase,
   passed, skipped, listening, playing ({ cue, index, of } or null). `statusLine(view, title)` is the pure form.
-- Contract (`src/contract.ts`, additions only): `CueEvent` kinds `repeat-cue` { cue, dir, index, of, durS }, `praise`,
-  `stage` { index }, `wrong-way` { dir }, `wrong-side` { dir } (the host passes them to `engine.cue` as any cue action);
+- Contract (`src/contract.ts`, additions only): `CueEvent` kinds `repeat-cue` { cue, dir?, index?, of?, durS? }, `praise`,
+  `stage` { stage? }, `wrong-way` { dir? }, `wrong-side` { dir? } (the host passes them to `engine.cue` as any cue action;
+  every field either lane gives them, review R2);
   `LessonProgress.skipped?`; `IntroLine` (`intro` items may carry `cues`); `Checkpoint.stage?`; `FORMATS.lesson` is
   'shramko-sonic-lesson/2' (format 1 files are migrated on load); `PassRule` fields keep their names with format 2 meaning.
 - Events: the runner writes a lesson event `leave` when the pilot leaves for another lesson.
@@ -221,7 +222,7 @@ walls line) go through the same queue, so the fix (wait for the report) also wai
 - The runner now waits for the host's report: a spoken step is over when `spoken(t)` says the queue ran empty (a host
   that never reports is waited for at most twice the estimate and a second per line, scaled by `RunnerOptions.speechRate`).
   A sound waits for that silence, then plays 3 times, 1 s apart, and the step goes on 1 s after the last play
-  (`src/lesson/sounds.ts`: `REPEAT_PLAYS`, `REPEAT_GAP_S`, 2.5 s a play, 1.2 s for a one-off sound). A question's 20 s to
+  (`src/lesson/sounds.ts`: `REPEAT_PLAYS`, `REPEAT_GAP_S`, 2.5 s a play; a one-off sound its own length, review R2). A question's 20 s to
   answer run from the end of its lines.
 - Sounds a step names: intro lines name their sounds in a new field `cues` (lesson format 2; `IntroLine` in the contract)
   and each plays three times after its line (hover-height: the height tone, then the buzzing tone; walls-hall: wall,
@@ -323,6 +324,24 @@ walls line) go through the same queue, so the fix (wait for the report) also wai
   of hover-turn, move-speed, move-stop, rings-line and rings-course is silent between its lines and plays where no layer
   sounds (the planner hears no frame there; speech covers part of it in a real host).
 
+### Review R2: the shared cue events, one payload per kind
+
+- Contract: each of the five kinds takes every field either lane gives it, so the code of both compiles against one
+  variant: `repeat-cue { cue, dir?, index?, of?, durS? }`, `stage { stage? }` (the field named as lane s13-sound named
+  it; it was `index` here), `wrong-way { dir? }`, `wrong-side { dir? }`, `praise {}`. The runner sets them all.
+- The play length: the runner gives each play a slot (`durS`) and sends the next play `REPEAT_GAP_S` after it; the
+  planner sounds a continuous cue for `durS` (this lane's placeholder does; lane s13-sound's plays `REPEAT_CUE_S` = 0.9 s
+  whatever `durS` says). A one-off cue's slot is now its own length (`ONE_OFF_PLAY_S` per cue: touch 0.2 s, reset 0.4,
+  gate note 0.4, lap 1.1, checkpoint 0.5, fanfare 1.2), measured from the planner's notes in all three built-in themes;
+  one slot of 1.2 s for all left a ping 2.1 s of silence between plays.
+- Check (`test/repeat-plays.test.ts`): every `repeat-cue` the runner sends in every shipped lesson (the ears lessons'
+  first attempt, a flying lesson's task) is fed to the real `CuePlanner` at its time, in each built-in theme, and read
+  frame by frame (a continuous cue's preview, a one-off cue's notes): each play sounds from its first frame, a continuous
+  one in at least 90 % of its slot, none after its slot, and the next play of the same sound follows after at most 1.2 s
+  of silence (a one-off: 2 s). Control: the same events given to the planner as 0.9 s plays (lane s13-sound's planner as
+  it stands) fail it: 30 or more plays sound in 36 % of their slot, 2.6 s of silence between plays; the per-cue table's
+  predecessor (one 1.2 s slot) failed it with the ping. What it cannot show: how a play sounds at the ear.
+
 ## Needs from the simulator
 
 All in `C:/dev/gsfpv-v03/apps/fly/src/sonic/` (read only here; lane v13-host):
@@ -349,8 +368,9 @@ All in `C:/dev/gsfpv-v03/apps/fly/src/sonic/` (read only here; lane v13-host):
 Lane s13-sound (`src/cues/*`, `src/audio/*`):
 
 1. `repeat-cue` (contract `CueEvent`): sound play `index` of `of` of `cue` for `durS` seconds from `dir` (listener frame, or
-   the cue's default when null). My placeholder in `src/cues/planner.ts` plays it as the cue's preview with that length;
-   replace it with your design. The runner sends the next play 1 s after one ends and nothing over speech.
+   the cue's default when null or absent). My placeholder in `src/cues/planner.ts` plays it as the cue's preview with that
+   length; replace it with your design, keeping the length (review R2, below). The runner sends the next play 1 s after
+   one's `durS` ends and nothing over speech.
 2. `src/audio/engine.ts` 757 starts a preview at once (it plans the frame inside `cue()`); do the same for `repeat-cue`, or
    the first play starts with the next frame (up to a frame late).
 3. `praise` and `stage` (contract `CueEvent`): my placeholders play the checkpoint chime and the lap chime; design them
@@ -364,3 +384,21 @@ Lane s13-sound (`src/cues/*`, `src/audio/*`):
 6. Z while flying plays the task's named sounds (for example the height tone) while the live layers go on: a `repeat-cue`
    of `height.tone` replaces the live height plan for its length (the planner's preview rule). Decide whether the live
    layers duck under a repeat-cue in flight, or the preview layers sound beside them.
+
+## For the lead's merge
+
+1. Review R2, the five shared cue events (`src/contract.ts`, `src/cues/planner.ts`):
+   - Take this lane's five `CueEvent` variants: each is a superset of lane s13-sound's (`stage?`, `dir?` on the two
+     direction kinds, `repeat-cue` with `dir?`, `index?`, `of?`, `durS?`), so the planner of s13-sound and this runner
+     both compile against them. Take s13-sound's planner cases and drop this lane's placeholders.
+   - The play length: s13-sound's `repeat-cue` case must honour `durS`, one line:
+     `return this.previewCue(e.cue, e.dir ?? null, t, e.durS ?? REPEAT_CUE_S);`. Until then `test/repeat-plays.test.ts`
+     fails (its control is that planner: 0.9 s plays, 2.6 s of silence between them). If the sound lane keeps 0.9 s, set
+     `REPEAT_PLAY_S` in `src/lesson/sounds.ts` to 0.9 instead and the check passes again; this lane's view: 2.5 s keeps a
+     sound that changes as it plays (a wall coming closer, the height glide) long enough to hear the change.
+   - A one-off cue a lesson names plays in a slot of its own length (`ONE_OFF_PLAY_S`); s13-sound's new one-off cues
+     (`target.praise`, `target.stage`, `safety.wrong-way`, `safety.wrong-side`) are named by no lesson yet; a lesson that
+     names one needs its length there (the check says which).
+   - s13-sound's `test/replay-v012.test.ts` asserts that only lesson events differ on its v0.12 sessions; with this
+     runner goal, gate, reset and speech events differ too (review probe: rings-first 2 of 10 events re-derived,
+     walls-hall 5 of 14): relax it to "told as an older build" when the lesson version differs.
