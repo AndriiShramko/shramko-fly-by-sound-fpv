@@ -33,8 +33,7 @@
   "format": "shramko-sonic-lesson/2",
   "goals": [
     {
-      "kind": "fly-distance",
-      "metres": 33
+      "kind": "track-end"
     }
   ],
   "id": "tunnel-gaps",

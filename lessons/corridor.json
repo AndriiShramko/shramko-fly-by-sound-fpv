@@ -77,8 +77,7 @@
       "metres": 15
     },
     {
-      "kind": "fly-distance",
-      "metres": 120
+      "kind": "track-end"
     }
   ],
   "id": "corridor",

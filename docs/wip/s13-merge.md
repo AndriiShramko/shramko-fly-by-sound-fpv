@@ -90,7 +90,13 @@ Steps 7 to 11, lane s13-worlds:
   a), 16 tests of s13-lessons that fly v0.12's numbers (item c; its `test/progress.test.ts` pair was already taken from
   the world by s13-worlds' own edit, which git merged), s13-sound's two (item c) and `test/world-versions.test.ts`'s
   line for a v0.12 recording, written before item d's verdict (item c).
-- [ ] 8a. The corridor and the six tunnels end on `track-end`; `test/world-track-end.test.ts` runs its 7 cases
+- [x] 8a. The corridor and the six tunnels end on `track-end` (s13-lessons R5, s13-worlds M1 and M2): the six tunnels'
+  `goals` are `[{ "kind": "track-end" }]`, the corridor's `[{ "kind": "fly-distance", "metres": 15 }, { "kind":
+  "track-end" }]` (its straight first, so its two goal lines stay). `test/world-track-end.test.ts` runs its seven merged
+  cases, none skipped, and all pass (the truth bot and a pilot whose path is 10 % longer are counted only past the last
+  obstacle and corner, at the end of the track); with the goals as merged (fly-distance) the same seven failed in step
+  7's run ("expected [ 'fly-distance' ] to deeply equal [ 'track-end' ]"). `test/world-tunnels.test.ts`' truth bot in
+  tunnel-long now fails (FF: the attempt never ends), which is item b.
 - [ ] 8b. `passWorldPoints` takes a point as passed with a micrometre of tolerance
 - [ ] 8c. Stale tests take their positions from the worlds; s13-sound's two; the v0.12 replays with item d's verdict
 - [ ] 8d. The corridor's `attemptLimitS` for its 126 m track; every tunnel's limit at 1 m/s
