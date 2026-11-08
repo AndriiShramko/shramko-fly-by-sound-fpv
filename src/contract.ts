@@ -609,10 +609,12 @@ export interface SonicEngine {
     /** an AudioNode before the limiter for other sounds, as they are; null before start */
     readonly auxInput: object | null;
     /**
-     * v0.13 (lane s13-sound, M41-16): the AudioNode for the simulator's motor sound. It low-passes the motor,
-     * evens out its level and sets it about 10 dB under the cues, ducks it under speech and under an urgent
-     * hazard, and is silent while SonicPrefs.motorSound is off. Null before start; absent on an older engine
-     * (connect to auxInput then).
+     * v0.13 (lane s13-sound, M41-16): the AudioNode for the simulator's motor sound. It keeps the propellers'
+     * whine (1.1 to 2 kHz, over the cues' notes), evens out its level and sets it under the cues (every cue at
+     * least 6 dB over it in its own bands, measured for the default craft and the micro presets:
+     * evidence/listen/VL-2-motor.json), applies the pilot's motor level (SonicPrefs.motorGainDb), ducks it under
+     * speech and under an urgent hazard, and is silent while SonicPrefs.motorSound is off. Null before start;
+     * absent on an older engine (connect to auxInput then).
      */
     readonly motorInput?: object | null;
 }

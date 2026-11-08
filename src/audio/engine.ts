@@ -81,10 +81,11 @@ const BUTTERWORTH_4_Q = [0.5411961, 1.3065630] as const;
 /** The leveller: threshold, knee and ratio of the motor's compressor (its make-up gain is taken back out). */
 export const MOTOR_LEVELLER = { thresholdDb: -50, kneeDb: 6, ratio: 4, attackS: 0.03, releaseS: 0.3 } as const;
 /**
- * Gain after the leveller, dB. Calibrated by the virtual listener's rig (pnpm listen, evidence/listen/VL-2-motor.json):
- * the simulator's motor at its default volume (15 %) sits about 14.5 LU under the cues of a ring flight, 2 dB under
- * the most that keeps every cue at least 6 dB over the motor in its own third-octave bands (16 dB gave the shape
- * trace 5.8 dB at 630 Hz, where it binds first).
+ * Gain after the leveller, dB. Calibrated by the virtual listener's rig (pnpm listen, evidence/listen/VL-2-motor.json,
+ * the numbers there) with the motors of the simulator's default craft, the micro presets and a 5-inch quad at the
+ * slider's default 15 %: the motor sits about 11 LU under the cues of a ring flight (the plan: about 10) and every
+ * cue stays more than 10 dB over it in its own third-octave bands (the rule: 6). With the first band (400 Hz to
+ * 1.5 kHz, review M3) the same level left the shape trace 3.2 dB under the Air65's rotor note.
  */
 export const MOTOR_LEVEL_DB = 14;
 /** The engine's own wake-up, ms: keeps rhythms placed between frames. */
