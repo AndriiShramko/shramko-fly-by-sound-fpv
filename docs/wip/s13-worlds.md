@@ -351,12 +351,9 @@ lesson with a goal other than hold-height, approach-stop or around): the owner's
 Lane s13-lessons (owner of the strings, goals and the truth bot):
 
 1. walls-hall's title and first line say "The big hall" and "You are in a big, empty hall"; it is now the smallest room
-   (10 x 12 x 3.2 m). Proposed: en "A small room" / "You are in a small, empty room. The walls, the floor and the
-   ceiling make knocks, thuds and puffs when you come near."; ru "Маленькая комната" / "Ты в маленькой пустой комнате.
-   Стены, пол и потолок дают стуки, глухие удары и дуновения, когда ты приближаешься."; pl "Mały pokój" / "Jesteś w
-   małym, pustym pokoju. Ściany, podłoga i sufit wydają stuknięcia, łoskoty i powiewy, gdy się zbliżasz."; es "Una sala
-   pequeña" / "Estás en una sala pequeña y vacía. Las paredes, el suelo y el techo hacen golpes, golpes graves y soplos
-   cuando te acercas."
+   (10 x 12 x 3.2 m). Proposed English: "A small room" / "You are in a small, empty room. The walls, the floor and the
+   ceiling make knocks, thuds and puffs when you come near."; the Spanish, Polish and Russian lines are in this lane's
+   report to the lead (this repository keeps every language but English in `locales/`).
 2. walls-hall's goal `approach-stop` `stopWithinM: 3` is now 60 % of the room's half width (5 m): two metres of
    flight toward a side wall and a stop pass it. 1.5 m keeps the v0.12 task ("fly to the wall, stop before it").
 3. The truth bot's pass-gates flight goes 4 m before and 4 m past every gate (`test/helpers/truth.ts`); with gates 5 to
