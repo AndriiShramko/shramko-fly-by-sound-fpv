@@ -82,7 +82,10 @@ and below change with it. In the same lane: "wrong way" between gates, which the
   (`HEARD`). Evidence `evidence/listen/VL-4-words.json`; `test/words.test.ts` (the words, the errors, the records, the
   evidence scored again). Controls: a Spanish line in Cyrillic fails the run (heard as nothing), restored; the
   Russian bound at 0.15 fails the evidence tests, restored
-- [ ] E2-3 (the next agent's)
+- [x] E2-3 The simulator's Fly by Sound lines, read only (section "Simulator lines"): its four Fly by Sound files at
+  v13-host e7612d3, 249 lines a language with K's help, the same round trip and bound. Heard with no error: 230, 232,
+  230 and 203 of 249 (en, es, pl, ru); over the bound 4, 4, 9 and 21, each listed with its transcript; the name "Fly
+  by Sound" in Russian and Polish and the key lines are the simulator's main items
 - [ ] E2-4 (the next agent's)
 
 ## E1-1 Audit: the cues of up and down in v0.13 (code as of 16c01a1)
@@ -338,6 +341,100 @@ The rest is Whisper's writing, not the voice: American spellings, digits for num
 accent. A limit: the check hears what a voice cannot say or a listener may mishear, not spelling. A misspelt word that
 the voice reads as written comes back as written ("las tecals", tried on purpose, passed).
 
+## Simulator lines
+
+The same round trip (`node tools/run-tool.mjs listen-words --sim <the simulator's packages/i18n/locales>`, the same
+voices, Whisper and bound; no records: the simulator owns these texts) on its Fly by Sound files, read only: ShramkoGSFPV
+v13-host at e7612d3 (2026-11-08 20:46, "stage B final"), `fly/sonic` (72 keys), `fly/sonicentry` (2), `fly/sonickeys`
+(10), `fly/sonicrec` (168). Of the 252 keys a language, 3 are not lines (the recogniser's language tag and the two
+lists of phrases it listens for): 249 lines a language, 996 in all. A line with parameters is said with the simulator's
+own words where it has them (its key names and "Control and C", a lesson's title, its problem and reason lines) or
+small numbers; K's help lines of the simulator (`sonic.say.helpShare`, `helpPrevious`, `helpRepeat`, `helpCut`) with
+its keys L, B and Z, and the line at every lesson's start (`sonic.say.lessonKeys`) with Escape, Z and N.
+
+| | English, David | Spanish, Helena | Polish, Paulina | Russian, Irina |
+|---|---|---|---|---|
+| lines | 249 | 249 | 249 | 249 |
+| heard with no error | 230 | 232 | 230 | 203 |
+| mean rate | 0.010 | 0.015 | 0.023 | 0.063 |
+| over the bound 0.2 | 4 | 4 | 9 | 21 |
+
+Every line over the bound, with what Whisper heard:
+
+English, David
+
+| Key | Line | Heard | Rate |
+|---|---|---|---|
+| `sonic.copyKeys` | Control and C | Control-N-C. | 0.33 |
+| `sonic.copyKeysMac` | Command and C | Command-N-C | 0.33 |
+| `sonicrec.channel.status.retrying` | will try again | We'll try again. | 0.33 |
+| `sonicrec.state.savedDisk` | Saved to disk. | Save to Disk | 0.33 |
+
+Spanish, Helena
+
+| Key | Line | Heard | Rate |
+|---|---|---|---|
+| `sonic.copyKeysMac` | Comando y C | Comando IC. | 0.67 |
+| `sonic.link.titleStart` | Enlace a Fly by Sound | Enlace a FlybySound. | 0.60 |
+| `sonicrec.channel.telegram` | Telegram | TELAGRAM | 1.00 |
+| `sonicrec.send.notice.cancelled` | No se envió. La grabación sigue en este dispositivo. | Nos envió. La grabación sigue en este dispositivo. | 0.22 |
+
+Polish, Paulina
+
+| Key | Line | Heard | Rate |
+|---|---|---|---|
+| `sonic.captions.label` | Napisy Fly by Sound | Napisy Flajby Sound | 0.50 |
+| `sonic.copyKeys` | Control i C | Kontroli C. | 0.67 |
+| `sonic.footer.about` | O Fly by Sound i jego kodzie źródłowym | Offline Sound i jego kodzie źródłowym. | 0.38 |
+| `sonic.footer.leave` | Wyjdź z Fly by Sound i otwórz symulator | Wyjdź z Flajby Sound i otwórz symulator. | 0.25 |
+| `sonic.link.titleStart` | Link do Fly by Sound | Link do Flajby Sound. | 0.40 |
+| `sonic.say.menuResume` | Wznów | Wznow. | 1.00 |
+| `sonicrec.channel.status.retrying` | spróbuje ponownie | Spróbuję ponownie. | 0.50 |
+| `sonicrec.key.Tab` | Tab | Tabulator | 1.00 |
+| `sonicrec.status.starting` | Uruchamiam. Jeśli przeglądarka zapyta o mikrofon, wybierz Zezwól. | Uruchamiam. Jeśli przeglądarka zapyta o mikrofon, wybierz ZZW-L. | 0.25 |
+
+Russian, Irina
+
+| Key | Line | Heard | Rate |
+|---|---|---|---|
+| `keys.sonic.glossary` | Fly by Sound: открыть словарь звуков | FLUI BUI SOUND Открыть словарь звуков | 0.33 |
+| `keys.sonic.menu` | Fly by Sound: меню урока (Esc), меню паузы (P) | FLY BUY SOUND Меню урока Escape Меню паузы P | 0.22 |
+| `keys.sonic.previous` | Fly by Sound: шаг назад | F-L-U-I-B-U-I саунд, шаг назад | 1.60 |
+| `keys.sonic.status` | Fly by Sound: услышать состояние урока и записи | FLUI BUI SOUND Услышать состояние урока и записи | 0.25 |
+| `sonic.copyKeys` | Control и C | Ctrl-E-C | 0.67 |
+| `sonic.copyKeysMac` | Command и C | Кэйры Мэн Ти Си | 1.33 |
+| `sonic.footer.about` | О Fly by Sound и его исходном коде | AFL-UI, BUISound и его исходном коде | 0.50 |
+| `sonic.footer.leave` | Выйти из Fly by Sound и открыть симулятор | Выйти из FLYBUY SOUND и открыть симулятор | 0.25 |
+| `sonic.link.titleStart` | Ссылка на Fly by Sound | Ссылка на флюайбьюай саунд | 0.60 |
+| `sonic.menu.page` | Fly by Sound: слепым и слабовидящим | FLY BUY SOUND Слепым и слабый дящим | 0.50 |
+| `sonic.progress.counted` | Засчитано 2 из 5 | За счета на 2 из 5 | 0.25 |
+| `sonicrec.action.send` | Отправить автору | Отправите автору. | 0.50 |
+| `sonicrec.blocked.not-a-package` | сервер говорит, что это не запись Fly by Sound. | Сервер говорит, что это не запись FLUI-BUI Sound | 0.22 |
+| `sonicrec.channel.name` | Telegram: отправлено | Телеграм, отправлено | 0.50 |
+| `sonicrec.channel.telegram` | Telegram | Телеграм | 1.00 |
+| `sonicrec.headphones.wired` | Проводные | Приводные | 1.00 |
+| `sonicrec.key.Tab` | Таб | ТАП | 1.00 |
+| `sonicrec.survey.again` | Повторить вопрос | Повторите вопрос. | 0.50 |
+| `sonicrec.title` | Fly by Sound: запись | FLYBUY SOUND Запись | 0.50 |
+| `sonicrec.transfer.delivered` | Доставлено. Запись у автора: Telegram: отправлено. | Доставлено. Запись у автора, телеграм, отправлена. | 0.33 |
+| `sonicrec.transfer.stored` | Сервер её получил. Доставка автору: Telegram: отправлено. | Сервер её получил Доставка автору, телеграм, отправлена | 0.29 |
+
+What stands out for the simulator's owner:
+
+- The name. Irina spells or mangles "Fly by Sound" in every Russian line that says it (10 of the 21 over the bound);
+  Paulina says "Flajby", and "O Fly by Sound" was heard as "Offline Sound". The package's own Russian lines have the
+  same habit, recorded (`app.name`, the menu's welcome).
+- K's help and the other lines that name a key lose the key's name as the package's did, under the bound only because
+  the lines are long: "pulsa T otra vez" heard as "púlsate otra vez" (`sonicrec.status.asking`), "naciśnij T jeszcze
+  raz" as "naciśnij tej jeszcze raz", "Нажми B" as "Нажми бы" (`sonic.say.helpPrevious`), "Нажмите U ещё раз" as
+  "Нажмите её ещё раз" (`sonicrec.send.notice.asked`). The words "the key" before the key's name, as the package now
+  says them, would do the same there.
+- Russian speaks to the pilot in two registers in one help: the package's K lines say "Нажми" (informal), the
+  simulator's `helpShare`, `sonicrec.survey.listening` and `sonicrec.send.notice.asked` say "Нажмите" (formal), and
+  `helpPrevious` says "Нажми".
+- A key's name alone ("Tab" in Polish and Russian, "Control and C") and a word alone ("Wznów", "Проводные") are
+  heard worst, as in the package: nothing around them tells them.
+
 ## Needs from the simulator
 
 - The panel (M41-25, wave 2 W14): `engine.plan.freeWay` has two new fields, `dir` (where the way's middle is, listener
@@ -354,3 +451,12 @@ the voice reads as written comes back as written ("las tecals", tried on purpose
   walls-hall), and a recording made at 16c01a1 in those two lessons reads "recorded with an older build" on the replay
   page (W10). The engine makes one more HRTF panner (33) and the free way two more rays a frame while the chime sounds:
   worth noting in the cost bench run of W16, nothing to change.
+- E2, K's help and the lines that name a key: in Spanish, Polish and Russian the package's 17 such lines now say "the
+  key" before its name ("Pulsa la tecla T", "Naciśnij klawisz T", "Нажми клавишу T"). The simulator's own lines that
+  name a key (`sonic.say.helpShare`, `helpPrevious`, `helpRepeat`, `sonicrec.status.asking`,
+  `sonicrec.send.notice.asked`, `sonicrec.survey.listening`) lose the key's name the same way said by the local voices
+  (section "Simulator lines") and would take the same words; the Russian ones would take one register with the package's
+  ("Нажми"). No simulator test holds the changed texts (searched v13-host: `apps/fly`, `tools/bench`).
+- E2, the simulator's lines over the bound (section "Simulator lines"), above all "Fly by Sound" said by the Russian and
+  Polish voices; `node tools/run-tool.mjs listen-words --sim <its packages/i18n/locales>` hears them again after a change
+  (a report, not evidence: the texts are the simulator's).
