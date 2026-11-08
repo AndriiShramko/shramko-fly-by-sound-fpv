@@ -138,6 +138,14 @@ Steps 7 to 11, lane s13-worlds:
   - `test/world-versions.test.ts` (s13-worlds, written before item d): the v0.12 walls-hall recording replayed with the
     shipped lesson is verdict 'older-build', "recorded with an older build (lesson walls-hall is version 2 here, ...",
     and names the walls it was flown in.
+  - Then every test flight was checked for walls (a probe, not committed: the scripted pilot, the recording host and the
+    runner test's pilot logged each sample whose centre lay inside a solid of the lesson's world, over the whole suite):
+    three tests still flew through walls, all passing, all s13-lessons' review R1 in `test/direction.test.ts` (rings-line
+    222 samples, rings-small 299, the course control 52: v0.12's 6 m beside a ring and 12 m back, in rooms 9 and 10 m
+    wide). They now pass ring 2 beside it by its frame and 2.5 m on the side with more room, 3 m past it (short of ring
+    3), fly back to its front short of ring 1, and the control flies back to 0.6 m before the room's back wall (further
+    than `LINE_UP_M` from ring 2 for about 1.5 s). The probe then logs no sample in a wall. Broken on purpose once (the
+    wrong way judged against the track in a course too, R1 undone), the three R1 cases fail; restored, 10 of 10.
 - [ ] 8d. The corridor's `attemptLimitS` for its 126 m track; every tunnel's limit at 1 m/s
 - [ ] 8e. The open-way chime and the checkpoint chime with different words in the glossary, four languages
 - [ ] 8f. `ears-glossary` names s13-sound's six new cues

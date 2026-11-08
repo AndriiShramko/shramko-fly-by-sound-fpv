@@ -4,7 +4,7 @@
 // flying back. Turn around.", at most once every 5 s; a gate crossed from its back side is told and not counted.
 import { describe, expect, it } from 'vitest';
 import type { CueEvent, SonicObject, SonicWorld, Vec3 } from '../src/contract';
-import { getLesson, lessonTrack, worldCheckpoints, WRONG_WAY_EVERY_S, type RunnerAction } from '../src/lesson';
+import { getLesson, lessonTrack, toLocal, worldCheckpoints, WRONG_WAY_EVERY_S, type RunnerAction } from '../src/lesson';
 import { quatRotate } from '../src/util/vec';
 import { createAnalyticWorld } from '../src/world';
 import { ScriptedPilot } from './helpers/pilot';
@@ -104,22 +104,28 @@ const atGate = (g: Pick<SonicObject, 'pos' | 'quat'>, l: Vec3): Vec3 => {
 };
 
 describe('flying back to a gate that was missed (review R1)', () => {
-    // a pilot passes ring 2 6 m beside it (further than a near miss, so the attempt goes on and ring 2 stays the
-    // target), hears its hum behind him, turns round and flies 11 m back at 3 m/s to its front, then through it
+    // a pilot passes ring 2 beside it (further than a near miss: its frame and 2.5 m, inside the room), so the attempt
+    // goes on and ring 2 stays the target, flies 3 m past it (short of ring 3), hears its hum behind him, turns round and
+    // flies back at 3 m/s to its front (7 to 8 m, over 2 s), then through it
     it.each(['rings-line', 'rings-small', 'rings-course'])('%s: is never told the wrong way, and ring 2 counts from the front', (id) => {
         const p = new ScriptedPilot(getLesson(id));
         p.begin();
         p.until(() => p.run.phase === 'flying', 60);
         const [r1, r2] = p.objects().filter((o) => o.order !== null) as [SonicObject, SonicObject];
-        p.flyTo(atGate(r1, [0, 0, 4]));
-        p.flyTo(atGate(r1, [0, 0, -4])); // ring 1, forward
-        p.flyTo(atGate(r2, [6, 0, 4]));
-        p.flyTo(atGate(r2, [6, 0, -6])); // 6 m beside ring 2, past it
+        const beside = (r2.shape as { diameter: number }).diameter / 2 + 2 * (r2.shape as { tube: number }).tube + 2.5;
+        // the side of ring 2 with more room, and its front short of ring 1 (the rings are 5 to 7 m apart)
+        const room = (sign: number): number => (p.analytic as NonNullable<typeof p.analytic>).sdf(...atGate(r2, [sign * beside, 0, 0]));
+        const side = room(1) >= room(-1) ? 1 : -1;
+        const front = Math.min(5, toLocal(r2, r1.pos)[2] - 1.5);
+        p.flyTo(atGate(r1, [0, 0, 3]));
+        p.flyTo(atGate(r1, [0, 0, -2])); // ring 1, forward
+        p.flyTo(atGate(r2, [side * beside, 0, 3]));
+        p.flyTo(atGate(r2, [side * beside, 0, -3])); // beside ring 2, past it
         expect(p.of('gate').map((g) => g.gateId)).toEqual([r1.id]);
         expect(p.run.phase).toBe('flying');
-        p.flyTo(atGate(r2, [0, 0, 5]), 3); // back to its front
+        p.flyTo(atGate(r2, [0, 0, front]), 3); // back to its front
         p.face(r2.pos);
-        p.flyTo(atGate(r2, [0, 0, -4])); // and through it
+        p.flyTo(atGate(r2, [0, 0, -2])); // and through it
         expect(p.of('gate').map((g) => g.gateId)).toEqual([r1.id, r2.id]);
         expect(lines(p, 'fly.wrong-way')).toBe(0);
         expect(cueOf(p, 'wrong-way')).toHaveLength(0);
@@ -141,9 +147,12 @@ describe('flying back to a gate that was missed (review R1)', () => {
         p.until(() => p.run.phase === 'flying', 60);
         const [r1] = p.objects().filter((o) => o.order !== null) as [SonicObject];
         p.flyTo(atGate(r1, [0, 0, 4]));
-        p.flyTo(atGate(r1, [0, 0, -2])); // ring 1, forward; ring 2 counts next, 12 m ahead
+        p.flyTo(atGate(r1, [0, 0, -2])); // ring 1, forward; ring 2 counts next, 4 m ahead
         p.turnTo(180);
-        p.flyTo(atGate(r1, [0, 0, 10]), 3, false); // 12 m back, away from ring 2
+        // back to 0.6 m before the room's back wall (7 m in front of ring 1), away from ring 2: further than LINE_UP_M
+        // from it for the last 4.4 m, about 1.5 s at 3 m/s
+        const wall = (p.world as SonicWorld).castRay(r1.pos, [0, 0, 1], 50)!.distance;
+        p.flyTo(atGate(r1, [0, 0, wall - 0.6]), 3, false);
         expect(lines(p, 'fly.wrong-way')).toBe(1);
         // the cue says where ring 2 is: behind a pilot who faces back
         const dir = (cueOf(p, 'wrong-way')[0] as Extract<CueEvent, { kind: 'wrong-way' }>).dir as Vec3;
