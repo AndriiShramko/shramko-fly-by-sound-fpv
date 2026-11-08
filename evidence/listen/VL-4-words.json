@@ -1,8 +1,8 @@
 {
  "format": "shramko-listen-evidence/1",
- "key": "8d70a40dfea15a157f32d3ba0cc8f37937f6b102e8742258bdc512cff4e7bf0e",
+ "key": "00c1d278316c508c422139692b6ccbe1301ae72ab04522bfd0cda9a25dd4919c",
  "inputs": {
-  "hash": "8d70a40dfea15a157f32d3ba0cc8f37937f6b102e8742258bdc512cff4e7bf0e",
+  "hash": "00c1d278316c508c422139692b6ccbe1301ae72ab04522bfd0cda9a25dd4919c",
   "files": 14,
   "version": 1,
   "voices": {
@@ -32,7 +32,7 @@
    "numpy": "2.4.6"
   }
  },
- "date": "2026-11-08T19:53:16.584Z",
+ "date": "2026-11-08T19:54:55.093Z",
  "id": "VL-4-words",
  "claim": "every line of the four locales, said by the local Windows voice of its language and transcribed by Whisper large-v3, has a word error rate (case and punctuation normalised) at most its language's bound; the Russian lines said by the English voice fail it",
  "run": "pnpm listen:words",
