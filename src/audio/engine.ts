@@ -66,14 +66,14 @@ const REVERB_RETURN = 1.1;
 const HARMONY_DELAY_S = 0.07;
 const HARMONY_GAIN = 0.8;
 // The motor bus (M41-16; review M3): the simulator's motor sound under the cues. Its band is the propellers' whine
-// (the blade-pass harmonics of a micro drone, 1.3 to 2.6 kHz at the micro presets' rotor speeds) and leaves the
-// cues' notes (their own bands end at about 630 Hz) and the hiss over 2.5 kHz, where their direction lives; a
-// micro rotor's own turning note (450 to 900 Hz) sits right on the cues and goes. The leveller holds a motor played
+// (the blade-pass harmonics of a micro drone, 1.3 to 2.6 kHz at the micro presets' rotor speeds): it leaves the cues'
+// notes (their own bands end at about 630 Hz; a micro rotor's own turning note, 450 to 900 Hz, sits right on them
+// and goes) and keeps 12 dB or more off the cues' highs over 4 kHz, where the ear's pinna cues of direction live. The leveller holds a motor played
 // at any volume of the simulator's slider within a few dB, so one level sits it under the cues; the pilot's own
 // motor level (SonicPrefs.motorGainDb) comes after it; it ducks under speech by the theme's duckDb and under an
 // urgent hazard as the other layers do.
 /** Low-pass cutoff of the motor, Hz (second order). */
-export const MOTOR_LOWPASS_HZ = 2500;
+export const MOTOR_LOWPASS_HZ = 2000;
 /** High-pass cutoff of the motor, Hz (fourth order, two second-order sections): a micro rotor's turning note goes, its whine stays. */
 export const MOTOR_HIGHPASS_HZ = 1100;
 /** The two sections of a fourth-order Butterworth high-pass. */
