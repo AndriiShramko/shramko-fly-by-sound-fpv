@@ -2,20 +2,28 @@
 // wrong. Between attempts the runner keeps giving the planner the next attempt's first target, so the
 // target layer goes on sounding while the attempt's lines are said and the pause runs. What else must keep
 // sounding (a quiet bed, the motor) is the planner's and the host's: docs/wip/s13-lessons.md, needs from
-// other lanes. Measured with the cue planner and the lesson's own layers; how it feels is for people.
+// other lanes. Since lane s13-sound (M41-10, the planner's part) every flying lesson has the height tone and
+// the room bed on, so with the lessons' own layers the pause sounds whatever the runner does: the runner's
+// part is measured with v0.12's layers too (the lesson's layers without 'height' and 'room'), and the control
+// uses only those. Measured with the cue planner; how it feels is for people.
 import { describe, expect, it } from 'vitest';
-import type { SonicObject } from '../src/contract';
+import type { LessonDef, LessonLayers, SonicObject } from '../src/contract';
 import { CuePlanner } from '../src/cues';
 import { getLesson, SHIPPED_LESSON_IDS } from '../src/lesson';
 import { getBuiltinTheme } from '../src/theme';
 import { ScriptedPilot } from './helpers/pilot';
 import { flyTruth, truthAnswerer } from './helpers/truth';
 
-/** Flies a lesson with the truth bot and counts, frame by frame between attempts, what the planner sounds. */
-function betweenAttempts(id: string, targetOf: (p: ScriptedPilot) => SonicObject | null): { frames: number; silent: number; withTarget: number } {
+/** v0.12's layers of a lesson: its layers without the height tone and the bed, which lane s13-sound added to every flying lesson. */
+function v012Layers(lesson: LessonDef): LessonLayers {
+    return { ...lesson.layers, on: lesson.layers.on.filter((id) => id !== 'height' && id !== 'room') };
+}
+
+/** Flies a lesson with the truth bot and counts, frame by frame between attempts, what the planner sounds with the given layers (default: the lesson's own). */
+function betweenAttempts(id: string, targetOf: (p: ScriptedPilot) => SonicObject | null, layersOf: (lesson: LessonDef) => LessonLayers = (l) => l.layers): { frames: number; silent: number; withTarget: number } {
     const lesson = getLesson(id);
     const p = new ScriptedPilot(lesson);
-    const planner = new CuePlanner({ theme: getBuiltinTheme('soft'), layers: lesson.layers });
+    const planner = new CuePlanner({ theme: getBuiltinTheme('soft'), layers: layersOf(lesson) });
     const out = { frames: 0, silent: 0, withTarget: 0 };
     let seen = 0;
     const tick = p.tick.bind(p);
@@ -53,19 +61,21 @@ const WITH_TARGET = SHIPPED_LESSON_IDS.filter((id) => {
 });
 
 describe('between attempts the next attempt\'s target keeps sounding (M41-10, the runner\'s part)', () => {
-    it('in every flying lesson whose attempts begin with a target: a target in every frame of the pause, and never a silent frame', () => {
+    it('in every flying lesson whose attempts begin with a target: a target in every frame of the pause, and never a silent frame, with the lesson\'s own layers and with v0.12\'s', () => {
         expect(WITH_TARGET.length).toBeGreaterThanOrEqual(8);
         for (const id of WITH_TARGET) {
-            const r = betweenAttempts(id, (p) => p.run.target());
-            expect(r.frames, id).toBeGreaterThan(0);
-            expect(r.withTarget, id).toBe(r.frames);
-            expect(r.silent, id).toBe(0);
+            for (const [layers, layersOf] of [['own', undefined], ['v0.12', v012Layers]] as const) {
+                const r = betweenAttempts(id, (p) => p.run.target(), layersOf);
+                expect(r.frames, `${id}, ${layers} layers`).toBeGreaterThan(0);
+                expect(r.withTarget, `${id}, ${layers} layers`).toBe(r.frames);
+                expect(r.silent, `${id}, ${layers} layers`).toBe(0);
+            }
         }
     }, 300000);
 
-    it('control: without the target between attempts (as v0.12 had it) the pause of hover-turn and of move-stop is silent but for the praise chime', () => {
+    it('control: with v0.12\'s layers and without the target between attempts (as v0.12 had it) the pause of hover-turn and of move-stop is silent but for the praise chime', () => {
         for (const id of ['hover-turn', 'move-stop']) {
-            const r = betweenAttempts(id, (p) => (p.run.phase === 'flying' ? p.run.target() : null));
+            const r = betweenAttempts(id, (p) => (p.run.phase === 'flying' ? p.run.target() : null), v012Layers);
             expect(r.frames, id).toBeGreaterThan(0);
             expect(r.silent / r.frames, id).toBeGreaterThan(0.6);
         }

@@ -16,7 +16,11 @@ and the corridor's goal (s13-lessons' "For the lead's merge" item 2, review R5) 
 - [x] 1. Worktree and this doc with the checklist
 - [x] 2. Merge s13-lessons (14e00f0): clean, main had not moved (74 files)
 - [x] 3. Merge s13-sound (3c73658), every conflict resolved and listed ("Conflicts and their resolution" below)
-- [ ] 4a. The silence control of `test/silence.test.ts` with v0.12's layers (it must fail with them, the real check pass)
+- [x] 4a. The silence control of `test/silence.test.ts` with v0.12's layers (the lesson's layers without 'height' and
+  'room'): with them and no target between attempts the pause of hover-turn and of move-stop is silent in 104 of 150
+  frames (69 %, the control holds); with the lessons' own layers it is silent in 0 of 150 (the control as merged,
+  failing: broken on purpose once, as in the merge's first test run). The real check now runs with both: a target in
+  every pause frame and no silent frame in all 9 lessons, own layers and v0.12's.
 - [ ] 4b. `test/repeat-plays.test.ts` passes: the repeat-cue case honours `durS` (confirmed once with `durS` ignored)
 - [ ] 4c. `ONE_OFF_PLAY_S` gets the lengths of s13-sound's one-off cues
 - [ ] 4d. The replay's verdict "recorded with an older build" (not FAIL), its negative control, `test/replay-v012.test.ts`
