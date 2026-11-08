@@ -384,6 +384,7 @@
     "reason.stop-none": "You did not stop.",
     "reason.stop-far": "Stopped {metres, plural, one {# metre} other {# metres}} away. Stop within {limit, plural, one {# metre} other {# metres}}.",
     "reason.around": "Only {degrees} degrees of the full circle.",
+    "reason.around-none": "You did not fly around it.",
     "reason.distance": "{metres} of {total, plural, one {# metre} other {# metres}} flown.",
     "reason.gate-missed": "Gate {n} was missed.",
     "reason.gates": "Gates passed: {passed} of {total}.",

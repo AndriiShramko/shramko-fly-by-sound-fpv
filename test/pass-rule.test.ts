@@ -195,6 +195,11 @@ describe('format 2: r counted attempts in total pass a lesson (M41-8)', () => {
         }
         row.until(() => row.said().includes('fly.offer-next'), 30);
         expect(offerLines(row)).toEqual(['reason.touches-none']);
+        // walls-pillar: a pilot who never flies round the pillar hears that, not "only 0 degrees" (review R12)
+        const pillar = pilotFor('walls-pillar');
+        pillar.begin();
+        pillar.until(() => pillar.said().includes('fly.offer-next'), 3600);
+        expect(offerLines(pillar).at(-1)).toBe('reason.around-none');
     }, 300000);
 
     it('hover-turn: the pilot who mistakes behind for in front passes at the fifth attempt', () => {

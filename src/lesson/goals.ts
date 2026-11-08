@@ -302,7 +302,11 @@ export function createTracker(goal: Goal, ctx: TrackContext): GoalTracker {
                     return Math.abs(total) >= 2 * Math.PI ? 'met' : null;
                 },
                 target: () => find(ctx, goal.objectId),
-                reason: () => ({ key: 'reason.around', params: { degrees: Math.min(350, Math.round((Math.abs(total) * 18) / Math.PI) * 10) } }),
+                reason: () => {
+                    // in tens of degrees, never the full circle; none of it is said as such, not "only 0 degrees" (review R12)
+                    const degrees = Math.min(350, Math.round((Math.abs(total) * 18) / Math.PI) * 10);
+                    return degrees === 0 ? { key: 'reason.around-none' } : { key: 'reason.around', params: { degrees } };
+                },
                 score: () => null
             };
         }

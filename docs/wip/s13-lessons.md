@@ -29,7 +29,7 @@ Review fixes (`docs/wip/s13-lessons-review.md`, one commit per fix or small grou
 - [x] R9 the corridor's retry line and where the next attempt starts
 - [x] R10 the schedule's repeat rule pinned to 3 plays
 - [x] R11 an intro cue from the side its line names
-- [ ] R12 wording of the new lines in ru, pl, en
+- [x] R12 wording of the new lines in ru, pl, en
 - [ ] R13 v0.12 recordings played back
 - [ ] R14 public docs
 - [ ] R15 test machinery marked internal
@@ -397,6 +397,21 @@ walls line) go through the same queue, so the fix (wait for the report) also wai
   hum three times from the left. Tests (`test/lessons.test.ts`): its task's plays come from [-1, 0, 0]; control: the
   same line with the plain id plays them from the cue's default (dir null, ahead); the loader refuses an unknown side,
   an unknown cue, an unknown key and a repeat.
+
+### Review R12: wording
+
+- ru: `praise.7` "Красиво!" (was "Чисто.", slang), `praise.8` "Прекрасно." (was "Точно.", agreement, not praise),
+  `fly.wrong-way` "Ты летишь обратно. Развернись." ("обратно": back the way you came; "назад" read as flying in
+  reverse), `fly.wrong-side` "Ворота пройдены не с той стороны. Вернись и войди в них спереди." ("войти в ворота" is
+  how a gate is said; "пролети их спереди" was awkward).
+- pl: `praise.7` "Pięknie!" (was "Czysto."), `fly.wrong-way` "Lecisz w złą stronę. Zawróć." ("do tyłu" read as in
+  reverse), `reason.stop-far` second sentence "Zatrzymaj się nie dalej niż N metrów." (was "Trzeba najwyżej N metrów").
+- es: `fly.wrong-way` "Vas en sentido contrario. Da la vuelta." ("hacia atrás" has the same reverse sense as the ru
+  and pl lines the review flagged).
+- en and all: a pilot who flew none of the circle round the pillar now hears `reason.around-none` ("You did not fly
+  around it.") instead of "Only 0 degrees of the full circle" (test: walls-pillar, an idle pilot, `test/pass-rule.test.ts`).
+- Written by this lane as a native speaker of Russian and Polish would say them; no person has read them aloud yet.
+  Locale lint and parity pass (four languages).
 
 ## Needs from the simulator
 

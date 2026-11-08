@@ -270,6 +270,7 @@ export const FREE_KEYS = [
     'reason.stop-none',
     'reason.stop-far',
     'reason.around',
+    'reason.around-none',
     'reason.distance',
     'reason.gate-missed',
     'reason.gates',
