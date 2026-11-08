@@ -149,6 +149,7 @@ describe('the report of a recorded flight: rings-course, a failed attempt then a
     it('holds the replay check of the recording', () => {
         expect('ok' in report.replayCheck && report.replayCheck.ok).toBe(true);
         expect('line' in report.replayCheck && report.replayCheck.line).toMatch(/^replay check PASS/);
+        expect('verdict' in report.replayCheck && report.replayCheck.verdict).toBe('pass');
         expect(buildReport(pkg, { replay: false }).replayCheck).toEqual({ skipped: 'turned off' });
     });
 
@@ -206,8 +207,11 @@ describe('the report of a package written by another tool (Python)', () => {
         expect(report.metrics.answers).toEqual({ given: 0, skipped: 1 });
         expect(report.survey?.answers).toHaveLength(2);
         expect(report.lesson?.title).toBe('Utrzymaj wysokość');
-        // the fixture's events were not made by this lesson runner: the check must say so
+        // the fixture's events were not made by this lesson runner: the check must say so (its manifest names lesson and
+        // theme version 1, older than this build's, so the verdict is "recorded with an older build", not verified here)
         expect('ok' in report.replayCheck && report.replayCheck.ok).toBe(false);
+        expect('verdict' in report.replayCheck && report.replayCheck.verdict).toBe('older-build');
+        expect('line' in report.replayCheck && report.replayCheck.line).toMatch(/^replay check: recorded with an older build \(lesson hover-height is version 2 here, the session was flown with 1;.*\), so this build cannot verify it: events 1 of 7 re-derived/);
         expect(report.timeline.find((e) => e.kind === 'speech')?.text).toBe('says: Zawiśnij na wysokości. Висите на высоте.');
     });
 

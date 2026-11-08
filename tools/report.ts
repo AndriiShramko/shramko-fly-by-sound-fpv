@@ -19,7 +19,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 import type { FlightFrame, SessionEvent, SonicObject, SonicWorld, Vec3 } from '../src/contract';
 import { DICTS, createTranslator } from '../src/i18n';
 import { courseGates } from '../src/lesson';
-import { checkSession, formatReplayCheck, rebuildSession, ReplayError, SPEECH_END_KEY, type ReplaySetup, type Tolerances } from '../src/replay';
+import { checkSession, formatReplayCheck, rebuildSession, ReplayError, replayVerdict, SPEECH_END_KEY, type ReplaySetup, type ReplayVerdict, type Tolerances } from '../src/replay';
 import { PackageError, readPackage, ZipError, type SessionPackage } from '../src/session';
 import { parseTrack, trackToObjects } from '../src/track';
 import { formatIssues, utf8Decode } from '../src/util';
@@ -166,7 +166,7 @@ export interface Report {
     readonly attempts: readonly AttemptReport[];
     readonly gates: readonly GateReport[];
     readonly survey: { readonly skipped: boolean; readonly answers: readonly { readonly item: string; readonly value: number | null; readonly via: string; readonly tMs: number }[] } | null;
-    readonly replayCheck: { readonly skipped: string } | { readonly ok: boolean; readonly line: string; readonly exact: boolean; readonly differences: readonly string[] };
+    readonly replayCheck: { readonly skipped: string } | { readonly ok: boolean; readonly verdict: ReplayVerdict; readonly line: string; readonly exact: boolean; readonly differences: readonly string[] };
     readonly transcript: { readonly source: string; readonly segments: number; readonly offsetMs: number } | null;
     readonly warnings: readonly string[];
     readonly timeline: readonly TimelineEntry[];
@@ -378,14 +378,14 @@ export function buildReport(pkg: SessionPackage, options: ReportOptions = {}): R
         else {
             try {
                 const done = checkSession(pkg, { ...(options.world === undefined ? {} : { world: options.world }), ...(options.objects === undefined ? {} : { objects: options.objects }), ...(options.tolerances === undefined ? {} : { tolerances: options.tolerances }) });
-                replayCheck = { ok: done.check.ok, line: formatReplayCheck(done.check), exact: done.check.exact, differences: done.check.events.diffs.slice(0, 10).map((d) => d.detail) };
+                replayCheck = { ok: done.check.ok, verdict: replayVerdict(done.check), line: formatReplayCheck(done.check), exact: done.check.exact, differences: done.check.events.diffs.slice(0, 10).map((d) => d.detail) };
                 for (const n of done.check.notes) warnings.push(`replay: ${n.message}`);
             } catch (e) {
                 if (!(e instanceof ReplayError)) throw e;
                 // a scan session: the replay runs without the simulator's world
                 try {
                     const done = checkSession(pkg, { world: null, ...(options.objects === undefined ? {} : { objects: options.objects }), ...(options.tolerances === undefined ? {} : { tolerances: options.tolerances }) });
-                    replayCheck = { ok: done.check.ok, line: formatReplayCheck(done.check), exact: done.check.exact, differences: done.check.events.diffs.slice(0, 10).map((d) => d.detail) };
+                    replayCheck = { ok: done.check.ok, verdict: replayVerdict(done.check), line: formatReplayCheck(done.check), exact: done.check.exact, differences: done.check.events.diffs.slice(0, 10).map((d) => d.detail) };
                     for (const n of done.check.notes) warnings.push(`replay: ${n.message}`);
                 } catch (e2) {
                     if (!(e2 instanceof ReplayError)) throw e2;

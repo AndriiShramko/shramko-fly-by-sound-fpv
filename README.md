@@ -77,7 +77,7 @@ Sound never reads the renderer: it reads a `SonicWorld` (rays and a list of obje
 
 ## Sessions, replay and reports
 
-A recorded flight is **one `.zip`** (spec section 7): `manifest.json`, `flight.jsonl.gz` (30 Hz, one gzip member per chunk so that a closed tab loses at most a few seconds), `events.jsonl`, an optional `voice.webm`, `survey.json`. It is written without a server, read back by `src/session/`, and checked against the privacy rules (voice only with consent, a minor's package says whether a guardian confirmed). The replay core (`src/replay/`) runs the lesson runner and the cue planner on the recorded frames again and checks that they re-derive the recorded events and cues.
+A recorded flight is **one `.zip`** (spec section 7): `manifest.json`, `flight.jsonl.gz` (30 Hz, one gzip member per chunk so that a closed tab loses at most a few seconds), `events.jsonl`, an optional `voice.webm`, `survey.json`. It is written without a server, read back by `src/session/`, and checked against the privacy rules (voice only with consent, a minor's package says whether a guardian confirmed). The replay core (`src/replay/`) runs the lesson runner and the cue planner on the recorded frames again and checks that they re-derive the recorded events and cues. Its verdict is PASS, FAIL, or "recorded with an older build" when the recording does not re-derive and names a lesson or theme version older than this build's (this build cannot verify it; the line names the versions).
 
 ```
 pnpm report session.zip                       Markdown timeline and metrics

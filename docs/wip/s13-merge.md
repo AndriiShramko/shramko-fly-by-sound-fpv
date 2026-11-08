@@ -33,7 +33,21 @@ and the corridor's goal (s13-lessons' "For the lead's merge" item 2, review R5) 
   the whole table to the planner for every cue of `CUE_IDS`: a cue played as notes has a slot no shorter than its
   notes and its next play within 2 s, a continuous cue has none. Before the four entries it failed on exactly those
   four cues (24 cases: 3 themes, calm or not); with them it passes, and the full suite is 754 of 754.
-- [ ] 4d. The replay's verdict "recorded with an older build" (not FAIL), its negative control, `test/replay-v012.test.ts`
+- [x] 4d. The replay's verdict (`src/replay/compare.ts`, the package's place for the check's text: English lines for
+  logs and reports, as PASS and FAIL were): `ReplayVerdict` 'pass' | 'older-build' | 'fail', `ReplayCheck.verdict`
+  (optional in the type, always set by `compareReplay`, so the simulator's own `mergeChecks` still compiles) and
+  `replayVerdict(check)`. 'older-build' when the recording does not re-derive and a lesson or theme version in it is
+  lower than this build's, none higher (`ReplayNote.recorded` and `here` on the two version notes); the line is
+  "replay check: recorded with an older build (lesson rings-first is version 2 here, the session was flown with 1;
+  theme soft is version 2 here, the session was flown with 1), so this build cannot verify it: events 2 of 10 ...".
+  The report tool's `replayCheck` carries `verdict`; README and CHANGELOG say so. `test/replay-v012.test.ts` relaxed
+  to it (both v0.12 recordings: 'older-build', no FAIL; rings-first 2 of 10 events re-derived, walls-hall 5 of 14,
+  cues 0 % of their frames: goal, gate, reset and speech events differ besides the lesson's version). Negative
+  controls: the same recording claiming this build's versions, and the moved flight of `test/replay.test.ts` with
+  its own manifest, are FAIL; a newer lesson version, an older lesson with a newer theme, another world or an unknown
+  theme are FAIL too. Broken on purpose twice, then restored: every failure told as an older build fails 4 tests
+  (both controls of the v0.12 file, the moved flight, the verdict table); any version difference told as older fails
+  2. Full suite 756 of 756.
 - [ ] 4e. The lines of walls-hall and the corridor say what the knocks of v0.13 mean (four languages)
 - [ ] 4f. `docs/design/virtual-listener.md` section 14 without the build machine's folders
 - [ ] 5. Full checks on the final commit: typecheck, test, locale lint, layout check, proof:audio, listen

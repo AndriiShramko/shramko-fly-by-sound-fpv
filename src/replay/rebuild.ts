@@ -23,6 +23,9 @@ export interface ReplayNote {
     /** stable name of what differs */
     readonly code: 'lesson-version' | 'theme-version' | 'world-id' | 'no-world' | 'no-speech-end-markers' | 'no-lesson-events' | 'progress' | 'unknown-theme' | 'other-lesson-events';
     readonly message: string;
+    /** 'lesson-version' and 'theme-version' (v0.13): the version the session was flown with, and this build's */
+    readonly recorded?: number;
+    readonly here?: number;
 }
 
 export interface RebuildOptions {
@@ -72,7 +75,7 @@ export function rebuildSession(manifest: SessionManifest, options: RebuildOption
                 throw new ReplayError('unknown-lesson', `this build has no lesson '${id}'`);
             }
         }
-        if (lesson.version !== manifest.lesson.version) notes.push({ code: 'lesson-version', message: `lesson ${id} is version ${lesson.version} here, the session was flown with ${manifest.lesson.version}` });
+        if (lesson.version !== manifest.lesson.version) notes.push({ code: 'lesson-version', message: `lesson ${id} is version ${lesson.version} here, the session was flown with ${manifest.lesson.version}`, recorded: manifest.lesson.version, here: lesson.version });
     }
 
     let world: SonicWorld | null = null;
@@ -98,7 +101,7 @@ export function rebuildSession(manifest: SessionManifest, options: RebuildOption
 
     const theme = resolveTheme(manifest.theme.id, options.themes ?? {});
     if (theme.id !== manifest.theme.id) notes.push({ code: 'unknown-theme', message: `theme ${manifest.theme.id} is unknown here, ${theme.id} stands in` });
-    else if (theme.version !== manifest.theme.version) notes.push({ code: 'theme-version', message: `theme ${theme.id} is version ${theme.version} here, the session was flown with ${manifest.theme.version}` });
+    else if (theme.version !== manifest.theme.version) notes.push({ code: 'theme-version', message: `theme ${theme.id} is version ${theme.version} here, the session was flown with ${manifest.theme.version}`, recorded: manifest.theme.version, here: theme.version });
 
     return {
         manifest,

@@ -155,6 +155,7 @@ describe('the replay of a recorded flight: rings-course, a failed attempt then a
         expect(check.cues.share).toBeGreaterThanOrEqual(DEFAULT_TOLERANCES.minCueShare);
         expect(check.cues.classShare).toBeGreaterThanOrEqual(check.cues.share);
         expect(formatReplayCheck(check)).toMatch(/^replay check PASS: events \d+ of \d+ re-derived/);
+        expect(check.verdict).toBe('pass');
     });
 
     it('a derived list that is off fails the comparer, for each way of being off (control for the comparer itself)', () => {
@@ -206,6 +207,7 @@ describe('what the replay needs from the recording, and what it checks', () => {
         expect(check.ok).toBe(false);
         expect(check.events.diffs.length).toBeGreaterThan(0);
         expect(formatReplayCheck(check)).toMatch(/^replay check FAIL/);
+        expect(check.verdict).toBe('fail');
     });
 
     it('fails when the frames and the events are not on one clock: 400 ms apart (negative control)', () => {
@@ -243,9 +245,41 @@ describe('what the replay needs from the recording, and what it checks', () => {
         expect(a.setup.exact).toBe(false);
         expect(a.setup.notes.map((n) => n.code)).toEqual(['lesson-version']);
         expect(formatReplayCheck(a.check)).toMatch(/not the recording's own build: lesson rings-first is version 2 here, the session was flown with 1/);
+        // it re-derives all the same, so it passes; the notes keep both versions
+        expect(a.check.verdict).toBe('pass');
+        expect(a.setup.notes[0]).toMatchObject({ recorded: 1, here: 2 });
         expect(rebuildSession({ ...m, theme: { id: 'soft', version: 9 } }).notes.map((n) => n.code)).toEqual(['theme-version']);
         expect(rebuildSession({ ...m, theme: { id: 'my-own', version: 1 } }).notes.map((n) => n.code)).toEqual(['unknown-theme']);
         expect(rebuildSession(m).exact).toBe(true);
+    });
+
+    it('a flight that does not re-derive: FAIL with the build it was recorded with, "recorded with an older build" with a lower lesson or theme version (this build cannot verify it), FAIL with a newer one or another world', () => {
+        const m = first.pkg.manifest;
+        const frames = mapFrames(first.pkg.frames, (f) => ({ ...f, p: [f.p[0] + 2.5, f.p[1], f.p[2]] }));
+        const moved = (manifest: SessionManifest): ReturnType<typeof checkSession> => checkSession({ ...first.pkg, manifest, frames });
+        const lesson = m.lesson as NonNullable<SessionManifest['lesson']>;
+        // the negative control: the recording's own build, not re-derived
+        const own = moved(m);
+        expect(own.check.ok).toBe(false);
+        expect(own.check.verdict).toBe('fail');
+        expect(formatReplayCheck(own.check)).toMatch(/^replay check FAIL: events/);
+        // the same flight as a recording of an older lesson, an older theme, or both
+        for (const older of [{ ...m, lesson: { ...lesson, version: 1 } }, { ...m, theme: { id: 'soft', version: 1 } }, { ...m, lesson: { ...lesson, version: 1 }, theme: { id: 'soft', version: 1 } }]) {
+            const { check } = moved(older);
+            expect(check.ok).toBe(false);
+            expect(check.verdict).toBe('older-build');
+            const line = formatReplayCheck(check);
+            expect(line).toMatch(/^replay check: recorded with an older build \(.*version 2 here, the session was flown with 1.*\), so this build cannot verify it: events \d+ of \d+ re-derived/);
+            expect(line).not.toMatch(/FAIL|PASS/);
+        }
+        // a newer version, or an older lesson with a newer theme, is not an older build
+        expect(moved({ ...m, lesson: { ...lesson, version: 3 } }).check.verdict).toBe('fail');
+        expect(moved({ ...m, lesson: { ...lesson, version: 1 }, theme: { id: 'soft', version: 3 } }).check.verdict).toBe('fail');
+        // another world with the build's own versions, or an unknown theme: FAIL, saying which
+        const scene = moved({ ...m, scene: { ...m.scene, id: 'open-00000000' } });
+        expect(scene.check.verdict).toBe('fail');
+        expect(formatReplayCheck(scene.check)).toMatch(/^replay check FAIL: .*not the recording's own build: the world is/);
+        expect(moved({ ...m, theme: { id: 'my-own', version: 1 } }).check.verdict).toBe('fail');
     });
 
     it('refuses what it cannot rebuild, naming why', () => {

@@ -20,6 +20,11 @@
     `wrong-way`, `wrong-side`; `IntroLine`, `IntroCue`, `Checkpoint.stage`, `LessonProgress.skipped`, the goal
     `track-end`. Replay key actions `previous`, `repeat`, `next-lesson`, `previous-lesson`; the replay also takes the
     host's `session` pause and resume events.
+- The replay check has a verdict of its own for a recording of an older build: `ReplayCheck.verdict` ('pass',
+  'older-build', 'fail'; `replayVerdict(check)` for a check put together elsewhere) and the line "replay check:
+  recorded with an older build (the versions), so this build cannot verify it" when a recording does not re-derive
+  and names a lesson or theme version older than this build's, none newer. The same build not re-deriving is still
+  FAIL. `ReplayNote` carries `recorded` and `here` for the two version notes; the report's `replayCheck` has `verdict`.
 - Live in the simulator: ShramkoGSFPV v0.12 (2026-11-08) ships this engine as its submodule at 1eea4d5; the mode starts at https://gsfpv.flyreelstudio.eu/en/sound/ (es, pl, ru too). Ordinary pages of the simulator load none of it.
 - Spoken lines asked for by the simulator's recorder: `survey.howto` no longer tells the pilot to say the number (that works only with speech recognition on, now `survey.howto-voice`); new `survey.mic-on` (the microphone stays on during the questions), `send.none` (nothing to send) and `send.cancelled` (not sent, the flight stays on the device). English, Spanish, Polish and Russian.
 

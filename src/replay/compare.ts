@@ -85,14 +85,36 @@ export interface CueComparison {
     readonly mismatches: readonly CueDiff[];
 }
 
+/**
+ * What the check says (v0.13). 'pass': the recording re-derives within the tolerances. 'older-build': it does not,
+ * and it was recorded with an older build (a lesson or theme version lower than this build's, none higher): this
+ * build cannot verify it, which says nothing against the recording ("recorded with an older build"). 'fail': it
+ * does not re-derive, with the build it was recorded with or with nothing that explains why.
+ */
+export type ReplayVerdict = 'pass' | 'older-build' | 'fail';
+
 export interface ReplayCheck {
+    /** re-derived within the tolerances */
     readonly ok: boolean;
+    /** v0.13: set by compareReplay; for a check put together elsewhere `replayVerdict(check)` gives it */
+    readonly verdict?: ReplayVerdict;
     readonly tolerances: Tolerances;
     readonly events: EventComparison;
     readonly cues: CueComparison;
     /** false when the replay was not rebuilt from the recording's own versions */
     readonly exact: boolean;
     readonly notes: readonly ReplayNote[];
+}
+
+/** The notes that say the build is not the recording's own. */
+const BUILD_NOTES: readonly ReplayNote['code'][] = ['lesson-version', 'theme-version', 'world-id', 'unknown-theme', 'no-world'];
+
+/** The verdict of a check from what it found: see ReplayVerdict. */
+export function replayVerdict(check: Pick<ReplayCheck, 'ok' | 'notes'>): ReplayVerdict {
+    if (check.ok) return 'pass';
+    const versions = check.notes.filter((n) => n.code === 'lesson-version' || n.code === 'theme-version');
+    const older = versions.length > 0 && versions.every((n) => n.recorded !== undefined && n.here !== undefined && n.recorded < n.here);
+    return older ? 'older-build' : 'fail';
 }
 
 function identity(e: SessionEvent): string {
@@ -272,16 +294,23 @@ export function compareReplay(
 ): ReplayCheck {
     const events = compareEvents(recorded.events, result.derivedEvents, tolerances);
     const cues = compareCues(recorded.frames, result.cues, tolerances);
-    return { ok: events.diffs.length === 0 && cues.share >= tolerances.minCueShare, tolerances, events, cues, exact, notes: result.notes };
+    const ok = events.diffs.length === 0 && cues.share >= tolerances.minCueShare;
+    return { ok, verdict: replayVerdict({ ok, notes: result.notes }), tolerances, events, cues, exact, notes: result.notes };
 }
 
-/** The check as one line of text for a log or a report. */
+/**
+ * The check as one line of text for a log or a report: "replay check PASS: ...", "replay check FAIL: ...", or
+ * "replay check: recorded with an older build (the versions), so this build cannot verify it: ...".
+ */
 export function formatReplayCheck(check: ReplayCheck): string {
     const e = check.events;
     const parts: string[] = [];
     parts.push(`events ${e.matched} of ${e.recorded} re-derived (largest time difference ${e.maxDeltaMs} ms)`);
     parts.push(`cues ${(check.cues.share * 100).toFixed(1)} % of ${check.cues.frames} frames agree (${(check.cues.classShare * 100).toFixed(1)} % by cue kind)`);
     if (e.diffs.length > 0) parts.push(`${e.diffs.length} event difference${e.diffs.length === 1 ? '' : 's'}, first: ${(e.diffs[0] as EventDiff).detail}`);
-    if (!check.exact) parts.push(`not the recording's own build: ${check.notes.filter((n) => n.code === 'lesson-version' || n.code === 'theme-version' || n.code === 'world-id' || n.code === 'unknown-theme' || n.code === 'no-world').map((n) => n.message).join('; ')}`);
-    return `replay check ${check.ok ? 'PASS' : 'FAIL'}: ${parts.join('; ')}`;
+    const build = check.notes.filter((n) => BUILD_NOTES.includes(n.code)).map((n) => n.message).join('; ');
+    const verdict = check.verdict ?? replayVerdict(check);
+    if (verdict === 'older-build') return `replay check: recorded with an older build (${build}), so this build cannot verify it: ${parts.join('; ')}`;
+    if (!check.exact) parts.push(`not the recording's own build: ${build}`);
+    return `replay check ${verdict === 'pass' ? 'PASS' : 'FAIL'}: ${parts.join('; ')}`;
 }
