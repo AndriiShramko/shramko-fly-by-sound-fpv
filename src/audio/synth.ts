@@ -327,7 +327,9 @@ export interface ToneOptions {
  * drone. A pad is two triangles over a sub-octave through a low-pass, the second 0.3 Hz above the
  * first: a slow swirl at every pitch, never a beating that could pass for the off-course cue; the
  * other timbres are a rounder sine over a sub-octave. The level is set by the caller (with ramps,
- * never jumps).
+ * never jumps). v0.13 (M41-10): the swirl's second triangle is a quarter of the pad, not half, so the
+ * swirl dips 6 dB, not to the sub-octave alone every 3.3 s (v0.12's soft height tone did that: a
+ * near-silence inside the band).
  */
 export class ToneVoice {
     readonly output: GainNode;
@@ -370,8 +372,8 @@ export class ToneVoice {
         const pad = options.family === undefined ? timbre === 'pad' || timbre === 'air' || timbre === 'mallet' || timbre === 'pluck' || timbre === 'wood' || timbre === 'thud' : options.family === 'pad';
         const all: { type: OscillatorType; ratio: number; amp: number; offsetHz: number }[] = pad
             ? [
-                  { type: 'triangle', ratio: 1, amp: 0.5, offsetHz: 0 },
-                  { type: 'triangle', ratio: 1, amp: 0.5, offsetHz: 0.3 },
+                  { type: 'triangle', ratio: 1, amp: 0.75, offsetHz: 0 },
+                  { type: 'triangle', ratio: 1, amp: 0.25, offsetHz: 0.3 },
                   { type: 'sine', ratio: 0.5, amp: 0.35, offsetHz: 0 }
               ]
             : [

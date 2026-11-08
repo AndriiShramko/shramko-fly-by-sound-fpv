@@ -39,8 +39,10 @@
     "hazardVoices": 0,
     "heightBandM": null,
     "on": [
+      "height",
       "speed",
       "target",
+      "room",
       "voice"
     ]
   },
@@ -73,7 +75,7 @@
   "title": {
     "key": "lesson.move-stop.title"
   },
-  "version": 1,
+  "version": 2,
   "world": {
     "kind": "analytic",
     "spec": {

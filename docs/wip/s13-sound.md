@@ -27,7 +27,7 @@ Shared event kinds (plan, "Lanes"): the runner emits the cue events `wrong-way`,
   `CueEvent`, planner; `test/events.test.ts`, 14 tests)
 - [x] 6 Motor (M41-16): on by default, under the cues, ducked under speech (engine motor bus, prefs default and
   migration, `test/prefs.test.ts`; the level is measured and calibrated by the rig in step 9)
-- [ ] 7 Never silence (M41-10), the planner's part
+- [x] 7 Never silence (M41-10), the planner's part (lesson layers, the pad swirl; `test/silence.test.ts`, 3 tests)
 - [ ] 8 Speech level (M41-17): speech 3 to 6 LU over the mix, true peak at most -1 dBTP
 - [ ] 9 The first measuring rig of the virtual listener (VL-0, part of VL-2 and VL-6)
 - [ ] 10 The full checks
@@ -218,6 +218,20 @@ Shared event kinds (plan, "Lanes"): the runner emits the cue events `wrong-way`,
   `motorSound` is off, and a duck like the layers': 12 dB under speech (theme `duckDb`), 9 dB under an urgent hazard.
   `auxInput` is unchanged: a raw input before the limiter.
 
+### Step 7, never silence (M41-10, the planner's part)
+
+- Every flying lesson (16, modules 1 to 7) has the height layer and the room bed on now (lesson files' `layers`;
+  each changed lesson is version 2). In a hover or between attempts the pilot hears the height tone (with its target
+  tone where there is a target height) and the quiet bed; the motor (step 6) is the third. Measured on the test host:
+  hover-height, every 30 Hz frame from the first attempt on, the pause between attempts included, has the height tone
+  and the bed; walls-hall hovering mid-hall has no hazard and still sounds; control: the same frames with the v0.12
+  layers (safety and voice) are silent in all 90 frames.
+- Found while doing it: v0.12's soft height tone was a pad of two equal triangles 0.3 Hz apart, so every 3.3 s it fell
+  to its sub-octave alone, a near-silence inside the band. The height tones are sines since step 2; the pad's swirl
+  (still used by soft's shape trace) now dips 6 dB (second triangle a quarter of the pad, was half).
+- Note for VL-3c (at most two streams in modules 0 to 2): hover-turn and move-stop now carry the height tone and the
+  bed besides their own layer. The bed is the owner's request (silence must mean something is wrong).
+
 ## Needs from the simulator
 
 - M41-16, motor (`apps/fly/src/app/builtin/sound.ts:112-121`, `startOnEngine`): connect the motor sound to
@@ -228,6 +242,13 @@ Shared event kinds (plan, "Lanes"): the runner emits the cue events `wrong-way`,
   (`tools/bench/test/sonic-audio.test.ts:177` and `:428`, `motorSound` false) must expect true.
 
 ## Needs from other lanes
+
+- s13-lessons: the lessons whose `layers` this lane changed are version 2 (all 16 flying lessons); a lesson changed by
+  both lanes needs one version 2, not 3. The tests that held lesson version 1 (`test/replay.test.ts`,
+  `test/report.test.ts`) now read the lesson's own version.
+- s13-worlds: target heights (band centres, gate centres) on one 0.5 m grid per lesson, counted from its first gate (or
+  its band centre), keep every target tone a note of the scale; a target off the grid is still in exact unison and only
+  off the scale (`onScale` false).
 
 - s13-lessons (runner): emit `{ kind: 'repeat-cue', cue }` once per play, three times about 1 s apart (onsets at least
   `REPEAT_CUE_S` + 0.1 s apart, `REPEAT_CUE_S` = 0.9 from `src/cues`), with no speech over them; `{ kind: 'praise' }` on

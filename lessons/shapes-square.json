@@ -41,6 +41,7 @@
       "height",
       "target",
       "shape",
+      "room",
       "voice"
     ]
   },

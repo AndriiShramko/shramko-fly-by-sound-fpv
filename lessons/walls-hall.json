@@ -39,6 +39,8 @@
     "heightBandM": null,
     "on": [
       "safety",
+      "height",
+      "room",
       "voice"
     ]
   },
@@ -71,7 +73,7 @@
   "title": {
     "key": "lesson.walls-hall.title"
   },
-  "version": 1,
+  "version": 2,
   "world": {
     "kind": "analytic",
     "spec": {

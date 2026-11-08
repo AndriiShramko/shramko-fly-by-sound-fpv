@@ -35,7 +35,9 @@
     "heightBandM": null,
     "on": [
       "safety",
+      "height",
       "shape",
+      "room",
       "voice"
     ]
   },
@@ -68,7 +70,7 @@
   "title": {
     "key": "lesson.walls-pillar.title"
   },
-  "version": 1,
+  "version": 2,
   "world": {
     "kind": "analytic",
     "spec": {

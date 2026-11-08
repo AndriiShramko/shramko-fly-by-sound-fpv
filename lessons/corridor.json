@@ -91,6 +91,8 @@
     "heightBandM": null,
     "on": [
       "safety",
+      "height",
+      "room",
       "voice"
     ]
   },
@@ -123,7 +125,7 @@
   "title": {
     "key": "lesson.corridor.title"
   },
-  "version": 1,
+  "version": 2,
   "world": {
     "kind": "analytic",
     "spec": {

@@ -35,7 +35,9 @@
     "hazardVoices": 0,
     "heightBandM": null,
     "on": [
+      "height",
       "target",
+      "room",
       "voice"
     ]
   },
@@ -68,7 +70,7 @@
   "title": {
     "key": "lesson.hover-turn.title"
   },
-  "version": 1,
+  "version": 2,
   "world": {
     "kind": "analytic",
     "spec": {

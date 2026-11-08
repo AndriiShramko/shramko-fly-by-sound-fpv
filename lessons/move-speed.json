@@ -40,7 +40,9 @@
     "hazardVoices": 0,
     "heightBandM": null,
     "on": [
+      "height",
       "speed",
+      "room",
       "voice"
     ]
   },
@@ -73,7 +75,7 @@
   "title": {
     "key": "lesson.move-speed.title"
   },
-  "version": 1,
+  "version": 2,
   "world": {
     "kind": "analytic",
     "spec": {
