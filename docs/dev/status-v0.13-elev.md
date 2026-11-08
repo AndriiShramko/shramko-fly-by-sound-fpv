@@ -115,7 +115,7 @@ the code, then fixed with a test and its control (section "Review fixes" below):
   measured there, the motor masked the breath's lowest bands (5.7 dB at 4 kHz), so the motor's low-pass is now fourth
   order (the breath 17.8 dB or more over every craft's motor from 4 to 16 kHz); the breath costs the voice 0.10 to
   0.17 LU of its margin; the tunnel's own voice margin (1.93 to 2.88 LU, under 3) is reported, not held; `pnpm listen`
-  PASS, 9 of 9 (543c687b88a2)
+  PASS, 9 of 9 (501229f0b72a)
 - [x] F5 Review E6: the target note's two timings measured (two new audio proofs, `target-note-gap` and
   `target-note-pan`, each with its control), and both found wrong on the shipped engine and fixed: the height tone now
   comes back 12 ms after a placed note (`HRTF_TAIL_S`; 6.5 ms left 2.3 to 2.8 ms of overlap), and a constant input 140 dB
@@ -130,7 +130,7 @@ the code, then fixed with a test and its control (section "Review fixes" below):
 Branch `s13-elev`, not pushed; the lead merges. The review (`docs/dev/review-v0.13-elev.md`, dbce5fd) found eight
 things; each was tried against the code first, all eight held, and each is fixed with a test and its control (section
 "Review fixes"). Commits: F1 fabfbbe; F2 b6497b0; F3 1dc2d8d, a2e4250; F5 96c7ee7; F6 7c13006; F4 9f776c7, 7da428b,
-e3e4cdc, 4b2a6b6; F7 this commit.
+e3e4cdc, 4b2a6b6; F7 98e45f9 and the last commit (a comment's measured numbers, `pnpm listen` again).
 
 What changed for the pilot since the review:
 
@@ -156,7 +156,7 @@ Measured on this tree:
   layout check 0 problems.
 - `pnpm proof:audio`: 3 files, 9 tests passing: the audio page's 7 proofs (two new: `target-note-gap`,
   `target-note-pan`), each passing with its control failing, and the demo's keyboard checks.
-- `pnpm listen` 9 of 9 valid and passing (543c687b88a2), the tunnel flown too: the voice 4.56 to 4.74 LU over the ring
+- `pnpm listen` 9 of 9 valid and passing (501229f0b72a), the tunnel flown too: the voice 4.56 to 4.74 LU over the ring
   flight's mix; the breath's cost to the voice in the tunnel 0.10 to 0.17 LU; true peak at most -1.98 dBTP; every cue
   15.0 dB or more over every craft's motor, the breath 17.8 dB or more; VL-1-elevation 3.57, 3.05 and 4.94 dB (control
   0.57).
@@ -718,7 +718,7 @@ What the first run found, and fixed:
   LU louder than the ring flight's, where the voices were set to 4.5 LU (M41-17). VL-6-speech keeps 3 to 6 LU on the
   ring flight and reports the tunnel's margin.
 
-The run (`pnpm listen`, 543c687b88a2, 9 of 9 valid and passing; 43 renders):
+The run (`pnpm listen`, 501229f0b72a, 9 of 9 valid and passing; 43 renders):
 
 | Check | Ring flight | Tunnel-gaps |
 |---|---|---|
@@ -728,7 +728,7 @@ The run (`pnpm listen`, 543c687b88a2, 9 of 9 valid and passing; 43 renders):
 | every cue over every craft's motor, dB | 15.0 or more | 41.7 or more |
 | the breath over every craft's motor, 4 to 16 kHz, dB | | 17.8 or more (raw motor: 4.5) |
 
-The other checks, as before: VL-1-elevation 3.57, 3.05 and 4.94 dB (control 0.57), VL-0a 1.2e-7, VL-0b -131.8 dB,
+The other checks, as before: VL-1-elevation 3.57, 3.05 and 4.94 dB (control 0.57), VL-0a 2.4e-7, VL-0b -131.0 dB,
 VL-pitch 3.7 cents a hop at most, VL-onset 2.475 to 2.493 s, VL-3-height passing.
 
 Open (the owner's): in a busy tunnel the voice sits 2 to 3 LU over the mix. Under every line the engine ducks the cues

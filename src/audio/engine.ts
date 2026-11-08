@@ -63,7 +63,8 @@ const TARGET_OCTAVE = 0.12;
 const HRTF_TAIL_S = 0.012;
 /**
  * Lane s13-elev: the target panner moves to the next note's direction this long before it, while it is silent, so
- * Chrome's crossfade between two directions (2048 frames, 43 ms at 48 kHz) is over when the note begins, s.
+ * Chrome's crossfade between two directions is over when the note begins, s. Measured (the target-note-pan proof): with
+ * it, a note's first 20 ms are within 0.52 dB of its held part in level difference; moved at the note's start, 6.54 dB.
  */
 const TARGET_PAN_LEAD_S = 0.06;
 /** The constant input that keeps the target panner running between notes: 140 dB under full scale (review E6). */

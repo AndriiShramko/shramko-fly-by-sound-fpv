@@ -1,8 +1,8 @@
 {
  "format": "shramko-listen-evidence/1",
- "key": "543c687b88a2b112f5eb5ee03a57cd713443f99b1365e3f88dfa604fe74fc91b",
+ "key": "501229f0b72a63fde517a318f77e92a4c73fd063c4d5ec7837a6075ac8fe7fec",
  "inputs": {
-  "hash": "543c687b88a2b112f5eb5ee03a57cd713443f99b1365e3f88dfa604fe74fc91b",
+  "hash": "501229f0b72a63fde517a318f77e92a4c73fd063c4d5ec7837a6075ac8fe7fec",
   "files": 127,
   "driver": 4,
   "measure": 4,
@@ -15,7 +15,7 @@
    "pyloudnorm": "0.2.0"
   }
  },
- "date": "2026-11-08T21:59:14.585Z",
+ "date": "2026-11-08T22:16:26.427Z",
  "id": "VL-2-motor",
  "claim": "every cue (safety, height, target, shape) is at least 6 dB over the motor in its own third-octave bands, where it sounds, for the simulator's default craft and the micro presets and a 5-inch quad, the slider at its default 15 %, in the ring flight and in tunnel-gaps flown (safety and height there: the chime above and below, the ceiling and the floor), and there the breath of air of those cues is 12 dB over the motor in every third octave from 4 to 16 kHz, as the motor bus is made to keep off the cues' highs (control: the v0.12 path, the raw motor at the slider at 60 %)",
  "thresholds": {
@@ -399,7 +399,7 @@
       "minMarginDb": 41.7,
       "marginsDb": {
        "125": 101.1,
-       "157": 108.7,
+       "157": 108.8,
        "198": 105.9,
        "315": 99.1,
        "397": 84.9,
