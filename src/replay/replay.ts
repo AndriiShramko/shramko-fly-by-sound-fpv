@@ -19,7 +19,9 @@
 //                  runner.resume(t) where it writes them, so the lesson's clocks leave the pause out
 //   the start      the first `lesson open` event: when the host called runner.begin(t)
 // The host (the simulator's recorder) must therefore write those events; the comparer
-// (compare.ts) then checks everything else against the recording.
+// (compare.ts) then checks everything else against the recording. It must also keep every sample
+// with a touch as a frame, between two due frames too: a touch is applied on the first frame at or
+// after its time, and in a lesson that re-centres the frame after it is already at the respawn.
 //
 // A package is ONE lesson: the manifest names it and the replay runs it from `open` to the end. A
 // host that moves a pilot on to the next lesson starts a new package.

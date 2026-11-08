@@ -31,6 +31,11 @@ export interface HostOptions {
     /** the answer a pilot gives to a question, 1..n or 0 to skip */
     readonly answerer?: (q: Question, index: number) => number;
     readonly beginAtMs?: number;
+    /**
+     * default true: a sample with a touch is always written, also between two due frames (the simulator's sampler with
+     * wave 2's W11); false: only the due ones, as its sampler at v0.12, so a touch's own sample may be lost (review M1)
+     */
+    readonly keepTouched?: boolean;
 }
 
 const DEG = 180 / Math.PI;
@@ -59,10 +64,10 @@ export class RecordingHost {
     private pending: { readonly at: number; readonly question: Question } | null = null;
     private asked = 0;
     private lastScene = false;
-    private readonly o: Required<Pick<HostOptions, 'hz' | 'recordHz' | 'speechEnds' | 'ttsBaseMs' | 'ttsMsPerChar'>> & HostOptions;
+    private readonly o: Required<Pick<HostOptions, 'hz' | 'recordHz' | 'speechEnds' | 'ttsBaseMs' | 'ttsMsPerChar' | 'keepTouched'>> & HostOptions;
 
     constructor(lesson: LessonDef, options: HostOptions = {}) {
-        this.o = { hz: 60, recordHz: 30, speechEnds: 'markers', ttsBaseMs: 300, ttsMsPerChar: 45, ...options };
+        this.o = { hz: 60, recordHz: 30, speechEnds: 'markers', ttsBaseMs: 300, ttsMsPerChar: 45, keepTouched: true, ...options };
         this.lesson = lesson;
         this.locale = options.locale ?? 'en';
         this.theme = options.theme ?? getBuiltinTheme('soft');
@@ -144,8 +149,11 @@ export class RecordingHost {
         this.drain();
         const input = this.runner.demoFrame(this.t) ?? { sample, world: this.world, target: this.runner.target(), floorY: 0 };
         const plan = this.planner.plan(input);
-        if (this.tickNo % Math.round(this.o.hz / this.o.recordHz) === 0) {
-            this.frames.push({ t: this.t, tick: Math.round(this.t), p: this.pos, v: this.vel, q: yawQuat(this.yaw), s: [0, 0, 0, 0], c: plan.cues.map((c) => c.id) });
+        // as the simulator's recorder writes a frame: the sample the runner was given (a place the runner asked for shows in
+        // the next one), one in recordHz; and every sample with a touch, whose position the replay derives the touch from
+        const due = this.tickNo % Math.round(this.o.hz / this.o.recordHz) === 0;
+        if (due || (sample.touched && this.o.keepTouched)) {
+            this.frames.push({ t: this.t, tick: Math.round(this.t), p: sample.pos, v: sample.vel, q: sample.quat, s: [0, 0, 0, 0], c: plan.cues.map((c) => c.id) });
         }
     }
 
@@ -227,6 +235,11 @@ export class RecordingHost {
 
     get scene(): boolean {
         return this.lastScene;
+    }
+
+    /** Whether the next tick's sample is a due frame (one in recordHz), written whether or not it has a touch. */
+    get nextDue(): boolean {
+        return (this.tickNo + 1) % Math.round(this.o.hz / this.o.recordHz) === 0;
     }
 
     /** The recorded session as a package: written through a SessionWriter into memory and zipped. */

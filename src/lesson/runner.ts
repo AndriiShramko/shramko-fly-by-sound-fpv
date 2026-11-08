@@ -68,7 +68,9 @@
 // the attempt's flown path goes back to what it was there, so a stretch flown twice is not counted twice. A
 // long R still goes back to the start; with no point passed yet a short R goes to the start of the attempt.
 // When an attempt of such a lesson fails (its time ran out), the next one begins at that point too, not at
-// the far start (review R9).
+// the far start (review R9). A frame's touch is taken after the points the frame crossed: a 30 Hz replay sees
+// a crossing and the next 60 Hz frame's touch in one frame, and puts the craft where the live run did (the
+// v0.13 merge review's M1; a recorder keeps every sample with a touch, so the touch is replayed where it was).
 //
 // Pause (review R8). While the flight is paused (the lesson menu of M41-3 speaks through the same queue) the
 // lesson waits: pause(t) stops it, and resume(t) moves every clock it keeps on by the pause (the step's start,
@@ -885,6 +887,18 @@ class Runner implements LessonSession {
     }
 
     private fly(s: FlightSample, prev: FlightSample, t: number): void {
+        // what the frame crossed counts before its touch (review M1 of the merge): live, the craft may cross a point one
+        // 60 Hz frame and touch the next; a 30 Hz replay sees both in one frame, and the respawn must go to the same point
+        for (const cp of this.lesson.checkpoints) {
+            if (this.reached.has(cp.id) || segmentDistance(prev.pos, s.pos, cp.at) > cp.radiusM) continue;
+            this.reached.add(cp.id);
+            this.lastCheckpoint = cp;
+            this.emit({ t, kind: 'checkpoint', id: cp.id });
+            this.passed(cp.id, cp);
+            if (cp.stage !== undefined && !this.stagesFromWorld()) this.stagePassed(cp.stage);
+            else if (this.lesson.checkpoints.indexOf(cp) > 0) this.actions.push({ kind: 'cue', event: { kind: 'checkpoint' } });
+        }
+        this.passWorldPoints(prev, s);
         if (s.touched) {
             this.touchCount++;
             this.emit({ t, kind: 'touch', material: this.touchMaterial(s.pos), speed: Math.round(speedOf(s) * 100) / 100, pos: s.pos });
@@ -897,16 +911,6 @@ class Runner implements LessonSession {
                 this.backSince = null;
             }
         }
-        for (const cp of this.lesson.checkpoints) {
-            if (this.reached.has(cp.id) || segmentDistance(prev.pos, s.pos, cp.at) > cp.radiusM) continue;
-            this.reached.add(cp.id);
-            this.lastCheckpoint = cp;
-            this.emit({ t, kind: 'checkpoint', id: cp.id });
-            this.passed(cp.id, cp);
-            if (cp.stage !== undefined && !this.stagesFromWorld()) this.stagePassed(cp.stage);
-            else if (this.lesson.checkpoints.indexOf(cp) > 0) this.actions.push({ kind: 'cue', event: { kind: 'checkpoint' } });
-        }
-        this.passWorldPoints(prev, s);
         this.checkDirection(s);
         this.evaluateGoals(s, prev, t);
     }

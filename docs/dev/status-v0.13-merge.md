@@ -282,6 +282,47 @@ Steps 7 to 11, lane s13-worlds:
   other languages in English. On that tree: typecheck clean, `pnpm test` 44 files, 1042 tests, locale lint and layout 0
   problems, the listener's evidence fresh (418eab75ba5d).
 
+Steps 12 to 19, the review of the merge (`docs/dev/review-v0.13-merge.md`, at ab7f591): each finding first tried against
+the code and a run, then fixed with a test that fails without the fix (what was done and why: "Review fixes" below). The
+simulator's part stays in the review's wave 2 list.
+
+- [x] 12. M1. A recording with a touch in the corridor or a tunnel replays PASS: a frame's points before its touch; the
+  test host writes what the simulator writes, and every touched sample (W11)
+- [ ] 13. M2. The target note named and played where it first sounds (hover-height); rings-heights' words for it
+- [ ] 14. M3. The open-way chime named and played in the corridor and in tunnel-gaps
+- [ ] 15. m1. The corridor's checkpoints line and its plays; the chime of a track's last checkpoint
+- [ ] 16. m2. The stale lesson counts in `CITATION.cff`, `src/contract.ts` and `docs/testing/test-protocol.md`
+- [ ] 17. m3. Tests for the six tunnels' respawn and the open-way chime at the shipped obstacles
+- [ ] 18. n1. s13-worlds' Russian sentence in `test/progress.test.ts`, as `\u` escapes
+- [ ] 19. All checks on the final code with fresh evidence; the final status
+
+## Review fixes (steps 12 to 19)
+
+### 12. M1: a recording with a touch in the corridor or a tunnel reads PASS
+
+- Tried first (a probe, not committed): the corridor, tunnel-gaps, tunnel-long and tunnel-narrow recorded by
+  `test/helpers/record.ts` with one touch each, after the sixth point of the world's list (at it, the frame after its
+  crossing, or halfway to the next; on a frame the recording keeps or not): all 16 read FAIL ("wall at 47133 ms:
+  position differs by 1.00 m", "wall at 24650 ms is recorded but the replay did not derive it", "speed 0 m/s recorded, 2
+  m/s re-derived"). Both causes hold. The test host wrote a frame's position after the runner's place (the respawn), and
+  the simulator's `FrameSampler` drops a touch's own sample when it is not due (one in two of 60 Hz): either way the
+  replay derives the touch at the respawn. And `fly()` took a frame's touch, and its respawn, before the points the
+  frame crossed: with the host fixed alone, the corridor's touch the frame after crossing `w6` (a crossing frame the
+  recording drops) still re-derived its reset to `w5`, where the live run went to `w6`.
+- Fix: `fly()` (`src/lesson/runner.ts`) counts the lesson's checkpoints and `passWorldPoints` first and the touch after
+  them (the two blocks moved, nothing else; the header's respawn paragraph says why). `test/helpers/record.ts` writes the
+  sample the runner was given, as the simulator's sampler does (a place shows in the next frame), one in two, and every
+  sample with a touch (`keepTouched`, default true: W11's rule; false is the sampler as it is). The replay's header
+  says a recorder keeps every touched sample. With both, the 16 probe flights read PASS.
+- Test, new `test/replay-touch.test.ts`: the corridor, tunnel-gaps and tunnel-long, each with two touches (the frame
+  after crossing the sixth point, a frame the recording keeps while it drops the crossing one; halfway between the 10th
+  and 11th on a frame that is not due), each back 1 m before `w6` and `w10`: the replay re-derives every event (touches
+  and resets 2 of 2) and says PASS. Its control: the same tunnel-gaps flight written by a host that keeps only the due
+  samples reads FAIL on the second touch. Broken on purpose, then restored: the old order in `fly()` fails the three PASS
+  cases ("checkpoint:w6 ... is recorded but the replay did not derive it", `w5` derived instead), and so does the host
+  writing the position after the place (the touches at the respawn). Full suite 1046 of 1046, typecheck clean.
+- The simulator's half, `FrameSampler.take` keeping every sample with `touched`, is W11 of the review's wave 2 list.
+
 ## Final status (2026-11-08, the whole merge)
 
 Done, branch `s13-merge`, not pushed, nothing deployed; `main` (7d4b4b9) and the three lanes' branches are untouched.
