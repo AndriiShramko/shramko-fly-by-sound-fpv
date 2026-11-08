@@ -21,7 +21,7 @@ import pyloudnorm as pyln
 import soundfile as sf
 from scipy.signal import hilbert, resample_poly
 
-MEASURE_VERSION = 3
+MEASURE_VERSION = 4
 RATE = 48000
 
 # thresholds (kind: standard, calibrated on controls, proposal)
@@ -51,6 +51,10 @@ ELEV_BANDS_HZ = [1000.0 * 2 ** (k / 3.0) for k in range(6, 13)]  # third octaves
 ELEV_DIFF_MIN_DB = 1.0  # proposal: the HRTF's response over the band changes by about a spectral-profile JND (1 dB rms over the bands and ears)
 AIR_TOP_MIN_DB = -30.0  # proposal: "energy up to about 16 kHz": the 16 kHz third octave within 30 dB of the cue's strongest band
 PITCH_SAME_MAX_CENTS = 5.0  # the notes are the plan's: the measured tracks agree within 5 cents
+# review E5 of lane s13-elev: the gaps flight (test-audio/page/listen.ts, tunnel-gaps along its track) under VL-6 and VL-2
+FLIGHTS = ['flight', 'gaps']
+GAPS_CUES = ['safety', 'height']  # the cue layers tunnel-gaps sounds (no target, no shapes)
+COVER_MIN_FRAMES = 30  # each of the chime above, the chime below, the ceiling and the floor sounds, with its breath, for 0.5 s or more
 
 
 def load(dirname, job):
@@ -254,11 +258,11 @@ def check_onset(d):
     }
 
 
-def speech_lines(d, theme, clips_dir, volume_override=None):
+def speech_lines(d, theme, clips_dir, volume_override=None, flight='flight'):
     """The voice against the flight: the integrated loudness of all its lines (as spoken, at their volumes) over the
     integrated loudness of the ears' engine output from the end of the fade-in on; per line, its own loudness over
     the 3 s before it (information: a busy and a quiet moment of one flight differ by up to 10 LU)."""
-    x, meta = load(d, 'flight-' + theme)
+    x, meta = load(d, flight + '-' + theme)
     ears = x[:, 0:2].astype(np.float64)
     spans = meta['speech']
     full, lines = with_speech(ears, spans, clips_dir, volume_override)
@@ -275,41 +279,64 @@ def speech_lines(d, theme, clips_dir, volume_override=None):
     return full, row
 
 
+def gaps_cover(d):
+    """What the gaps flight sounds (its truth, frame by frame): the frames with the chime above, the chime below, the
+    ceiling and the floor, each with its breath of air (review E5: VL-6 and VL-2 measure them only if they sound)."""
+    _, meta = load(d, 'gaps-soft')
+    counts = {'chimeAbove': 0, 'chimeBelow': 0, 'ceiling': 0, 'floor': 0}
+    for r in meta['truth']:
+        voices = r.get('voices') or []
+        breath = {v['cue'] for v in voices if v['breath']}
+        chime = r.get('chime')
+        if chime is not None and 'safety.free' in breath:
+            if chime['dir'][1] > 0.1:
+                counts['chimeAbove'] += 1
+            elif chime['dir'][1] < -0.1:
+                counts['chimeBelow'] += 1
+        if 'safety.ceiling' in breath:
+            counts['ceiling'] += 1
+        if 'safety.floor' in breath:
+            counts['floor'] += 1
+    return {'frames': counts, 'ok': all(v >= COVER_MIN_FRAMES for v in counts.values()), 'minFrames': COVER_MIN_FRAMES}
+
+
 def check_speech_and_peak(d, clips_dir, themes):
-    speech_rows = {}
-    peak_rows = {}
-    ctrl_speech = {}
-    ctrl_peak = {}
-    for th in themes:
-        full, rows = speech_lines(d, th, clips_dir)
-        speech_rows[th] = rows
-        x, _ = load(d, 'flight-' + th)
-        peak_rows[th] = {'mixWithSpeechDbtp': round(true_peak_dbtp(full), 2), 'engineOnlyDbtp': round(true_peak_dbtp(x[:, 0:2]), 2), 'engineLufs': round(lufs(x[:, 0:2]), 2)}
-        full1, rows1 = speech_lines(d, th, clips_dir, volume_override=1.0)
-        ctrl_speech[th] = rows1
-        ctrl_peak[th] = round(true_peak_dbtp(full1), 2)
-    sp_ok = all(SPEECH_OVER_MIN_LU <= r['overLu'] <= SPEECH_OVER_MAX_LU for r in speech_rows.values())
-    sp_ctrl = any(r['overLu'] > SPEECH_OVER_MAX_LU for r in ctrl_speech.values())
-    pk_ok = all(r['mixWithSpeechDbtp'] <= TRUE_PEAK_MAX_DBTP for r in peak_rows.values())
-    pk_ctrl = any(v > TRUE_PEAK_MAX_DBTP for v in ctrl_peak.values())
+    speech_rows = {f: {} for f in FLIGHTS}
+    peak_rows = {f: {} for f in FLIGHTS}
+    ctrl_speech = {f: {} for f in FLIGHTS}
+    ctrl_peak = {f: {} for f in FLIGHTS}
+    for fl in FLIGHTS:
+        for th in themes:
+            full, rows = speech_lines(d, th, clips_dir, flight=fl)
+            speech_rows[fl][th] = rows
+            x, _ = load(d, fl + '-' + th)
+            peak_rows[fl][th] = {'mixWithSpeechDbtp': round(true_peak_dbtp(full), 2), 'engineOnlyDbtp': round(true_peak_dbtp(x[:, 0:2]), 2), 'engineLufs': round(lufs(x[:, 0:2]), 2)}
+            full1, rows1 = speech_lines(d, th, clips_dir, volume_override=1.0, flight=fl)
+            ctrl_speech[fl][th] = rows1
+            ctrl_peak[fl][th] = round(true_peak_dbtp(full1), 2)
+    cover = gaps_cover(d)
+    sp_ok = all(SPEECH_OVER_MIN_LU <= r['overLu'] <= SPEECH_OVER_MAX_LU for rows in speech_rows.values() for r in rows.values())
+    sp_ctrl = any(r['overLu'] > SPEECH_OVER_MAX_LU for rows in ctrl_speech.values() for r in rows.values())
+    pk_ok = all(r['mixWithSpeechDbtp'] <= TRUE_PEAK_MAX_DBTP for rows in peak_rows.values() for r in rows.values())
+    pk_ctrl = any(v > TRUE_PEAK_MAX_DBTP for rows in ctrl_peak.values() for v in rows.values())
     return [
         {
             'id': 'VL-6-speech',
-            'claim': 'the voice (all its lines, at the engine\'s utterance volume, the Windows desktop voice) is 3 to 6 LU over the flight\'s mix, in every theme (control: the v0.12 utterance volume 1)',
-            'thresholds': {'overLu': {'value': [SPEECH_OVER_MIN_LU, SPEECH_OVER_MAX_LU], 'kind': 'proposal (design VL-6)'}},
-            'measured': speech_rows,
+            'claim': "the voice (all its lines, at the engine's utterance volume, the Windows desktop voice) is 3 to 6 LU over the flight's mix, in every theme, in the ring flight and in tunnel-gaps flown with the chime above and below, the ceiling and the floor and their breath of air (control: the v0.12 utterance volume 1)",
+            'thresholds': {'overLu': {'value': [SPEECH_OVER_MIN_LU, SPEECH_OVER_MAX_LU], 'kind': 'proposal (design VL-6)'}, 'gapsCoverFrames': {'value': COVER_MIN_FRAMES, 'kind': 'proposal (review E5)'}},
+            'measured': {'flights': speech_rows, 'gapsCover': cover},
             'controls': [{'name': 'utterance volume 1 (v0.12)', 'measured': ctrl_speech, 'ok': sp_ctrl}],
-            'valid': sp_ctrl,
-            'pass': sp_ok and sp_ctrl,
+            'valid': sp_ctrl and cover['ok'],
+            'pass': sp_ok and sp_ctrl and cover['ok'],
         },
         {
             'id': 'VL-6-peak',
-            'claim': 'the true peak of what reaches the ears (the engine and the voice) is at most -1 dBTP in every theme (control: the v0.12 utterance volume 1)',
+            'claim': 'the true peak of what reaches the ears (the engine and the voice) is at most -1 dBTP in every theme, in the ring flight and in tunnel-gaps flown with the chime above and below, the ceiling and the floor and their breath of air (control: the v0.12 utterance volume 1)',
             'thresholds': {'truePeakDbtp': {'value': TRUE_PEAK_MAX_DBTP, 'kind': 'standard (EBU R128)'}},
-            'measured': peak_rows,
+            'measured': {'flights': peak_rows, 'gapsCover': cover},
             'controls': [{'name': 'utterance volume 1 (v0.12)', 'measured': ctrl_peak, 'ok': pk_ctrl}],
-            'valid': pk_ctrl,
-            'pass': pk_ok and pk_ctrl,
+            'valid': pk_ctrl and cover['ok'],
+            'pass': pk_ok and pk_ctrl and cover['ok'],
         },
     ]
 
@@ -333,12 +360,12 @@ def third_octave_power(mono, frame_s=0.1):
 CUES = ['safety', 'height', 'target', 'shape']
 
 
-def motor_margins(d, motor_job):
+def motor_margins(d, motor_job, flight='flight', cues=CUES):
     motor = load(d, motor_job)[0][:, 2:4].mean(axis=1).astype(np.float64)
     centres, mp = third_octave_power(motor)
     rows = {}
-    for cue in CUES:
-        stem = load(d, 'flight-soft-solo-' + cue)[0][:, 2:4].mean(axis=1).astype(np.float64)
+    for cue in cues:
+        stem = load(d, flight + '-soft-solo-' + cue)[0][:, 2:4].mean(axis=1).astype(np.float64)
         _, cp = third_octave_power(stem)
         frame_power = cp.sum(axis=1)
         if frame_power.max() <= 0:
@@ -353,15 +380,43 @@ def motor_margins(d, motor_job):
     return rows
 
 
-def motor_job(craft):
-    return 'flight-soft-solo-motor' if craft == CRAFTS[0] else 'flight-soft-solo-motor-' + craft
+def motor_job(craft, flight='flight'):
+    return flight + '-soft-solo-motor' if craft == CRAFTS[0] else flight + '-soft-solo-motor-' + craft
+
+
+def breath_margin(d, motor_job_id):
+    """The gaps flight's safety stem over the motor in each third octave from 4 to 16 kHz (where the breath of air is), in
+    the frames (100 ms) where a safety voice with the breath sounds, dB; and the lowest band's margin."""
+    _, meta = load(d, 'gaps-soft')
+    stem = load(d, 'gaps-soft-solo-safety')[0][:, 2:4].mean(axis=1).astype(np.float64)
+    motor = load(d, motor_job_id)[0][:, 2:4].mean(axis=1).astype(np.float64)
+    centres, sp = third_octave_power(stem)
+    _, mp = third_octave_power(motor)
+    frames = sp.shape[0]
+    breath = np.zeros(frames, dtype=bool)
+    for r in meta['truth']:
+        k = int(r['t'] / 0.1)
+        if k < frames and any(v['breath'] and v['cue'].startswith('safety.') for v in (r.get('voices') or [])):
+            breath[k] = True
+    bands = [j for j, c in enumerate(centres) if 3900 <= c <= 16500]
+    margins = {f'{centres[j]:.0f}': round(10 * math.log10(sp[breath, j].mean() / max(mp[breath, j].mean(), 1e-20)), 1) for j in bands}
+    return {'frames': int(breath.sum()), 'marginsDb': margins, 'minMarginDb': min(margins.values())}
 
 
 def check_motor(d):
     per_craft = {c: motor_margins(d, motor_job(c)) for c in CRAFTS}
     raw = motor_margins(d, 'flight-soft-motor-raw-60-solo-motor')
+    # review E5: tunnel-gaps flown, the chime above and below, the ceiling and the floor with their breath of air
+    gaps_per_craft = {c: motor_margins(d, motor_job(c, 'gaps'), 'gaps', GAPS_CUES) for c in CRAFTS}
+    gaps_raw = motor_margins(d, 'gaps-soft-motor-raw-60-solo-motor', 'gaps', GAPS_CUES)
+    breath = {c: breath_margin(d, motor_job(c, 'gaps')) for c in CRAFTS}
+    breath_raw = breath_margin(d, 'gaps-soft-motor-raw-60-solo-motor')
+    cover = gaps_cover(d)
     ok = all(len(rows) == len(CUES) and all(r['minMarginDb'] >= MOTOR_MARGIN_MIN_DB for r in rows.values()) for rows in per_craft.values())
+    gaps_ok = all(len(rows) == len(GAPS_CUES) and all(r['minMarginDb'] >= MOTOR_MARGIN_MIN_DB for r in rows.values()) for rows in gaps_per_craft.values())
+    breath_ok = all(b['frames'] >= 5 and b['minMarginDb'] >= MOTOR_MARGIN_MIN_DB for b in breath.values())
     ctrl_fails = any(r['minMarginDb'] < MOTOR_MARGIN_MIN_DB for r in raw.values())
+    gaps_ctrl_fails = any(r['minMarginDb'] < MOTOR_MARGIN_MIN_DB for r in gaps_raw.values()) or breath_raw['minMarginDb'] < MOTOR_MARGIN_MIN_DB
     cue_sum = sum(load(d, 'flight-soft-solo-' + c)[0][:, 2:4].astype(np.float64) for c in CUES)
     cues_lufs = lufs(cue_sum)
     level = {'cuesLufs': round(cues_lufs, 2)}
@@ -370,14 +425,24 @@ def check_motor(d):
         level[c] = {'motorLufs': round(m, 2), 'motorUnderCuesLu': round(cues_lufs - m, 2)}
     level['rawMotor60Lufs'] = round(lufs(load(d, 'flight-soft-motor-raw-60-solo-motor')[0][:, 2:4].astype(np.float64)), 2)
     worst = min((r['minMarginDb'], c, cue) for c, rows in per_craft.items() for cue, r in rows.items())
+    gaps_worst = min((r['minMarginDb'], c, cue) for c, rows in gaps_per_craft.items() for cue, r in rows.items())
+    breath_worst = min((b['minMarginDb'], c) for c, b in breath.items())
     return {
         'id': 'VL-2-motor',
-        'claim': 'every cue (safety, height, target, shape) is at least 6 dB over the motor in its own third-octave bands, where it sounds, for the simulator\'s default craft and the micro presets and a 5-inch quad, the slider at its default 15 % (control: the v0.12 path, the raw motor at the slider at 60 %)',
-        'thresholds': {'minMarginDb': {'value': MOTOR_MARGIN_MIN_DB, 'kind': 'v13 plan'}, 'ownBands': {'value': 'within 10 dB of the cue\'s strongest band', 'kind': 'proposal'}},
-        'measured': {'worst': {'marginDb': worst[0], 'craft': worst[1], 'cue': worst[2]}, 'margins': per_craft, 'level': level},
-        'controls': [{'name': 'raw motor at 60 % (no low-pass, no leveller, as v0.12 auxInput), the default craft', 'measured': raw, 'ok': ctrl_fails}],
-        'valid': ctrl_fails,
-        'pass': ok and ctrl_fails,
+        'claim': "every cue (safety, height, target, shape) is at least 6 dB over the motor in its own third-octave bands, where it sounds, for the simulator's default craft and the micro presets and a 5-inch quad, the slider at its default 15 %, in the ring flight and in tunnel-gaps flown (safety and height there: the chime above and below, the ceiling and the floor), and there the breath of air of those cues is 6 dB over the motor in every third octave from 4 to 16 kHz (control: the v0.12 path, the raw motor at the slider at 60 %)",
+        'thresholds': {'minMarginDb': {'value': MOTOR_MARGIN_MIN_DB, 'kind': 'v13 plan'}, 'ownBands': {'value': "within 10 dB of the cue's strongest band", 'kind': 'proposal'}, 'breathBands': {'value': '4 to 16 kHz third octaves, frames with a safety voice that has the breath', 'kind': 'proposal (review E5)'}},
+        'measured': {
+            'worst': {'marginDb': worst[0], 'craft': worst[1], 'cue': worst[2]},
+            'margins': per_craft,
+            'level': level,
+            'gaps': {'worst': {'marginDb': gaps_worst[0], 'craft': gaps_worst[1], 'cue': gaps_worst[2]}, 'margins': gaps_per_craft, 'breath': breath, 'breathWorst': {'marginDb': breath_worst[0], 'craft': breath_worst[1]}, 'cover': cover},
+        },
+        'controls': [
+            {'name': 'raw motor at 60 % (no low-pass, no leveller, as v0.12 auxInput), the default craft', 'measured': raw, 'ok': ctrl_fails},
+            {'name': 'the same in tunnel-gaps (its margins and the breath bands)', 'measured': {'margins': gaps_raw, 'breath': breath_raw}, 'ok': gaps_ctrl_fails},
+        ],
+        'valid': ctrl_fails and gaps_ctrl_fails and cover['ok'],
+        'pass': ok and gaps_ok and breath_ok and ctrl_fails and gaps_ctrl_fails and cover['ok'],
     }
 
 

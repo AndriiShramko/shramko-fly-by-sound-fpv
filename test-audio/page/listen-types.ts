@@ -2,10 +2,10 @@
 // (test-audio/page/listen.ts, the browser). DOM-free, so both sides compile against it.
 import type { Vec3 } from '../../src/contract';
 
-export const RIG_VERSION = 3;
+export const RIG_VERSION = 4;
 export const RATE = 48000;
 
-export const SCENARIOS = ['height-climb', 'approach-1', 'approach-3', 'approach-5', 'flight', 'hover-band', 'free-chime'] as const;
+export const SCENARIOS = ['height-climb', 'approach-1', 'approach-3', 'approach-5', 'flight', 'hover-band', 'free-chime', 'gaps-flight'] as const;
 export type ScenarioId = (typeof SCENARIOS)[number];
 /**
  * Controls (the engine or the host broken on purpose), each failing one check; and, for the free chime (lane s13-elev),
@@ -73,6 +73,8 @@ export interface TruthRow {
     readonly motor: number;
     /** lane s13-elev: the open-way chime's voice this frame (a flight's or a named play's): its key, direction, notes */
     readonly chime?: { readonly key: string; readonly dir: Vec3; readonly hz: number; readonly harmonyHz: number | null } | null;
+    /** lane s13-elev, review E5: every voice of the plan this frame, its cue and whether it carries the breath of air */
+    readonly voices?: readonly { readonly cue: string; readonly breath: boolean }[];
 }
 
 export interface SpeechSpan {

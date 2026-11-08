@@ -22,8 +22,14 @@
 // a lesson names it (repeat-cue from up, from down), the safety layer alone and its direct sound alone (no reverb
 // return); with the up/down direction on (above and below), off (both from ahead: v0.13) and each again with no HRTF
 // panner (its dry twin), so the measurer can take the HRTF's own response per elevation and the notes' pitch.
+//
+// The gaps flight (lane s13-elev, review E5): tunnel-gaps flown along its world's own track through the four free ways
+// (above, right, below, left) at 2 m/s with the lesson's layers, the motor and three spoken lines: the open-way chime
+// above and below, the ceiling and the floor sound with their breath of air, under speech and over the motor, so VL-6
+// and VL-2 measure them too (the flight above has none of them).
 import type { FlightSample, LessonLayers, SonicObject, SonicPrefs, SonicWorld, SpeechOut, Vec3 } from '../../src/contract';
 import { createSonicEngine, type EngineTestHooks, type FlyBySoundEngine, type SoloPart } from '../../src/audio';
+import { getLesson } from '../../src/lesson/library';
 import { defaultPrefs } from '../../src/prefs/prefs';
 import { getBuiltinTheme } from '../../src/theme/builtin';
 import { createRng } from '../../src/util/rng';
@@ -155,6 +161,38 @@ const BODY = 0.12;
 
 const smooth = (x: number): number => (x <= 0 ? 0 : x >= 1 ? 1 : x * x * (3 - 2 * x));
 
+/** tunnel-gaps' world and its track (the start, then the world's checkpoints through the free ways), and its length, m */
+const GAPS = ((): { readonly world: SonicWorld; readonly layers: LessonLayers; readonly path: readonly Vec3[]; readonly at: readonly number[] } => {
+    const lesson = getLesson('tunnel-gaps');
+    if (lesson.world.kind !== 'analytic') throw new Error('tunnel-gaps has an analytic world');
+    const world = createAnalyticWorld(lesson.world.spec);
+    const path: Vec3[] = [lesson.start.pos, ...(world.checkpoints ?? []).map((c) => c.pos)];
+    const at: number[] = [0];
+    for (let i = 1; i < path.length; i++) {
+        const a = path[i - 1] as Vec3;
+        const b = path[i] as Vec3;
+        at.push((at[i - 1] as number) + Math.hypot(b[0] - a[0], b[1] - a[1], b[2] - a[2]));
+    }
+    return { world, layers: lesson.layers, path, at };
+})();
+/** The gaps flight's speed along the track, m/s (the lesson's cap is 2.5), and the second it holds still first. */
+export const GAPS_SPEED = 2;
+const GAPS_HOLD_S = 1;
+
+/** Where the gaps flight is `s` m along the track, and its velocity there. */
+function alongGaps(s: number, v: number): { readonly pos: Vec3; readonly vel: Vec3 } {
+    const total = GAPS.at[GAPS.at.length - 1] as number;
+    const d = Math.max(0, Math.min(total, s));
+    let i = 1;
+    while (i < GAPS.at.length - 1 && (GAPS.at[i] as number) < d) i++;
+    const a = GAPS.path[i - 1] as Vec3;
+    const b = GAPS.path[i] as Vec3;
+    const len = Math.max(1e-9, (GAPS.at[i] as number) - (GAPS.at[i - 1] as number));
+    const u = (d - (GAPS.at[i - 1] as number)) / len;
+    const moving = s > 0 && s < total;
+    return { pos: [a[0] + (b[0] - a[0]) * u, a[1] + (b[1] - a[1]) * u, a[2] + (b[2] - a[2]) * u], vel: moving ? [((b[0] - a[0]) / len) * v, ((b[1] - a[1]) / len) * v, ((b[2] - a[2]) / len) * v] : [0, 0, 0] };
+}
+
 /** The free chime's two plays: from up at FREE_PLAYS_S[0], from down at [1], each FREE_PLAY_S long. */
 export const FREE_PLAYS_S: readonly number[] = [0.3, 3.6];
 export const FREE_PLAY_S = 2.5;
@@ -243,6 +281,32 @@ function scenarioOf(req: RenderRequest): Scenario {
                     { t: FREE_PLAYS_S[1] as number, run: (e) => e.cue({ kind: 'repeat-cue', cue: 'safety.free', dir: [0, -1, 0], index: 1, of: 1, durS: FREE_PLAY_S }) }
                 ],
                 motorVolume: null,
+                wallZ: null
+            };
+        }
+        case 'gaps-flight': {
+            // tunnel-gaps along its track at GAPS_SPEED after a still second: the chime above (from 2.5 s), the ceiling over
+            // the way above, the chime from the right, below with the floor under the way below, then from the left; the
+            // lesson's layers, the motor and three spoken lines (the second over the way above, the third over the way below)
+            const total = GAPS.at[GAPS.at.length - 1] as number;
+            return {
+                seconds: GAPS_HOLD_S + total / GAPS_SPEED + 0.5,
+                layers: GAPS.layers,
+                prefs: base,
+                world: GAPS.world,
+                frame: (t) => {
+                    const { pos, vel } = alongGaps((t - GAPS_HOLD_S) * GAPS_SPEED, GAPS_SPEED);
+                    const moving = vel[0] !== 0 || vel[1] !== 0 || vel[2] !== 0;
+                    return { pos, vel, yawDeg: 0, motor: moving ? 0.5 : 0.42 };
+                },
+                target: () => null,
+                say: [
+                    { t: 1.2, key: 'fly.go' },
+                    { t: 5, key: 'lesson.rings-first.hint.1' },
+                    { t: 10.5, key: 'fly.attempt' }
+                ],
+                events: [],
+                motorVolume: req.variant === 'motor-raw-60' ? 60 : 15,
                 wallZ: null
             };
         }
@@ -421,7 +485,8 @@ export async function render(req: RenderRequest): Promise<RenderResult> {
             urgent: plan?.urgent ?? false,
             speaking: engine.speaking,
             motor: f.motor,
-            chime: ((v) => (v === undefined ? null : { key: v.key, dir: v.dir, hz: v.hz, harmonyHz: v.harmonyHz ?? null }))(plan?.voices.find((v) => v.cue === 'safety.free'))
+            chime: ((v) => (v === undefined ? null : { key: v.key, dir: v.dir, hz: v.hz, harmonyHz: v.harmonyHz ?? null }))(plan?.voices.find((v) => v.cue === 'safety.free')),
+            voices: (plan?.voices ?? []).map((v) => ({ cue: v.cue, breath: v.airDb !== undefined }))
         });
     };
     tick(0);
