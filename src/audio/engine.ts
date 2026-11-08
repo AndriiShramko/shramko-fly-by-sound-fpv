@@ -74,7 +74,13 @@ const STALE_S = 0.1;
 /** Step of the shape trace's position automation, s. */
 const TRACE_STEP_S = 0.02;
 
-/** For the audio proofs' negative controls only: each one breaks a property a proof must catch. */
+/** What a solo render of the virtual listener's rig keeps: layers, the motor bus, the raw aux input. */
+export type SoloPart = Exclude<LayerId, 'voice'> | 'motor' | 'aux';
+
+/**
+ * For the audio proofs and the virtual listener's rig only (outside the contract, so the simulator is
+ * unaffected): the negative controls break a property a check must catch; the taps let the rig record.
+ */
 export interface EngineTestHooks {
     /** no HRTF panner: every voice reaches both ears alike */
     readonly bypassPanner?: boolean;
@@ -86,6 +92,18 @@ export interface EngineTestHooks {
     readonly periodScale?: number;
     /** moving voices allowed at once */
     readonly maxMovingVoices?: number;
+    /** the rig's stems: only these parts reach the master (dry and reverb send); the engine plays the same notes either way */
+    readonly solo?: readonly SoloPart[];
+    /** where the output chain ends (the rig's channel merger) instead of the context's destination */
+    readonly destination?: AudioNode;
+    /** fed with the master's output before the compressor (the rig's pre-chain stems) */
+    readonly tap?: AudioNode;
+    /** seed of the synth kit's noise (1): another seed is the rig's determinism control */
+    readonly noiseSeed?: number;
+    /** the height tone rounded to whole notes, as v0.12 (the rig's continuity control) */
+    readonly steppedHeight?: boolean;
+    /** 'raw': the motor input goes straight to the master as v0.12's auxInput did (the rig's motor control) */
+    readonly motorBus?: 'shipped' | 'raw';
 }
 
 export interface EngineOptions {
@@ -232,7 +250,8 @@ export class FlyBySoundEngine implements SonicEngine {
             prefs: options.prefs ?? defaultPrefs(),
             ...(options.layers === undefined ? {} : { layers: options.layers }),
             ...(options.sampler === undefined ? {} : { sampler: options.sampler }),
-            maxMovingVoices: this.hooks.maxMovingVoices ?? MAX_MOVING_VOICES
+            maxMovingVoices: this.hooks.maxMovingVoices ?? MAX_MOVING_VOICES,
+            ...(this.hooks.steppedHeight === true ? { steppedHeight: true } : {})
         });
         this.localeValue = options.locale ?? 'en';
         this.dicts = options.dicts ?? DICTS;
@@ -364,8 +383,11 @@ export class FlyBySoundEngine implements SonicEngine {
 
     private build(ctx: BaseAudioContext): Graph {
         const theme = this.planner.theme;
-        const kit = createSynthKit(ctx);
-        const output = createOutputChain(ctx, theme.master.ceilingDb, { limiter: this.hooks.limiter !== false, fade: this.hooks.fade !== false });
+        const kit = createSynthKit(ctx, this.hooks.noiseSeed ?? 1);
+        const output = createOutputChain(ctx, theme.master.ceilingDb, { limiter: this.hooks.limiter !== false, fade: this.hooks.fade !== false, ...(this.hooks.destination === undefined ? {} : { destination: this.hooks.destination }) });
+        if (this.hooks.tap !== undefined) output.master.connect(this.hooks.tap);
+        const solo = this.hooks.solo;
+        const heard = (part: SoloPart | 'voice'): boolean => solo === undefined || (part !== 'voice' && solo.includes(part));
         output.setMasterDb(theme.master.gainDb, ctx.currentTime);
         output.master.gain.value = dbToGain(theme.master.gainDb);
 
@@ -403,9 +425,9 @@ export class FlyBySoundEngine implements SonicEngine {
             centre.connect(centreSend);
             centreSend.connect(wet);
             dry.connect(duckDry);
-            duckDry.connect(output.master);
+            if (heard(id)) duckDry.connect(output.master);
             wet.connect(duckWet);
-            duckWet.connect(reverbIn);
+            if (heard(id)) duckWet.connect(reverbIn);
             layers[id] = { dry, wet, centre, duckDry, duckWet, duckTarget: 1 };
         }
 
@@ -468,7 +490,7 @@ export class FlyBySoundEngine implements SonicEngine {
         }
 
         const aux = ctx.createGain();
-        aux.connect(output.master);
+        if (heard('aux')) aux.connect(output.master);
 
         // the motor bus
         const motorIn = ctx.createGain();
@@ -487,12 +509,13 @@ export class FlyBySoundEngine implements SonicEngine {
         const motorGate = ctx.createGain();
         motorGate.gain.value = this.planner.prefs.motorSound ? 1 : 0;
         const motorDuck = ctx.createGain();
-        motorIn.connect(motorLp);
+        if (this.hooks.motorBus === 'raw') motorIn.connect(motorGate);
+        else motorIn.connect(motorLp);
         motorLp.connect(leveller);
         leveller.connect(motorLevel);
         motorLevel.connect(motorGate);
         motorGate.connect(motorDuck);
-        motorDuck.connect(output.master);
+        if (heard('motor')) motorDuck.connect(output.master);
         const motor = { input: motorIn, gate: motorGate, duck: motorDuck, duckTarget: 1 };
 
         // height: tone -> roughness -> out
@@ -605,6 +628,11 @@ export class FlyBySoundEngine implements SonicEngine {
         this.lastInputAudio = this.g.ctx.currentTime;
         this.render(plan);
         this.pump();
+    }
+
+    /** The plan of the last frame the engine took (the virtual listener's rig reads its truth from it), null before the first. */
+    get plan(): FramePlan | null {
+        return this.lastPlan;
     }
 
     activeCues(): readonly ActiveCue[] {

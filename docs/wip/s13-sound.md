@@ -29,7 +29,8 @@ Shared event kinds (plan, "Lanes"): the runner emits the cue events `wrong-way`,
   migration, `test/prefs.test.ts`; the level is measured and calibrated by the rig in step 9)
 - [x] 7 Never silence (M41-10), the planner's part (lesson layers, the pad swirl; `test/silence.test.ts`, 3 tests)
 - [ ] 8 Speech level (M41-17): speech 3 to 6 LU over the mix, true peak at most -1 dBTP
-- [ ] 9 The first measuring rig of the virtual listener (VL-0, part of VL-2 and VL-6)
+- [ ] 9 The first measuring rig of the virtual listener (VL-0, part of VL-2 and VL-6): in progress (code committed,
+  first run pending)
 - [ ] 10 The full checks
 
 ## How v0.12 sounds: facts with file and line (code as of 7d4b4b9)

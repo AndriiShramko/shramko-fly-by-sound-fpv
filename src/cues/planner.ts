@@ -305,6 +305,8 @@ export interface PlannerOptions {
     readonly sampler?: SamplerOptions;
     /** voices the allocator may give out at once (MAX_MOVING_VOICES); a larger number exists only for the proofs' negative control */
     readonly maxMovingVoices?: number;
+    /** the height tone rounded to whole notes as in v0.12: only the virtual listener's continuity control */
+    readonly steppedHeight?: boolean;
 }
 
 const tri = (u: number): number => {
@@ -324,6 +326,7 @@ export class CuePlanner {
     private on: Set<LayerId>;
     private readonly sampler: SceneSampler;
     private readonly moving: VoiceAllocator;
+    private readonly steppedHeight: boolean;
     private readonly staticSlots: (SoundingNote | null)[] = new Array<SoundingNote | null>(MAX_STATIC_VOICES).fill(null);
     private previews: Preview[] = [];
     private notes: SoundingNote[] = [];
@@ -348,6 +351,7 @@ export class CuePlanner {
         this.sampler = createSceneSampler(options.sampler);
         this.sampler.setMaxVoices(Math.min(this.layersValue.hazardVoices, 3));
         this.moving = new VoiceAllocator(options.maxMovingVoices ?? MAX_MOVING_VOICES);
+        this.steppedHeight = options.steppedHeight === true;
     }
 
     /** The theme as it sounds: the calm preset applied when the pilot asked for it. */
@@ -686,7 +690,9 @@ export class CuePlanner {
         const targetM = this.prefsValue.heightTarget === false ? null : targetHeightM(input.target, band, input.floorY);
         const offset = this.alignment(input.world, input.floorY, rule.metresPerStep);
         const tones = heightTones(heightM, targetM, band, rule, theme.scale, this.prefsValue.heightPolarity, offset, this.pitch('height'));
-        return { noteIndex: Math.round(tones.position), position: tones.position, hz: tones.hz, heightM, rough: tones.rough, roughHz: p['roughHz'] as number, glideS: (p['glideMs'] as number) / 1000, timbre: theme.layers.height.timbre, target: tones.target };
+        const position = this.steppedHeight ? Math.round(tones.position) : tones.position;
+        const hz = this.steppedHeight ? noteHz(theme.scale, position) : tones.hz;
+        return { noteIndex: Math.round(tones.position), position, hz, heightM, rough: tones.rough, roughHz: p['roughHz'] as number, glideS: (p['glideMs'] as number) / 1000, timbre: theme.layers.height.timbre, target: tones.target };
     }
 
     /**
