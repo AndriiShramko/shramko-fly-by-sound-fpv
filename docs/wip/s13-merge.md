@@ -140,13 +140,22 @@ Steps 7 to 11, lane s13-worlds:
     and names the walls it was flown in.
   - Then every test flight was checked for walls (a probe, not committed: the scripted pilot, the recording host and the
     runner test's pilot logged each sample whose centre lay inside a solid of the lesson's world, over the whole suite):
-    three tests still flew through walls, all passing, all s13-lessons' review R1 in `test/direction.test.ts` (rings-line
-    222 samples, rings-small 299, the course control 52: v0.12's 6 m beside a ring and 12 m back, in rooms 9 and 10 m
-    wide). They now pass ring 2 beside it by its frame and 2.5 m on the side with more room, 3 m past it (short of ring
+    three tests still flew through walls, all passing, all s13-lessons' review R1 in `test/direction.test.ts`
+    (rings-line 222 samples, rings-small 299, the course control 52: v0.12's 6 m beside a ring and 12 m back, in rooms 9
+    and 10 m wide). They now pass ring 2 beside it by its frame and 2.5 m on the side with more room, 3 m past it (short of ring
     3), fly back to its front short of ring 1, and the control flies back to 0.6 m before the room's back wall (further
     than `LINE_UP_M` from ring 2 for about 1.5 s). The probe then logs no sample in a wall. Broken on purpose once (the
     wrong way judged against the track in a course too, R1 undone), the three R1 cases fail; restored, 10 of 10.
-- [ ] 8d. The corridor's `attemptLimitS` for its 126 m track; every tunnel's limit at 1 m/s
+- [x] 8d. The corridor's `attemptLimitS` was v0.12's 900 s, set for v0.12's corridor (5 x 4 m, its world's track 323.5
+  m, its sections 335 m: 2.8 s a metre, about 8 times the track at the cap of 3 m/s). The corridor's track is 125.2 m
+  now: the same 2.8 s a metre is 348 s, so its limit is 350 s. Every limit of the seven lessons that end on
+  `track-end` lets a pilot at 1 m/s fly the track twice (s; the track in m, twice it at 1 m/s in s): corridor 350
+  (125.2, 250), tunnel-wide 120 (31.5, 63), tunnel-narrow 120 (26.3, 53), tunnel-narrower 120 (20.7, 41), tunnel-bends
+  150 (40.6, 81), tunnel-gaps 150 (34.8, 70), tunnel-long 600 (149.8, 300); the tunnels' limits stay as s13-worlds
+  set them. A new test in `test/world-track-end.test.ts` holds both rules (twice the track at 1 m/s; the corridor's
+  seconds per metre v0.12's, to 10 s). Broken on purpose twice, then restored: the corridor at 900 s as merged fails
+  ("900 s against 348 s"), tunnel-long at 250 s fails ("149.8 m of track: expected 250 to be greater than or equal to
+  299.5"). Full suite 1031 of 1031.
 - [ ] 8e. The open-way chime and the checkpoint chime with different words in the glossary, four languages
 - [ ] 8f. `ears-glossary` names s13-sound's six new cues
 - [ ] 8g. The truth bot in the ring lessons raises no wrong-way event

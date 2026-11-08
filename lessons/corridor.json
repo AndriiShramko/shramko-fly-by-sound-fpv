@@ -8,7 +8,7 @@
     "maxYawDps": 90,
     "onTouch": "bump-recentre"
   },
-  "attemptLimitS": 900,
+  "attemptLimitS": 350,
   "checkpoints": [
     {
       "at": [0, 1.25, 0],

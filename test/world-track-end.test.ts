@@ -21,6 +21,12 @@ import { flyTruth } from './helpers/truth';
 const LESSONS = ['corridor', 'tunnel-wide', 'tunnel-narrow', 'tunnel-narrower', 'tunnel-bends', 'tunnel-gaps', 'tunnel-long'];
 const worldOf = (l: LessonDef): AnalyticWorldInfo => createAnalyticWorld((l.world as { spec: Parameters<typeof createAnalyticWorld>[0] }).spec);
 
+/** A slow pilot's speed, m/s: every attempt's time limit lets him fly the track twice (merge item 8d of s13-merge). */
+const SLOW_MPS = 1;
+/** v0.12's corridor (version 1, 5 x 4 m, straight 50 m): its world, and the attempt's time limit of its lesson file, s. */
+const V012_CORRIDOR = (JSON.parse(readFileSync(new URL('./fixtures/v012-lesson-geometry.json', import.meta.url), 'utf8')) as { lessons: Record<string, Pick<LessonDef, 'world'>> }).lessons['corridor'] as Pick<LessonDef, 'world'>;
+const V012_CORRIDOR_LIMIT_S = 900;
+
 /** tunnel-gaps with the goal 'track-end' (lane s13-lessons, review R5), through the package's validator: known after the merge. */
 const PROBE = validateLesson({ ...(JSON.parse(readFileSync(new URL('../lessons/tunnel-gaps.json', import.meta.url), 'utf8')) as object), goals: [{ kind: 'track-end' }] });
 const TRACK_END = PROBE.ok;
@@ -120,6 +126,20 @@ describe('the end of the corridor and of every tunnel (review M1, M2)', () => {
         const hard = lastHardPart(w);
         expect(at as number, `${id}: counted at ${(at as number).toFixed(1)} m, ${hard.what} ends at ${hard.at.toFixed(1)} m`).toBeLessThan(hard.at);
     }, 120000);
+
+    it("every attempt's time limit lets a pilot at 1 m/s fly the track twice; the corridor's is v0.12's scaled to its track", () => {
+        for (const id of LESSONS) {
+            const lesson = getLesson(id);
+            const length = trackLength(worldOf(lesson).checkpoints as WorldCheckpoint[]);
+            expect(lesson.attemptLimitS ?? Infinity, `${id}: ${length.toFixed(1)} m of track`).toBeGreaterThanOrEqual((2 * length) / SLOW_MPS);
+        }
+        // v0.12 gave its corridor 900 s for a track of 323.5 m (2.8 s a metre, about 8 times the track at its cap of 3 m/s);
+        // the corridor of v0.13 (125 m) has the same seconds per metre, to 10 s, not v0.12's 900 s
+        const perMetre = V012_CORRIDOR_LIMIT_S / trackLength(worldOf(V012_CORRIDOR as LessonDef).checkpoints as WorldCheckpoint[]);
+        const corridor = getLesson('corridor');
+        const scaled = perMetre * trackLength(worldOf(corridor).checkpoints as WorldCheckpoint[]);
+        expect(Math.abs((corridor.attemptLimitS as number) - scaled), `${corridor.attemptLimitS} s against ${scaled.toFixed(0)} s`).toBeLessThanOrEqual(10);
+    });
 
     describe.runIf(TRACK_END)('with the goal track-end (lane s13-lessons R5, after the merge)', () => {
         it.each(LESSONS)('%s: the shipped goal counts the truth bot and a pilot whose path is 10 percent longer only at the end of the track', (id) => {
