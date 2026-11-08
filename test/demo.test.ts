@@ -220,6 +220,11 @@ describe('the demo host', () => {
         expect(f.cues.map((c) => c.kind)).toEqual(['repeat-cue']); // the height tone, its first play
         t = await run(host, t, 22);
         expect(f.cues.filter((c) => c.kind === 'repeat-cue')).toHaveLength(6);
+        // the line that names the target note (review M2 of the merge), then its three plays
+        expect(f.said.at(-1)).toBe('lesson.hover-height.intro.3');
+        f.finishLines();
+        t = await run(host, t, 12);
+        expect(f.cues.filter((c) => c.kind === 'repeat-cue')).toHaveLength(9);
         expect(f.said.at(-1)).toBe('lesson.hover-height.goal.1');
         f.finishLines();
         t = await run(host, t, 0.1);
@@ -250,8 +255,8 @@ describe('the demo host', () => {
         const host = new DemoHost({ engine: f.engine, locale: 'en' });
         host.open('hover-height', 0);
         let t = await run(host, 0, 1);
-        // the task: its lines (said at once here) and its two sounds, three times each
-        for (let i = 0; i < 60 && host.state().phase !== 'flying'; i++) t = await run(host, t, 0.5);
+        // the task: its lines (said at once here) and its three sounds, three times each
+        for (let i = 0; i < 90 && host.state().phase !== 'flying'; i++) t = await run(host, t, 0.5);
         expect(host.state().phase).toBe('flying');
         const band = getLesson('hover-height').layers.heightBandM as readonly [number, number];
         for (let i = 0; i < 60 * 10 && host.state().heightM < (band[0] + band[1]) / 2; i++) t = await run(host, t, 1 / 60, stick({ throttle: 1 }));

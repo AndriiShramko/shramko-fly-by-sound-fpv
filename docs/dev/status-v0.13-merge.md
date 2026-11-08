@@ -288,7 +288,7 @@ simulator's part stays in the review's wave 2 list.
 
 - [x] 12. M1. A recording with a touch in the corridor or a tunnel replays PASS: a frame's points before its touch; the
   test host writes what the simulator writes, and every touched sample (W11)
-- [ ] 13. M2. The target note named and played where it first sounds (hover-height); rings-heights' words for it
+- [x] 13. M2. The target note named and played where it first sounds (hover-height); rings-heights' words for it
 - [ ] 14. M3. The open-way chime named and played in the corridor and in tunnel-gaps
 - [ ] 15. m1. The corridor's checkpoints line and its plays; the chime of a track's last checkpoint
 - [ ] 16. m2. The stale lesson counts in `CITATION.cff`, `src/contract.ts` and `docs/testing/test-protocol.md`
@@ -322,6 +322,34 @@ simulator's part stays in the review's wave 2 list.
   cases ("checkpoint:w6 ... is recorded but the replay did not derive it", `w5` derived instead), and so does the host
   writing the position after the place (the touches at the respawn). Full suite 1046 of 1046, typecheck clean.
 - The simulator's half, `FrameSampler.take` keeping every sample with `touched`, is W11 of the review's wave 2 list.
+
+### 13. M2: the target note is named and played where it first sounds
+
+- Tried first (a probe, not committed): the truth bot flew 15 lessons with the planner given every frame and each
+  lesson's layers. `height.target` sounds in every flying frame of hover-height (3052 of 3052 at 50 Hz), hover-turn,
+  rings-first, rings-course and rings-heights; on the fast path no line names it (the glossary, lesson 1 of the full
+  path, does; rings-heights, lesson 22, called it "the second, steady tone" and played nothing). The finding holds.
+- Fix: hover-height has `intro.3` after the height tone and its buzz, with `cues: ["height.target"]`: "About once a
+  second, a short note marks the best height. When your tone sounds the same, you are there." (es and pl say the same in
+  their words, ru "the height you need"). rings-heights' `intro.2` is "You
+  hear your height as a gliding tone. About once a second, a short note marks the height of the next ring." with
+  `cues: ["height.tone", "height.target"]`, and `hint.1` "Before each ring, move up or down until your tone sounds the
+  same as the short note."; its intro.3 and retry ("the two tones") stand for the tone and the note. The catalogue
+  gives hover-height three intro lines; the lessons stay version 2 (unreleased).
+- The English lines measured as the others were (Microsoft David Desktop, `measure-tts.ps1`'s method; hover-height's
+  unchanged intro.2 measured 10.255 s, as in the fixture): hover-height's intro.3 7.715 s, rings-heights' intro.2 7.34
+  s and hint.1 5.62 s, added to `test/fixtures/tts-en-david.json`. The schedule test's fact is 265 of 379 lines longer
+  than the estimate (264 of 376 before; of the three only hover-height's line is longer).
+- Tests: new `test/named-sounds.test.ts` flies every lesson of the fast path that has a world with the truth bot, the
+  planner given every frame: each watched sound it hears (here the target note) must be named, by an intro line's
+  `cues` or a name-cues goal, in that lesson or one before it on the path; it sees the note first in hover-height. The
+  full path names it in its second lesson, the glossary; hover-height's line plays only the note, after the tone.
+  `test/world-heights.test.ts`: rings-heights' intro says the short note and plays the tone and the note, no line of
+  the lesson says "steady", the hint names the short note. `test/lesson-schedule.test.ts`: hover-height plays the tone,
+  the buzz and the note three times each, each after its line; `test/demo.test.ts`: the demo host says intro.3 after the
+  six plays, then the note three times, then the goal. Broken on purpose (both lesson files as merged), then restored:
+  the three checks fail ("height.target sounds while flying hover-height, and no lesson so far named it"). Full suite
+  1049 of 1049, typecheck clean, locale lint 0 problems (522 keys), layout 0.
 
 ## Final status (2026-11-08, the whole merge)
 

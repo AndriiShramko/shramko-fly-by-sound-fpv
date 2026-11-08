@@ -25,6 +25,10 @@
       "key": "lesson.rings-heights.intro.1"
     },
     {
+      "cues": [
+        "height.tone",
+        "height.target"
+      ],
       "key": "lesson.rings-heights.intro.2"
     },
     {

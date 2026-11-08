@@ -1,7 +1,7 @@
 // Rings at different heights (M41-22, lane s13-worlds step 7): the rings generator's version 2 places
 // gates at given heights (levels floor, middle, ceiling or metres), and the lesson rings-heights, after
 // rings-small and before rings-course, teaches finding a ring's height by ear with the target tone of
-// M41-12 (lane s13-sound): the second, steady tone is the next ring's height. Held here: the gates at the
+// M41-12 (lane s13-sound): a short note about once a second is the next ring's height. Held here: the gates at the
 // asked heights, all three levels used and far apart; every ring inside the room with its margins; each
 // height change can be flown within its leg at the lesson's caps; no one height passes rings of two levels
 // (review M3); the truth bot passes; the intro says what to listen for. Controls: rings-line's rings are all
@@ -137,11 +137,18 @@ describe('rings at different heights (M41-22)', () => {
         expect(tooSteep(lesson, tight).length).toBeGreaterThan(0);
     }, 120000);
 
-    it('the intro says that the second, steady tone is the next ring\'s height, and the same tone the right height', () => {
+    it('the intro says that a short note about once a second is the next ring\'s height, plays it, and the same sound is the right height', () => {
         const en = createTranslator('en', DICTS);
         const text = lesson.intro.map((x) => en.text(x)).join(' ');
-        expect(text).toMatch(/second, steady tone is the height of the next ring/);
+        // since lane s13-sound's review M2 the target is a short note about once a second, not a steady second tone
+        // (review M2 of the merge): the line that says so plays the height tone and the note, three times each
+        expect(text).toMatch(/About once a second, a short note marks the height of the next ring/);
         expect(text).toMatch(/two tones sound the same, you are at the right height/);
+        const line = lesson.intro.find((x) => x.key === 'lesson.rings-heights.intro.2');
+        expect(line?.cues).toEqual(['height.tone', 'height.target']);
+        const all = [...lesson.intro, ...lesson.speech.hints, lesson.speech.retry, lesson.speech.pass].map((x) => en.text(x)).join(' ');
+        expect(all).not.toMatch(/steady/);
+        expect(en.text(lesson.speech.hints[0]!)).toMatch(/your tone sounds the same as the short note/);
         // every language says it (the keys exist and differ from English)
         for (const locale of ['es', 'pl', 'ru'] as const) {
             const tr = createTranslator(locale, DICTS);

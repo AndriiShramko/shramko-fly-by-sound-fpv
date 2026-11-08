@@ -70,7 +70,7 @@ export const LESSONS: readonly LessonSpec[] = [
     { id: 'ears-walls', module: 0, intro: 2, goals: 1, hints: 1 },
     { id: 'ears-shapes', module: 0, intro: 2, goals: 1, hints: 1 },
     { id: 'ears-game', module: 0, intro: 3, goals: 1, hints: 1 },
-    { id: 'hover-height', module: 1, intro: 2, goals: 1, hints: 1 },
+    { id: 'hover-height', module: 1, intro: 3, goals: 1, hints: 1 },
     { id: 'hover-turn', module: 1, intro: 2, goals: 1, hints: 1 },
     { id: 'move-speed', module: 2, intro: 2, goals: 1, hints: 1 },
     { id: 'move-stop', module: 2, intro: 2, goals: 1, hints: 1 },

@@ -90,11 +90,14 @@ describe('every named sound plays three times with no speech over it, and every 
         const first = h.plays.filter((p) => p.step === 2);
         expect(first).toHaveLength(3);
         expect(h.asks[0]?.linesStart).toBeGreaterThan(first[2]?.end ?? Infinity);
-        // a flying lesson's task: each sound its line names, three times after the line
+        // a flying lesson's task: each sound its line names, three times after the line (the target note since the merge's review M2)
         const task = schedule('hover-height', { speech: measuredSpeech(david) });
-        expect(task.plays.map((p) => p.cue)).toEqual(['height.tone', 'height.tone', 'height.tone', 'height.rough', 'height.rough', 'height.rough']);
+        expect(task.plays.map((p) => p.cue)).toEqual(['height.tone', 'height.tone', 'height.tone', 'height.rough', 'height.rough', 'height.rough', 'height.target', 'height.target', 'height.target']);
         const line = task.speech.find((l) => l.key === 'lesson.hover-height.intro.2');
         expect(task.plays[0]?.start).toBeGreaterThanOrEqual(line?.end ?? Infinity);
+        const target = task.speech.find((l) => l.key === 'lesson.hover-height.intro.3');
+        expect(target?.start).toBeGreaterThanOrEqual(task.plays[5]?.end ?? Infinity);
+        expect(task.plays[6]?.start).toBeGreaterThanOrEqual(target?.end ?? Infinity);
     }, 60000);
 });
 
@@ -131,11 +134,11 @@ describe('control: the v0.12 timing fails the same check (a line ends at the ear
         }
     }, 120000);
 
-    it('the fact as measured: 264 of the 376 English lines take the Windows voice longer than the estimate', () => {
+    it('the fact as measured: 265 of the 379 English lines take the Windows voice longer than the estimate', () => {
         const en = JSON.parse(readFileSync(new URL('../locales/en.json', import.meta.url), 'utf8')) as Record<string, string>;
         const keys = Object.keys(david);
         const longer = keys.filter((k) => (david[k] as number) > 0.7 + 0.065 * (MEASURED_TEXT[k] ?? (en[k] as string)).length);
-        expect(keys.length).toBe(376);
+        expect(keys.length).toBe(379);
         // 262 until merge s13-merge reworded walls-hall's intro.2 and hint.1 and the corridor's intro.2 (review m4 of
         // lane s13-sound); those three were measured again with the same voice and method (walls-hall's intro.1, not
         // changed then, measured 8.64 s again, as in the fixture). walls-hall's goal.1, reworded at the s13-worlds merge
@@ -143,8 +146,10 @@ describe('control: the v0.12 timing fails the same check (a line ends at the ear
         // old text). 263 until the checkpoint chime's glossary line was reworded at that merge (item 8e: "One chime from
         // low to high, only once, ..."), measured again too: 5.175 s, longer than its estimate (5.055 s), where the old
         // line (3.295 s) was shorter. The lines lane s13-worlds reworded after they were measured are taken with the
-        // text that was measured (MEASURED_TEXT).
-        expect(longer.length).toBe(264);
+        // text that was measured (MEASURED_TEXT). 376 lines and 264 longer until the merge's review M2 added three lines
+        // that name the target note, measured the same way: hover-height's intro.3 7.715 s (longer than its estimate,
+        // 7.395 s), rings-heights' intro.2 7.34 s and hint.1 5.62 s (shorter than theirs).
+        expect(longer.length).toBe(265);
         // and under v0.12 the first sound of the check plays partly under the line before it
         const s = schedule('ears-headphones', { speech: measuredSpeech(david), runner: v012 });
         const first = s.plays.find((p) => p.kind !== 'one-off');

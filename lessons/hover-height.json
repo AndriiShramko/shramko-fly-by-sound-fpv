@@ -33,6 +33,12 @@
       "key": "lesson.hover-height.intro.2"
     },
     {
+      "cues": [
+        "height.target"
+      ],
+      "key": "lesson.hover-height.intro.3"
+    },
+    {
       "key": "lesson.hover-height.goal.1",
       "params": {
         "seconds": 20
