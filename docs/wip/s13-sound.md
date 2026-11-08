@@ -1,7 +1,7 @@
 # Lane s13-sound: the sound of v0.13 (owner's message 41)
 
-Plan: ShramkoGSFPV `docs/wip/v13-plan.md` (items M41-12 to M41-17, the lanes, the checks). Branch `s13-sound`, worktree
-`C:/dev/sonic-s13-sound`, cut from `main` 7d4b4b9 with `vl-spec` merged (the virtual listener's design,
+Plan: ShramkoGSFPV `docs/wip/v13-plan.md` (items M41-12 to M41-17, the lanes, the checks). Branch `s13-sound`, in a
+worktree of its own, cut from `main` 7d4b4b9 with `vl-spec` merged (the virtual listener's design,
 `docs/design/virtual-listener.md`). Sole writer: this lane. Never pushed; the lead merges.
 
 ## Ownership
@@ -44,26 +44,36 @@ Fixes after the review (`docs/wip/s13-sound-review.md`), one commit per fix or s
   between two sector rays its time to contact (`src/sense/sampler.ts` `pathObjects`, `collisionCourse`); box faces and
   the walls-pillar pillar heard 2.48 to 2.50 s before contact at every angle tried (`test/ttc.test.ts`, 8 new tests)
 - [x] B2 the five shared cue events with s13-lessons' fields: the same text of the five `CueEvent` members as
-  s13-lessons' (its worktree at 1862a33 plus its uncommitted R2 fix, read 2026-11-08); the planner sounds a repeat-cue
+  s13-lessons' (its review fix R2, cdb5733: word for word); the planner sounds a repeat-cue
   for the play's `durS`, a stage by `stage`, wrong-way and wrong-side from `dir`; the engine plans a repeat-cue at once
   (`test/events.test.ts`, 16 tests; `test/replay-v012.test.ts` relaxed as s13-lessons' review R2 asks)
 - [x] M1 the open way in narrow tunnels: probes from 0.25 m out in steps of 0.15 m with the hull's half width and
   3 cm; tunnels 2, 1.6 and 1.2 m wide, a way on every side, the craft at three places across the obstacle: each way
   named, never another (`src/sense/freeway.ts`, `test/freeway.test.ts`, 21 tests with the controls)
-- [ ] M2 the target height without a beat that sounds like "out of band" or "off aim"
-- [ ] M3 the motor calibrated on the default craft and the micro presets
-- [ ] M4 the voice the owner's Chrome speaks
-- [ ] M5, M6, m4, m7 what the simulator, the lead and s13-lessons must do, in this doc
+- [x] M2 the target height as a short note about once a second, the height tone giving way to it: one tone at a time,
+  no beat (`src/cues/height.ts`, engine `playTargetNote`, themes' `targetPeriodMs`, `targetNoteMs`; rig check
+  VL-3-height, its control the first design's steady pair)
+- [x] M3 the motor on the simulator's default craft and the micro presets: the bus keeps the propellers' whine (1.1 to
+  2 kHz) and leaves the cues' notes; every cue at least 15 dB over the motor in its own bands for five crafts (rig
+  VL-2-motor)
+- [x] M4 a local voice of the language before a network voice (`src/audio/voice-choice.ts`); the local voices Chrome can
+  use here measured as Chrome drives them (`evidence/voices-local.json`); Spanish, Polish and Russian stay open (no
+  local voice here, their network voices unmeasured)
+- [x] M5, M6, m4, m7 in "Needs from the simulator" and "Needs from other lanes": the motor hookup's owner, the five
+  simulator tests with their new expectations, the walls-hall and corridor lines, the replay page's verdict
 - [x] m1 no open-way chime at a gate ahead (the target layer leads through it), with its control (same commit as M1)
-- [ ] m2 the open-way chime's above and below
-- [ ] m3 the pilot's motor level
-- [ ] m5 the new lines in their languages
-- [ ] m6, m8 stale statements, build-machine folders
-- [ ] The full checks again, the final status
+- [x] m2 the open-way chime tells the way by its contour (equal notes from a side, rising above, falling below, with
+  the polarity), and its line holds for either polarity
+- [x] m3 the pilot's own motor level (`SonicPrefs.motorGainDb`, after the leveller), "Motor volume" in four languages;
+  the leveller's ratio stays (see step 6)
+- [x] m5 the new lines as people say them (en, ru, pl, es)
+- [x] m6, m8 the motor bus as it is in the contract, the engine and this doc; no build-machine folders in this doc (the
+  design document's install section is the lead's, see "Needs from other lanes")
+- [x] The full checks again, the final status (below)
 
-## Final status (2026-11-08)
+## Final status (2026-11-08, after the review fixes)
 
-Done, with commits (branch `s13-sound`, not pushed):
+Done, with commits (branch `s13-sound`, not pushed). The lane's steps:
 
 | Step | Item | Commit |
 |---|---|---|
@@ -76,36 +86,72 @@ Done, with commits (branch `s13-sound`, not pushed):
 | 7 | M41-10 never silence, the planner's part | 00efe02 |
 | 9 | the rig, its code and its first runs | 1452641, faa630b |
 | 8 | M41-17 speech level, and the rig's passing evidence | e5bdaae |
-| 10 | the full checks, the v0.12 replay test, the proofs' evidence | 2a35675, and the first-note fix after it |
+| 10 | the full checks, the v0.12 replay test, the proofs' evidence | 2a35675, 22e3b09 |
+
+The review's fixes (`docs/wip/s13-sound-review.md`, 2 blockers, 6 majors, 8 minors; none refuted):
+
+| Finding | Fix | Commit |
+|---|---|---|
+| B1 objects heard late | five path rays decide the collision course and read their own sector | bbcda98 |
+| B2 shared events disagree | s13-lessons' text of the five members; `durS`, `stage`, `dir` honoured; repeat-cue planned at once | c48de8c |
+| M1 no open way in narrow tunnels | probes from 0.25 m in steps of 0.15 m, half width 0.15 m | 36a723e |
+| M2 the target beat | a target note about once a second, one tone at a time | ea9eaff, 302ae05 |
+| M3 motor set on a 5-inch quad | the whine band, measured on five crafts | abe5428, 07c36bd, 302ae05 |
+| M4 voice set on a voice Chrome does not use | local voice first, local voices measured | 783dd8b |
+| M5, M6 the motor hookup, five simulator tests | in "Needs from the simulator" | this doc |
+| m1 chime at a ring's tube | none at a gate | 36a723e |
+| m2 above and below by register | by contour, with the polarity | 095d926 |
+| m3 no motor level for the pilot | `SonicPrefs.motorGainDb` | abe5428 |
+| m4 walls-hall and corridor lines | in "Needs from other lanes" | this doc |
+| m5 lines not natural | rewritten | 095d926 |
+| m6 stale motor statements | contract, engine, this doc | 9cecf7c |
+| m7 v0.12 recordings FAIL on the replay page | in "Needs from other lanes" (the lead) | this doc |
+| m8 build-machine folders | placeholders here; the design document is the lead's | this doc |
+| (proofs' evidence after the engine changes) | | 2f5a671 |
+
+Checks on the last commit: `pnpm typecheck` clean; `pnpm test` 26 files, 674 tests (the locale lint and the layout
+check run inside it, `test/locales.test.ts` and `test/layout.test.ts`; `node tools/run-tool.mjs locale-lint` and
+`check-layout` need the `main()` that s13-lessons adds to those tools); `pnpm proof:audio` 3 files, 9 proofs, every
+broken control failing; `pnpm listen` 8 of 8 checks valid and passing, fresh for inputs fd752e0f7bf9.
 
 Left open, with reasons:
 
+- M41-17 for Spanish, Polish and Russian on the owner's machine: it has no local voice of those languages, so Chrome
+  online speaks them with Google's network voices, whose loudness cannot be captured headless (a loopback recording
+  of headed Chrome is outside this lane's rules). English holds: the local voices measure within 0 to -1.7 LU of the
+  calibration voice. Ways out for the lead and the owner: Windows' own voices of those languages (a system setting on
+  the owner's machine), or pre-rendered clips through the engine (design, section 13).
 - Not rendered by the rig yet: the open-way chime and the five event earcons (their checks are the planner's: on the
   scale, distinct, planned peaks at least 3 dB under a hazard pulse); a rendered "never louder than the safety sound"
   and a three-onset check of repeat-cue need the runner's events (lane s13-lessons) in a scripted lesson.
-- The motor sits 14.5 LU under the cues, not "about 10": louder, the shape trace's 630 Hz band would fall under 6 dB
-  over the motor (the plan's own masking rule binds first). Measured with a stand-in of the simulator's motor (a
-  5-inch quad on 6S); a whoop's rotor sings higher and needs the simulator's own motor in its bench (design VL-0e).
-- The target tone of a 3 m gate is A4 in soft and clear, the shape trace's note; where both layers are on they can
-  beat together. Not measured yet (design VL-2's informational-masking flag).
-- Target heights off the lesson's 0.5 m grid (rings-course's random gate heights) give target tones off the scale (in
-  exact unison still).
+- The motor's band (1.1 to 2 kHz) holds the cues' weak partials and transients there 20 to 35 dB under it (the price
+  of hearing the motor at all; the first band did the same at 1 to 1.5 kHz); the cues' notes and the pinna cues over
+  4 kHz are clear of it. Whether that costs localization is VL-2's glimpse measure, not built.
+- The pilot's motor level and the slider: the leveller (ratio 4) still flattens the simulator's slider (about 4.5 dB
+  from 15 % to 60 %) and the throttle's loudness swing; the rotor's pitch carries the throttle, and the pilot's own
+  level comes after the leveller. A gentler ratio would let a high slider mask the cues again; not changed.
+- VL-0a held at 1.8e-7 and 2.4e-7 in this lane's runs; the review's run with another motor stand-in saw 1.85e-5 (a
+  motor through the leveller). If it comes back, compare the stems to find the part that drifts.
+- Target heights off the lesson's 0.5 m grid (rings-course's random gate heights) give target notes off the scale
+  (the same pitch as the height tone at the target still).
 - A slowing craft no longer hears a wall it has stopped short of (over about 1 m and 3 s): `walls-hall`'s "stop
   within 3 m" (lane s13-lessons) and the corridor's quiet middle are the new behaviour to confirm with pilots.
-- Speech: measured with the Windows desktop voice; Chrome may use a network voice whose level is unknown. Per line,
-  the voice is 4 LU over a busy moment and up to 13 LU over a quiet one.
-- The rig is the design's VL-0a, VL-0b and a cheap part of VL-2 and VL-6. VL-0c to 0e, VL-1 to 5 and 7 to 9, the head
-  panel, the bots and clips through Web Audio are not built.
+- The rig is the design's VL-0a, VL-0b and a cheap part of VL-2, VL-3 and VL-6. VL-0c to 0e, VL-1, the rest of VL-2
+  to 5, VL-7 to 9, the head panel, the bots and clips through Web Audio are not built.
 - v0.12 recordings: reported as recorded with an older build (theme soft version 2 here, flown with 1; lesson version
-  2 here); their cue ids no longer match frame by frame (every flying frame now has the height tone and the bed).
-- How any of it feels to a person: not measurable here; the first testers calibrate the "proposal" thresholds.
+  2 here); their cue ids no longer match frame by frame.
+- How any of it feels to a person (the target note's pitch step, the contour of the open-way chime, the motor's
+  whine): not measurable here; the first testers calibrate the "proposal" thresholds.
 
 ## API for the host (exact)
 
 - `SonicEngine.motorInput?: object | null` (contract) and `FlyBySoundEngine.motorInput` (getter): the AudioNode for the
-  simulator's motor sound; the engine's AudioContext as `.context`; silent while `SonicPrefs.motorSound` is false.
+  simulator's motor sound (band 1.1 to 2 kHz, levelled, under the cues, the pilot's motor level, ducked); the
+  engine's AudioContext as `.context`; silent while `SonicPrefs.motorSound` is false.
 - `SonicPrefs.motorSound`: default `true`. `SonicPrefs.heightTarget?: boolean` (new, optional; absent or true: the
-  target tone on); its setting text `menu.setting.height-target`.
+  target note on); its setting text `menu.setting.height-target` ("Target height note").
+  `SonicPrefs.motorGainDb?: number` (new, optional, -24 to 6 dB, absent: 0): the pilot's motor level in the mode,
+  after the leveller; its setting text `menu.setting.motor-level` ("Motor volume").
 - `readPrefs(stored)`: a pre-v0.13 document (no `heightTarget`) with `motorSound: false` reads as true, with an issue
   at path `motorSound`.
 - `CueEvent` new members (one text with lane s13-lessons, review B2): `{ kind: 'repeat-cue'; cue: CueId; dir?: Vec3 |
@@ -114,11 +160,13 @@ Left open, with reasons:
   with `engine.cue(e)` as the runner hands it over. A repeat-cue sounds from its first audio frame (the engine plans
   at once, as for a preview) and for its `durS` (`REPEAT_PLAY_DEFAULT_S` = 2.5 when absent, held to 0.2 to 6 s).
 - For the panel (M41-25): `FlyBySoundEngine.plan` (getter, the last `FramePlan`): `plan.height.heightM`,
-  `plan.height.hz`, `plan.height.target` (`heightM`, `hz`, `onScale`, `noteIndex`, `gainDb`) or null, `plan.freeWay`
+  `plan.height.hz`, `plan.height.target` (`heightM`, `hz`, `onScale`, `noteIndex`, `gainDb`, `periodS`, `noteS`: a
+  note `noteS` long every `periodS`) or null, `plan.freeWay`
   (`side` 'left' | 'right' | 'up' | 'down', `offsetM`, `obstacleM`, `ttcS`) or null; active cue ids `height.target`,
   `safety.free:<side>`, `safety.wrong-way`, `safety.wrong-side`, `target.praise`, `target.stage` besides the old ones.
 - Speak every line through `engine.say()`: the theme's `voice.volume` (0.74 soft, 0.87 clear, 0.77 race) sets the voice
-  under the mix; a line spoken past the engine would be 7 to 11 LU louder.
+  under the mix; a line spoken past the engine would be 7 to 11 LU louder. The engine picks a local voice of the
+  language before a network one (`chooseVoice`, `src/audio/voice-choice.ts`).
 
 
 ## How v0.12 sounds: facts with file and line (code as of 7d4b4b9)
@@ -220,6 +268,22 @@ Left open, with reasons:
 - Known overlap, not fixed here: in soft and clear the target tone of a 3 m gate is A4 (440 Hz), the shape layer's
   note, and the shape trace bends by Doppler around it; where both layers are on (rings-first, shapes-*) the two can
   beat against each other. The virtual listener's informational-masking flag (VL-2) is the check for it.
+- Changed after the review (M2): the steady target tone beat against the height tone at 7 to 62 Hz over most of
+  hover-height's band, as rough as the out-of-band buzz the lesson calls "too high or too low", and at 2 to 13 Hz
+  within 10 cm of a gate's height, the rate of the target hum's "off to one side" beat. The target is now a short
+  note at its pitch, `height.targetNoteMs` (280 ms) every `height.targetPeriodMs` (1250 ms; calm x 1.3), as loud as
+  the height tone (`targetDb` 0) with a soft octave, and the height tone fades out just before each note and back just
+  after it (no overlap: two tones at one pitch could cancel). One tone at a time: no beat at any height. At the
+  target the tone seems to go on through the note, a little brighter; off it the note is higher or lower than the tone
+  around it. The lesson lines about the buzz and the hum keep their meaning; the glossary line now says "about once a
+  second, a short note marks the height to fly at; change height so your tone moves toward that note". The overlap
+  with the shape trace above is now one note a second, not a continuous beat.
+- Measured (rig VL-3-height, hover-height's band 2 to 3 m, the craft held at 2.5, 2.45, 2.4, 2.3, 2.2, 2.05, 2.7,
+  2.95 m and out of the band at 1.6 and 3.4 m, 21 target notes): in the band the height layer's envelope is modulated
+  at most 1.1 % between 2 and 70 Hz, in the plain tone between notes and in each note; out of the band the buzz is
+  43 % deep at 38 Hz. Control, the first design's steady pair: 43 % in the band at every height off the target (at
+  2.2 and 2.95 m as deep at 38 Hz as the buzz itself). What it cannot show: whether a pilot hears the pitch step from
+  the tone to the note as "climb" or "sink" (sequential pitch judgement, people or VL-3's discrimination model).
 
 ### Step 3, time to contact (M41-13)
 
@@ -335,12 +399,26 @@ Left open, with reasons:
   that is lost: a v0.12 pilot who turned the motor on and then off again gets it on once. From the first v0.13 save
   every value is kept. The prefs format stays `shramko-sonic-prefs/1`; the strict `validatePrefs` (session manifests)
   never changes a recorded value, so v0.12 packages read as before.
-- Engine motor bus (`motorInput`, new optional member of `SonicEngine`): input, 2nd-order low-pass at 1.5 kHz
-  (the rotor's note and the low wash stay, the hiss over 2 kHz where the cues' direction lives goes), a leveller
-  (compressor at -50 dB, ratio 4, knee 6 dB, its make-up gain taken back out) so a motor played at any position of the
-  simulator's volume slider stays within a few dB, `MOTOR_LEVEL_DB` after it, a gate that is shut while
-  `motorSound` is off, and a duck like the layers': 12 dB under speech (theme `duckDb`), 9 dB under an urgent hazard.
-  `auxInput` is unchanged: a raw input before the limiter.
+- Engine motor bus (`motorInput`, new optional member of `SonicEngine`), as fixed after the review (M3, m3, m6): input,
+  a 4th-order high-pass at 1.1 kHz and a 2nd-order low-pass at 2 kHz (the propellers' whine stays: a micro drone's
+  blade-pass harmonics, 1.3 to 2.6 kHz at the presets' rotor speeds; the rotor's own turning note, 450 to 900 Hz on a
+  micro, sat right on the cues' notes and goes; the motor stays 12 dB or more off the cues' highs over 4 kHz), a
+  leveller (compressor at -50 dB, ratio 4, knee 6 dB, its make-up gain taken back out) so a motor played at any
+  position of the simulator's volume slider stays within a few dB, `MOTOR_LEVEL_DB` (14) after it, the pilot's own
+  level (`SonicPrefs.motorGainDb`, -24 to 6 dB) in a gate that is shut while `motorSound` is off, and a duck like the
+  layers': 12 dB under speech (theme `duckDb`), 9 dB under an urgent hazard. `auxInput` is unchanged: a raw input
+  before the limiter.
+- The first bus (400 Hz to 1.5 kHz) was set on a 5-inch quad's motor. Measured with the simulator's default craft and
+  the micro presets (rig VL-2-motor, the motor stand-in at each craft's rotor speed, the slider at 15 %), the shape
+  trace was 5.9 dB over the Pavo20's motor, -2.5 dB over the Meteor65's and -3.2 dB over the Air65's (the rule is 6):
+  keeping that band would have taken the motor 10 dB lower, about 24 LU under the cues. With the whine band at the
+  same level every cue is at least 15 dB over the motor in its own bands for every craft (the Air65's shape trace is
+  the worst), and the motor sits 11.0 to 12.1 LU under the cues for the micros, 14.1 LU for the 5-inch (the plan:
+  about 10). The level stays 14 dB.
+- The pilot's level (m3): the slider of the simulator moves the motor by about 4.5 dB from 15 % to 60 % through the
+  leveller (ratio 4), so the mode's own setting does it now; a gentler ratio would let a high slider mask the cues
+  again. The throttle's loudness swing is cut 4:1 by the same leveller; the rotor's pitch, which the leveller does not
+  touch, carries the throttle.
 
 ### Step 7, never silence (M41-10, the planner's part)
 
@@ -379,9 +457,19 @@ Measured, not guessed (the rig, step 9, and the clip maker `tools/listen/tts/sap
   moment and 10.7 to 13.2 LU over a quiet one (the turn after the ring: only the height tone, the bed and the
   motor). One utterance volume cannot hold 3 to 6 LU against both; the engine's 12 dB duck lowers the cues under
   every line anyway.
-- Not measured: the voice and level Chrome really uses (the engine asks for en-GB; on a machine with only en-US
-  local voices Chrome may take a network voice, whose level is unknown); how loud a person sets the headphones.
-  Playing pre-rendered clips through the engine's limiter (design, section 13) would make both exact.
+- Not measured: how loud a person sets the headphones. Playing pre-rendered clips through the engine's limiter
+  (design, section 13) would make the voice's level exact everywhere.
+- After the review (M4): the engine asked for en-GB first, network or not, so Chrome online on a machine with only
+  en-US local voices (this one, the owner's) would have spoken English with Google's network en-GB voice, whose level
+  nobody measured. `chooseVoice` now takes a local voice of the exact tag, then a local voice of the language, then a
+  network voice (`test/speech-voice.test.ts`; control: the first rule takes the network voice). Measured, the local
+  voices Chrome can use here, driven as Chrome drives them on Windows (SAPI 5 with the desktop and the OneCore voice
+  tokens, `SetVolume`, spoken to a file; `tools/listen/tts/voice-levels.ps1`, `tools/listen/measure-voices.py`,
+  `evidence/voices-local.json`): OneCore David speaks exactly as the desktop David the themes were set on, Mark
+  -0.6 LU, Zira -0.4 (desktop) and -1.7 LU (OneCore); every one follows the same volume law, 0.25 dB per step (87:
+  -3.25 dB, 74: -6.5 dB, 50: -12.5 dB). So with any local English voice the voice is 3.0 to 4.8 LU over the mix. That
+  Chrome hands `utterance.volume` x 100 to SAPI stays an assumption (consistent with every SAPI voice here). Spanish,
+  Polish and Russian have no local voice on this machine: Chrome online speaks them with network voices, unmeasured.
 
 ### Step 9, the first measuring rig (VL-0, a cheap part of VL-2 and VL-6)
 
@@ -390,9 +478,9 @@ voice faded in (the new target tone at its first frame, and the room's drone at 
 note is now set at once.
 
 One command: `pnpm listen` (`node tools/run-tool.mjs listen`, `--force` to run again with nothing changed).
-Environment: `SHRAMKO_LISTEN_PY` (the Python of `tools/listen/requirements.txt`; on the build machine
-`U:/venvs/shramko-listen/Scripts/python.exe`), `SHRAMKO_LISTEN_CACHE` (on the build machine
-`U:/cache/shramko-listen`; default `.cache/listen`), `GPU_LOCK` (default `C:/dev/.gpu-lock`).
+Environment: `SHRAMKO_LISTEN_PY` (the Python of `tools/listen/requirements.txt`, `<venv>/Scripts/python.exe`),
+`SHRAMKO_LISTEN_CACHE` (a folder on a data disk, `<cache>`; default `.cache/listen`), `GPU_LOCK` (the machine's GPU
+lock directory; the driver has a default).
 
 - Render (`test-audio/page/listen.ts`, `test-audio/page/listen-types.ts`): scripted flights through the real engine,
   OfflineAudioContext at 48 kHz, frames at 60 Hz by suspend and resume, four channels (the ears after the output
@@ -401,25 +489,29 @@ Environment: `SHRAMKO_LISTEN_PY` (the Python of `tools/listen/requirements.txt`;
   distance and time to contact, the free way, urgent, speaking, the motor), speech that keeps the time of its clip,
   and a motor stand-in that follows the simulator's motor recipe. Scenarios: a climb (0.5 to 4.5 m at 0.5 m/s), three
   approaches at 1, 3 and 5 m/s, a 16 s ring flight (ring at 3 m, a height dip, a gate note, praise, a turn, a run at
-  a wall at 4 m/s, three spoken lines). Controls: v0.12 stepped height, the distance-only sampler, the raw motor at
-  60 %, another noise seed.
-- Driver (`tools/listen.ts`): clips by `tools/listen/tts/sapi-clips.ps1`, 18 renders in headless Chrome under the GPU
-  lock (about 40 s), `tools/listen/measure.py` (about 10 s), evidence `evidence/listen/<check>.json` and `index.json`
+  a wall at 4 m/s, three spoken lines), and since the review a 25 s hover in hover-height's band (M2) and the motor stem
+  of the flight once for each craft (M3: the simulator's default Pavo20 Pro on 3S, the Meteor65 Pro and Air65 on 1S,
+  the Pavo Pico on 2S, each at its rotor speed and hover output from the simulator's presets, and the first 5-inch
+  stand-in); the flights fly the default craft. Controls: v0.12 stepped height, the distance-only sampler, the raw
+  motor at 60 %, another noise seed, the steady target tone (`targetTone: 'steady'`).
+- Driver (`tools/listen.ts`): clips by `tools/listen/tts/sapi-clips.ps1`, 24 renders in headless Chrome under the GPU
+  lock (about 80 s), `tools/listen/measure.py` (about 10 s), evidence `evidence/listen/<check>.json` and `index.json`
   under the sha256 of every input (106 files: src, themes, lessons, locales, the rig's own code, package.json, the
   lockfile); renders cached in `SHRAMKO_LISTEN_CACHE/renders/<hash>/`. Nothing changed and the last run passed:
   nothing runs.
-- The checks, each valid only when its control fails (final run 2026-11-08, Chrome 156.0.8078.80, inputs
-  61b845a05094):
+- The checks, each valid only when its control fails (final run after the review fixes, 2026-11-08, Chrome
+  156.0.8078.80, inputs fd752e0f7bf9):
 
 | Check | Measured | Control |
 |---|---|---|
 | VL-0a two renders the same | max difference 1.8e-7 (float32 rounding; limit 1e-6) | noise seed 2: 0.045 |
-| VL-0b stems sum to the pre-chain mix | residual -127.6 dB (limit -90) | the height stem left out: -2.6 dB |
+| VL-0b stems sum to the pre-chain mix | residual -130.7 dB (limit -90) | a stem left out: -3.0 dB |
 | height pitch track continuous | largest change 3.7 cents per 10 ms in the climb (limit 25), 7.8 cents median behind the plan (the glide's smoothing) | v0.12 stepped tone: 118.7 cents |
 | hazard onset before impact | 2.475, 2.493, 2.475 s at 1, 3, 5 m/s (at least 2) | distance-only rule at 5 m/s: 1.18 s |
-| voice over the mix | soft 4.66, clear 4.65, race 4.73 LU (3 to 6) | volume 1: 11.2, 7.9, 10.5 LU |
-| true peak, engine and voice | -6.98, -3.73, -6.27 dBTP (at most -1) | volume 1: -0.52, -0.50, -0.49 |
-| cues over the motor in their own third-octave bands | safety 28.3, height 24.8, target 18.3, shape 7.8 dB (at least 6); motor 14.5 LU under the cues | raw motor at 60 %: shape 0.6 dB |
+| voice over the mix | soft 4.76, clear 4.66, race 4.64 LU (3 to 6) | volume 1: 11.3, 7.9, 10.4 LU |
+| true peak, engine and voice | -6.99, -3.74, -6.26 dBTP (at most -1) | volume 1: -0.52, -0.51, -0.49 |
+| cues over the motor in their own third-octave bands, five crafts | worst 15.0 dB (the Air65, shape trace); Pavo20 30.3, Meteor65 20.1, Pavo Pico 22.3, 5-inch 24.2 dB at their worst cue (at least 6); motor 11.0 to 12.1 LU under the cues (micro), 14.1 (5-inch) | raw motor at 60 %: shape 0.9 dB |
+| VL-3-height, the band's meanings | in the band 1.1 % at most (2 to 70 Hz), out of it a 43 % buzz | steady pair: 43 % in the band |
 
 - What it cannot show: how any of it feels to a person; other heads than the HRTF's own (no panel yet); the voice
   Chrome really uses; masking between cues (VL-2's glimpses), telling cues apart (VL-3), intelligibility (VL-4) and
@@ -427,17 +519,33 @@ Environment: `SHRAMKO_LISTEN_PY` (the Python of `tools/listen/requirements.txt`;
 
 ## Needs from the simulator
 
-- M41-16, motor (`apps/fly/src/app/builtin/sound.ts:112-121`, `startOnEngine`): connect the motor sound to
-  `ctx.sonic.engine.motorInput` instead of `auxInput` (fall back to `auxInput` when `motorInput` is undefined: an
-  older package). Its `context` is the engine's AudioContext, as `auxInput`'s. `enabled()` (`sound.ts:84`) already
-  reads `prefs.motorSound`, which is now true by default; nothing else changes there. `apps/fly/src/sonic/audio.ts:16`
-  `PageEngine`: add `'motorInput'` to the Pick. The bench tests that hold the old default
-  (`tools/bench/test/sonic-audio.test.ts:177` and `:428`, `motorSound` false) must expect true.
+- M41-16, motor (`apps/fly/src/app/builtin/sound.ts:113-121`, `startOnEngine`): connect the motor sound to
+  `ctx.sonic.engine.motorInput` instead of `auxInput` (`motorInput ?? auxInput`: an older package has none). Its
+  `context` is the engine's AudioContext, as `auxInput`'s. `enabled()` (`sound.ts:84`) already reads
+  `prefs.motorSound`, which is now true by default; nothing else changes there. `apps/fly/src/sonic/audio.ts:16`
+  `PageEngine`: add `'motorInput'` to the Pick. Review M5: `app/builtin/sound.ts` is in neither wave 2 lane's list
+  (v13-host owns `apps/fly/src/sonic/*` and `app/builtin/sonic-flight.ts`), so the lead assigns it (to v13-host) or
+  makes the change in the gitlink-move merge itself, with a bench test that the mode's motor reaches `motorInput`.
+  Until it lands every pilot in the mode hears the raw motor on `auxInput` (no band, no leveller, no duck): at the
+  default slider about 10 dB under the bus's level, with the slider raised over the cues.
+- The simulator's sound tests that change with this package (review M6, measured by the review at the gitlink 1eea4d5
+  through a vitest alias to this branch; the app itself typechecks clean against it):
+  - `tools/bench/test/sonic-audio.test.ts:177` and `:428`: `motorSound` is true by default now;
+  - `tools/bench/test/sonic-int-replay.test.ts:328`, the glossary control "heard over a floor, voices the floor
+    below": hovering 1.5 m over the floor is silent since the 0.8 m rule (M41-13); hover within 0.8 m of the floor, or
+    sink toward it, to hear `safety.floor:down`;
+  - `tools/bench/test/sonic-lessons.test.ts:178`, walls-hall's layers "the safety layer only (and the voice)": the
+    layers are now safety, height, room and voice (M41-10); expect `on` to include 'safety' (not a length of 2);
+  - `tools/bench/test/sonicrec-recorder.test.ts:303`, walls-hall `version: 1`: read the version from the package
+    (`getLesson('walls-hall').version`; 2 after the merge, which s13-lessons' lesson format bumps as well).
+- M41-3 and M41-4, the mode's settings: offer `motorGainDb` ("Motor volume", `menu.setting.motor-level`, -24 to 6 dB,
+  say 3 dB steps) beside `motorSound`; with the leveller the simulator's own slider moves the motor in the mode by only
+  about 4.5 dB.
 - M41-25, the panel: draw the height bar from `engine.plan.height` (the craft's `heightM`, the target's
-  `target.heightM`, both tones' `hz`), the radar from the active cues' `dir` and `plan.freeWay.side`; add `'plan'` to
-  the `PageEngine` Pick. A step that plays a sound three times (M41-5) shows the cue named in the `repeat-cue` event.
-- M41-4 and M41-3, the mode's settings: offer `heightTarget` ("Target height tone", `menu.setting.height-target`) beside
-  `motorSound`; both through `setup.update()` (`apps/fly/src/sonic/entry.ts:51`), which saves the whole document (a
+  `target.heightM`, the tone's and the target note's `hz`; the note sounds `noteS` every `periodS`), the radar from the
+  active cues' `dir` and `plan.freeWay.side`; add `'plan'` to the `PageEngine` Pick. A step that plays a sound three times (M41-5) shows the cue named in the `repeat-cue` event.
+- M41-4 and M41-3, the mode's settings: offer `heightTarget` ("Target height note", `menu.setting.height-target`) beside
+  `motorSound`; all through `setup.update()` (`apps/fly/src/sonic/entry.ts:51`), which saves the whole document (a
   saved v0.13 document keeps the pilot's motor choice).
 - The voice: the menus and the progress lines of M41-3, 4 and 7 must go through the engine's `say()` so they get the
   theme's measured volume (a separate speechSynthesis call would be 7 to 11 LU louder than the mix).
@@ -456,23 +564,41 @@ Environment: `SHRAMKO_LISTEN_PY` (the Python of `tools/listen/requirements.txt`;
   off the scale (`onScale` false).
 
 - s13-lessons (runner) and the lead at the merge (review B2): the five `CueEvent` members here are, word for word, the
-  text in s13-lessons' worktree on 2026-11-08 (its uncommitted R2 fix over 1862a33: `repeat-cue` { cue, dir?, index?,
-  of?, durS? }, `stage` { stage? }, `wrong-way` and `wrong-side` { dir? }), so that hunk merges clean if s13-lessons
-  commits it as it was; if it changed later, take s13-lessons' text: the planner reads only `cue`, `dir`, `durS` and
+  text of s13-lessons' review fix R2 (cdb5733: `repeat-cue` { cue, dir?, index?, of?, durS? }, `stage` { stage? },
+  `wrong-way` and `wrong-side` { dir? }), so that hunk merges clean; the planner reads only `cue`, `dir`, `durS` and
   `stage`. In `src/cues/planner.ts` take this lane's side and drop s13-lessons' placeholder cases (`eventCue` and
-  `cue()`). `test/replay.test.ts` and `test/report.test.ts` now carry s13-lessons' own lines for the lesson version, and
-  this lane's never-silence test is `test/silence-layers.test.ts`, so neither collides. The glossary can name the new
-  cues (`safety.free`, `safety.wrong-way`, `safety.wrong-side`, `height.target`, `target.praise`, `target.stage` are
-  in `CUE_IDS` with their lines); a one-off cue of them is its own notes (s13-lessons' `ONE_OFF_CUES` should list
-  `safety.wrong-way`, `safety.wrong-side`, `target.praise` and `target.stage` too, so their plays get the one-off
-  length and check).
+  `cue()`): this lane's `repeat-cue` case already honours `durS` (`REPEAT_PLAY_DEFAULT_S` = 2.5 when absent; the name
+  `REPEAT_CUE_S` in s13-lessons' merge note is gone). If a lesson names one of this lane's one-off cues, s13-lessons'
+  `ONE_OFF_PLAY_S` needs its length: `safety.wrong-way` 0.65 s, `safety.wrong-side` 0.55, `target.praise` 0.5,
+  `target.stage` 1.0 (the planner's figures end by 0.63, 0.54, 0.46 and 0.96 s in every theme). `test/replay.test.ts`
+  and `test/report.test.ts` now carry s13-lessons' own lines for the lesson version, and this lane's never-silence test
+  is `test/silence-layers.test.ts`, so neither collides. The glossary can name the new cues (`safety.free`,
+  `safety.wrong-way`, `safety.wrong-side`, `height.target`, `target.praise`, `target.stage` are in `CUE_IDS` with
+  their lines).
 
-- s13-lessons: `walls-hall` asks to stop within 3 m of a wall (`approach-stop`, `stopWithinM` 3). Since v0.13 a
-  slowing craft stops hearing a wall once its time to contact is over about 3 s (and the distance over 1 m): stopping
-  where the knocks start (about 1.25 m at 0.5 m/s) passes, braking at 6 m does not. The intro line "The knocks speed up
-  as you get close" still holds; a hint like "Fly slowly until you hear knocks, then stop" would fit the new rule.
-- s13-lessons and s13-worlds: in a corridor a centred, straight flight is quiet now (side walls sound when drifting
-  toward them under 2.5 s, or within 0.8 m).
-- The lead (replay, owned by no lane): `formatReplayCheck` says FAIL for a recording of an older build and then names
-  the versions; "recorded with an older build" as its own verdict would read better. After the merge, `pnpm listen`
-  re-runs (the evidence is keyed by every input, the other lanes' files included).
+- s13-lessons, and the lead at the merge (review m4): `walls-hall` asks to stop within 3 m of a wall (`approach-stop`,
+  `stopWithinM` 3). Since v0.13 a slowing craft stops hearing a wall once its time to contact is over about 3 s (and
+  the distance over 1 m; braking from 2 m/s the knocks stop at about 3.1 s): stopping where the knocks start (about
+  1.25 m at 0.5 m/s) passes, braking at 6 m does not, and a pilot who stops 3 to 4 m short hears nothing and fails
+  "within 3 m" without knowing why. Change the goal to the new rule (stop while the knocks sound, or within 1.5 m) or
+  the lines (`lesson.walls-hall.intro.2`, `lesson.walls-hall.hint.1`: "Fly slowly until you hear knocks, then stop");
+  the lead checks at the merge that one of them changed. Unchanged in s13-lessons at 1862a33.
+- s13-lessons and s13-worlds (review m4): in a corridor a centred, straight flight is quiet now (side walls sound when
+  drifting toward them under 2.5 s, or within 0.8 m), while `lesson.corridor.intro.2` says "if the knocks are louder on
+  one side, move away from that side": it holds only for a drifting craft; a line such as "if knocks come from one
+  side, you are drifting toward it: move away" fits.
+- s13-worlds: its new lessons at fef8869 (tunnel-wide, tunnel-narrow, tunnel-narrower, tunnel-bends, tunnel-gaps,
+  tunnel-long) have the layers safety and voice only, and rings-heights safety, target, height and voice; every
+  flying lesson needs the height and the room layer (M41-10: never silence; the `layers` of the shipped files are this
+  lane's, the new files are s13-worlds'): add 'height' and 'room' to the six tunnels and 'room' to rings-heights, at
+  the merge at the latest. The free-way probes find ways of 0.5 m (s13-worlds' smallest `gapM`) in tunnels down to
+  1.2 m wide (`test/freeway.test.ts`).
+- The lead (replay, owned by no lane; review m7): `formatReplayCheck` says FAIL for a recording of an older build and
+  then names the versions; on the simulator's replay page (`apps/fly/src/sonic-session/replay-control.ts`,
+  `replay-check.ts`) every v0.12 recording will read "FAIL ... not the recording's own build". A verdict of its own,
+  "recorded with an older build", landed with the merge, would read right. After the merge, `pnpm listen` re-runs (the
+  evidence is keyed by every input, the other lanes' files included).
+- The lead (review m8): whether `docs/wip/` is published. This doc names no build-machine folder now; the design
+  document (`docs/design/virtual-listener.md`, from `vl-spec`) still has the build machine's install steps with its
+  folders (section 14): placeholders such as `<venv>`, `<cache>` and `<tools>` would do there, as
+  `tools/listen/requirements.txt` has them.
