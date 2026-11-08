@@ -353,6 +353,8 @@
     "fly.touches": "Dotknięcia: {n}.",
     "fly.progress": "Próba {n}. Zaliczone {counted} z {required}.",
     "fly.stage": "Etap {n} zaliczony.",
+    "fly.wrong-way": "Lecisz do tyłu. Zawróć.",
+    "fly.wrong-side": "Ta bramka przeleciana od złej strony. Wróć i przeleć ją od przodu.",
     "fly.lesson-passed": "Lekcja zaliczona. Dalej trochę trudniej: {title}.",
     "fly.last-lesson": "Lekcja zaliczona. To była ostatnia lekcja.",
     "praise.1": "Świetnie!",

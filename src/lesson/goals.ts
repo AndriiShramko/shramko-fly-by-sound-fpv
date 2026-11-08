@@ -34,6 +34,8 @@ export interface TrackContext {
     attemptPathM(): number;
     /** a gate was passed: index in the course, how many there are, how far from its centre */
     passedGate(gate: SonicObject, index: number, of: number, missM: number, lapDone: boolean, t: number): void;
+    /** a gate that counts next was crossed through its opening from its back side (M41-15): told, never counted */
+    wrongSide?(gate: SonicObject, t: number): void;
 }
 
 /** How good a met goal was, for "better than last time": a number and which way is better. */
@@ -103,6 +105,15 @@ export function gateCrossing(gate: SonicObject, a: Vec3, b: Vec3): { readonly in
     const o = opening(gate.shape);
     const missM = Math.hypot(x, y);
     return { inside: o.inside(x, y), missM, near: missM <= o.edge + GATE_NEAR_MISS_M };
+}
+
+/** Whether the step from `a` to `b` crosses the gate's plane backward (from its -Z side to its +Z side) inside its opening. */
+export function gateCrossingBack(gate: SonicObject, a: Vec3, b: Vec3): boolean {
+    const la = toLocal(gate, a);
+    const lb = toLocal(gate, b);
+    if (!(la[2] < 0 && lb[2] >= 0)) return false;
+    const u = la[2] / (la[2] - lb[2]);
+    return opening(gate.shape).inside(la[0] + u * (lb[0] - la[0]), la[1] + u * (lb[1] - la[1]));
 }
 
 /** The gates of a course in order: objects with an order, filtered to `ids` (kept in course order). */
@@ -321,6 +332,7 @@ export function createTracker(goal: Goal, ctx: TrackContext): GoalTracker {
                     if (gates.length === 0) return null;
                     const candidates = inOrder ? [gates[next] as SonicObject] : gates.filter((g) => !passed.has(g.id));
                     for (const g of candidates) {
+                        if (gateCrossingBack(g, prev.pos, s.pos)) ctx.wrongSide?.(g, s.t);
                         const x = gateCrossing(g, prev.pos, s.pos);
                         if (x === null) continue;
                         if (x.inside) {

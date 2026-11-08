@@ -353,6 +353,8 @@
     "fly.touches": "Contactos: {n}.",
     "fly.progress": "Intento {n}. Cuentan {counted} de {required}.",
     "fly.stage": "Etapa {n} superada.",
+    "fly.wrong-way": "Vas hacia atrás. Da la vuelta.",
+    "fly.wrong-side": "Esa puerta la pasaste por el lado equivocado. Vuelve y crúzala de frente.",
     "fly.lesson-passed": "Lección superada. La siguiente, un poco más difícil: {title}.",
     "fly.last-lesson": "Lección superada. Era la última lección.",
     "praise.1": "¡Bien!",

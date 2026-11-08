@@ -353,6 +353,8 @@
     "fly.touches": "Touches: {n}.",
     "fly.progress": "Attempt {n}. Counted {counted} of {required}.",
     "fly.stage": "Stage {n} passed.",
+    "fly.wrong-way": "You are flying back. Turn around.",
+    "fly.wrong-side": "That gate was passed from the wrong side. Go back and fly it from the front.",
     "fly.lesson-passed": "Lesson passed. Next, a bit harder: {title}.",
     "fly.last-lesson": "Lesson passed. That was the last lesson.",
     "praise.1": "Nice!",

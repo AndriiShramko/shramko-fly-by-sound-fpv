@@ -48,15 +48,23 @@
 // else the attempt's time); with it the cue event 'praise'. The pass is the fanfare, the lesson's own pass
 // line and "Lesson passed. Next, a bit harder: <the next lesson on the pilot's path>". A checkpoint that
 // ends a stage gives the cue event 'stage' and "Stage k passed".
+//
+// Direction (M41-15). A lesson with a track (track.ts: the world's checkpoint list, the lesson's
+// checkpoints, or a course's gates) knows which way is forward: flying against it faster than
+// WRONG_WAY_MPS for more than WRONG_WAY_S gives the cue event 'wrong-way' and "You are flying back. Turn
+// around.", at most once every WRONG_WAY_EVERY_S; a gate crossed from its back side gives 'wrong-side' and
+// its line, and is not counted.
 import type { Checkpoint, CueEvent, CueId, FlightSample, Goal, LessonDef, LessonProgress, LessonRunner, Locale, MaterialClass, Pose, SessionEvent, SonicFrameInput, SonicObject, SonicWorld, SpeechLine, Vec3 } from '../contract';
 import { DICTS } from '../i18n/dicts';
 import { createTranslator, type Dicts, type Translator } from '../i18n/translator';
 import { createRng } from '../util/rng';
-import { distance as dist3, yawQuat } from '../util/vec';
+import { distance as dist3, dot, normalize, sub, yawQuat } from '../util/vec';
 import { createAnalyticWorld, makeSpec, type AnalyticWorldInfo } from '../world/analytic-world';
 import { createTracker, type GoalScore, type GoalTracker, type Outcome } from './goals';
 import { lessonAfter, lessonPaths } from './library';
 import { APPROACHES, GAME_SCENE_S, isGlossary, NARRATED_SCENE_S, playS, REPEAT_GAP_S, REPEAT_PLAYS, SHAPE_ORDER } from './sounds';
+import { lessonTrack, type LessonTrack } from './track';
+import { headingBasis, worldToListener } from '../sense/frame';
 
 // ------------------------------------------------------------------ host interface
 
@@ -222,6 +230,13 @@ export const ASK_TIMEOUT_S = 20;
 export const BETWEEN_S = 1.5;
 /** v0.12 (testHooks.speechWait only): a preview was given this long, s. */
 export const PREVIEW_WAIT_S = 3.3;
+/** Flying against the track faster than this, m/s, ... */
+export const WRONG_WAY_MPS = 0.5;
+/** ... for longer than this, s, is flying the wrong way; it is said at most once every WRONG_WAY_EVERY_S. */
+export const WRONG_WAY_S = 1;
+export const WRONG_WAY_EVERY_S = 5;
+/** A gate's back side is told at most this often, s (a craft that hovers on the plane would cross it to and fro). */
+export const WRONG_SIDE_EVERY_S = 3;
 /** The praise lines of a counted attempt (keys praise.1 .. praise.PRAISE_LINES). */
 export const PRAISE_LINES = 8;
 /** A score counts as better than the last counted attempt's when it improved by this share of it. */
@@ -326,6 +341,11 @@ class Runner implements LessonSession {
     private goalScores: GoalScore[] = [];
     private lastScore: GoalScore | null = null;
     private lastPraise = -1;
+    // direction: the track (built once the world is known), since when the craft flies against it, the last warnings
+    private trackValue: LessonTrack | null | undefined = undefined;
+    private backSince: number | null = null;
+    private lastWrongWay = -Infinity;
+    private lastWrongSide = -Infinity;
     // progress
     /** attempts and counted attempts of this lesson version, earlier sessions included */
     private attemptsDone: number;
@@ -667,6 +687,7 @@ class Runner implements LessonSession {
         this.reached.clear();
         this.earsAnswers = new Map();
         this.goalScores = [];
+        this.backSince = null;
         this.listening = false;
         this.pausedMs = 0;
         this.phaseValue = 'flying';
@@ -698,6 +719,12 @@ class Runner implements LessonSession {
                 this.emit({ t: at, kind: 'gate', gateId: gate.id, index, missM: Math.round(missM * 1000) / 1000 });
                 this.actions.push({ kind: 'cue', event: { kind: 'gate', index, of } });
                 if (lapDone) this.actions.push({ kind: 'cue', event: { kind: 'lap' } });
+            },
+            wrongSide: (gate, at) => {
+                if (at - this.lastWrongSide < WRONG_SIDE_EVERY_S * 1000) return;
+                this.lastWrongSide = at;
+                this.actions.push({ kind: 'cue', event: { kind: 'wrong-side', dir: this.toListener(sub(gate.pos, this.prev?.pos ?? gate.pos)) } });
+                this.actions.push({ kind: 'say', line: { key: 'fly.wrong-side' }, interrupt: false });
             }
         });
         if (goal.kind === 'name-shape') this.pushShapeQuestion(goal.objectId, t);
@@ -756,6 +783,7 @@ class Runner implements LessonSession {
                 this.actions.push({ kind: 'cue', event: { kind: 'reset' } });
                 this.emit({ t, kind: 'reset', to: cp === null ? 'start' : 'checkpoint', checkpointId: cp === null ? null : cp.id });
                 this.prev = null; // the jump is not flight
+                this.backSince = null;
             }
         }
         for (const cp of this.lesson.checkpoints) {
@@ -766,7 +794,35 @@ class Runner implements LessonSession {
             if (cp.stage !== undefined) this.stagePassed(cp.stage);
             else if (this.lesson.checkpoints.indexOf(cp) > 0) this.actions.push({ kind: 'cue', event: { kind: 'checkpoint' } });
         }
+        this.checkDirection(s);
         this.evaluateGoals(s, prev, t);
+    }
+
+    /** The lesson's track, built the first time a frame brings the world. */
+    private track(): LessonTrack | null {
+        if (this.trackValue === undefined) this.trackValue = lessonTrack(this.lesson, this.worldRef, this.objects(), this.o.start ?? this.lesson.start);
+        return this.trackValue;
+    }
+
+    /** A world direction in the craft's heading frame (the listener frame the cue events use), unit; null for none. */
+    private toListener(w: Vec3): Vec3 | null {
+        const p = this.prev;
+        if (p === null || Math.hypot(w[0], w[1], w[2]) < 1e-6) return null;
+        return normalize(worldToListener(headingBasis(p.yawDeg), w));
+    }
+
+    /** M41-15: flying against the track for more than a second, told at most once every few seconds. */
+    private checkDirection(s: FlightSample): void {
+        const dir = this.track()?.dirAt(s.pos) ?? null;
+        if (dir === null || dot(s.vel, dir) >= -WRONG_WAY_MPS) {
+            this.backSince = null;
+            return;
+        }
+        this.backSince ??= s.t;
+        if (s.t - this.backSince < WRONG_WAY_S * 1000 || s.t - this.lastWrongWay < WRONG_WAY_EVERY_S * 1000) return;
+        this.lastWrongWay = s.t;
+        this.actions.push({ kind: 'cue', event: { kind: 'wrong-way', dir: this.toListener(dir) } });
+        this.actions.push({ kind: 'say', line: { key: 'fly.wrong-way' }, interrupt: false });
     }
 
     /** The current goal, and the next ones as each is met, in order; then the attempt's time limit. */

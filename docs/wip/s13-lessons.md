@@ -11,7 +11,7 @@ from `main` 7d4b4b9. No push. Every step one commit with this Status in it.
 - [x] 4. Navigation: next step, previous step, next lesson (skipped), previous lesson, repeat the task
 - [x] 5. Every named sound three times with no speech over it; validator rule and schedule check
 - [x] 6. Praise and stages (M41-11)
-- [ ] 7. Direction: wrong way, wrong side (M41-15)
+- [x] 7. Direction: wrong way, wrong side (M41-15)
 - [ ] 8. Respawn near the crash (M41-20, runner side)
 - [ ] 9. Never silence between attempts (M41-10, runner side)
 - [ ] 10. Strings in four languages, speech lint, all checks
@@ -199,6 +199,24 @@ walls line) go through the same queue, so the fix (wait for the report) also wai
   last section (bends with pillars) and stage 4 are never flown in a passing attempt. The goals are not in my ownership
   table; for the lead or lane s13-worlds: end the corridor at its last checkpoint (or raise the goal to its length, 335 m).
 
+### Step 7: which way is forward (M41-15, detection and lines)
+
+- `src/lesson/track.ts`: a lesson's track from the first source that exists: the world's own checkpoint list
+  (`checkpoints: { pos, dir, stage? }[]` on the analytic world, feature-detected for lane s13-worlds; a malformed list is
+  ignored), the lesson's checkpoints (at least two, each pointing at the next), or a course's gates (the start, then each
+  gate along its axis). `dirAt(p)` is the way the track goes near p (null further than 15 m from it).
+- Flying against the track faster than 0.5 m/s for more than 1 s: the cue event `{ kind: 'wrong-way', dir }` (dir: the
+  way the track goes, listener frame) and "You are flying back. Turn around." (`fly.wrong-way`), at most once every 5 s.
+- A gate that counts next crossed through its opening from its back side: `{ kind: 'wrong-side', dir }` (dir: where the
+  gate is) and "That gate was passed from the wrong side. Go back and fly it from the front." (`fly.wrong-side`), at most
+  every 3 s; not counted (a forward crossing still counts). `gateCrossingBack` in goals.ts, a `wrongSide` callback in the
+  tracker's context.
+- Placeholders in `src/cues/planner.ts`: both sound as the re-centre sweep.
+- Tests (`test/direction.test.ts`): flying back 7 s in the corridor is told twice, with the track's way behind the pilot;
+  flying forward, a slow drift back (0.3 m/s), a short move back (0.6 s) and a hall with no track are never told
+  (controls); a world list reversed makes forward the wrong way (the world's list wins); a ring crossed backward is told
+  and not counted, then counted forward; a whole course flown forward is never told.
+
 ## Needs from the simulator
 
 All in `C:/dev/gsfpv-v03/apps/fly/src/sonic/` (read only here; lane v13-host):
@@ -231,6 +249,8 @@ Lane s13-sound (`src/cues/*`, `src/audio/*`):
    the first play starts with the next frame (up to a frame late).
 3. `praise` and `stage` (contract `CueEvent`): my placeholders play the checkpoint chime and the lap chime; design them
    (the praise is said with a line at the same time; the stage comes over the flight).
-4. Z while flying plays the task's named sounds (for example the height tone) while the live layers go on: a `repeat-cue`
+4. `wrong-way` and `wrong-side` (contract `CueEvent`, each with `dir`, listener frame): my placeholders play the re-centre
+   sweep; design them (the wrong-way cue could sound from `dir`, the way to turn to).
+5. Z while flying plays the task's named sounds (for example the height tone) while the live layers go on: a `repeat-cue`
    of `height.tone` replaces the live height plan for its length (the planner's preview rule). Decide whether the live
    layers duck under a repeat-cue in flight, or the preview layers sound beside them.

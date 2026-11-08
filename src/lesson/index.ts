@@ -3,4 +3,6 @@ export * from './goals';
 export * from './library';
 export * from './runner';
 export * from './schedule';
+export * from './sounds';
+export * from './track';
 export * from './validate';

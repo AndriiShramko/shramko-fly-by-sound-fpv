@@ -218,6 +218,9 @@ export function eventCue(e: CueEvent): CueId {
             return 'target.checkpoint';
         case 'stage':
             return 'target.lap';
+        case 'wrong-way':
+        case 'wrong-side':
+            return 'safety.reset';
     }
 }
 
@@ -694,6 +697,10 @@ export class CuePlanner {
                 return this.cue({ kind: 'checkpoint' }, t).map((n) => ({ ...n, cue: 'target.checkpoint' }));
             case 'stage':
                 return this.cue({ kind: 'lap' }, t);
+            // and flying back or through a gate's back side as the re-centre sweep
+            case 'wrong-way':
+            case 'wrong-side':
+                return this.cue({ kind: 'reset' }, t);
             // lane s13-lessons placeholder until lane s13-sound designs it: a play of a named sound sounds as its preview, for its length
             case 'repeat-cue':
             case 'preview': {

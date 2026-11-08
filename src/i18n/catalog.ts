@@ -236,6 +236,9 @@ export const FREE_KEYS = [
     'fly.progress',
     // a stage of a long course, the pass and what comes next, the praise of a counted attempt (a pool and "better")
     'fly.stage',
+    // flying back along a track, a gate crossed from its back side (M41-15)
+    'fly.wrong-way',
+    'fly.wrong-side',
     'fly.lesson-passed',
     'fly.last-lesson',
     'praise.1',

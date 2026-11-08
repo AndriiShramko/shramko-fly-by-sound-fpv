@@ -552,7 +552,11 @@ export type CueEvent =
     /** v0.13 (M41-11): a counted attempt, said with a short praise line */
     | { readonly kind: 'praise' }
     /** v0.13 (M41-11): stage `index` of a long course passed (a checkpoint that ends a stage), said "Stage k passed" */
-    | { readonly kind: 'stage'; readonly index: number };
+    | { readonly kind: 'stage'; readonly index: number }
+    /** v0.13 (M41-15): flying back along the track for more than a second; `dir`: the way the track goes, listener frame */
+    | { readonly kind: 'wrong-way'; readonly dir: Vec3 | null }
+    /** v0.13 (M41-15): a gate crossed from its back side (not counted); `dir`: where the gate is, listener frame */
+    | { readonly kind: 'wrong-side'; readonly dir: Vec3 | null };
 
 /** A cue sounding now: what the recording stores and the captions may show. */
 export interface ActiveCue {
