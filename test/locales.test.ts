@@ -41,6 +41,7 @@ const ARGUMENTS: Readonly<Record<string, readonly string[]>> = {
     'fly.best-time': ['time'],
     'fly.touches': ['n'],
     'fly.progress': ['counted', 'n', 'required'],
+    'headphones.trial': ['n', 'total'],
     'fly.offer-next': ['key'],
     'reason.height-high': ['percent'],
     'reason.height-low': ['percent'],

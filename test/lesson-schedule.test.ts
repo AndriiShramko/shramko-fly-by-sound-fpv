@@ -25,15 +25,15 @@ describe('v0.12: when the sounds of the ears lessons play against the speech (fa
         expect(longer.length).toBe(262);
     });
 
-    it('ears-headphones: the first sound plays under the last intro line, then the question asks where it was', () => {
+    it('ears-headphones: the first sound plays under the last line before it, then the question asks where it was', () => {
         const s = lessonSchedule(getLesson('ears-headphones'), { speech: measuredSpeech(david), answer: rightAnswer });
         const first = sounds(s)[0];
         expect(first).toMatchObject({ kind: 'preview', cue: 'target.hum' });
-        const line = s.speech.find((l) => l.key === 'headphones.os-spatial');
+        const line = [...s.speech].reverse().find((l) => l.start < (first?.start ?? 0));
         expect(line).toBeDefined();
-        // the sound starts 2.5 s before the line ends: 2.5 s of its 3 s are under the voice
-        expect((line?.end ?? 0) - (first?.start ?? 0)).toBeGreaterThan(2000);
-        expect(speechOverlapMs(s, first?.start ?? 0, first?.end ?? 0)).toBeGreaterThan(2000);
+        // the sound starts before the line ends: part of its 3 s is under the voice (v0.12 as shipped: 2.5 s; with the trial line: 1 s)
+        expect((line?.end ?? 0) - (first?.start ?? 0)).toBeGreaterThan(500);
+        expect(speechOverlapMs(s, first?.start ?? 0, first?.end ?? 0)).toBeGreaterThan(500);
         const ask = s.asks[0];
         expect(ask?.id).toMatch(/:side$/);
         expect(ask?.linesStart).toBeGreaterThanOrEqual(first?.end ?? Infinity);

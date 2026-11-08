@@ -44,7 +44,7 @@ describe('review D2: a key the pilot presses cuts the speech in progress', () =>
         expect(after[0]?.interrupt, 'the queued intro must be cut by N').toBe(true);
     });
 
-    it('N during the pause between attempts: the next attempt announcement interrupts', () => {
+    it('Z during the pause between attempts: the task said again interrupts (v0.13: N there goes to the next lesson)', () => {
         const lesson = getLesson('hover-height');
         const run = createLessonRunner(lesson);
         run.begin(0);
@@ -62,10 +62,11 @@ describe('review D2: a key the pilot presses cuts the speech in progress', () =>
             t += 50;
         }
         expect(phaseBetween).toBe(true);
-        run.next(t);
+        run.repeat(t);
         const after = says(run.takeActions());
-        expect(after[0]?.line.key).toBe('fly.go'); // the attempt's number was said with its count ("Attempt 1. Counted 0 of 3.")
+        expect(after[0]?.line.key).toBe('lesson.hover-height.title');
         expect(after[0]?.interrupt).toBe(true);
+        expect(after.slice(1).every((a) => !a.interrupt)).toBe(true);
     });
 
     it('an answer cuts the rest of the question that is still being read out', () => {

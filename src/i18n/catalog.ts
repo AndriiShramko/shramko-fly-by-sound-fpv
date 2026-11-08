@@ -110,6 +110,7 @@ export const FREE_KEYS = [
     'headphones.wired',
     'headphones.volume',
     'headphones.os-spatial',
+    'headphones.trial',
     // the game "what is it, where is it, is it moving"
     'quiz.intro',
     'quiz.howto',
@@ -217,6 +218,7 @@ export const FREE_KEYS = [
     // in flight
     'fly.ready',
     'fly.go',
+    'fly.go-on',
     'fly.checkpoint',
     'fly.reset-checkpoint',
     'fly.reset-start',

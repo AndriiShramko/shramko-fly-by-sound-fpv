@@ -156,8 +156,13 @@ export class RecordingHost {
 
     /** A key of the pilot: the host calls the runner and records the key event. */
     press(action: (typeof REPLAY_KEY_ACTIONS)[keyof typeof REPLAY_KEY_ACTIONS]): void {
-        this.events.push({ t: this.t, kind: 'key', code: action === 'next' ? 'KeyN' : 'KeyR', action });
+        const codes: Record<string, string> = { next: 'KeyN', previous: 'KeyB', repeat: 'KeyZ', 'next-lesson': 'Escape', 'previous-lesson': 'Escape' };
+        this.events.push({ t: this.t, kind: 'key', code: codes[action] ?? 'KeyR', action });
         if (action === REPLAY_KEY_ACTIONS.next) this.record(this.runner.next(this.t));
+        else if (action === REPLAY_KEY_ACTIONS.previous) this.record(this.runner.previous(this.t));
+        else if (action === REPLAY_KEY_ACTIONS.repeat) this.record(this.runner.repeat(this.t));
+        else if (action === REPLAY_KEY_ACTIONS.nextLesson) this.record(this.runner.nextLesson(this.t));
+        else if (action === REPLAY_KEY_ACTIONS.previousLesson) this.record(this.runner.previousLesson(this.t));
         else {
             const r = this.runner.reset(action === REPLAY_KEY_ACTIONS.resetStart ? 'start' : 'checkpoint', this.t);
             this.pos = r.pose.pos;

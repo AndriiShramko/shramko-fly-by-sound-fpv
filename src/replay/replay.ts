@@ -10,7 +10,8 @@
 //                  the flight model); the runner works out material, speed and position again
 //   answers        `answer` events: digits or voice given to a question
 //   keys           `key` events whose action is REPLAY_KEY_ACTIONS.*: reset to a checkpoint, reset
-//                  to the start, next step
+//                  to the start, next step, previous step, repeat the step (v0.13: N, B, Z), next
+//                  lesson and previous lesson (the lesson menu)
 //   speech ends    `speech` events with the key SPEECH_END_KEY: the moment the host's speech queue
 //                  ran empty and it called runner.spoken(t). Without them the runner's own estimate
 //                  of how long a line takes is used, which is exact only if the host did the same.
@@ -35,7 +36,7 @@ import type { ReplayNote, ReplaySetup } from './rebuild';
 export const SPEECH_END_KEY = 'speech.end';
 
 /** The `action` of a `key` event the replay acts on. */
-export const REPLAY_KEY_ACTIONS = { resetCheckpoint: 'reset.checkpoint', resetStart: 'reset.start', next: 'next' } as const;
+export const REPLAY_KEY_ACTIONS = { resetCheckpoint: 'reset.checkpoint', resetStart: 'reset.start', next: 'next', previous: 'previous', repeat: 'repeat', nextLesson: 'next-lesson', previousLesson: 'previous-lesson' } as const;
 
 export interface ReplayInput {
     readonly setup: ReplaySetup;
@@ -77,7 +78,7 @@ type Input =
     | { readonly t: number; readonly kind: 'spoken' }
     | { readonly t: number; readonly kind: 'answer'; readonly value: number; readonly via: 'key' | 'voice' }
     | { readonly t: number; readonly kind: 'reset'; readonly to: 'checkpoint' | 'start' }
-    | { readonly t: number; readonly kind: 'next' };
+    | { readonly t: number; readonly kind: 'next' | 'previous' | 'repeat' | 'next-lesson' | 'previous-lesson' };
 
 /** The inputs a recording holds, in time order (events with the same time keep their order). */
 function inputsOf(events: readonly SessionEvent[], firstT: number): { readonly inputs: Input[]; readonly touches: number[]; readonly markers: number; readonly hasOpen: boolean } {
@@ -97,6 +98,10 @@ function inputsOf(events: readonly SessionEvent[], firstT: number): { readonly i
         } else if (e.kind === 'key' && e.action === REPLAY_KEY_ACTIONS.resetCheckpoint) inputs.push({ t: e.t, kind: 'reset', to: 'checkpoint' });
         else if (e.kind === 'key' && e.action === REPLAY_KEY_ACTIONS.resetStart) inputs.push({ t: e.t, kind: 'reset', to: 'start' });
         else if (e.kind === 'key' && e.action === REPLAY_KEY_ACTIONS.next) inputs.push({ t: e.t, kind: 'next' });
+        else if (e.kind === 'key' && e.action === REPLAY_KEY_ACTIONS.previous) inputs.push({ t: e.t, kind: 'previous' });
+        else if (e.kind === 'key' && e.action === REPLAY_KEY_ACTIONS.repeat) inputs.push({ t: e.t, kind: 'repeat' });
+        else if (e.kind === 'key' && e.action === REPLAY_KEY_ACTIONS.nextLesson) inputs.push({ t: e.t, kind: 'next-lesson' });
+        else if (e.kind === 'key' && e.action === REPLAY_KEY_ACTIONS.previousLesson) inputs.push({ t: e.t, kind: 'previous-lesson' });
         else if (e.kind === 'touch') touches.push(e.t);
     }
     if (!hasOpen) inputs.push({ t: firstT, kind: 'begin' });
@@ -236,6 +241,18 @@ export class Replayer {
                 break;
             case 'next':
                 this.add(runner.next(i.t), events);
+                break;
+            case 'previous':
+                this.add(runner.previous(i.t), events);
+                break;
+            case 'repeat':
+                this.add(runner.repeat(i.t), events);
+                break;
+            case 'next-lesson':
+                this.add(runner.nextLesson(i.t), events);
+                break;
+            case 'previous-lesson':
+                this.add(runner.previousLesson(i.t), events);
                 break;
         }
         this.take(i.t, events, actions);

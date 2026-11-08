@@ -8,7 +8,7 @@ from `main` 7d4b4b9. No push. Every step one commit with this Status in it.
 - [x] 1. Lane doc, facts of M41-8 and M41-9 reproduced in Node (`test/pass-rule.test.ts`, `test/lesson-schedule.test.ts`)
 - [x] 2. Pass rule: r counted attempts in total, the reason and the go-on offer after 3 failures in a row, lesson format 2
 - [x] 3. Progress line after every attempt and the progress view (I, the host's panel)
-- [ ] 4. Navigation: next step, previous step, next lesson (skipped), previous lesson, repeat the task
+- [x] 4. Navigation: next step, previous step, next lesson (skipped), previous lesson, repeat the task
 - [ ] 5. Every named sound three times with no speech over it; validator rule and schedule check
 - [ ] 6. Praise and stages (M41-11)
 - [ ] 7. Direction: wrong way, wrong side (M41-15)
@@ -126,9 +126,48 @@ walls line) go through the same queue, so the fix (wait for the report) also wai
   Spoken: `status.progress` "Lesson 6 of 21: Hold your height. Step 2 of 2. Attempt 4. Counted 2 of 3." or, before an
   attempt and in module 0, `status.progress-step`. Tests: `test/progress.test.ts` (control: the v0.12 rule says no count).
 
+### Step 4: N, B, Z and the lesson menu (M41-6, package side of M41-3)
+
+- Steps (documented in the runner's header): a flying lesson has 1 the task (title, intro lines) and 2 flying (the
+  attempts, the pause between them, the pass); a lesson of module 0 has 1 its intro, then one step per glossary sound,
+  narrated scene, headphone trial ("Sound 2 of 3." begins each, `headphones.trial`) or game round. Every step begins with a
+  line, so a key that moves to it cuts the speech going on (the first line interrupts).
+- `next(t)` N: one step on; from the last step (flying, the pause, the pass, the last sound) the next lesson.
+  `previous(t)` B: one step back; from step 1 the previous lesson; while flying (or in the pause, or after the pass) back
+  to the task, the attempt dropped and not counted, the next attempt from the lesson's start. `repeat(t)` Z: the step
+  again from its first line; while flying the task is said again and the attempt waits (its goals and its time limit
+  stop: `pausedMs`), then "Go on." (`fly.go-on`); in the pause the task, then the next attempt; after the pass the pass
+  line. `nextLesson(t)` and `previousLesson(t)` (the Escape menu): at once. Leaving gives the action
+  `{ kind: 'go', to: 'next' | 'previous' }` and the lesson event `leave`; leaving forward without a pass marks the
+  progress `skipped: true` (new optional field of `LessonProgress`); the runner is inert afterwards. A question left by a
+  key is recorded as skipped (answer null, via 'skip'), as a timeout is.
+- `lessonAfter(id, path)` and `lessonBefore(id, path)` (library): where a 'go' leads, the full ladder when the lesson is
+  not on the pilot's path, null at either end.
+- Replay: `REPLAY_KEY_ACTIONS` gains `previous`, `repeat`, `next-lesson`, `previous-lesson` (src/replay/replay.ts, the only
+  change there: four inputs mapped to the runner's calls). The demo host and page take B and Z and open the lesson a 'go'
+  names. Tests: `test/navigation.test.ts` (every move, N and B exactly one step, a glossary flown with N, B, Z and the menu
+  replays to the same events; control: without the key events it does not), `test/demo.test.ts`.
+
 ## Needs from the simulator
 
-(filled as the API is fixed, steps 2 to 9)
+All in `C:/dev/gsfpv-v03/apps/fly/src/sonic/` (read only here; lane v13-host):
+
+1. `lessons.ts` 183-190, `createLessonRunner(lesson, { ... })`: also pass `path: this.p.path()` (the view's lesson index
+   and, step 6, the next lesson's title) and `keys: { next: 'N', previous: 'B', repeat: 'Z' }` (the names the lines say).
+2. `lessons.ts` 308-329, `act()`: a new action `{ kind: 'go', to }`: save the progress, then open
+   `lessonAfter(id, path)` or `lessonBefore(id, path)`, or `showMenu()` when it is null. Until then the host ignores it
+   and the pilot stays in a lesson that no longer moves.
+3. Keys, each recorded as a `key` event with its `REPLAY_KEY_ACTIONS` value before the call, like N and R today
+   (`bridge.ts` 341-364): B -> `runner.previous(t)` ('previous'); Z -> `runner.repeat(t)` ('repeat') instead of the bridge's
+   last line again (`lessons.ts` 392-395, `bridge.ts` 425-429); the Escape menu's Next lesson and Previous lesson ->
+   `runner.nextLesson(t)` / `runner.previousLesson(t)` ('next-lesson', 'previous-lesson'), Repeat the task -> repeat, Next
+   step -> next, Previous step -> previous. N keeps `bridge.next`.
+4. I: say `runner.statusLine()` (`lessons.ts` 384-390 builds `status.lesson` today); the large panel of M41-7 draws
+   `runner.view()` (lesson k of n, step k of N, attempt, counted m of r, failures in a row, the offer, phase).
+5. Progress: keep the new `skipped` field when the prefs store a lesson's progress (`packages/prefs/src/doc.ts` 212-220,
+   `validSonicProgress` drops unknown fields) and show it on the start screen (`start-model.ts` 44-49 `stateOf`: a
+   'skipped' state beside passed, current, new).
+
 
 ## Needs from other lanes
 

@@ -397,6 +397,8 @@ export interface LessonProgress {
     readonly bestTimeMs: number | null;
     /** ISO 8601 */
     readonly lastAt: string;
+    /** v0.13: the pilot went on to the next lesson without passing this one (N); false or absent otherwise */
+    readonly skipped?: boolean;
 }
 
 // ------------------------------------------------------------------ the session package

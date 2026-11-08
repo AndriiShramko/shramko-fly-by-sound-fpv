@@ -5,7 +5,7 @@ import type { Locale, SpeechLine } from '../src/contract';
 import { LOCALES } from '../src/contract';
 import { createSonicEngine, type FlyBySoundEngine } from '../src/audio';
 import { createTranslator, DICTS, LESSONS } from '../src/i18n';
-import type { Question } from '../src/lesson';
+import { lessonAfter, lessonBefore, type Question } from '../src/lesson';
 import { defaultPrefs } from '../src/prefs';
 import { getBuiltinTheme } from '../src/theme';
 import { byId, el, fill } from './dom';
@@ -101,6 +101,14 @@ function start(): void {
             ui: {
                 ask(q: Question | null): void {
                     question.textContent = q === null ? '' : `Answer with the number keys 1 to ${q.options}${q.skippable ? ', or 0 to skip' : ''}.`;
+                },
+                go(to: 'next' | 'previous', from: string): void {
+                    const other = to === 'next' ? lessonAfter(from, 'full') : lessonBefore(from, 'full');
+                    if (other !== null) openLesson(other.id);
+                    else {
+                        host?.leave();
+                        flight.hidden = true;
+                    }
                 }
             }
         });
@@ -149,6 +157,12 @@ function start(): void {
             e.preventDefault();
         } else if (e.code === 'KeyN') {
             h.next();
+            e.preventDefault();
+        } else if (e.code === 'KeyB') {
+            h.previous();
+            e.preventDefault();
+        } else if (e.code === 'KeyZ') {
+            h.repeat();
             e.preventDefault();
         } else if (e.code === 'KeyR') {
             h.reset(e.shiftKey ? 'start' : 'checkpoint');

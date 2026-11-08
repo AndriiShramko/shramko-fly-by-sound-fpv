@@ -59,15 +59,17 @@ async function ringsFirst(options: HostOptions = {}): Promise<{ host: RecordingH
     return { host, pkg: (await host.toPackage()).pkg };
 }
 
-/** walls-hall with the pilot's keys: next, a reset to the checkpoint (none: the start) and a long reset, and a contact. */
+/** walls-hall with the pilot's keys: N (the task skipped), Z (the task again), a reset to the checkpoint (none: the start) and a long reset, and a contact. */
 async function wallsHall(options: HostOptions = {}): Promise<{ host: RecordingHost; pkg: SessionPackage }> {
     const host = new RecordingHost(getLesson('walls-hall'), options);
     host.begin();
+    host.hold(0.5);
+    host.press(REPLAY_KEY_ACTIONS.next);
     host.until(() => host.runner.phase === 'flying', 120);
     host.flyTo([0, 1.5, -27.5], 3);
     host.hold(1.2);
-    host.press(REPLAY_KEY_ACTIONS.next);
-    host.until(() => host.runner.phase === 'flying', 20);
+    host.press(REPLAY_KEY_ACTIONS.repeat);
+    host.until(() => host.runner.phase === 'flying', 60);
     host.flyTo([0, 1.5, -20], 3);
     host.touch();
     host.flyTo([0, 1.5, -24], 3);
@@ -265,7 +267,7 @@ describe('what the replay needs from the recording, and what it checks', () => {
 describe('keys, contacts and resets: walls-hall', () => {
     it("re-derives the events that follow the pilot's keys and a contact", async () => {
         const { pkg } = await wallsHall();
-        expect(kinds(pkg.events, 'key').map((e) => (e.kind === 'key' ? e.action : ''))).toEqual(['next', 'reset.checkpoint', 'reset.start']);
+        expect(kinds(pkg.events, 'key').map((e) => (e.kind === 'key' ? e.action : ''))).toEqual(['next', 'repeat', 'reset.checkpoint', 'reset.start']);
         expect(kinds(pkg.events, 'touch')).toHaveLength(1);
         expect(kinds(pkg.events, 'reset').length).toBeGreaterThanOrEqual(2);
         const { check } = checkSession(pkg);

@@ -97,3 +97,18 @@ export function nextLesson(id: string, path: 'full' | 'fast'): LessonDef | null 
     const next = i < 0 ? undefined : list[i + 1];
     return next === undefined ? null : getLesson(next);
 }
+
+/**
+ * Where a runner's 'go' action leads: the lesson after (or before) `id` on the pilot's path, or on the
+ * full ladder when `id` is not on that path; null at either end (the host shows the start screen).
+ */
+export function lessonAfter(id: string, path: 'full' | 'fast'): LessonDef | null {
+    return lessonPaths()[path].includes(id) ? nextLesson(id, path) : nextLesson(id, 'full');
+}
+
+export function lessonBefore(id: string, path: 'full' | 'fast'): LessonDef | null {
+    const list = lessonPaths()[lessonPaths()[path].includes(id) ? path : 'full'];
+    const i = list.indexOf(id);
+    const before = i <= 0 ? undefined : list[i - 1];
+    return before === undefined ? null : getLesson(before);
+}

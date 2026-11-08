@@ -309,6 +309,24 @@ describe('the demo host', () => {
         expect(host.state().paused).toBe(true);
     });
 
+    it('N past the last step, and B before the first, ask the page to open the next or the previous lesson', async () => {
+        const f = fakeEngine(false);
+        const went: string[] = [];
+        const host = new DemoHost({ engine: f.engine, locale: 'en', ui: { ask: () => undefined, go: (to, from) => void went.push(`${to}:${from}`) } });
+        host.open('hover-height', 0);
+        host.previous(); // the task is step 1: the lesson before
+        await settle();
+        expect(went).toEqual(['previous:hover-height']);
+        host.open('hover-height', 10);
+        host.next(); // the task skipped
+        expect(host.state().phase).toBe('flying');
+        host.repeat(); // the task again while the attempt waits
+        host.next(); // flying is the last step: the next lesson
+        await settle();
+        expect(went).toEqual(['previous:hover-height', 'next:hover-height']);
+        expect(host.events.at(-1)).toMatchObject({ kind: 'lesson', what: 'leave' });
+    });
+
     it('a lesson with a world hands the engine that world and the floor', async () => {
         const f = fakeEngine(false);
         const host = new DemoHost({ engine: f.engine, locale: 'en' });

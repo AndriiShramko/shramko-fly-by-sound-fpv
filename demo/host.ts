@@ -19,6 +19,8 @@ export interface EngineLike {
 export interface HostUi {
     /** a question is asked (digits answer it), or the question is over (null) */
     ask(question: Question | null): void;
+    /** the pilot left the lesson for the next or the previous one (N past the last step, B before the first): the page opens it */
+    go?(to: 'next' | 'previous', from: string): void;
 }
 
 export interface HostState {
@@ -138,6 +140,14 @@ export class DemoHost {
     /** Carries out what the runner asked for. `runner` is the one that asked: a stale answer to a closed lesson is ignored. */
     private handle(runner: LessonSession, actions: readonly RunnerAction[]): void {
         for (const a of actions) {
+            if (a.kind === 'go') {
+                // the page opens the other lesson once this one has finished handing out its actions
+                const from = runner.lesson.id;
+                queueMicrotask(() => {
+                    if (this.runner === runner) this.ui?.go?.(a.to, from);
+                });
+                return;
+            }
             if (a.kind === 'say') {
                 this.speaking++;
                 this.engine
@@ -183,11 +193,25 @@ export class DemoHost {
         this.handle(runner, runner.takeActions());
     }
 
-    /** N: skips the intro, a question, the pause between attempts, a module-0 scene. */
+    /** N: the next step; from the last step, the next lesson. */
     next(): void {
+        this.key((r, t) => r.next(t));
+    }
+
+    /** B: the previous step; from the first, the previous lesson. */
+    previous(): void {
+        this.key((r, t) => r.previous(t));
+    }
+
+    /** Z: the step again from its first line (while flying, the task again; the attempt waits). */
+    repeat(): void {
+        this.key((r, t) => r.repeat(t));
+    }
+
+    private key(call: (runner: LessonSession, t: number) => readonly SessionEvent[]): void {
         const runner = this.runner;
         if (runner === null) return;
-        this.record(runner.next(this.t));
+        this.record(call(runner, this.t));
         this.handle(runner, runner.takeActions());
     }
 
