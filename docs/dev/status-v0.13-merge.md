@@ -292,7 +292,7 @@ simulator's part stays in the review's wave 2 list.
 - [x] 14. M3. The open-way chime named and played in the corridor and in tunnel-gaps
 - [x] 15. m1. The corridor's checkpoints line and its plays; the chime of a track's last checkpoint (one commit with 14)
 - [x] 16. m2. The stale lesson counts in `CITATION.cff`, `src/contract.ts` and `docs/testing/test-protocol.md`
-- [ ] 17. m3. Tests for the six tunnels' respawn and the open-way chime at the shipped obstacles
+- [x] 17. m3. Tests for the six tunnels' respawn and the open-way chime at the shipped obstacles
 - [ ] 18. n1. s13-worlds' Russian sentence in `test/progress.test.ts`, as `\u` escapes
 - [ ] 19. All checks on the final code with fresh evidence; the final status
 
@@ -400,6 +400,23 @@ One commit: both change the corridor's intro.
   gives the fast path as about six lessons. Broken on purpose (the four files as merged), then restored: both fail
   ("expected ... to contain 'a curriculum of 28 lessons'"; the specification, the contract and the protocol listed).
   Full suite 1054 of 1054, typecheck clean, layout 0.
+
+### 17. m3: the tunnels' respawn and the open-way chime at their obstacles, held by tests
+
+- Tried first: `test/respawn.test.ts` tests the respawn on the corridor's world only, and `test/freeway.test.ts` flies
+  box tunnels of its own; nothing flew the six tunnels' respawn or the lessons' own obstacles. The finding holds (the
+  behaviour itself held, as the review measured).
+- New `test/tunnels-flown.test.ts`. (1) The corridor and the six tunnels: the points of each world's track are 5 m
+  apart or less; the scripted pilot flies the track and touches 0.3 m past every third point (corridor 17 touches,
+  tunnel-long 20, the others 3 to 7): each reset names that point, the craft is 1 m before it (at the point itself in
+  5 cases where 1 m before is too near a wall, as the runner's rule says), facing along the track, at least 0.35 m
+  from every surface, 0.3 to 1.3 m back along the track (6 m at most, M41-20), and the lesson is passed in that same
+  attempt. (2) Every obstacle of tunnel-gaps (4) and tunnel-long (5), flown straight at down the middle of the tunnel
+  at the lesson's cap, from where its straight begins: in every frame under 3 s from it (47 to 68 frames) the planner
+  names the side the generator left free and sounds the chime, and names no other side.
+- Broken on purpose, then restored: `RESPAWN_BEFORE_M` 6.5 fails all seven respawn cases ("corridor w3: expected 5.5
+  to be less than 1e-9"; before, one test failed); left and right swapped in `FREE_SIDE_AXES` fails the chime
+  ("tunnel-gaps block-2: expected [ 'left' ] to deeply equal [ 'right' ]"). Full suite 1062 of 1062, typecheck clean.
 
 ## Final status (2026-11-08, the whole merge)
 
