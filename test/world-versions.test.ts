@@ -68,6 +68,21 @@ describe('every version a generator published still builds', () => {
         expect(w.bounds).toEqual(v.bounds);
     });
 
+    it('a lesson whose world changed since v0.12 has a newer lesson version: a recording that differs only in its world reads FAIL, never an older build (merge item 8i of s13-merge)', () => {
+        // the replay tells an older build by the lesson's and the theme's versions only; a world that changes under the same
+        // lesson version is a defect, and its recordings read FAIL (test/replay.test.ts, the verdict table)
+        const changed: string[] = [];
+        for (const [id, v] of Object.entries(V012)) {
+            const lesson = getLesson(id);
+            const now = lesson.world.kind === 'analytic' ? createAnalyticWorld(lesson.world.spec).id : null;
+            if (now === v.id) continue;
+            changed.push(id);
+            expect(lesson.version, `${id}: the world ${v.id} of v0.12 is ${String(now)} here`).toBeGreaterThan(v.lessonVersion);
+        }
+        // v0.13 moved every room to the scale of a micro drone, and the corridor
+        expect(changed.length).toBeGreaterThanOrEqual(14);
+    });
+
     it('the fixture holds every v0.12 lesson with an analytic world (15 of the 21)', () => {
         expect(Object.keys(V012)).toHaveLength(15);
         expect(Object.keys(V012)).toContain('corridor');

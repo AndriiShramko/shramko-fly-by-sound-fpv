@@ -257,7 +257,7 @@ describe('what the replay needs from the recording, and what it checks', () => {
         expect(rebuildSession(m).exact).toBe(true);
     });
 
-    it('a flight that does not re-derive: FAIL with the build it was recorded with, "recorded with an older build" with a lower lesson or theme version (this build cannot verify it), FAIL with a newer one or another world', () => {
+    it('a flight that does not re-derive: FAIL with the build it was recorded with, "recorded with an older build" with a lower lesson or theme version (this build cannot verify it), FAIL with a newer one or another world under the same versions (a defect)', () => {
         const m = first.pkg.manifest;
         const frames = mapFrames(first.pkg.frames, (f) => ({ ...f, p: [f.p[0] + 2.5, f.p[1], f.p[2]] }));
         const moved = (manifest: SessionManifest): ReturnType<typeof checkSession> => checkSession({ ...first.pkg, manifest, frames });
@@ -279,7 +279,10 @@ describe('what the replay needs from the recording, and what it checks', () => {
         // a newer version, or an older lesson with a newer theme, is not an older build
         expect(moved({ ...m, lesson: { ...lesson, version: 3 } }).check.verdict).toBe('fail');
         expect(moved({ ...m, lesson: { ...lesson, version: 1 }, theme: { id: 'soft', version: 3 } }).check.verdict).toBe('fail');
-        // another world with the build's own versions, or an unknown theme: FAIL, saying which
+        // another world with the build's own versions, or an unknown theme: FAIL, saying which. A recording whose only
+        // difference is the world's id stays FAIL (merge item 8i of s13-merge): a lesson's world never changes without a
+        // new lesson version (test/world-versions.test.ts), so a changed world under the same version is a defect, not
+        // an older build
         const scene = moved({ ...m, scene: { ...m.scene, id: 'open-00000000' } });
         expect(scene.check.verdict).toBe('fail');
         expect(formatReplayCheck(scene.check)).toMatch(/^replay check FAIL: .*not the recording's own build: the world is/);

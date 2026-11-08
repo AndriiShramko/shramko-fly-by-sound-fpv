@@ -187,17 +187,17 @@ Steps 7 to 11, lane s13-worlds:
   (was 21); the schedule's every-sound-three-times check passes with all five speech models; the glossary takes 8.4
   minutes with the measured voice (its bound in `test/lesson-schedule.test.ts` is 9). Full suite 1032 of 1032.
 - [x] 8g. The truth bot in the ring and shape lessons (rings-first, rings-line, rings-small, rings-heights,
-  rings-course, shapes-square, shapes-series, shapes-cube), flown to each lesson's pass (a probe, then a test): no wrong-way event.
-  Its 4 m before and past each gate does fly back 1 to 3 m between gates 5 to 7 m apart, but that stays within
-  `LINE_UP_M` (8 m) in front of the gate that counts next, where s13-lessons' rule (review R1) tells nothing, so its
-  track stays as it is and the pass-rule tests keep their exact numbers. The same probe found a wrong-SIDE event at the
-  start of every attempt after the first in seven of them (rings-first, -line, -small, -heights 2 each, the three
+  rings-course, shapes-square, shapes-series, shapes-cube), flown to each lesson's pass (a probe, then a test): no
+  wrong-way event. Its 4 m before and past each gate does fly back 1 to 3 m between gates 5 to 7 m apart, but that stays
+  within `LINE_UP_M` (8 m) in front of the gate that counts next, where s13-lessons' rule (review R1) tells nothing, so
+  its track stays as it is and the pass-rule tests keep their exact numbers. The same probe found a wrong-SIDE event at
+  the start of every attempt after the first in seven of them (rings-first, -line, -small, -heights 2 each, the three
   shapes 1 each): s13-lessons' runner places the craft at the start for a new attempt without setting its last sample
   aside (the resume branch and every reset did), so the jump from past the gate to the start crossed the gate from its
   back side through its opening. A pilot would have heard "That gate was passed from the wrong side" at the "Go." of
-  attempts 2 and 3. `src/lesson/runner.ts`: that place sets the last sample aside too, and a move of `JUMP_M` (3 m,
-  the rule the path flown already had) or more from one frame to the next crosses no gate, point or checkpoint, nor
-  does the frame of a place; without the second rule the replay of a host that never reports the end of speech
+  attempts 2 and 3. `src/lesson/runner.ts`: that place sets the last sample aside too, and a move of `JUMP_M` (3 m, the
+  rule the path flown already had) or more from one frame to the next crosses no gate, point or checkpoint, nor does the
+  frame of a place; without the second rule the replay of a host that never reports the end of speech
   (`test/replay.test.ts`, 'estimate') began the attempt two frames before the recorded jump and derived the line the
   live run no longer said. New test in `test/direction.test.ts`: the truth bot flies each of the eight lessons to its
   pass, no touch, no wrong-way and no wrong-side cue or line. Broken on purpose (neither rule): 7 of the 8 fail
@@ -221,7 +221,15 @@ Steps 7 to 11, lane s13-worlds:
   tests pass on the new layout (the bands, the margins, every change fits its leg, the truth bot, the room in 2 to 3 s);
   the M3 control (the same lesson with 2 m rings) still finds one height through four of the five rings, now 2 m
   through rings 1, 2, 3 and 5. Full suite 1041 of 1041.
-- [ ] 8i. A recording that differs only in the world's id stays FAIL
+- [x] 8i. A recording whose only difference is the world's id (the lesson's and the theme's versions equal) stays FAIL,
+  as item d made it (the verdict table of `test/replay.test.ts`: "the world is ..." under the build's own versions is
+  'fail'), and the code and the tests now say why: a lesson's world changes only with a new lesson version, so a world
+  changed under the same version is a defect, never an older build (`ReplayVerdict`'s comment in
+  `src/replay/compare.ts`; the verdict table's name and comment). New test in `test/world-versions.test.ts`: every
+  lesson whose world changed since v0.12 (14 of the 15 in s13-worlds' fixture of the v0.12 worlds) has a newer lesson
+  version than v0.12's, so its v0.12 recordings read "recorded with an older build". Broken on purpose once (walls-hall
+  at version 1): "walls-hall: the world hall-67e9057a of v0.12 is hall-4fed66a6 here: expected 1 to be greater than 1";
+  restored.
 - [ ] 8j. CHANGELOG (Unreleased) for s13-sound and s13-worlds; README, llms.txt and AGENTS.md agree
 - [ ] 9. Full checks on the final code with fresh evidence
 - [ ] 10. The lanes' notes as public dev notes (`docs/dev/`); no build-machine folder in `docs/`, README, AGENTS, llms

@@ -89,7 +89,9 @@ export interface CueComparison {
  * What the check says (v0.13). 'pass': the recording re-derives within the tolerances. 'older-build': it does not,
  * and it was recorded with an older build (a lesson or theme version lower than this build's, none higher): this
  * build cannot verify it, which says nothing against the recording ("recorded with an older build"). 'fail': it
- * does not re-derive, with the build it was recorded with or with nothing that explains why.
+ * does not re-derive, with the build it was recorded with or with nothing that explains why. A recording whose only
+ * difference is the world's id (the same lesson and theme versions) is a 'fail': a lesson's world changes only with a
+ * new lesson version, so a world changed under the same version is a defect, never an older build.
  */
 export type ReplayVerdict = 'pass' | 'older-build' | 'fail';
 
