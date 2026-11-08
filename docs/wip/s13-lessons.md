@@ -34,6 +34,7 @@ Review fixes (`docs/wip/s13-lessons-review.md`, one commit per fix or small grou
 - [x] R14 public docs
 - [x] R15 test machinery marked internal
 - [x] Found while measuring R4: a course's first attempt begins at its start (with R9 a pilot could be trapped for good)
+- [x] Found while measuring R4: a key at the time a step was due re-derives the same in a replay (the runner catches up first)
 - [ ] Checks after the fixes, final status
 
 ## Final status (2026-11-08)
@@ -483,6 +484,18 @@ walls line) go through the same queue, so the fix (wait for the report) also wai
   (`test/respawn.test.ts`): a pilot who flies 40 m at 1 m/s while the corridor's task is said is placed at the start at
   "Go." and then passes the corridor in that attempt; control: a pilot who waits is not moved. Without the rule the
   test fails.
+
+### Found while measuring R4: a key in the same millisecond as a step that was due
+
+- The simulator's reader test ("a lesson flown in this mode re-derives on replay", `tools/bench/test/sonic-int-reader.test.ts`)
+  failed after the first-attempt fix, with a diagnostic of its diffs: attempt 3 began in the frame at 66 768 ms and N
+  came in that same millisecond; live the runner took N after the attempt began, the replay (frames of 30 Hz, the key
+  applied before the next frame) took it while the pause between attempts was still on, so attempt 3 and its reset were
+  not re-derived. It passed at e0d1f0a by the parity of the recorded frames only.
+- Fix: before a key, an answer or a reset at t the runner catches up to t (what was due by then happens first), live and
+  in a replay alike; not while paused. Test (`test/navigation.test.ts`): N in the frame that began attempt 2 replays to
+  the same events (lesson events end attempt-start 2, leave 2); without the catch-up the replay check fails. The
+  simulator's reader test's diffs are then empty.
 
 ## Needs from the simulator
 

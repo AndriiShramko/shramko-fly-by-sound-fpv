@@ -288,3 +288,21 @@ describe('the replay re-derives what N, B and Z did', () => {
         expect(without.ok).toBe(false);
     }, 60000);
 });
+
+describe('a key in the same millisecond as a step that was due (found while measuring review R4)', () => {
+    it('N as the next attempt begins replays to the same events: the lesson catches up to the key\'s time first', async () => {
+        const host = new RecordingHost(getLesson('rings-first'));
+        host.begin();
+        host.until(() => host.runner.phase === 'flying', 120);
+        host.flyTo([0, 3, 66], 4);
+        host.flyTo([0, 3, 54], 4); // through the ring: the attempt counts, the pause between attempts begins
+        host.until(() => host.runner.attempt === 2, 30); // stops in the frame that began attempt 2
+        host.press(REPLAY_KEY_ACTIONS.next); // N in that same millisecond: it leaves from attempt 2, as the live runner saw it
+        host.hold(1);
+        expect(host.events.filter((e) => e.kind === 'lesson').map((e) => (e.kind === 'lesson' ? `${e.what}:${e.attempt}` : '')).slice(-2)).toEqual(['attempt-start:2', 'leave:2']);
+        const { pkg } = await host.toPackage();
+        const { check } = checkSession(pkg);
+        expect(check.events.diffs).toEqual([]);
+        expect(check.ok).toBe(true);
+    }, 60000);
+});

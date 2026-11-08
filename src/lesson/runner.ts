@@ -1447,6 +1447,7 @@ class Runner implements LessonSession {
     answer(value: number, via: 'key' | 'voice', t: number): readonly SessionEvent[] {
         this.t = Math.max(this.t, t);
         if (this.left) return this.drain();
+        this.catchUp(t);
         const c = this.current;
         if (c === null || c.step.kind !== 'ask' || c.answered) return this.drain();
         const q = c.step.question;
@@ -1469,10 +1470,24 @@ class Runner implements LessonSession {
 
     // -------------------------------------------------------------- N, B, Z and the lesson menu
 
+    /**
+     * Before a key, an answer or a reset at `t` the lesson catches up to `t`: what was due by then (the pause between
+     * attempts ran out, a play ended, a question timed out) has happened, whether or not a frame came after it. A live host
+     * steps a frame every 16 ms, a replay has the recording's 30 Hz frames: without this, a key in the same millisecond as
+     * an attempt's start was taken before it in the replay and after it live (the simulator's reader test, found while
+     * measuring review R4). Not while paused: the lesson's clocks wait then.
+     */
+    private catchUp(t: number): void {
+        if (this.pausedAt !== null || !this.began || this.left) return;
+        this.advance(t);
+        this.afterScript(t);
+    }
+
     /** A key of the pilot: the first line said after it cuts the speech going on (review D2). */
     private byKey(t: number, run: () => void): readonly SessionEvent[] {
         this.t = Math.max(this.t, t);
         if (!this.began || this.left) return this.drain();
+        this.catchUp(t);
         this.interruptNext = true;
         try {
             run();
@@ -1606,6 +1621,7 @@ class Runner implements LessonSession {
     reset(to: 'checkpoint' | 'start', t: number): { readonly pose: Pose; readonly events: readonly SessionEvent[] } {
         this.t = Math.max(this.t, t);
         if (this.left) return { pose: this.startPose(Math.max(this.attemptNo, 1)), events: this.drain() };
+        this.catchUp(t);
         // a short R: near the last point passed (M41-20); a long R: the start
         const back = to === 'checkpoint' && !this.ears && this.phaseValue === 'flying' ? this.respawn() : null;
         const pose = back === null ? this.startPose(Math.max(this.attemptNo, 1)) : back.pose;
