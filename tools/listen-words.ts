@@ -333,8 +333,11 @@ export function keyHeard(line: Pick<Line, 'locale' | 'keyName'>, hyp: string): b
 /** The simulator's Fly by Sound files (under its packages/i18n/locales). */
 export const SIM_FILES = ['fly/sonic', 'fly/sonicentry', 'fly/sonickeys', 'fly/sonicrec', 'fly/soniclook'] as const;
 
-/** Keys of those files that are not lines a person hears or reads as words: a language tag and the phrases the recogniser listens for. */
-export const SIM_NOT_LINES: readonly RegExp[] = [/^sonicrec\.voice\.lang$/, /^sonicrec\.voice\.phrases\./];
+/**
+ * Keys of those files that are not lines a person hears or reads as words: a language tag, the phrases the recogniser listens for, and
+ * the line that only carries a text put together elsewhere (sonic.say.text: the start screen's stops, a recorded line in a replay).
+ */
+export const SIM_NOT_LINES: readonly RegExp[] = [/^sonicrec\.voice\.lang$/, /^sonicrec\.voice\.phrases\./, /^sonic\.say\.text$/];
 
 /** The simulator's lines, their parameters filled with its own words where it has them, else with small numbers. */
 export function simulatorLines(root: string): Line[] {
@@ -376,7 +379,8 @@ export function simulatorLines(root: string): Line[] {
             now: '0:30',
             total: key === 'sonicrec.replay.time' ? '1:05' : '5',
             matched: '18',
-            recorded: '20',
+            recorded: key === 'sonic.say.replayOlder' ? '1' : '20',
+            here: '2',
             cues: '95',
             diffs: '2',
             n: '2',
