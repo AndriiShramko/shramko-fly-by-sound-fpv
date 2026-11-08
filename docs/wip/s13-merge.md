@@ -73,8 +73,88 @@ and the corridor's goal (s13-lessons' "For the lead's merge" item 2, review R5) 
   Python 3.11.9), `SHRAMKO_LISTEN_CACHE` on the data disk and `GPU_LOCK` as the lane ran it: 24 of 24 renders, 8 of 8
   checks valid and passing, 88.6 s, fresh for inputs 67e227c5d9ad (112 files; s13-sound's last run was ca2ea78c02fb).
   Its numbers did not move from s13-sound's (table in "Final status").
-- [ ] 6. Final status: what merged, the conflicts, the merge items with their commits, the checks with numbers, what
-  waits for s13-worlds, what each lane needs from the simulator
+- [x] 6. Final status: what merged, the conflicts, the merge items with their commits, the checks with numbers, what
+  waits for s13-worlds, what each lane needs from the simulator ("Final status" below)
+
+## Final status (2026-11-08)
+
+Done, branch `s13-merge`, not pushed, nothing deployed. `main` (7d4b4b9) is untouched; s13-worlds is not merged.
+
+What merged: s13-lessons at 14e00f0 (5db2b1d, clean: main had not moved) and s13-sound at 3c73658, which carries
+vl-spec at 3044c7c (9eb98d7). Conflicts: three files, each resolved as the table under "Conflicts and their
+resolution" says: `src/cues/planner.ts` s13-sound's side (s13-lessons' planner hunks were placeholders only, every one
+covered by s13-sound's cases), the two proofs' evidence files s13-sound's side and then rewritten by the proofs. Every
+other file both lanes changed merged by itself and was checked field by field (contract, lesson files, locales,
+catalog, tools, tests), as listed there.
+
+| Merge item | What | Commit |
+|---|---|---|
+| a | the silence control of `test/silence.test.ts` with v0.12's layers; the real check with both | aacabfd |
+| b | `test/repeat-plays.test.ts` passes; `durS` honoured, checked broken once | a329d4d |
+| c | `ONE_OFF_PLAY_S` for s13-sound's four event sounds, and a test of the whole table | aa3e789 |
+| d | the replay's verdict "recorded with an older build", its negative controls | 6dc1a44 |
+| e | walls-hall's and the corridor's lines for the knocks of v0.13, four languages | 543a5cb |
+| f | placeholders for the build machine's folders in `docs/design/virtual-listener.md` | 8eae637 |
+| 5 | fresh evidence: proofs 371afd8, listener 7083089 | |
+
+Checks on the final code (8eae637; after it only evidence and this doc changed), all passing: `pnpm typecheck` clean;
+`pnpm test` 36 files, 756 tests; `node tools/run-tool.mjs locale-lint` 0 problems, 4 languages, 469 keys; `node
+tools/run-tool.mjs check-layout` 0 problems; `GPU_LOCK=C:/dev/.gpu-lock pnpm proof:audio` 3 files, 9 proofs, 48.8 s,
+every broken control failing; `pnpm listen` 8 of 8 checks valid and passing for inputs 67e227c5d9ad (a second run
+says the evidence is fresh: nothing to run). The listener's numbers:
+
+| Check | Measured | Control |
+|---|---|---|
+| VL-0a two renders the same | max difference 2.4e-7 (limit 1e-6) | noise seed 2: 0.045 |
+| VL-0b stems sum to the mix | residual -131.4 dB (limit -90) | a stem left out: -3.0 dB |
+| VL-pitch height track | largest step 3.7 cents per 10 ms (limit 25) | v0.12 stepped tone: 118.7 cents |
+| VL-onset hazard before impact | 2.475, 2.493, 2.475 s at 1, 3, 5 m/s (at least 2) | distance-only rule at 5 m/s: 1.18 s |
+| VL-6-speech voice over the mix | soft 4.76, clear 4.66, race 4.64 LU (3 to 6) | volume 1: 11.26, 7.91, 10.39 LU |
+| VL-6-peak engine and voice | -6.99, -3.74, -6.26 dBTP (at most -1) | volume 1: -0.52, -0.51, -0.49 |
+| VL-2-motor cues over the motor | worst 15.0 dB (Air65, shape); Pavo20 30.3, Meteor65 20.1, Pavo Pico 22.3, 5-inch 24.2 dB; motor 11.0 to 12.1 LU under the cues (micro), 14.05 (5-inch) | raw motor at 60 %: shape 0.9 dB |
+| VL-3-height band | in the band at most 1.1 % (2 to 70 Hz), out of it a 43 % buzz | steady pair: 44 % in the band |
+
+Found while merging (a probe, not committed): with the merged layers move-speed is never silent, 0 of 150 frames of
+the pause between attempts and 0 of 786 flying frames (with v0.12's layers 104 of 150 and 84 of 786, s13-lessons'
+own measure). That closes s13-lessons' "Left open" 7; its item 1 (the event sounds as placeholders) is closed by the
+merge too: s13-sound's sounds play now. No person has heard any of it.
+
+Left open by this merge:
+
+1. `ears-glossary` does not name s13-sound's six new cues (`safety.free`, `safety.wrong-way`, `safety.wrong-side`,
+   `height.target`, `target.praise`, `target.stage`); their lines and play lengths are ready. Naming them changes the
+   glossary lesson (its goals, its version, its length, the 60 plays `test/repeat-plays.test.ts` counts): a lesson
+   decision, not a merge one.
+2. `CHANGELOG.md` (Unreleased) has s13-lessons' entry and the replay verdict, nothing yet of s13-sound's changes.
+3. `test/fixtures/tts-en-david.json` has no measured length for s13-sound's new English lines (the six cues, the two
+   settings); the schedule takes the estimate for them. No shipped lesson's schedule says them yet.
+4. A recording whose only difference is the world's id (a generator changed, the lesson's version did not) still
+   reads FAIL with "not the recording's own build"; whether that is an older build too is a question for the
+   s13-worlds merge, which changes worlds.
+5. The new lines of item e were heard by no person; this machine has no local Spanish, Polish or Russian voice.
+6. The lanes' own "Left open" lists stand otherwise (s13-lessons "Final status", s13-sound "Final status").
+
+What waits for the s13-worlds merge (by reference, not copied):
+
+- `docs/wip/s13-lessons.md`, "For the lead's merge" item 2 (review R5: the corridor's `goals[1]` and cp-6 with the
+  world's geometry, the tunnels' goals), and its "Left open" items 4 and 5 (the corridor passed at 240 m, the respawn
+  points' density until the world's checkpoint list).
+- `docs/wip/s13-sound.md`, "Needs from other lanes", the s13-worlds items (target heights on one 0.5 m grid; the
+  height and room layers of s13-worlds' new lessons) and the corridor line of review m4 for s13-worlds' own tunnel
+  lines (the corridor's own line is done here, item e).
+- After that merge: `pnpm proof:audio` and `pnpm listen` again (their inputs change), and left open 4 above.
+
+What each lane needs from the simulator (wave 2, lane v13-host, with the gitlink move; by reference):
+
+- s13-lessons: `docs/wip/s13-lessons.md`, "Needs from the simulator" items 1 to 7, and the simulator test updates of
+  its "Review R4" table.
+- s13-sound: `docs/wip/s13-sound.md`, "Needs from the simulator" (the motor on `motorInput` and who owns that change,
+  review M5; the five sound tests, M6; the settings `motorGainDb` and `heightTarget`; the panel's `plan` and the
+  repeat-cue; every line through `engine.say()`; one run of the cost bench).
+- From this merge (item d, s13-sound's m7): the replay page (`apps/fly/src/sonic-session/replay-control.ts`,
+  `summary`) picks its pass or fail line from `check.ok`; it should read `replayVerdict(check)` and say "recorded with
+  an older build" in the simulator's own locales for 'older-build'. The details line (`formatReplayCheck`) says it
+  already, and the simulator's `mergeChecks` compiles as it is (`verdict` is optional).
 
 ## Conflicts and their resolution (step 3)
 
