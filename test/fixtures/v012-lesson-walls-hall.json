@@ -1,0 +1,84 @@
+{
+  "assists": {
+    "altitude": "hold",
+    "autoArm": true,
+    "control": "velocity",
+    "maxClimbMps": 1,
+    "maxSpeedMps": 3,
+    "maxYawDps": 90,
+    "onTouch": "bump"
+  },
+  "attemptLimitS": 60,
+  "checkpoints": [],
+  "fastPath": true,
+  "format": "shramko-sonic-lesson/1",
+  "goals": [
+    {
+      "kind": "approach-stop",
+      "objectId": null,
+      "stopWithinM": 3
+    }
+  ],
+  "id": "walls-hall",
+  "intro": [
+    {
+      "key": "lesson.walls-hall.intro.1"
+    },
+    {
+      "key": "lesson.walls-hall.intro.2"
+    },
+    {
+      "key": "lesson.walls-hall.intro.3"
+    },
+    {
+      "key": "lesson.walls-hall.goal.1"
+    }
+  ],
+  "layers": {
+    "hazardVoices": 2,
+    "heightBandM": null,
+    "on": [
+      "safety",
+      "voice"
+    ]
+  },
+  "module": 3,
+  "order": 9,
+  "pass": {
+    "attempts": 10,
+    "blocking": true,
+    "blocks": 1,
+    "maxTouches": 1,
+    "required": 8
+  },
+  "speech": {
+    "hints": [
+      {
+        "key": "lesson.walls-hall.hint.1"
+      }
+    ],
+    "pass": {
+      "key": "lesson.walls-hall.pass"
+    },
+    "retry": {
+      "key": "lesson.walls-hall.retry"
+    }
+  },
+  "start": {
+    "pos": [0, 1.5, 0],
+    "yawDeg": 0
+  },
+  "title": {
+    "key": "lesson.walls-hall.title"
+  },
+  "version": 1,
+  "world": {
+    "kind": "analytic",
+    "spec": {
+      "generator": "hall",
+      "params": {},
+      "seed": 0,
+      "version": 1
+    }
+  }
+}

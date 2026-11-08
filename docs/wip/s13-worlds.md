@@ -7,7 +7,7 @@ navigation and truth bot `test/helpers/truth.ts`). No push. Every step one commi
 ## Status
 
 - [x] 1. Lane doc: ownership, facts with file:line, the seconds-to-wall table of v0.12
-- [ ] 2. Versions that keep old recordings: every generator builds every version it published
+- [x] 2. Versions that keep old recordings: every generator builds every version it published
 - [ ] 3. The hollow for the simulator: the cavity boxes in the analytic world
 - [ ] 4. The world's checkpoint list (M41-20)
 - [ ] 5. Micro-drone scale (M41-18): version 2 of the room generators, the lessons' world, start and assists
@@ -111,7 +111,30 @@ lesson with a goal other than hold-height, approach-stop or around): the owner's
 
 ## Done
 
-(filled per step)
+### Step 2: versions that keep old recordings
+
+- `src/world/generators.ts`: a version table per generator (schema and builder per version). `GENERATOR_VERSION` is the
+  CURRENT version (what `makeSpec` writes), `GENERATOR_VERSIONS` every version this build builds, `buildsVersion()`,
+  `paramSchema(generator, version)`; `resolveParams`, `buildWorld` and `makeSpec` take an optional version (the current
+  one by default), `PARAM_SCHEMAS` stays the current versions' schemas. `createAnalyticWorld` builds the spec's own
+  version and refuses only a version this build lacks: "generator 'hall' builds versions 1, 2 here (current 2), the
+  spec asks for 99" (the replay passes it on as `ReplayError('world')`).
+- Version 1 moved unchanged to `src/world/v1.ts` (the builders byte for byte; parameters `src/world/params.ts`, shared
+  helpers `src/world/build.ts`). Its goldens in `test/world.test.ts` are untouched and pass.
+- Fixtures written by the v0.12 build itself (sources of 7d4b4b9 under `U:/Temp`, its own test host):
+  `test/fixtures/v012-worlds.json` (the 15 v0.12 lessons with an analytic world: spec, id, digest, objects and field
+  fingerprint), `test/fixtures/v012-session-walls-hall.zip` (a session it recorded on walls-hall) and
+  `test/fixtures/v012-lesson-walls-hall.json` (that lesson file as v0.12 shipped it).
+- Tests (`test/world-versions.test.ts`): every v0.12 spec gives its v0.12 id, digest, objects, bounds and field; the
+  v0.12 recording rebuilds on its own walls with its own lesson (world id = recorded scene id, the same field, no
+  `world-id` note, its first goal met when it was recorded); with the shipped lesson it is reported "not the
+  recording's own build: lesson walls-hall is version 2 here, the session was flown with 1" (and `world-id` once the
+  shipped world differs); a spec of version 0, 99, 1.5 or -1 fails with the versions this build has, in the world and
+  in the replay. Controls: walls 1 cm off fail the digest and field comparison; the recording on other walls (a hall of
+  200 x 200 m) does not meet its first goal when it was recorded.
+- What does not verify, and why: replayed with its own v0.12 lesson, the events after the first attempt differ ("fly.progress",
+  the next attempts): lane s13-lessons changed the pass rule and the lines (their doc, step 2: "it does not verify, by
+  design"). The walls are the same walls.
 
 ## Needs from the simulator
 

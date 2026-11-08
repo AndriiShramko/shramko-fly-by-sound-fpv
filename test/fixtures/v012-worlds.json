@@ -1,0 +1,447 @@
+{
+  "build": "sound repo 7d4b4b9 (ShramkoGSFPV v0.12)",
+  "worlds": {
+    "hover-height": {
+      "lessonVersion": 1,
+      "spec": {
+        "generator": "open",
+        "version": 1,
+        "seed": 0,
+        "params": {
+          "startHeightM": 1
+        }
+      },
+      "id": "open-5149d77f",
+      "digest": "5149d77fa08ce0899a4fb33250b04a9f814a27e1b7f852db6cd5509dbdab1ec9",
+      "objects": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "field": "6bfb54e7e8ae38f0bd248aacf6383e716f147a467ab0708c0e1eea1336211bc2",
+      "bounds": {
+        "min": [
+          -80,
+          -1,
+          -80
+        ],
+        "max": [
+          80,
+          40,
+          80
+        ]
+      }
+    },
+    "hover-turn": {
+      "lessonVersion": 1,
+      "spec": {
+        "generator": "rings",
+        "version": 1,
+        "seed": 0,
+        "params": {
+          "aheadM": 3,
+          "layout": "single",
+          "offsetXM": -25,
+          "sizeM": 3
+        }
+      },
+      "id": "rings-0d36f02a",
+      "digest": "0d36f02a8d9899c0e97c900aa341c394eef39d82fa3d714f390f244ff6ca3743",
+      "objects": "e8ffff6dec09615b507f0da84535f456162f43eeb92583ab0ce0e29a5878081d",
+      "field": "387d7c323a2b977f0ebaa7bf7993c9153e99fc4fbe183e87740426eb03f666c6",
+      "bounds": {
+        "min": [
+          -31,
+          -1,
+          -81
+        ],
+        "max": [
+          31,
+          21,
+          81
+        ]
+      }
+    },
+    "move-speed": {
+      "lessonVersion": 1,
+      "spec": {
+        "generator": "open",
+        "version": 1,
+        "seed": 0,
+        "params": {
+          "startHeightM": 1.5,
+          "zoneDistanceM": 14,
+          "zoneSizeM": 16
+        }
+      },
+      "id": "open-60ad7d2f",
+      "digest": "60ad7d2f3752d103c9ecc441561de090d4fe7c29a569d82f8afbf918a3f49306",
+      "objects": "cb19f49c63f0a604c32a7e26c6c11d537bc511067db46c4cebede95a32d1c420",
+      "field": "6bfb54e7e8ae38f0bd248aacf6383e716f147a467ab0708c0e1eea1336211bc2",
+      "bounds": {
+        "min": [
+          -80,
+          -1,
+          -80
+        ],
+        "max": [
+          80,
+          40,
+          80
+        ]
+      }
+    },
+    "move-stop": {
+      "lessonVersion": 1,
+      "spec": {
+        "generator": "open",
+        "version": 1,
+        "seed": 0,
+        "params": {
+          "startHeightM": 1.5,
+          "zoneDistanceM": 30,
+          "zoneSizeM": 6
+        }
+      },
+      "id": "open-7b79caf2",
+      "digest": "7b79caf2c2cd7363f2c1015d7578848df8922b522a3d4057ebcbfbffe1fe04cf",
+      "objects": "4278c0d1a5eaa80b3ca457433d261a850c4fb28166125c78517ef865f8fcb7e0",
+      "field": "6bfb54e7e8ae38f0bd248aacf6383e716f147a467ab0708c0e1eea1336211bc2",
+      "bounds": {
+        "min": [
+          -80,
+          -1,
+          -80
+        ],
+        "max": [
+          80,
+          40,
+          80
+        ]
+      }
+    },
+    "walls-hall": {
+      "lessonVersion": 1,
+      "spec": {
+        "generator": "hall",
+        "version": 1,
+        "seed": 0,
+        "params": {}
+      },
+      "id": "hall-67e9057a",
+      "digest": "67e9057ac22a5c874077eb8f8efc61f29fef50df3acc80432fe324aba4debc41",
+      "objects": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "field": "b6393adf1959dc5c8835bbafc18038fe7bf407d4d7e3593ecb4fb183dc15cc80",
+      "bounds": {
+        "min": [
+          -21,
+          -1,
+          -31
+        ],
+        "max": [
+          21,
+          13,
+          31
+        ]
+      }
+    },
+    "walls-pillar": {
+      "lessonVersion": 1,
+      "spec": {
+        "generator": "pillars",
+        "version": 1,
+        "seed": 0,
+        "params": {
+          "aheadM": 15,
+          "layout": "single"
+        }
+      },
+      "id": "pillars-fa96b763",
+      "digest": "fa96b763e15b1db899b53d9c0943f5810d58f55395cc8783e68b43354ae36af3",
+      "objects": "cd8a555741e72b2008e0b205fbde31422712901ca91242e5232609a6a4af6267",
+      "field": "d5f64ff69705be1f12371a6390bb1687a1ed0e490d7ba6d2a326adcaf992d2d7",
+      "bounds": {
+        "min": [
+          -21,
+          -1,
+          -31
+        ],
+        "max": [
+          21,
+          13,
+          31
+        ]
+      }
+    },
+    "walls-row": {
+      "lessonVersion": 1,
+      "spec": {
+        "generator": "pillars",
+        "version": 1,
+        "seed": 0,
+        "params": {
+          "aheadM": 15,
+          "count": 5,
+          "gapM": 6,
+          "layout": "row"
+        }
+      },
+      "id": "pillars-f74a7bad",
+      "digest": "f74a7bad382ef8476cfaa7b83f7368f9c0f1ba2e2652ea256e52cf1eef0855a7",
+      "objects": "8db5a37c5d2280792a30751843a21d5a25ab2d674f51265d8b055f985e349ecf",
+      "field": "191812ce6467d02dd45003b25c049743e2501311b0f16c7a2f3602590ccb7565",
+      "bounds": {
+        "min": [
+          -21,
+          -1,
+          -31
+        ],
+        "max": [
+          21,
+          13,
+          31
+        ]
+      }
+    },
+    "corridor": {
+      "lessonVersion": 1,
+      "spec": {
+        "generator": "corridor",
+        "version": 1,
+        "seed": 0,
+        "params": {
+          "layout": "full",
+          "straightM": 50
+        }
+      },
+      "id": "corridor-2946bfc7",
+      "digest": "2946bfc757d0fa9fcdde74745120859b2669a32116077a8e68da70a998d65668",
+      "objects": "5b41d2efdd5b30a7776b70feead1eaa03d5717f9f0278153cc7d3095333d595b",
+      "field": "a8a39b8faec794a0b05b19bc3e791f42f6d8e7cb54a95200fe8a5fc3bac28198",
+      "bounds": {
+        "min": [
+          -3.5,
+          -1,
+          -248.5
+        ],
+        "max": [
+          93.5,
+          8,
+          3.5
+        ]
+      }
+    },
+    "rings-first": {
+      "lessonVersion": 1,
+      "spec": {
+        "generator": "rings",
+        "version": 1,
+        "seed": 0,
+        "params": {
+          "aheadM": 12,
+          "layout": "single",
+          "sizeM": 3
+        }
+      },
+      "id": "rings-2bd64a5c",
+      "digest": "2bd64a5c598ae3691973ee55f883c048007caa362df568da6d9e48b3625285ef",
+      "objects": "9987f466dbf87a596e62fe0d3e2e59d46a93cc6a70f1ce688314121a06ce071a",
+      "field": "8d1d1316f8f9261412d4a3d39ec326b10ff3a66a24548cbc2e3e7568e01a0b1e",
+      "bounds": {
+        "min": [
+          -31,
+          -1,
+          -81
+        ],
+        "max": [
+          31,
+          21,
+          81
+        ]
+      }
+    },
+    "rings-line": {
+      "lessonVersion": 1,
+      "spec": {
+        "generator": "rings",
+        "version": 1,
+        "seed": 0,
+        "params": {
+          "aheadM": 12,
+          "count": 3,
+          "layout": "line",
+          "sizeM": 3,
+          "spacingM": 14
+        }
+      },
+      "id": "rings-011ebea8",
+      "digest": "011ebea8f8922ab9a57c33e45a22371c4a7501323916921ba2360792533a7092",
+      "objects": "769cf544b335a5411f448eee108d926886d8eb8b5e4ff5fcdd343b55ad0412ca",
+      "field": "0d1c018de41803a14e34e42056bf79fae7d200ea5d271a8f68c6df060899eda5",
+      "bounds": {
+        "min": [
+          -31,
+          -1,
+          -81
+        ],
+        "max": [
+          31,
+          21,
+          81
+        ]
+      }
+    },
+    "rings-small": {
+      "lessonVersion": 1,
+      "spec": {
+        "generator": "rings",
+        "version": 1,
+        "seed": 0,
+        "params": {
+          "aheadM": 12,
+          "layout": "line",
+          "sizes": [
+            3,
+            2,
+            1.5,
+            1
+          ],
+          "spacingM": 14
+        }
+      },
+      "id": "rings-5db8b185",
+      "digest": "5db8b1858c92ed4902eafc9072a234820a27d9542ba07145e25d6f0b0be05995",
+      "objects": "b5c87808a121817860404013472644384bc92b19df109bb5156fc20a3835534c",
+      "field": "3a8dd556c52e3758bba92bbf61985f5c75f9cdf7cf19d40051e0a8a594438ce0",
+      "bounds": {
+        "min": [
+          -31,
+          -1,
+          -81
+        ],
+        "max": [
+          31,
+          21,
+          81
+        ]
+      }
+    },
+    "rings-course": {
+      "lessonVersion": 1,
+      "spec": {
+        "generator": "rings",
+        "version": 1,
+        "seed": 7,
+        "params": {
+          "aheadM": 12,
+          "count": 6,
+          "layout": "course",
+          "sizeM": 3,
+          "spacingM": 16
+        }
+      },
+      "id": "rings-b39c47c1",
+      "digest": "b39c47c15e683367f1fb8b87b1d1fda9f7ee3ada3267c1a2b70f8ec873710b3a",
+      "objects": "d2d7c87aa81f9d152dd163aa65e9b6ad04784f22efe0eb33fe42f7f5f8d68ac4",
+      "field": "98d4d88cc0bb224d6396ffd4a3c73dfa64170f7b3fc2f273425cd7a213879bb2",
+      "bounds": {
+        "min": [
+          -31,
+          -1,
+          -81
+        ],
+        "max": [
+          31,
+          21,
+          81
+        ]
+      }
+    },
+    "shapes-square": {
+      "lessonVersion": 1,
+      "spec": {
+        "generator": "squares",
+        "version": 1,
+        "seed": 0,
+        "params": {
+          "aheadM": 12,
+          "layout": "single",
+          "sizeM": 3
+        }
+      },
+      "id": "squares-47710812",
+      "digest": "47710812f9400a8c8d80c5442f81f15a0e3c36e7b4b588a58deee911f41e56e5",
+      "objects": "1de6e293f9361ffe2b7b5c73afb95d15e9aa65db1f935c13f39511bd074544a7",
+      "field": "6e0f0004210028ee0a0faaed3fbe762b99f6d33a012c80871d405384c7d3ac18",
+      "bounds": {
+        "min": [
+          -31,
+          -1,
+          -81
+        ],
+        "max": [
+          31,
+          21,
+          81
+        ]
+      }
+    },
+    "shapes-series": {
+      "lessonVersion": 1,
+      "spec": {
+        "generator": "squares",
+        "version": 1,
+        "seed": 0,
+        "params": {
+          "aheadM": 12,
+          "count": 4,
+          "layout": "turn",
+          "sizeM": 3,
+          "spacingM": 14,
+          "turnDeg": 40
+        }
+      },
+      "id": "squares-b57cd2b9",
+      "digest": "b57cd2b99012a9510d242ff44521500a5a00beefcc7378153f5f8244d4162ee3",
+      "objects": "9bcd13fd8407d2419fe230949d96a0663131e93ac9d6f67d222d49a66e096fc8",
+      "field": "0949fb1636f42675e0a9880e5356326aaf51da372ce2487dd4109d3c6842e2ac",
+      "bounds": {
+        "min": [
+          -31,
+          -1,
+          -81
+        ],
+        "max": [
+          31,
+          21,
+          81
+        ]
+      }
+    },
+    "shapes-cube": {
+      "lessonVersion": 1,
+      "spec": {
+        "generator": "cube-frames",
+        "version": 1,
+        "seed": 0,
+        "params": {
+          "aheadM": 12,
+          "layout": "single",
+          "sizeM": 3
+        }
+      },
+      "id": "cube-frames-40f72dec",
+      "digest": "40f72dec16e97dfe1b8cb30aa3f3c3264d7812318de4c500f5ecb7c7d1dfda92",
+      "objects": "b2e2cbe531e98ebc6455f2e6af9b22dd39846d45f4b8cdbaf6bd98f96708b117",
+      "field": "f8d7a802622736761b69dd9ad0a9e5cefdc44d8c316810cd7e7178a97da86cb4",
+      "bounds": {
+        "min": [
+          -31,
+          -1,
+          -81
+        ],
+        "max": [
+          31,
+          21,
+          81
+        ]
+      }
+    }
+  }
+}
