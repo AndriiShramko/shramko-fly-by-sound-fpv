@@ -160,6 +160,20 @@ export interface AnalyticWorldSpec {
 }
 
 /**
+ * One box of a lesson world's hollow (v0.13, lane s13-worlds): centre and half extents, world metres.
+ * The room (floor, walls, ceiling, a corridor's tunnel) is solid everywhere outside the union of its
+ * boxes; the objects stand inside it.
+ */
+export interface CavityBox {
+    readonly cx: number;
+    readonly cy: number;
+    readonly cz: number;
+    readonly hx: number;
+    readonly hy: number;
+    readonly hz: number;
+}
+
+/**
  * An analytic world built from its spec. The simulator builds its collider from `solidAt` (one
  * voxel per call) and names the walls by `digest`, so a flight log replays on the same walls.
  */
@@ -174,6 +188,12 @@ export interface AnalyticWorld extends SonicWorld {
     solidAt(x: number, y: number, z: number): boolean;
     /** the voxel size the simulator should build the collider at, metres */
     readonly voxelM: number;
+    /**
+     * v0.13: the boxes of the room's hollow, the shell exactly (objects not included); null for the open
+     * world, whose shell is the ground (and a ceiling slab with `ceilingM`). For every generator and
+     * version; absent only from a world made by an older package. The simulator draws the room from it.
+     */
+    readonly cavities?: readonly CavityBox[] | null;
 }
 
 export interface TrackRef {

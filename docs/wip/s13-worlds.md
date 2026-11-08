@@ -8,7 +8,7 @@ navigation and truth bot `test/helpers/truth.ts`). No push. Every step one commi
 
 - [x] 1. Lane doc: ownership, facts with file:line, the seconds-to-wall table of v0.12
 - [x] 2. Versions that keep old recordings: every generator builds every version it published
-- [ ] 3. The hollow for the simulator: the cavity boxes in the analytic world
+- [x] 3. The hollow for the simulator: the cavity boxes in the analytic world
 - [ ] 4. The world's checkpoint list (M41-20)
 - [ ] 5. Micro-drone scale (M41-18): version 2 of the room generators, the lessons' world, start and assists
 - [ ] 6. Tunnels (M41-21): corridor version 2 and the tunnel lessons
@@ -136,9 +136,37 @@ lesson with a goal other than hold-height, approach-stop or around): the owner's
   the next attempts): lane s13-lessons changed the pass rule and the lines (their doc, step 2: "it does not verify, by
   design"). The walls are the same walls.
 
+### Step 3: the hollow for the simulator
+
+- Contract (added): `CavityBox { cx, cy, cz, hx, hy, hz }` and `AnalyticWorld.cavities?: readonly CavityBox[] | null`
+  (optional in the contract so an older package's world still compiles; always set by this package).
+  `AnalyticWorldInfo.cavities: readonly CavityBox[] | null`: the boxes whose union is the room's free space, the shell
+  exactly (objects not included), null for the open world (its shell is the ground and an optional ceiling slab). Taken
+  from the shell itself (`cavityShell` keeps a copy of its boxes, `src/world/parts.ts`), so every generator and version
+  gives them without a line of any builder changing; the world hands out a copy.
+- Test (`test/world-cavities.test.ts`, 40 worlds: every shipped lesson, every generator at every version with its
+  defaults and each of its layouts): on 20 000 random points of the bounds per world (points within 3 mm of a box face
+  and within an object's bounding sphere left out, at least 8 000 checked), a point inside a box is free and one outside
+  every box is solid; the open world has none. Control: the first box moved by 0.5 m disagrees on more than 20 points in
+  walls-hall and in the corridor.
+
 ## Needs from the simulator
 
-(filled per step)
+1. Draw the room from the package's boxes (`apps/fly/src/sonic/primitives.ts:215-231`, `cavityBoxes`), and delete the
+   mirror (`corridorCavities` 135-208 and the switch by generator name):
+
+   ```ts
+   export function cavityBoxes(world: AnalyticWorldInfo): Cavity[] | null {
+       return world.cavities === null ? null : world.cavities.map((b) => ({ ...b }));
+   }
+   ```
+
+   (`Cavity` has the fields of the contract's `CavityBox` and can become an alias of it.) Why: the mirror walks
+   version 1 of the corridor and treats every other generator as one box; the tunnels (corridor version 2, step 6) are
+   other boxes, so until this switch the helper's view draws walls where there are none and none where there are.
+   `tools/bench/test/sonic-primitives.test.ts:83-115` keeps working (it then holds the package's boxes to `solidAt`;
+   its left-for-right control stays meaningful). Expected meanwhile: that test fails for every world of a new
+   version whose hollow is not one box centred on (0, h/2, 0).
 
 ## Needs from other lanes
 

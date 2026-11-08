@@ -31,6 +31,8 @@ export interface Part {
     readonly material: MaterialClass | null;
     /** a bounding sphere, or null for a part that reaches everywhere (the shell) */
     readonly bound: Bound | null;
+    /** a hollow shell: the boxes whose union is free (everything else is solid); absent for every other part */
+    readonly cavities?: readonly Box[];
     sdf(x: number, y: number, z: number): number;
 }
 
@@ -167,6 +169,7 @@ export function cavityShell(boxes: readonly Box[]): Part {
         id: null,
         material: null,
         bound: null,
+        cavities: boxes.map((b) => ({ cx: b.cx, cy: b.cy, cz: b.cz, hx: b.hx, hy: b.hy, hz: b.hz })),
         sdf(x, y, z) {
             let best = Infinity;
             for (let i = 0; i < n; i++) {

@@ -2,7 +2,7 @@
 // union of solids, each with a signed distance function (sdf.ts, parts.ts); rays are sphere
 // traced against it; the simulator builds its collider from `solidAt` and names the walls by
 // `digest`, so a flight log replays on the same walls.
-import type { AnalyticWorld, AnalyticWorldSpec, MaterialClass, Pose, RayHit, SonicObject, Vec3, WorldGenerator } from '../contract';
+import type { AnalyticWorld, AnalyticWorldSpec, CavityBox, MaterialClass, Pose, RayHit, SonicObject, Vec3, WorldGenerator } from '../contract';
 import { canonicalJson } from '../util/canonical';
 import { sha256Hex } from '../util/sha256';
 import { buildsVersion, buildWorld, GENERATOR_VERSION, GENERATOR_VERSIONS, isWorldGenerator, resolveParams, WorldSpecError, type Landmark, type ResolvedParams } from './generators';
@@ -34,6 +34,8 @@ export interface AnalyticWorldInfo extends AnalyticWorld {
     readonly floorY: number;
     /** named points: start, wall middles, corridor sections, ... (positions at the start height) */
     readonly landmarks: readonly Landmark[];
+    /** the boxes of the room's hollow (the shell exactly); null for the open world */
+    readonly cavities: readonly CavityBox[] | null;
 }
 
 /** A complete spec of a generator at `version` (the current one by default): defaults for everything not given. */
@@ -173,6 +175,7 @@ export function createAnalyticWorld(spec: AnalyticWorldSpec): AnalyticWorldInfo 
         resolved,
         start: built.start,
         floorY: 0,
-        landmarks: built.landmarks
+        landmarks: built.landmarks,
+        cavities: built.shell.cavities === undefined ? null : built.shell.cavities.map((b) => ({ ...b }))
     };
 }
