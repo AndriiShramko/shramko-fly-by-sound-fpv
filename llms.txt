@@ -6,9 +6,10 @@
 
 - Principle: voice says what it is, music says where it is; a beginner hears one continuous stream and one event stream; never more than three hazard voices; danger first; no fail state.
 - Spatial audio: each important sound is its own object with its own HRTF panner (8 moving and 24 static voices in the browser's built-in HRTF). Ambisonics only for the ambience bed (order 3, at most 4 on one 32-channel bus); 5.1, 7.1 and Atmos beds add no resolution on headphones.
-- Layers: safety pulses with a period from time to collision, own height as pitch, speed as tempo, the next gate as a hum with a melody note, object shapes traced by a moving point, room ambience, speech with captions.
+- Layers: safety pulses heard by time to contact (under about 2.5 s), own height as a gliding tone with a short target note about once a second, speed as tempo, the next gate as a hum with a melody note, the way past an obstacle as a chime from its free side, object shapes traced by a moving point, room ambience in every flying lesson (never silence), the motor under the cues, speech with captions.
 - Output safety: limiter at -6 dBFS, one-second fade-in; wired headphones recommended (Bluetooth adds 180-250 ms).
-- Curriculum: 28 lessons in modules 0 to 7 (ears before arming, hover, move and stop, walls, corridor and tunnels, rings, shapes, free flight) and a fast path of 8.
+- Curriculum: 28 lessons in modules 0 to 7 (ears before arming, hover, move and stop, walls, corridor and tunnels, rings, shapes, free flight) and a fast path of 8; rooms at the scale of a micro drone (a wall 2 to 3 s away at full stick).
+- Lesson worlds: seeded analytic generators pinned version by version; every published version still builds, so a recorded flight's walls can be built again.
 - Session package: one zip with manifest, 30 Hz flight track, events, optional voice (Opus) and survey; replay re-derives events and cues; a report tool turns it into a timeline and metrics.
 - Languages: English, Spanish, Polish, Russian. Keyboard and screen-reader friendly.
 - It is a game, not a therapy, not a medical device and not a mobility aid.

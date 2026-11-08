@@ -332,7 +332,7 @@ A 60 s render with 7 stems is about 0.2 GB of float32; a full tier about 40 GB (
 |---|---|---|---|
 | `pnpm proof:audio` | every change of `src/audio` or `src/cues` | the 5 existing proofs plus VL-0a to 0c (`test-audio/listen-rig.proof.ts`) | about 30 s (estimate) |
 | quick | every change of the engine, a theme or a lesson | ears-glossary, hover-height, walls-hall, corridor, rings-first; 3 themes; 30 s each; mix, safety, target and speech stems; VL-0d, VL-1 quick, VL-1b, VL-2, VL-4 (ESTOI), VL-5 and VL-6 without MoSQITo, VL-7a | renders about 1 min at the measured 26 s of audio per second; metrics about 5 min (estimate); target under 10 min |
-| full | overnight, before people and on every release candidate | 21 lessons by soft, clear, race and calm; every stem; recorded packages in every theme; hour-long sessions; both speech routes and +-6 LU; full panels; MoSQITo on the mix and the safety and target stems (20 s excerpts, 30 processes); MBSTOI, HASPI, Whisper; classifier; VL-7b bots; VL-8; VL-9; VL-0e | renders about 45 min; all of it 3 to 6 h (estimate) |
+| full | overnight, before people and on every release candidate | every lesson (28 since v0.13) by soft, clear, race and calm; every stem; recorded packages in every theme; hour-long sessions; both speech routes and +-6 LU; full panels; MoSQITo on the mix and the safety and target stems (20 s excerpts, 30 processes); MBSTOI, HASPI, Whisper; classifier; VL-7b bots; VL-8; VL-9; VL-0e | renders about 45 min; all of it 3 to 6 h (estimate) |
 
 The full tier runs as a detached process with its log under `<cache>/logs/`. Whisper and the judges take the machine's GPU lock (`GPU_LOCK`, default `C:/dev/.gpu-lock`) while they run.
 

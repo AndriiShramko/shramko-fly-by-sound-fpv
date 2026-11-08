@@ -34,6 +34,9 @@ The answers, with sources, are in [docs/research](docs/research) and [docs/desig
 - **Danger first.** The safety layer outranks everything and is never masked.
 - **The pilot owns the sound.** Each layer has its own volume and pitch, "up = higher" can be flipped, and a calm preset exists.
 - **No fail state.** A touch is a soft bump, not a crash screen.
+- **Hear what matters now.** Your height is a tone that glides with you, and a short note about once a second gives the
+  height to reach; a wall sounds when it is under about 2.5 s ahead, so a slow pilot is not buried in knocks; a chime
+  from the free side shows the way past an obstacle; the motor sits under it all, and a flying lesson is never silent.
 
 The full design is in [docs/design/stage-1-spec.md](docs/design/stage-1-spec.md).
 
@@ -58,7 +61,7 @@ pnpm demo
 `pnpm demo` builds the stand-alone page and serves it at http://127.0.0.1:5173/. It holds two things:
 
 - **The flight demo**: the first lessons (hearing the sounds, hover, move and stop) flown with the keyboard (W S A D, arrows, N next step, B previous step, Z the step again, R reset, digits to answer, P pause) in a simple point-mass world. Press **Start the sound** first, with the volume low.
-- **The Sound Lab**: a slider for every layer's gain and pitch, every number of the theme, a preview of each of the 20 cues, and an export of the theme as a JSON file that goes into [themes/](themes) or to the author.
+- **The Sound Lab**: a slider for every layer's gain and pitch, every number of the theme, a preview of each of the 26 cues, and an export of the theme as a JSON file that goes into [themes/](themes) or to the author.
 
 Everything works with the keyboard alone, and a headless check proves it (`pnpm proof:audio`). `pnpm demo:build` writes the page to `demo/dist/`, a folder of three files that opens by double click or from any web server. Use wired headphones: Bluetooth adds 180-250 ms of delay.
 
@@ -67,8 +70,9 @@ Everything works with the keyboard alone, and a headless check proves it (`pnpm 
 [ShramkoGSFPV](https://github.com/AndriiShramko/ShramkoGSFPV) links this repository as a git submodule at `packages/sonic-fpv` and consumes it as the workspace package `@shramko/sonic-fpv`. The simulator holds the adapters (its flight loop, its walls, its screens, the server and the delivery of recorded sessions); this repository holds everything the simulator does not need to know about sound:
 
 - the shared contract (`src/contract.ts`): the types both repositories compile against;
-- the analytic lesson worlds, the scene sampler, tracks, themes and pilot preferences;
-- the lessons (28, modules 0 to 7) and the lesson runner;
+- the analytic lesson worlds (every version of a generator that was ever published still builds, so a recording's
+  walls can be built again), the scene sampler, tracks, themes and pilot preferences;
+- the lessons (28 in modules 0 to 7, and a fast path of 8) and the lesson runner;
 - the strings in English, Spanish, Polish and Russian (`locales/`);
 - the audio engine in `src/audio/`, the only code that touches the browser;
 - the session package format, the replay core and the report tool.

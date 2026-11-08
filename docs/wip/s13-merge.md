@@ -230,7 +230,19 @@ Steps 7 to 11, lane s13-worlds:
   version than v0.12's, so its v0.12 recordings read "recorded with an older build". Broken on purpose once (walls-hall
   at version 1): "walls-hall: the world hall-67e9057a of v0.12 is hall-4fed66a6 here: expected 1 to be greater than 1";
   restored.
-- [ ] 8j. CHANGELOG (Unreleased) for s13-sound and s13-worlds; README, llms.txt and AGENTS.md agree
+- [x] 8j. `CHANGELOG.md` (Unreleased) has, beside s13-lessons' entry and the replay verdict, "The sounds of v0.13"
+  (the height glide and its target note, walls by time to contact, the open-way chime, the event sounds, the motor
+  under the cues, never silence, the voice level, the six new cue ids and the glossary of 26, `engine.plan`, the
+  listener's rig) and "Rooms, tunnels and rings at the scale of a micro drone" (generators version by version, the
+  small rooms and walls-hall's 1.5 m, the corridor of 125 m ending on `track-end` in 350 s, the seven new lessons:
+  28, a fast path of 8, `cavities` and `checkpoints`). README: the idea's new bullet on the new sounds, the Sound Lab's
+  26 cues (it previews every id of `CUE_IDS`; it said 20), "28 in modules 0 to 7, and a fast path of 8", and that every
+  published generator version still builds. llms.txt: the layers of v0.13, the micro-drone rooms, the generators
+  pinned version by version. AGENTS.md: the map's world, sense and lessons rows (28, the fast path of 8) and a rule
+  that every cue id is in the glossary and every flying lesson has the height and room layers; its generator rule was
+  s13-worlds'. Also "21 lessons" in the full tier of `docs/design/virtual-listener.md` and the examples of two
+  comments in `src/lesson/runner.ts` ("Lesson 6 of 28"). `test/docs.test.ts` 8 of 8, typecheck clean, full suite 1042
+  of 1042.
 - [ ] 9. Full checks on the final code with fresh evidence
 - [ ] 10. The lanes' notes as public dev notes (`docs/dev/`); no build-machine folder in `docs/`, README, AGENTS, llms
 - [ ] 11. Final status of the whole merge

@@ -7,8 +7,8 @@ Shramko Fly by Sound: the sound engine, lessons and session format that let blin
 | Path | What |
 |---|---|
 | `src/contract.ts` | Types shared with the simulator (ShramkoGSFPV compiles against them). |
-| `src/world/` | Analytic lesson worlds (signed distance functions), seven seeded generators, sphere-traced rays. |
-| `src/sense/` | Scene sampler: ten sectors of three rays, hysteresis, at most three hazard voices. |
+| `src/world/` | Analytic lesson worlds (signed distance functions), seven seeded generators version by version (`v1.ts`, `rooms-v2.ts`, `tunnels.ts`), sphere-traced rays, the room's hollow (`cavities`) and the world's track (`checkpoints`, `track.ts`). |
+| `src/sense/` | Scene sampler: ten sectors of three rays and five rays along the path, hazards by time to contact, hysteresis, at most three hazard voices; the open way past an obstacle (`freeway.ts`). |
 | `src/cues/` | Pure cue planner: what sounds, where, how often. Runs without a browser, so replay can re-derive it. |
 | `src/audio/` | Web Audio engine: HRTF panners, synth voices, limiter, fade-in, speech with captions. |
 | `src/theme/` | Theme schema (`LAYER_PARAMS`), built-in themes, calm preset, pentatonic pitch helpers. |
@@ -18,7 +18,7 @@ Shramko Fly by Sound: the sound engine, lessons and session format that let blin
 | `src/replay/` | Replay core: rebuild frames, re-run runner and planner, compare with the recording. |
 | `src/i18n/`, `locales/` | Strings in en, es, pl, ru; key catalogue; formatter. |
 | `src/survey/`, `src/prefs/`, `src/util/` | Surveys, pilot preferences, helpers (sha256, rng, vectors). |
-| `lessons/`, `themes/` | Lessons and themes as JSON. |
+| `lessons/`, `themes/` | Lessons (28; `paths.json`: the full path and a fast path of 8) and themes as JSON. |
 | `tools/` | Report tool, layout check, locale lint (run through `node tools/run-tool.mjs`). |
 | `tools/listen.ts`, `tools/listen/`, `test-audio/page/listen*.ts` | The virtual listener's first rig: scripted flights rendered through the real engine, stems, truth, measurements (`measure.py`), clip maker. |
 | `evidence/` | Audio proofs, demo check, and `evidence/listen/` (the rig's checks, keyed by the hash of their inputs). |
@@ -31,6 +31,7 @@ Shramko Fly by Sound: the sound engine, lessons and session format that let blin
 - **The contract is shared.** Change `src/contract.ts` only together with the matching change in ShramkoGSFPV.
 - **Read theme numbers by the names in `LAYER_PARAMS`** (`src/theme/schema.ts`). Build every pitch with `noteHz`, `gateMelody` or `shiftNote`, never from raw frequencies: that keeps every mix in one pentatonic scale. **The height tone glides, everything else stays on the scale:** the height tone is a position on the scale (`heightPosition`, `noteHzAt`; `src/cues/height.ts`), continuous in height, never rounded to a note; its target note (about once a second, the height tone giving way to it) is a note again. A theme parameter added after v0.12 is `optional` in `LAYER_PARAMS`, so older exported themes still load.
 - **Strings go into all four locales.** Lesson ids and keys live in `src/i18n/catalog.ts`; the parity test and the speech lint fail on a missing key.
+- **Every sound a pilot can hear is in the glossary, and a flying lesson is never silent.** A new cue id in `CUE_IDS` gets its name and glossary lines and goes into `lessons/ears-glossary.json` (the G key; `test/lessons.test.ts`); every flying lesson has the `height` and `room` layers (`test/silence-layers.test.ts`).
 - **Generators are pinned by golden tests, version by version.** A change of a generator's geometry, defaults, random draws or track is a new version in its version table (`src/world/generators.ts`), with its own goldens; a published version never changes, so the walls a recording was flown on can always be built again. The replay builds a lesson's world from the lesson it is handed: a recording made with an older version of a lesson rebuilds on its own walls only when the replay gets that lesson (`checkSession(pkg, { lessons })`, `test/world-versions.test.ts`); with the shipped one it is reported as flown with another lesson version. `GENERATOR_VERSION` is only what `makeSpec` writes when no version is named (1); lesson files name theirs. `NEWEST_VERSION` is the newest of each generator; for the corridor that is version 2, the tunnels (layouts `tunnel`, `gaps`, `long`), and a corridor with version 1's layouts (`full`, `straight`, `obstacle`, `bends`, `jogs`) names version 1.
 - **`tools/*.ts` do not run under plain Node** (extensionless imports): use `node tools/run-tool.mjs <tool>`, vitest or a bundler.
 - **Hosts must record the replay markers:** a `lesson open` event, `key` events with the actions of `REPLAY_KEY_ACTIONS` (resets, next, previous, repeat, next and previous lesson) before the runner's call, a `speech` event with key `speech.end` whenever they call `runner.spoken(t)` (`SPEECH_END_KEY` in `src/replay`), and `session` pause and resume events where they call `runner.pause(t)` and `runner.resume(t)`. Without them the replay check fails on times.

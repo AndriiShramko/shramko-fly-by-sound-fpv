@@ -135,7 +135,7 @@ export type RunnerAction =
 export type StepKind = 'task' | 'fly' | 'intro' | 'sound' | 'scene' | 'trial' | 'round';
 
 /**
- * Where the pilot is in the lesson, for the I key and the host's progress panel ("Lesson 6 of 21, step
+ * Where the pilot is in the lesson, for the I key and the host's progress panel ("Lesson 6 of 28, step
  * 2 of 2, attempt 4, counted 2 of 3"). Plain data, so a host can draw it and say it (statusLine).
  */
 export interface LessonView {
@@ -1792,7 +1792,7 @@ function segmentDistance(a: Vec3, b: Vec3, p: Vec3): number {
 }
 
 /**
- * The progress view as one line to say (I): "Lesson 6 of 21: Hold your height. Step 2 of 2. Attempt 4.
+ * The progress view as one line to say (I): "Lesson 6 of 28: Hold your height. Step 2 of 2. Attempt 4.
  * Counted 2 of 3." A lesson without a world says its lesson and step only. `title` is the lesson's title
  * in the pilot's language.
  */
