@@ -26,7 +26,8 @@
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmdirSync, statSync, writeFileSync } from 'node:fs';
-import { basename, join } from 'node:path';
+import { basename, dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { LOCALES, type Locale, type SpeechLine } from '../src/contract';
 import { DICTS, messageArguments } from '../src/i18n';
 import { createTranslator, type Translator } from '../src/i18n/translator';
@@ -458,7 +459,9 @@ export const KEY_CONTROL_LOCALES: readonly Locale[] = ['es', 'pl', 'ru'];
 
 // ------------------------------------------------------------------ files, clips, transcripts
 
-const ROOT = process.cwd();
+// the package's own root, from this file's place (not the working directory: the simulator's vitest runs the package's
+// tests from its own root, where tools/listen/ is not)
+const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const sha256 = (data: string | Buffer): string => createHash('sha256').update(data).digest('hex');
 
 /** Every input of the check: the lines (locales and the code that fills them), the clip maker, the transcriber, this driver, the key control's lines. */
