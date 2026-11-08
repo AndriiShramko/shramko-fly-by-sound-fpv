@@ -91,7 +91,7 @@ describe('the report of a recorded flight: rings-course, a failed attempt then a
 
     it('says what happened: passed on the second attempt, one touch, twelve gates', () => {
         expect(report.format).toBe(REPORT_FORMAT);
-        expect(report.lesson).toEqual({ id: 'rings-course', version: 1, title: expect.any(String) });
+        expect(report.lesson).toEqual({ id: 'rings-course', version: getLesson('rings-course').version, title: expect.any(String) });
         expect(report.outcome).toEqual({ status: 'passed', success: true, attempts: 2, passedAtMs: expect.any(Number) });
         expect(report.attempts.map((a) => [a.attempt, a.result, a.touches, a.gates])).toEqual([
             [1, 'fail', 1, 6],

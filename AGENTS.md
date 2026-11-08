@@ -27,7 +27,7 @@ Shramko Fly by Sound: the sound engine, lessons and session format that let blin
 
 - **Everything in `src/` except `src/audio/` stays DOM-free.** `tsconfig.core.json` checks it.
 - **The contract is shared.** Change `src/contract.ts` only together with the matching change in ShramkoGSFPV.
-- **Read theme numbers by the names in `LAYER_PARAMS`** (`src/theme/schema.ts`). Build every pitch with `noteHz`, `heightNoteIndex`, `gateMelody` or `shiftNote`, never from raw frequencies: that keeps every mix in one pentatonic scale.
+- **Read theme numbers by the names in `LAYER_PARAMS`** (`src/theme/schema.ts`). Build every pitch with `noteHz`, `gateMelody` or `shiftNote`, never from raw frequencies: that keeps every mix in one pentatonic scale. **The height tone glides, everything else stays on the scale:** the height tone is a position on the scale (`heightPosition`, `noteHzAt`; `src/cues/height.ts`), continuous in height, never rounded to a note; its target tone is a note again. A theme parameter added after v0.12 is `optional` in `LAYER_PARAMS`, so older exported themes still load.
 - **Strings go into all four locales.** Lesson ids and keys live in `src/i18n/catalog.ts`; the parity test and the speech lint fail on a missing key.
 - **Generators are pinned by golden tests.** Changing a generator or its defaults needs a `GENERATOR_VERSION` bump and regenerated goldens.
 - **`tools/*.ts` do not run under plain Node** (extensionless imports): use `node tools/run-tool.mjs <tool>`, vitest or a bundler.

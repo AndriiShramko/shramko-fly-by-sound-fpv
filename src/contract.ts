@@ -278,6 +278,11 @@ export interface SonicPrefs {
     readonly path: 'full' | 'fast';
     /** listener frame: 'heading' (default, tilt ignored) or the full body attitude */
     readonly listenerFrame: 'heading' | 'body';
+    /**
+     * v0.13 (lane s13-sound, M41-12): the height layer's second, steady tone at the target height (the
+     * next gate, or the band centre). Absent in documents written before v0.13; absent or true: on.
+     */
+    readonly heightTarget?: boolean;
 }
 
 // ------------------------------------------------------------------ lessons

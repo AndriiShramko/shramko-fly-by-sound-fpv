@@ -4,7 +4,9 @@
 // the engine (src/audio) renders them, the Node tests hold them, the replay re-derives them.
 //
 // Every pitch is a note of the theme's pentatonic scale (src/theme/pitch.ts). Doppler and glides
-// bend a note for a moment; the note itself never leaves the scale.
+// bend a note for a moment; the note itself never leaves the scale. The one exception is the height
+// tone, which glides continuously with the height (v0.13, M41-12; src/cues/height.ts); its target tone
+// is a note again.
 import type { SonicPrefs, ThemeDef, Vec3 } from '../contract';
 import { heightNoteIndex, noteHz, scaleSize, shiftNote } from '../theme/pitch';
 
@@ -183,7 +185,11 @@ export function bandRoughness(heightM: number, band: readonly [number, number] |
     return depth * (softM <= 0 ? 1 : clamp01(out / softM));
 }
 
-/** The height tone: the note for the height above the lesson floor (pitch.ts heightNoteIndex) and its roughness. */
+/**
+ * The STEPPED height tone of v0.12: the nearest note for the height above the lesson floor (pitch.ts
+ * heightNoteIndex) and its roughness. The planner no longer uses it (the tone glides: height.ts
+ * heightTones); it stays as the negative control of the glide's tests.
+ */
 export function heightTone(heightM: number, band: readonly [number, number] | null, rule: HeightRule, polarity: SonicPrefs['heightPolarity']): { readonly noteIndex: number; readonly rough: number } {
     return {
         noteIndex: heightNoteIndex(heightM, { baseStep: rule.baseStep, maxStep: rule.maxStep, metresPerStep: rule.metresPerStep, polarity }),

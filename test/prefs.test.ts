@@ -40,7 +40,8 @@ describe('the defaults', () => {
             captions: true,
             motorSound: false,
             path: 'full',
-            listenerFrame: 'heading'
+            listenerFrame: 'heading',
+            heightTarget: true
         });
     });
 

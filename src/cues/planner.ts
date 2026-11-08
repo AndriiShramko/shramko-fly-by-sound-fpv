@@ -6,14 +6,15 @@
 //
 // Frames: directions are in the listener frame (heading by default, contract header), unit vectors.
 // The craft is the listener, at the origin of that frame.
-import type { ActiveCue, CueEvent, CueId, FlightSample, LayerId, LessonLayers, MaterialClass, ObjectShape, Quat, SonicFrameInput, SonicObject, SonicPrefs, ThemeDef, Timbre, Vec3 } from '../contract';
+import type { ActiveCue, CueEvent, CueId, FlightSample, LayerId, LessonLayers, MaterialClass, ObjectShape, Quat, SonicFrameInput, SonicObject, SonicPrefs, SonicWorld, ThemeDef, Timbre, Vec3 } from '../contract';
 import { LAYER_IDS } from '../contract';
 import { defaultPrefs } from '../prefs/prefs';
 import { createSceneSampler, type SamplerOptions, type SceneSampler } from '../sense/sampler';
 import { headingBasis, listenerBasis, worldToListener, type Basis } from '../sense/frame';
 import type { Hazard, SceneSample } from '../sense/types';
 import { applyCalm } from '../theme/calm';
-import { gateMelody } from '../theme/pitch';
+import { gateMelody, noteHz, noteHzAt } from '../theme/pitch';
+import { alignOffset, heightTones, referenceHeightM, targetHeightM, type HeightToneRule, type TargetTone } from './height';
 import { add, dot, length, normalize, quatConjugate, quatRotate, scale, sub, yawQuat } from '../util/vec';
 import {
     aimMissM,
@@ -22,7 +23,6 @@ import {
     dopplerCents,
     elevationSteps,
     expLerp,
-    heightTone,
     isUrgent,
     note,
     openness,
@@ -86,13 +86,24 @@ export interface VoicePlan {
     readonly trace: TracePlan | null;
 }
 
+/**
+ * The height layer (M41-12, src/cues/height.ts): a tone that glides with the height, and a steady
+ * target tone (null when the lesson has no target height or the pilot turned it off).
+ */
 export interface HeightPlan {
+    /** the whole note nearest to the glide (the stepped tone of v0.12) */
     readonly noteIndex: number;
+    /** position on the scale of the glide: a note index with a fraction */
+    readonly position: number;
+    /** the glide's frequency now */
     readonly hz: number;
+    /** metres above the lesson floor (a preview: as if) */
+    readonly heightM: number;
     readonly rough: number;
     readonly roughHz: number;
     readonly glideS: number;
     readonly timbre: Timbre;
+    readonly target: TargetTone | null;
 }
 
 export interface SpeedPlan {
@@ -281,6 +292,8 @@ export class CuePlanner {
     private previewCount = 0;
     private noteCount = 0;
     private lastT = 0;
+    /** the height mapping's alignment for the current world and band (height.ts alignOffset) */
+    private align: { readonly world: SonicWorld | null; readonly band: LessonLayers['heightBandM']; readonly floorY: number; readonly metresPerStep: number; readonly offset: number } | null = null;
 
     constructor(options: PlannerOptions) {
         this.baseTheme = options.theme;
@@ -329,6 +342,7 @@ export class CuePlanner {
         this.previews = [];
         this.notes = [];
         this.staticSlots.fill(null);
+        this.align = null;
     }
 
     private pitch(layer: LayerId): number {
@@ -361,7 +375,7 @@ export class CuePlanner {
         }
         // previews (glossary, lesson narration) sound whatever layers the lesson has on
         this.previews = this.previews.filter((p) => t < p.t0 + p.durS * 1000 && t >= p.t0 - 1);
-        let height: HeightPlan | null = this.on.has('height') ? this.heightPlan(s.pos[1] - input.floorY) : null;
+        let height: HeightPlan | null = this.on.has('height') ? this.heightPlan(input) : null;
         let speed: SpeedPlan | null = this.on.has('speed') ? this.speedPlan(length(s.vel)) : null;
         let room: RoomPlan | null = this.on.has('room') ? this.roomPlan(openness(scene.meanFreeDistanceM, { opennessFullM: theme.layers.room.params['opennessFullM'] as number })) : null;
         for (const p of this.previews) {
@@ -408,6 +422,7 @@ export class CuePlanner {
             });
         }
         if (height !== null) out.push({ id: height.rough > 0 ? 'height.rough' : 'height.tone', layer: 'height', dir: null, distance: null, rateHz: null, pitchHz: height.hz, rough: height.rough });
+        if (height !== null && height.target !== null) out.push({ id: 'height.target', layer: 'height', dir: null, distance: null, rateHz: null, pitchHz: height.target.hz, rough: 0 });
         if (speed !== null && speed.tempoHz > 0) out.push({ id: 'speed.tick', layer: 'speed', dir: null, distance: null, rateHz: speed.tempoHz, pitchHz: speed.hz, rough: 0 });
         if (room !== null) out.push({ id: 'room.bed', layer: 'room', dir: null, distance: null, rateHz: null, pitchHz: room.hz, rough: 0 });
         for (const n of this.notes) out.push({ id: n.cue, layer: n.layer, dir: n.dir, distance: null, rateHz: null, pitchHz: n.hz, rough: 0 });
@@ -543,22 +558,59 @@ export class CuePlanner {
         };
     }
 
-    private heightPlan(heightM: number): HeightPlan {
-        const theme = this.effectiveTheme;
-        const p = theme.layers.height.params as Record<string, number>;
-        const ht = heightTone(heightM, this.layersValue.heightBandM, { baseStep: p['baseStep'] as number, maxStep: p['maxStep'] as number, metresPerStep: p['metresPerStep'] as number, roughDepth: p['roughDepth'] as number, bandSoftM: p['bandSoftM'] as number }, this.prefsValue.heightPolarity);
-        const n = note(theme.scale, ht.noteIndex, this.pitch('height'));
-        return { noteIndex: n.index, hz: n.hz, rough: ht.rough, roughHz: p['roughHz'] as number, glideS: (p['glideMs'] as number) / 1000, timbre: theme.layers.height.timbre };
+    private heightRule(): HeightToneRule {
+        const p = this.effectiveTheme.layers.height.params as Record<string, number>;
+        return { baseStep: p['baseStep'] as number, maxStep: p['maxStep'] as number, metresPerStep: p['metresPerStep'] as number, roughDepth: p['roughDepth'] as number, bandSoftM: p['bandSoftM'] as number, targetDb: (p['targetDb'] as number | undefined) ?? -6 };
     }
 
+    /** The mapping's alignment: once per world, band, floor and step size (the lesson's reference height on a note). */
+    private alignment(world: SonicWorld | null, floorY: number, metresPerStep: number): number {
+        const band = this.layersValue.heightBandM;
+        const a = this.align;
+        if (a !== null && a.world === world && a.band === band && a.floorY === floorY && a.metresPerStep === metresPerStep) return a.offset;
+        const offset = alignOffset(referenceHeightM(world, band, floorY), metresPerStep);
+        this.align = { world, band, floorY, metresPerStep, offset };
+        return offset;
+    }
+
+    private heightPlan(input: SonicFrameInput): HeightPlan {
+        const theme = this.effectiveTheme;
+        const p = theme.layers.height.params as Record<string, number>;
+        const rule = this.heightRule();
+        const band = this.layersValue.heightBandM;
+        const heightM = input.sample.pos[1] - input.floorY;
+        const targetM = this.prefsValue.heightTarget === false ? null : targetHeightM(input.target, band, input.floorY);
+        const offset = this.alignment(input.world, input.floorY, rule.metresPerStep);
+        const tones = heightTones(heightM, targetM, band, rule, theme.scale, this.prefsValue.heightPolarity, offset, this.pitch('height'));
+        return { noteIndex: Math.round(tones.position), position: tones.position, hz: tones.hz, heightM, rough: tones.rough, roughHz: p['roughHz'] as number, glideS: (p['glideMs'] as number) / 1000, timbre: theme.layers.height.timbre, target: tones.target };
+    }
+
+    /**
+     * The height cues of the glossary: 'height.tone' glides up four steps and back, 'height.rough' holds a
+     * rough tone, 'height.target' holds a target tone four steps up while the height tone glides up into
+     * it and settles there in unison for the last fifth.
+     */
     private previewHeight(cue: CueId, u: number): HeightPlan {
         const theme = this.effectiveTheme;
         const p = theme.layers.height.params as Record<string, number>;
+        const rule = this.heightRule();
         const base = p['baseStep'] as number;
-        const rough = cue === 'height.rough' ? (p['roughDepth'] as number) : 0;
-        const index = cue === 'height.rough' ? base + 3 : base + Math.round(4 * tri(u));
-        const n = note(theme.scale, index, this.pitch('height'));
-        return { noteIndex: n.index, hz: n.hz, rough, roughHz: p['roughHz'] as number, glideS: (p['glideMs'] as number) / 1000, timbre: theme.layers.height.timbre };
+        const shift = this.pitch('height');
+        const top = theme.scale.steps.length * theme.scale.octaves;
+        const place = (x: number): number => Math.min(Math.max(x + shift, 0), top);
+        const common = { roughHz: p['roughHz'] as number, glideS: (p['glideMs'] as number) / 1000, timbre: theme.layers.height.timbre };
+        if (cue === 'height.rough') {
+            const x = place(Math.round(base + 3));
+            return { ...common, noteIndex: x, position: x, hz: noteHz(theme.scale, x), heightM: 3 * rule.metresPerStep, rough: p['roughDepth'] as number, target: null };
+        }
+        if (cue === 'height.target') {
+            const t = place(Math.round(base + 4));
+            const x = place(Math.round(base + 4) - 2.5 * Math.max(0, 1 - u / 0.8) ** 2);
+            const target: TargetTone = { heightM: 4 * rule.metresPerStep, position: t, hz: noteHz(theme.scale, t), noteIndex: t, onScale: true, gainDb: rule.targetDb };
+            return { ...common, noteIndex: Math.round(x), position: x, hz: x === t ? target.hz : noteHzAt(theme.scale, x), heightM: (x - base) * rule.metresPerStep, rough: 0, target };
+        }
+        const x = place(base + 4 * tri(u));
+        return { ...common, noteIndex: Math.round(x), position: x, hz: noteHzAt(theme.scale, x), heightM: (x - base) * rule.metresPerStep, rough: 0, target: null };
     }
 
     private speedPlan(speedMps: number): SpeedPlan {

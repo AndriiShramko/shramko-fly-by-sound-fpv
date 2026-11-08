@@ -12,7 +12,8 @@
         "maxStep": 17,
         "metresPerStep": 0.5,
         "roughDepth": 0.6,
-        "roughHz": 38
+        "roughHz": 38,
+        "targetDb": -6
       },
       "timbre": "pad"
     },
@@ -114,5 +115,5 @@
     "rootHz": 130.8128,
     "steps": [0, 2, 4, 7, 9]
   },
-  "version": 1
+  "version": 2
 }

@@ -30,12 +30,17 @@ export function defaultPrefs(): SonicPrefs {
         captions: true,
         motorSound: false,
         path: 'full',
-        listenerFrame: 'heading'
+        listenerFrame: 'heading',
+        heightTarget: true
     };
 }
 
-const KEYS = ['format', 'theme', 'calm', 'heightPolarity', 'layerGainDb', 'layerPitchSteps', 'selfVoice', 'speechRate', 'captions', 'motorSound', 'path', 'listenerFrame'] as const;
+const KEYS = ['format', 'theme', 'calm', 'heightPolarity', 'layerGainDb', 'layerPitchSteps', 'selfVoice', 'speechRate', 'captions', 'motorSound', 'path', 'listenerFrame', 'heightTarget'] as const;
 type Key = (typeof KEYS)[number];
+/** Keys added after the first documents were written (v0.13): a document without them is still valid. */
+const ADDED_KEYS: readonly Key[] = ['heightTarget'];
+/** The keys every document must have. */
+const REQUIRED_KEYS: readonly Key[] = KEYS.filter((k) => !ADDED_KEYS.includes(k));
 
 type FieldCheck = (c: Collector, v: unknown, path: string) => unknown;
 
@@ -68,15 +73,16 @@ const FIELDS: Readonly<Record<Key, FieldCheck>> = {
     captions: (c, v, path) => c.boolean(v, path),
     motorSound: (c, v, path) => c.boolean(v, path),
     path: (c, v, path) => c.oneOf(v, path, ['full', 'fast'] as const),
-    listenerFrame: (c, v, path) => c.oneOf(v, path, ['heading', 'body'] as const)
+    listenerFrame: (c, v, path) => c.oneOf(v, path, ['heading', 'body'] as const),
+    heightTarget: (c, v, path) => c.boolean(v, path)
 };
 
-/** Strict: every field present and valid, nothing else. */
+/** Strict: every field present and valid (a field added in v0.13 may be absent), nothing else. */
 export function validatePrefs(input: unknown): Validation<SonicPrefs> {
     const c = new Collector();
     const root = c.record(input, '');
     if (root === null) return { ok: false, issues: c.issues };
-    c.keys(root, '', KEYS);
+    c.keys(root, '', KEYS, REQUIRED_KEYS);
     const out: Record<string, unknown> = {};
     for (const key of KEYS) {
         if (root[key] === undefined) continue;

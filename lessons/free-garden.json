@@ -38,6 +38,7 @@
     "heightBandM": null,
     "on": [
       "safety",
+      "height",
       "target",
       "room",
       "voice"
@@ -72,7 +73,7 @@
   "title": {
     "key": "lesson.free-garden.title"
   },
-  "version": 1,
+  "version": 2,
   "world": {
     "kind": "scan",
     "sceneId": "7a475d38",

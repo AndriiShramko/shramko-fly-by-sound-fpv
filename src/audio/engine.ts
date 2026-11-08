@@ -5,7 +5,7 @@
 //   moving voices (8)   notes / tone -> roughness -> low-pass -> level -> HRTF panner -> ILD -> layer bus
 //                                                                       \-> reverb send
 //   static voices (24)  one-off notes from a fixed direction (touch ping), HRTF panner -> layer bus
-//   centre              height tone, speed ticks, room bed and drone, gate notes, chimes
+//   centre              height tone and its target tone, speed ticks, room bed and drone, gate notes, chimes
 //   layer buses         theme gain + pilot gain -> duck (speech, urgent hazard) -> master
 //   reverb              synthetic warm hall, return follows the room's openness
 //   output              master -> compressor -> soft clipper at the ceiling -> fade -> destination
@@ -42,6 +42,8 @@ const SHAPE_AIR = 0.18;
 const ACCENT_GAIN = 0.42;
 const NOTE_GAIN = 0.55;
 const HEIGHT_GAIN = 0.34;
+/** How fast the target tone moves to the next gate's note, s (a change of target, never a step of the height). */
+const TARGET_GLIDE_S = 0.12;
 const TICK_GAIN = 0.4;
 const BED_GAIN = 0.5;
 const DRONE_GAIN = 0.1;
@@ -150,11 +152,11 @@ interface Graph {
     readonly moving: MovingSlot[];
     readonly statics: StaticSlot[];
     readonly aux: GainNode;
-    // height
+    // height: the glide (through the roughness) and the steady target tone (not roughened)
     readonly heightRough: Roughness;
     readonly heightOut: GainNode;
     heightTone: ToneVoice | null;
-    heightFamily: 'pad' | 'sine' | null;
+    readonly heightTarget: ToneVoice;
     // speed
     readonly speedOut: GainNode;
     readonly speedTrain: PulseTrain;
@@ -286,6 +288,7 @@ export class FlyBySoundEngine implements SonicEngine {
             }
             g.drone.stop(now);
             if (g.heightTone !== null) g.heightTone.stop(now);
+            g.heightTarget.stop(now);
             for (const s of g.moving) if (s.tone !== null) s.tone.stop(now);
             g.output.disconnect();
         }
@@ -454,6 +457,10 @@ export class FlyBySoundEngine implements SonicEngine {
         heightSend.gain.value = 0.1;
         heightOut.connect(heightSend);
         heightSend.connect(layers.height.wet);
+        // the target tone: one pure partial (no sub-octave), so it beats against the height tone's
+        // fundamental alone; past the roughness, so it stays steady when the craft leaves the band
+        const heightTarget = new ToneVoice(ctx, 'sine', now, 0, null, { family: 'sine', sub: false });
+        heightTarget.output.connect(layers.height.dry);
 
         const speedOut = ctx.createGain();
         speedOut.gain.value = 1;
@@ -489,7 +496,7 @@ export class FlyBySoundEngine implements SonicEngine {
             heightRough,
             heightOut,
             heightTone: null,
-            heightFamily: null,
+            heightTarget,
             speedOut,
             speedTrain: createPulseTrain(),
             bed,
@@ -650,23 +657,31 @@ export class FlyBySoundEngine implements SonicEngine {
         } else if (slot.tone !== null) slot.tone.setLevel(0, now, 0.03);
     }
 
+    /**
+     * The height glide and its target tone (M41-12). Both are soft sines in every theme, whatever the
+     * theme's height timbre: two tones that are to beat must be pure (a pad's own 0.3 Hz swirl would beat
+     * too), and a gliding tone rich in partials roughens against the rest of the mix.
+     */
     private renderHeight(h: HeightPlan | null, now: number): void {
         const g = this.g as Graph;
         if (h === null) {
             g.heightOut.gain.setTargetAtTime(0, now, 0.08);
+            g.heightTarget.setLevel(0, now, 0.08);
             return;
         }
-        const family = toneFamily(h.timbre);
-        if (g.heightTone === null || g.heightFamily !== family) {
-            if (g.heightTone !== null) g.heightTone.stop(now);
-            g.heightTone = new ToneVoice(g.ctx, h.timbre, now);
+        if (g.heightTone === null) {
+            g.heightTone = new ToneVoice(g.ctx, 'sine', now, 0, null, { family: 'sine' });
             g.heightTone.output.connect(g.heightRough.input);
             g.heightTone.setLevel(1, now, 0.01);
-            g.heightFamily = family;
         }
         g.heightTone.setNote(h.hz, now, h.glideS);
         g.heightRough.set(h.rough, h.roughHz, now);
         g.heightOut.gain.setTargetAtTime(HEIGHT_GAIN, now, 0.1);
+        if (h.target === null) g.heightTarget.setLevel(0, now, 0.08);
+        else {
+            g.heightTarget.setNote(h.target.hz, now, Math.max(TARGET_GLIDE_S, h.glideS));
+            g.heightTarget.setLevel(HEIGHT_GAIN * dbToGain(h.target.gainDb), now, 0.1);
+        }
     }
 
     private renderRoom(plan: FramePlan, now: number): void {

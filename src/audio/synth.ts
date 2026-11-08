@@ -314,11 +314,20 @@ export function playNote(kit: SynthKit, dest: AudioNode, spec: NoteSpec): number
 
 // ------------------------------------------------------------------ continuous voices
 
+/** How a ToneVoice is built beyond its timbre. */
+export interface ToneOptions {
+    /** 'pad' or 'sine' family whatever the timbre says (the height tones are always 'sine', M41-12) */
+    readonly family?: 'pad' | 'sine';
+    /** false: no sub-octave (the target tone: one partial that beats against the height tone and nothing else) */
+    readonly sub?: boolean;
+}
+
 /**
- * A tone that holds and glides: the height tone, the shape trace, the room's drone. A pad is two
- * triangles over a sub-octave through a low-pass, the second 0.3 Hz above the first: a slow swirl
- * at every pitch, never a beating that could pass for the off-course cue; the other timbres are a
- * rounder sine over a sub-octave. The level is set by the caller (with ramps, never jumps).
+ * A tone that holds and glides: the height tone and its target tone, the shape trace, the room's
+ * drone. A pad is two triangles over a sub-octave through a low-pass, the second 0.3 Hz above the
+ * first: a slow swirl at every pitch, never a beating that could pass for the off-course cue; the
+ * other timbres are a rounder sine over a sub-octave. The level is set by the caller (with ramps,
+ * never jumps).
  */
 export class ToneVoice {
     readonly output: GainNode;
@@ -334,7 +343,7 @@ export class ToneVoice {
      * `air`: level of a breath of filtered noise (around 3.5 kHz) under the tone, for a voice that
      * must be placed in space (the shape trace); 0 for the centred tones. Needs the kit's noise.
      */
-    constructor(private readonly ctx: BaseAudioContext, timbre: Timbre, startAt: number, air = 0, noise: AudioBuffer | null = null) {
+    constructor(private readonly ctx: BaseAudioContext, timbre: Timbre, startAt: number, air = 0, noise: AudioBuffer | null = null, options: ToneOptions = {}) {
         this.output = ctx.createGain();
         this.output.gain.value = 0;
         if (air > 0 && noise !== null) {
@@ -358,8 +367,8 @@ export class ToneVoice {
         this.lp.Q.value = 0.4;
         this.lp.frequency.value = 3000;
         this.lp.connect(this.output);
-        const pad = timbre === 'pad' || timbre === 'air' || timbre === 'mallet' || timbre === 'pluck' || timbre === 'wood' || timbre === 'thud';
-        const layers: { type: OscillatorType; ratio: number; amp: number; offsetHz: number }[] = pad
+        const pad = options.family === undefined ? timbre === 'pad' || timbre === 'air' || timbre === 'mallet' || timbre === 'pluck' || timbre === 'wood' || timbre === 'thud' : options.family === 'pad';
+        const all: { type: OscillatorType; ratio: number; amp: number; offsetHz: number }[] = pad
             ? [
                   { type: 'triangle', ratio: 1, amp: 0.5, offsetHz: 0 },
                   { type: 'triangle', ratio: 1, amp: 0.5, offsetHz: 0.3 },
@@ -370,6 +379,7 @@ export class ToneVoice {
                   { type: 'sine', ratio: 2, amp: 0.06, offsetHz: 0 },
                   { type: 'sine', ratio: 0.5, amp: 0.25, offsetHz: 0 }
               ];
+        const layers = options.sub === false ? all.filter((l) => l.ratio !== 0.5) : all;
         for (const l of layers) {
             const osc = ctx.createOscillator();
             osc.type = l.type;

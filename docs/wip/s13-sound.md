@@ -15,8 +15,10 @@ Shared event kinds (plan, "Lanes"): the runner emits the cue events `wrong-way`,
 
 ## Status
 
-- [x] 1 This lane doc: checklist, ownership, facts of v0.12 with file and line
-- [ ] 2 Height (M41-12): a continuous glide and a steady target tone on the scale
+- [x] 1 This lane doc: checklist, ownership, facts of v0.12 with file and line, commit 5ea4bf8 (with two sessions
+  recorded by the v0.12 engine, `test/fixtures/session-v012-*.zip`, for the replay check of step 10)
+- [x] 2 Height (M41-12): a continuous glide and a steady target tone on the scale (`src/cues/height.ts`,
+  `test/height.test.ts`, 15 tests); `pnpm proof:audio` after it: see step 10
 - [ ] 3 Time to contact (M41-13): hazards by time to contact, quiet far walls when slow, always heard within 0.8 m
 - [ ] 4 Free way (M41-14): the open-way chime from the free side
 - [ ] 5 Event sounds (M41-15, M41-11, M41-5): wrong-way, wrong-side, praise, stage, repeat-cue
@@ -92,7 +94,39 @@ Shared event kinds (plan, "Lanes"): the runner emits the cue events `wrong-way`,
 
 ## Decisions
 
-(Filled step by step.)
+### Step 2, height (M41-12)
+
+- `src/cues/height.ts`: the height tone is a POSITION on the scale (`heightPosition`, `src/theme/pitch.ts`), one
+  scale step per `metresPerStep`, never rounded; its frequency is `noteHzAt` (linear in semitones between two notes,
+  exactly the note at a whole position). Between 1 cm steps it moves at most about 7 cents (3-semitone steps at
+  0.5 m per step: 6 semitones per metre).
+- The target tone: the next gate's centre when the runner's target is a gate (ring, square, cube frame), else the
+  centre of the lesson's band, else none (a zone is not a height). It comes from the same mapping, so at the target
+  height the two tones are in unison exactly; near it they beat (at 2.55 m against 2.5 m in soft: a few Hz), the beat
+  slows to nothing at the target. Up-higher: the craft's tone under the target's means climb; up-lower turns both
+  over.
+- On the scale: the mapping is moved, once per lesson world (and band), by under half a step so that the lesson's
+  REFERENCE height lands on a note: the first gate of the world, else the band centre. Every target on that
+  reference's 0.5 m grid is then a note of the scale (hover-height 2.5 m, all rings and gates of the shipped lessons
+  but the course's); a target off the grid keeps its exact unison and is marked `onScale: false` (rings-course's
+  random heights 4.43, 4.15, 4.31, 3.28 m are off it). The other way round (every target a note, unison off by up to
+  a quarter metre; or the mapping re-anchored at each new gate, so the craft's own tone would drift by up to a step
+  at each gate) breaks "unison at the target" or "a function of height". `race` now has 0.5 m per step like the
+  others (was 0.4), so the grid is one for every theme.
+- Both height tones are soft sines in every theme (engine `renderHeight`): the soft theme's pad had its own 0.3 Hz
+  swirl, which would beat as well, and a gliding tone rich in partials roughens against the mix. The target tone is
+  one partial (no sub-octave) and sits `height.targetDb` under the height tone (-6 dB; calm another -4 dB), so the
+  beat is a wobble of about 9.5 dB, not a hole. The band roughness stays on the height tone only.
+- Theme parameter `height.targetDb` (new, `optional` in `LAYER_PARAMS`: a theme exported before v0.13 without it still
+  loads and gets -6). Shipped themes are now version 2. Prefs field `heightTarget` (optional; absent or true: on),
+  setting text `menu.setting.height-target`, cue `height.target` with its glossary line; `cue.height.tone.glossary`
+  now says it slides.
+- Lessons with the height layer on now: hover-height (as before) and every ring and gate lesson (rings-first,
+  rings-line, rings-small, rings-course, shapes-square, shapes-series, shapes-cube, free-garden); each changed lesson
+  is version 2 (only its `layers` changed here).
+- Known overlap, not fixed here: in soft and clear the target tone of a 3 m gate is A4 (440 Hz), the shape layer's
+  note, and the shape trace bends by Doppler around it; where both layers are on (rings-first, shapes-*) the two can
+  beat against each other. The virtual listener's informational-masking flag (VL-2) is the check for it.
 
 ## Needs from the simulator
 

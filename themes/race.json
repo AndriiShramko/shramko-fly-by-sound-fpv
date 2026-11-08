@@ -10,9 +10,10 @@
         "baseStep": 4,
         "glideMs": 20,
         "maxStep": 17,
-        "metresPerStep": 0.4,
+        "metresPerStep": 0.5,
         "roughDepth": 0.8,
-        "roughHz": 50
+        "roughHz": 50,
+        "targetDb": -6
       },
       "timbre": "sine"
     },
@@ -114,5 +115,5 @@
     "rootHz": 130.8128,
     "steps": [0, 2, 4, 7, 9]
   },
-  "version": 1
+  "version": 2
 }

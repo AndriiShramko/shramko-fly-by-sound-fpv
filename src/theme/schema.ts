@@ -15,11 +15,18 @@ export interface ParamSpec {
     readonly scaleIndex: boolean;
     /** what it does, with its unit */
     readonly doc: string;
+    /**
+     * Added after the first theme files were exported (v0.13): a file without it still loads and the
+     * loader fills in `default`. Every other parameter must be in the file.
+     */
+    readonly optional: boolean;
 }
 
-const p = (min: number, max: number, def: number, doc: string): ParamSpec => ({ min, max, default: def, integer: false, scaleIndex: false, doc });
-const count = (min: number, max: number, def: number, doc: string): ParamSpec => ({ min, max, default: def, integer: true, scaleIndex: false, doc });
-const note = (def: number, doc: string): ParamSpec => ({ min: 0, max: 100, default: def, integer: true, scaleIndex: true, doc });
+const p = (min: number, max: number, def: number, doc: string): ParamSpec => ({ min, max, default: def, integer: false, scaleIndex: false, doc, optional: false });
+const count = (min: number, max: number, def: number, doc: string): ParamSpec => ({ min, max, default: def, integer: true, scaleIndex: false, doc, optional: false });
+const note = (def: number, doc: string): ParamSpec => ({ min: 0, max: 100, default: def, integer: true, scaleIndex: true, doc, optional: false });
+/** A parameter added in v0.13: optional in a file (older exports lack it), always in the loaded theme. */
+const added = (spec: ParamSpec): ParamSpec => ({ ...spec, optional: true });
 
 export const LAYER_PARAMS: Readonly<Record<LayerId, Readonly<Record<string, ParamSpec>>>> = {
     safety: {
@@ -42,11 +49,12 @@ export const LAYER_PARAMS: Readonly<Record<LayerId, Readonly<Record<string, Para
     height: {
         baseStep: note(3, 'note of the height tone at the floor'),
         maxStep: note(17, 'highest note of the height tone'),
-        metresPerStep: p(0.1, 5, 0.5, 'metres of height per scale step'),
-        glideMs: p(0, 400, 80, 'time to glide from one note to the next, ms'),
+        metresPerStep: p(0.1, 5, 0.5, 'metres of height per scale step: the height tone glides one step up per this much climb'),
+        glideMs: p(0, 400, 80, 'smoothing of the height glide and of a change of the target tone, ms'),
         roughDepth: p(0, 1, 0.6, 'roughness (amplitude modulation depth) outside the lesson band, 0 to 1'),
         roughHz: p(10, 90, 38, 'rate of the roughness, Hz'),
-        bandSoftM: p(0, 2, 0.3, 'distance outside the band over which the roughness grows to full, m')
+        bandSoftM: p(0, 2, 0.3, 'distance outside the band over which the roughness grows to full, m'),
+        targetDb: added(p(-30, 0, -6, 'level of the steady target-height tone against the height tone, dB'))
     },
     speed: {
         tempoMinHz: p(0.3, 6, 1, 'tick rate at the slowest speed, Hz'),

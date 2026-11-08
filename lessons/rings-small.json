@@ -36,6 +36,7 @@
     "heightBandM": null,
     "on": [
       "safety",
+      "height",
       "target",
       "voice"
     ]
@@ -69,7 +70,7 @@
   "title": {
     "key": "lesson.rings-small.title"
   },
-  "version": 1,
+  "version": 2,
   "world": {
     "kind": "analytic",
     "spec": {

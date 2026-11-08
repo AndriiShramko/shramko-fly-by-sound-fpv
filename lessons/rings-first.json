@@ -41,6 +41,7 @@
     "heightBandM": null,
     "on": [
       "safety",
+      "height",
       "target",
       "shape",
       "voice"
@@ -75,7 +76,7 @@
   "title": {
     "key": "lesson.rings-first.title"
   },
-  "version": 1,
+  "version": 2,
   "world": {
     "kind": "analytic",
     "spec": {
