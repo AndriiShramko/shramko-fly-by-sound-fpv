@@ -10,7 +10,7 @@ needs from the package. Not pushed; the lead merges it to `main` after gh_preche
   v13-host, "Needs from the package" 2): `SonicEngine.reset?()` in the contract (optional), `FlyBySoundEngine.reset()`,
   `CuePlanner.reset()` stamps the next cue at 0; a Node test and an audio proof, each with its control; a changelog line
   and a rule in AGENTS.md.
-- [ ] I2. The words check on the simulator's Fly by Sound lines after the simulator's rewording (its key lines, its
+- [x] I2. The words check on the simulator's Fly by Sound lines after the simulator's rewording (its key lines, its
   Russian register, the mode's name in Russian and Polish): before and after, per language.
 - [ ] I3. The checks on the branch's head: typecheck, tests, locale lint, layout, the audio proofs (the engine changed),
   `pnpm listen` (the engine's files changed, so its evidence is keyed again).
@@ -50,3 +50,34 @@ Checks:
   wall front-left, all held).
 
 Not checked by a machine: how the switch sounds to a person (the released voices fade in about 20 ms).
+
+## I2, the simulator's lines heard again
+
+The tool: `--sim` reads the simulator's `fly/soniclook` too (the sound panel's and the attitude display's words, said by
+its spoken settings list since the integration branch; ea9ae36), fills the parameters the integration branch added
+(`{here}`, the replay's version of a lesson) and leaves out `sonic.say.text`, which only carries a text put together
+elsewhere (43ed9a3). Before that the simulator's newest lines stopped the run (no sample value for `here`).
+
+The simulator's integration branch reworded its lines (its `docs/wip/v13-int.md`, step 6): "the key" before a key's name
+in Spanish, Polish and Russian, as this package says it; one register in Russian (the informal one this package uses);
+the mode named in Russian and Polish in their own words (the voices garbled the English name); Spanish keeps the
+English name. Heard with the same voices, Whisper large-v3 and bound 0.2 (the report is the simulator's, not evidence):
+
+| | lines | heard exactly | mean rate | over the bound |
+|---|---|---|---|---|
+| en, David, before | 268 | 249 | 0.0092 | 4 |
+| en, after | 269 | 250 | 0.0091 | 4 |
+| es, Helena, before | 268 | 251 | 0.0137 | 4 |
+| es, after | 269 | 254 | 0.0128 | 4 |
+| pl, Paulina, before | 268 | 248 | 0.0227 | 10 |
+| pl, after | 269 | 254 | 0.0133 | 5 |
+| ru, Irina, before | 268 | 219 | 0.0603 | 22 |
+| ru, after | 269 | 245 | 0.0266 | 10 |
+
+What is left is Whisper's spelling (the brand Telegram written in Cyrillic, "1,5 metra" for "1.5 m", "Control-N-C") or a
+habit of a voice that no rewording here fixes (a key's name alone, the copy keys, a browser's own button name); the
+simulator's doc lists each line. This package's own `app.name` and `menu.welcome` still say "Fly by Sound" in every
+language (the simulator names the mode with a key of its own now); whether the package's Russian and Polish lines follow
+is the owner's call (they would need new lengths measured and the package's words check again).
+
+Not checked by a machine: a native reading of the reworded Russian and Polish lines, the Polish name above all.
