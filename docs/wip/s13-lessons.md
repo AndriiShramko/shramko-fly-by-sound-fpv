@@ -13,7 +13,7 @@ from `main` 7d4b4b9. No push. Every step one commit with this Status in it.
 - [x] 6. Praise and stages (M41-11)
 - [x] 7. Direction: wrong way, wrong side (M41-15)
 - [x] 8. Respawn near the crash (M41-20, runner side)
-- [ ] 9. Never silence between attempts (M41-10, runner side)
+- [x] 9. Never silence between attempts (M41-10, runner side)
 - [ ] 10. Strings in four languages, speech lint, all checks
 
 ## Ownership
@@ -236,6 +236,19 @@ walls line) go through the same queue, so the fix (wait for the report) also wai
   back to its start.
 - The density of respawn points is the worlds lane's: the corridor's own checkpoints are 30 to 75 m apart.
 
+### Step 9: never silence, the runner's part (M41-10)
+
+- Between attempts `target()` gives the next attempt's first target (the sound to turn to, the zone, the first gate, the
+  pillar), so the target layer goes on while the attempt's lines are said and the pause runs (v0.12 gave null outside an
+  attempt). Every step that waits begins with a line (step 4), and every attempt that ends says so (steps 2, 3, 6).
+- Measured (`test/silence.test.ts`, the cue planner with each lesson's own layers, the truth bot): every frame of the pause
+  between attempts sounds in the 9 flying lessons whose attempts begin with a target (control: without the target, as in
+  v0.12, more than 60 % of the pause of hover-turn and move-stop is silent; the rest is the praise chime).
+- Still silent with the shipped layers (probe, not committed; for lane s13-sound): move-speed (layers speed and voice) is
+  silent in 68 % of its pause between attempts and in 11 % of its flying frames (the ticks stop at rest); the task step
+  of hover-turn, move-speed, move-stop, rings-line and rings-course is silent between its lines and plays where no layer
+  sounds (the planner hears no frame there; speech covers part of it in a real host).
+
 ## Needs from the simulator
 
 All in `C:/dev/gsfpv-v03/apps/fly/src/sonic/` (read only here; lane v13-host):
@@ -270,6 +283,10 @@ Lane s13-sound (`src/cues/*`, `src/audio/*`):
    (the praise is said with a line at the same time; the stage comes over the flight).
 4. `wrong-way` and `wrong-side` (contract `CueEvent`, each with `dir`, listener frame): my placeholders play the re-centre
    sweep; design them (the wrong-way cue could sound from `dir`, the way to turn to).
-5. Z while flying plays the task's named sounds (for example the height tone) while the live layers go on: a `repeat-cue`
+5. M41-10: keep a quiet bed (the room layer) sounding in every flying lesson whatever `lesson.layers.on` says (or add
+   'room' to the layers of every flying lesson: the files' `layers` are yours), ducked under speech, never stopped between
+   attempts; with the motor (M41-16) that makes silence mean something is wrong. move-speed is the lesson that goes
+   silent today (above). The runner keeps the target between attempts; the height tone inside the band is M41-12.
+6. Z while flying plays the task's named sounds (for example the height tone) while the live layers go on: a `repeat-cue`
    of `height.tone` replaces the live height plan for its length (the planner's preview rule). Decide whether the live
    layers duck under a repeat-cue in flight, or the preview layers sound beside them.

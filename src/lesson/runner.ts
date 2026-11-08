@@ -60,6 +60,10 @@
 // world's checkpoint list), facing along the track (a checkpoint's own pose yaw, a world point's dir), and
 // the attempt's flown path goes back to what it was there, so a stretch flown twice is not counted twice. A
 // long R still goes back to the start; with no point passed yet a short R goes to the start of the attempt.
+//
+// Never silence (M41-10, the runner's part). Between attempts target() keeps giving the first target of the
+// next attempt (the gate, the zone, the sound to turn to), so the target layer goes on sounding while the
+// attempt's lines are said and the pause runs; a step never waits in silence without a line said first.
 import type { Checkpoint, CueEvent, CueId, FlightSample, Goal, LessonDef, LessonProgress, LessonRunner, Locale, MaterialClass, Pose, SessionEvent, SonicFrameInput, SonicObject, SonicWorld, SpeechLine, Vec3 } from '../contract';
 import { DICTS } from '../i18n/dicts';
 import { createTranslator, type Dicts, type Translator } from '../i18n/translator';
@@ -1558,8 +1562,17 @@ class Runner implements LessonSession {
     // -------------------------------------------------------------- what the engine hears
 
     target(): SonicObject | null {
-        if (this.ears || this.left || this.phaseValue !== 'flying' || this.tracker === null) return null;
-        return this.tracker.target();
+        if (this.ears || this.left) return null;
+        if (this.phaseValue === 'flying') return this.tracker === null ? null : this.tracker.target();
+        // between attempts the next attempt's first target keeps sounding (M41-10: silence means something is wrong)
+        return this.phaseValue === 'between' ? this.firstTarget() : null;
+    }
+
+    /** What the first goal of an attempt sounds as its target (null for a goal without one: a height, a distance). */
+    private firstTarget(): SonicObject | null {
+        const goal = this.lesson.goals[0];
+        if (goal === undefined) return null;
+        return createTracker(goal, { floorY: this.o.floorY ?? 0, objects: () => this.objects(), world: () => this.worldRef, attemptPathM: () => 0, passedGate: () => undefined }).target();
     }
 
     progress(): LessonProgress {
