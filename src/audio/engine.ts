@@ -5,8 +5,9 @@
 //   moving voices (8)   notes / tone -> roughness -> low-pass -> level -> HRTF panner -> ILD -> layer bus
 //                                                                       \-> reverb send
 //   static voices (24)  one-off notes from a fixed direction (touch ping), HRTF panner -> layer bus
-//   centre              height tone, speed ticks, room bed and drone, gate notes, chimes
+//   centre              height tone and its target notes, speed ticks, room bed and drone, gate notes, chimes
 //   layer buses         theme gain + pilot gain -> duck (speech, urgent hazard) -> master
+//   motor bus           the simulator's motor (motorInput) -> band-pass -> leveller -> level, pilot gain -> duck -> master (M41-16)
 //   reverb              synthetic warm hall, return follows the room's openness
 //   output              master -> compressor -> soft clipper at the ceiling -> fade -> destination
 //
@@ -19,7 +20,7 @@
 import type { ActiveCue, AudioContextLike, CueEvent, LayerId, LessonLayers, Locale, SonicEngine, SonicFrameInput, SonicPrefs, SpeechLine, SpeechOut, ThemeDef, Timbre } from '../contract';
 import { LAYER_IDS } from '../contract';
 import { CuePlanner, duckDb, layerGainDb, tracePosition, type FramePlan, type HeightPlan, type NotePlan, type VoicePlan } from '../cues/planner';
-import { clamp, dbToGain, pannerDirection } from '../cues/rules';
+import { clamp, compressorMakeupDb, dbToGain, pannerDirection, URGENT_DUCK_DB } from '../cues/rules';
 import { createPulseTrain, duePulses, LOOKAHEAD_S, type PulseTrain } from '../cues/schedule';
 import { shapeAccents } from '../cues/shape';
 import { MAX_MOVING_VOICES, MAX_STATIC_VOICES } from '../cues/voices';
@@ -42,12 +43,51 @@ const SHAPE_AIR = 0.18;
 const ACCENT_GAIN = 0.42;
 const NOTE_GAIN = 0.55;
 const HEIGHT_GAIN = 0.34;
+/** The target note's peak gain: its fundamental as loud as the height tone's (0.85 of the tone's voice), before the theme's height.targetDb. */
+const TARGET_NOTE_GAIN = HEIGHT_GAIN * 0.85;
+/** The height tone fades out over this before a target note and back in over it after the note's release, s. */
+const TARGET_SWAP_S = 0.02;
+/** A target note's attack and release, s: the two never overlap (at the same pitch they could cancel). */
+const TARGET_ATTACK_S = 0.008;
+const TARGET_RELEASE_S = 0.015;
+/** A target note's soft octave over its fundamental: a touch brighter than the glide, so it is heard as the target's own. */
+const TARGET_OCTAVE = 0.12;
+/** The control's steady target tone (before review M2): 6 dB under the height tone. */
+const STEADY_TARGET_DB = -6;
+/** How fast the control's steady target tone moves to the next gate's note, s. */
+const TARGET_GLIDE_S = 0.12;
 const TICK_GAIN = 0.4;
 const BED_GAIN = 0.5;
 const DRONE_GAIN = 0.1;
 const CENTRE_SEND = 0.12;
 /** How strongly the room's openness feeds the reverb return. */
 const REVERB_RETURN = 1.1;
+/** The open-way chime's upper note: this much after the lower one (a quick two-note figure, not a chord), s, and this much softer. */
+const HARMONY_DELAY_S = 0.07;
+const HARMONY_GAIN = 0.8;
+// The motor bus (M41-16; review M3): the simulator's motor sound under the cues. Its band is the propellers' whine
+// (the blade-pass harmonics of a micro drone, 1.3 to 2.6 kHz at the micro presets' rotor speeds): it leaves the cues'
+// notes (their own bands end at about 630 Hz; a micro rotor's own turning note, 450 to 900 Hz, sits right on them
+// and goes) and keeps 12 dB or more off the cues' highs over 4 kHz, where the ear's pinna cues of direction live. The leveller holds a motor played
+// at any volume of the simulator's slider within a few dB, so one level sits it under the cues; the pilot's own
+// motor level (SonicPrefs.motorGainDb) comes after it; it ducks under speech by the theme's duckDb and under an
+// urgent hazard as the other layers do.
+/** Low-pass cutoff of the motor, Hz (second order). */
+export const MOTOR_LOWPASS_HZ = 2000;
+/** High-pass cutoff of the motor, Hz (fourth order, two second-order sections): a micro rotor's turning note goes, its whine stays. */
+export const MOTOR_HIGHPASS_HZ = 1100;
+/** The two sections of a fourth-order Butterworth high-pass. */
+const BUTTERWORTH_4_Q = [0.5411961, 1.3065630] as const;
+/** The leveller: threshold, knee and ratio of the motor's compressor (its make-up gain is taken back out). */
+export const MOTOR_LEVELLER = { thresholdDb: -50, kneeDb: 6, ratio: 4, attackS: 0.03, releaseS: 0.3 } as const;
+/**
+ * Gain after the leveller, dB. Calibrated by the virtual listener's rig (pnpm listen, evidence/listen/VL-2-motor.json,
+ * the numbers there) with the motors of the simulator's default craft, the micro presets and a 5-inch quad at the
+ * slider's default 15 %: the motor sits about 11 LU under the cues of a ring flight (the plan: about 10) and every
+ * cue stays more than 10 dB over it in its own third-octave bands (the rule: 6). With the first band (400 Hz to
+ * 1.5 kHz, review M3) the same level left the shape trace 3.2 dB under the Air65's rotor note.
+ */
+export const MOTOR_LEVEL_DB = 14;
 /** The engine's own wake-up, ms: keeps rhythms placed between frames. */
 const PUMP_MS = 25;
 /** With no frame for this long, the engine plans on from the last one (previews, menus), s. */
@@ -55,7 +95,13 @@ const STALE_S = 0.1;
 /** Step of the shape trace's position automation, s. */
 const TRACE_STEP_S = 0.02;
 
-/** For the audio proofs' negative controls only: each one breaks a property a proof must catch. */
+/** What a solo render of the virtual listener's rig keeps: layers, the motor bus, the raw aux input. */
+export type SoloPart = Exclude<LayerId, 'voice'> | 'motor' | 'aux';
+
+/**
+ * For the audio proofs and the virtual listener's rig only (outside the contract, so the simulator is
+ * unaffected): the negative controls break a property a check must catch; the taps let the rig record.
+ */
 export interface EngineTestHooks {
     /** no HRTF panner: every voice reaches both ears alike */
     readonly bypassPanner?: boolean;
@@ -67,6 +113,26 @@ export interface EngineTestHooks {
     readonly periodScale?: number;
     /** moving voices allowed at once */
     readonly maxMovingVoices?: number;
+    /** the rig's stems: only these parts reach the master (dry and reverb send); the engine plays the same notes either way */
+    readonly solo?: readonly SoloPart[];
+    /** where the output chain ends (the rig's channel merger) instead of the context's destination */
+    readonly destination?: AudioNode;
+    /** fed with the master's output before the compressor (the rig's pre-chain stems) */
+    readonly tap?: AudioNode;
+    /** seed of the synth kit's noise (1): another seed is the rig's determinism control */
+    readonly noiseSeed?: number;
+    /** the height tone rounded to whole notes, as v0.12 (the rig's continuity control) */
+    readonly steppedHeight?: boolean;
+    /** 'raw': the motor input goes straight to the master as v0.12's auxInput did (the rig's motor control) */
+    readonly motorBus?: 'shipped' | 'raw';
+    /**
+     * 'steady': the target height as a second, steady tone 6 dB under the height tone, both sounding together, as
+     * before review M2 (the rig's control: the pair beats); default 'note': a short note about once a second, the
+     * height tone giving way to it
+     */
+    readonly targetTone?: 'note' | 'steady';
+    /** told the audio time of every target note the engine places (the rig's truth) */
+    readonly onTargetNote?: (t0: number, hz: number, noteS: number) => void;
 }
 
 export interface EngineOptions {
@@ -150,11 +216,17 @@ interface Graph {
     readonly moving: MovingSlot[];
     readonly statics: StaticSlot[];
     readonly aux: GainNode;
-    // height
+    readonly motor: { readonly input: GainNode; readonly gate: GainNode; readonly duck: GainNode; duckTarget: number };
+    // height: the glide (through the roughness and the gate that lets the target notes through alone) and the
+    // target notes (not roughened)
     readonly heightRough: Roughness;
+    readonly heightSwap: GainNode;
     readonly heightOut: GainNode;
     heightTone: ToneVoice | null;
-    heightFamily: 'pad' | 'sine' | null;
+    readonly targetOut: GainNode;
+    readonly targetTrain: PulseTrain;
+    /** the control's steady target tone (EngineTestHooks.targetTone 'steady'), made on first use */
+    steadyTarget: ToneVoice | null;
     // speed
     readonly speedOut: GainNode;
     readonly speedTrain: PulseTrain;
@@ -186,6 +258,11 @@ function setPannerDefaults(p: PannerNode): void {
     p.positionZ.value = -1;
 }
 
+/** The motor bus's gate: shut while the motor sound is off, else the pilot's own motor level (review m3). */
+function motorGateGain(prefs: SonicPrefs): number {
+    return prefs.motorSound ? dbToGain(prefs.motorGainDb ?? 0) : 0;
+}
+
 /** The Fly by Sound engine, plus what the demo, the Sound Lab and the proofs need beside the contract. */
 export class FlyBySoundEngine implements SonicEngine {
     readonly planner: CuePlanner;
@@ -212,7 +289,8 @@ export class FlyBySoundEngine implements SonicEngine {
             prefs: options.prefs ?? defaultPrefs(),
             ...(options.layers === undefined ? {} : { layers: options.layers }),
             ...(options.sampler === undefined ? {} : { sampler: options.sampler }),
-            maxMovingVoices: this.hooks.maxMovingVoices ?? MAX_MOVING_VOICES
+            maxMovingVoices: this.hooks.maxMovingVoices ?? MAX_MOVING_VOICES,
+            ...(this.hooks.steppedHeight === true ? { steppedHeight: true } : {})
         });
         this.localeValue = options.locale ?? 'en';
         this.dicts = options.dicts ?? DICTS;
@@ -226,6 +304,11 @@ export class FlyBySoundEngine implements SonicEngine {
 
     get auxInput(): object | null {
         return this.g === null ? null : this.g.aux;
+    }
+
+    /** The node for the simulator's motor sound (M41-16): low-passed, levelled, under the cues, ducked; silent while motorSound is off. */
+    get motorInput(): object | null {
+        return this.g === null ? null : this.g.motor.input;
     }
 
     get locale(): Locale {
@@ -286,6 +369,7 @@ export class FlyBySoundEngine implements SonicEngine {
             }
             g.drone.stop(now);
             if (g.heightTone !== null) g.heightTone.stop(now);
+            if (g.steadyTarget !== null) g.steadyTarget.stop(now);
             for (const s of g.moving) if (s.tone !== null) s.tone.stop(now);
             g.output.disconnect();
         }
@@ -338,8 +422,16 @@ export class FlyBySoundEngine implements SonicEngine {
 
     private build(ctx: BaseAudioContext): Graph {
         const theme = this.planner.theme;
-        const kit = createSynthKit(ctx);
-        const output = createOutputChain(ctx, theme.master.ceilingDb, { limiter: this.hooks.limiter !== false, fade: this.hooks.fade !== false });
+        const kit = createSynthKit(ctx, this.hooks.noiseSeed ?? 1);
+        const output = createOutputChain(ctx, theme.master.ceilingDb, { limiter: this.hooks.limiter !== false, fade: this.hooks.fade !== false, ...(this.hooks.destination === undefined ? {} : { destination: this.hooks.destination }) });
+        if (this.hooks.tap !== undefined) output.master.connect(this.hooks.tap);
+        const solo = this.hooks.solo;
+        const heard = (part: SoloPart | 'voice'): boolean => solo === undefined || (part !== 'voice' && solo.includes(part));
+        // a part a solo render leaves out still runs into a silent node, so every voice is processed as in the full
+        // mix (a node no output pulls is not processed, and its filters and HRTF state would differ when it is heard again)
+        const mute = ctx.createGain();
+        mute.gain.value = 0;
+        mute.connect(output.master);
         output.setMasterDb(theme.master.gainDb, ctx.currentTime);
         output.master.gain.value = dbToGain(theme.master.gainDb);
 
@@ -377,9 +469,9 @@ export class FlyBySoundEngine implements SonicEngine {
             centre.connect(centreSend);
             centreSend.connect(wet);
             dry.connect(duckDry);
-            duckDry.connect(output.master);
+            duckDry.connect(heard(id) ? output.master : mute);
             wet.connect(duckWet);
-            duckWet.connect(reverbIn);
+            duckWet.connect(heard(id) ? reverbIn : mute);
             layers[id] = { dry, wet, centre, duckDry, duckWet, duckTarget: 1 };
         }
 
@@ -442,18 +534,63 @@ export class FlyBySoundEngine implements SonicEngine {
         }
 
         const aux = ctx.createGain();
-        aux.connect(output.master);
+        aux.connect(heard('aux') ? output.master : mute);
 
-        // height: tone -> roughness -> out
+        // the motor bus
+        const motorIn = ctx.createGain();
+        const [motorHp, motorHp2] = BUTTERWORTH_4_Q.map((q) => {
+            const f = ctx.createBiquadFilter();
+            f.type = 'highpass';
+            f.frequency.value = MOTOR_HIGHPASS_HZ;
+            f.Q.value = q;
+            return f;
+        }) as [BiquadFilterNode, BiquadFilterNode];
+        const motorLp = ctx.createBiquadFilter();
+        motorLp.type = 'lowpass';
+        motorLp.frequency.value = MOTOR_LOWPASS_HZ;
+        motorLp.Q.value = Math.SQRT1_2;
+        const leveller = ctx.createDynamicsCompressor();
+        leveller.threshold.value = MOTOR_LEVELLER.thresholdDb;
+        leveller.knee.value = MOTOR_LEVELLER.kneeDb;
+        leveller.ratio.value = MOTOR_LEVELLER.ratio;
+        leveller.attack.value = MOTOR_LEVELLER.attackS;
+        leveller.release.value = MOTOR_LEVELLER.releaseS;
+        const motorLevel = ctx.createGain();
+        motorLevel.gain.value = dbToGain(MOTOR_LEVEL_DB - compressorMakeupDb(MOTOR_LEVELLER.thresholdDb, MOTOR_LEVELLER.kneeDb, MOTOR_LEVELLER.ratio));
+        const motorGate = ctx.createGain();
+        motorGate.gain.value = motorGateGain(this.planner.prefs);
+        const motorDuck = ctx.createGain();
+        if (this.hooks.motorBus === 'raw') motorIn.connect(motorGate);
+        else motorIn.connect(motorHp);
+        motorHp.connect(motorHp2);
+        motorHp2.connect(motorLp);
+        motorLp.connect(leveller);
+        leveller.connect(motorLevel);
+        motorLevel.connect(motorGate);
+        motorGate.connect(motorDuck);
+        motorDuck.connect(heard('motor') ? output.master : mute);
+        const motor = { input: motorIn, gate: motorGate, duck: motorDuck, duckTarget: 1 };
+
+        // height: tone -> roughness -> swap (it gives way to each target note) -> out
         const heightRough = new Roughness(ctx, now);
+        const heightSwap = ctx.createGain();
+        heightSwap.gain.value = 1;
         const heightOut = ctx.createGain();
         heightOut.gain.value = 0;
-        heightRough.output.connect(heightOut);
+        heightRough.output.connect(heightSwap);
+        heightSwap.connect(heightOut);
         heightOut.connect(layers.height.dry);
         const heightSend = ctx.createGain();
         heightSend.gain.value = 0.1;
         heightOut.connect(heightSend);
         heightSend.connect(layers.height.wet);
+        // the target notes: past the roughness, so a note is clean even when the craft is out of the band
+        const targetOut = ctx.createGain();
+        targetOut.connect(layers.height.dry);
+        const targetSend = ctx.createGain();
+        targetSend.gain.value = 0.1;
+        targetOut.connect(targetSend);
+        targetSend.connect(layers.height.wet);
 
         const speedOut = ctx.createGain();
         speedOut.gain.value = 1;
@@ -486,10 +623,14 @@ export class FlyBySoundEngine implements SonicEngine {
             moving,
             statics,
             aux,
+            motor,
             heightRough,
+            heightSwap,
             heightOut,
             heightTone: null,
-            heightFamily: null,
+            targetOut,
+            targetTrain: createPulseTrain(),
+            steadyTarget: null,
             speedOut,
             speedTrain: createPulseTrain(),
             bed,
@@ -511,6 +652,7 @@ export class FlyBySoundEngine implements SonicEngine {
             this.g.layers[id].dry.gain.setTargetAtTime(gain, at, 0.05);
             this.g.layers[id].wet.gain.setTargetAtTime(gain, at, 0.05);
         }
+        this.g.motor.gate.gain.setTargetAtTime(motorGateGain(prefs), at, 0.05);
     }
 
     private applyDucks(): void {
@@ -526,6 +668,16 @@ export class FlyBySoundEngine implements SonicEngine {
             bus.duckWet.gain.setTargetAtTime(target, at, tc);
             bus.duckTarget = target;
         }
+        // the motor ducks as any layer but the safety layer does
+        const m = this.g.motor;
+        const speaking = this.speakingCount > 0;
+        const urgent = this.lastPlan?.urgent ?? false;
+        const motorDb = Math.min(speaking ? -this.planner.theme.duckDb : 0, urgent ? -URGENT_DUCK_DB : 0);
+        const mt = dbToGain(motorDb);
+        if (Math.abs(mt - m.duckTarget) >= 1e-6) {
+            m.duck.gain.setTargetAtTime(mt, at, mt < m.duckTarget ? 0.02 : 0.15);
+            m.duckTarget = mt;
+        }
     }
 
     // -------------------------------------------------------------- frames
@@ -538,6 +690,11 @@ export class FlyBySoundEngine implements SonicEngine {
         this.lastInputAudio = this.g.ctx.currentTime;
         this.render(plan);
         this.pump();
+    }
+
+    /** The plan of the last frame the engine took (the virtual listener's rig reads its truth from it), null before the first. */
+    get plan(): FramePlan | null {
+        return this.lastPlan;
     }
 
     activeCues(): readonly ActiveCue[] {
@@ -650,23 +807,86 @@ export class FlyBySoundEngine implements SonicEngine {
         } else if (slot.tone !== null) slot.tone.setLevel(0, now, 0.03);
     }
 
+    /**
+     * The height glide and its target notes (M41-12, review M2). The glide is a soft sine in every theme,
+     * whatever the theme's height timbre (a pad's own 0.3 Hz swirl and a tone rich in partials roughen against
+     * the mix). The target notes are placed by the pump; while one sounds the glide gives way to it, so the
+     * two are never heard together and never beat.
+     */
     private renderHeight(h: HeightPlan | null, now: number): void {
         const g = this.g as Graph;
+        if (h === null || h.target === null) this.stopTargetNotes(now);
+        if (g.steadyTarget !== null && (h === null || h.target === null)) g.steadyTarget.setLevel(0, now, 0.08);
         if (h === null) {
             g.heightOut.gain.setTargetAtTime(0, now, 0.08);
             return;
         }
-        const family = toneFamily(h.timbre);
-        if (g.heightTone === null || g.heightFamily !== family) {
-            if (g.heightTone !== null) g.heightTone.stop(now);
-            g.heightTone = new ToneVoice(g.ctx, h.timbre, now);
+        if (g.heightTone === null) {
+            g.heightTone = new ToneVoice(g.ctx, 'sine', now, 0, null, { family: 'sine' });
             g.heightTone.output.connect(g.heightRough.input);
             g.heightTone.setLevel(1, now, 0.01);
-            g.heightFamily = family;
         }
         g.heightTone.setNote(h.hz, now, h.glideS);
         g.heightRough.set(h.rough, h.roughHz, now);
         g.heightOut.gain.setTargetAtTime(HEIGHT_GAIN, now, 0.1);
+        if (h.target !== null && this.hooks.targetTone === 'steady') {
+            // the control: the first design, a second tone held under the height tone, both at once
+            if (g.steadyTarget === null) {
+                g.steadyTarget = new ToneVoice(g.ctx, 'sine', now, 0, null, { family: 'sine', sub: false });
+                g.steadyTarget.output.connect(g.layers.height.dry);
+            }
+            g.steadyTarget.setNote(h.target.hz, now, Math.max(TARGET_GLIDE_S, h.glideS));
+            g.steadyTarget.setLevel(HEIGHT_GAIN * dbToGain(STEADY_TARGET_DB), now, 0.1);
+        }
+    }
+
+    /** No target height: no more notes, and the glide back at once if it was giving way. */
+    private stopTargetNotes(now: number): void {
+        const g = this.g as Graph;
+        if (g.targetTrain.last === null) return;
+        g.targetTrain.last = null;
+        const swap = g.heightSwap.gain as AudioParam & { cancelAndHoldAtTime?: (t: number) => AudioParam };
+        if (typeof swap.cancelAndHoldAtTime === 'function') swap.cancelAndHoldAtTime(now);
+        else swap.cancelScheduledValues(now);
+        swap.setTargetAtTime(1, now, TARGET_SWAP_S / 3);
+    }
+
+    /**
+     * One target note at `t0` (audio time): a held sine with a soft octave, `noteS` long. The glide fades out just
+     * before it and comes back just after its release, so the two never sound at once (no beat, and no cancelling
+     * at the same pitch): at the target the tone seems to go on through the note, a little brighter.
+     */
+    private playTargetNote(target: NonNullable<HeightPlan['target']>, t0: number, now: number): void {
+        const g = this.g as Graph;
+        const ctx = g.ctx;
+        const peak = TARGET_NOTE_GAIN * dbToGain(target.gainDb);
+        const held = t0 + target.noteS;
+        const end = held + TARGET_RELEASE_S;
+        const env = ctx.createGain();
+        env.gain.setValueAtTime(0, t0);
+        env.gain.linearRampToValueAtTime(peak, t0 + TARGET_ATTACK_S);
+        env.gain.setValueAtTime(peak, held);
+        env.gain.linearRampToValueAtTime(0, end);
+        env.connect(g.targetOut);
+        for (const [ratio, amp] of [
+            [1, 1],
+            [2, TARGET_OCTAVE]
+        ] as const) {
+            const osc = ctx.createOscillator();
+            osc.frequency.value = target.hz * ratio;
+            const gain = ctx.createGain();
+            gain.gain.value = amp;
+            osc.connect(gain);
+            gain.connect(env);
+            osc.start(t0);
+            osc.stop(end + 0.01);
+        }
+        const swap = g.heightSwap.gain;
+        swap.setValueAtTime(1, Math.max(t0 - TARGET_SWAP_S, now));
+        swap.linearRampToValueAtTime(0, t0);
+        swap.setValueAtTime(0, end);
+        swap.linearRampToValueAtTime(1, end + TARGET_SWAP_S);
+        if (this.hooks.onTargetNote !== undefined) this.hooks.onTargetNote(t0, target.hz, target.noteS);
     }
 
     private renderRoom(plan: FramePlan, now: number): void {
@@ -710,6 +930,8 @@ export class FlyBySoundEngine implements SonicEngine {
                 const gain = v.layer === 'target' ? HUM_GAIN : PULSE_GAIN;
                 for (const t0 of duePulses(slot.train, now, horizon, period)) {
                     playNote(g.kit, slot.input, { timbre: v.timbre, hz: v.hz, t0, durS: v.noteS, gain, cents: v.dopplerCents, beatHz: v.beatHz, beatDepth: v.beatDepth, maxS: Math.max(0.9 * period, 0.03) });
+                    // the open-way chime: its upper note with every pulse, a little softer
+                    if (v.harmonyHz !== undefined && v.harmonyHz !== null) playNote(g.kit, slot.input, { timbre: v.timbre, hz: v.harmonyHz, t0: t0 + HARMONY_DELAY_S, durS: v.noteS, gain: gain * HARMONY_GAIN, maxS: Math.max(0.9 * period - HARMONY_DELAY_S, 0.03) });
                 }
             }
             if (v.trace !== null) {
@@ -734,6 +956,11 @@ export class FlyBySoundEngine implements SonicEngine {
                 slot.accentT = Math.max(from, horizon);
             }
         }
+        // the target notes (M41-12, review M2): one every periodS while there is a target height
+        const target = this.lastPlan?.height?.target ?? null;
+        if (target !== null && this.hooks.targetTone !== 'steady') {
+            for (const t0 of duePulses(g.targetTrain, now, horizon, target.periodS * scaleP)) this.playTargetNote(target, t0, now);
+        }
         // speed ticks: a tone and a breath of air, mixed by the theme
         const sp = this.lastPlan?.speed ?? null;
         if (sp !== null && sp.tempoHz > 0) {
@@ -753,8 +980,8 @@ export class FlyBySoundEngine implements SonicEngine {
         if (this.g === null || this.stateValue !== 'running') return;
         const now = this.g.ctx.currentTime;
         for (const n of notes) this.playOneOff(n, now + 0.01 + n.atS);
-        // a preview starts sounding with the next plan: make it now
-        if (e.kind === 'preview' && this.lastInput !== null) {
+        // a preview (and a play of a 'repeat-cue', M41-5) starts sounding with the next plan: make it now
+        if ((e.kind === 'preview' || e.kind === 'repeat-cue') && this.lastInput !== null) {
             const plan = this.planner.plan(this.lastInput);
             this.lastPlan = plan;
             this.render(plan);

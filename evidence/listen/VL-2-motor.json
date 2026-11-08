@@ -1,0 +1,444 @@
+{
+ "format": "shramko-listen-evidence/1",
+ "key": "ca2ea78c02fbf9da990b2b5b13abb7e25a036549c6358b7b9f1c52176610c1df",
+ "inputs": {
+  "hash": "ca2ea78c02fbf9da990b2b5b13abb7e25a036549c6358b7b9f1c52176610c1df",
+  "files": 109,
+  "driver": 2,
+  "measure": 2,
+  "chrome": "156.0.8078.80",
+  "tools": {
+   "python": "3.11.9",
+   "numpy": "2.4.6",
+   "scipy": "1.17.1",
+   "soundfile": "0.14.0",
+   "pyloudnorm": "0.2.0"
+  }
+ },
+ "date": "2026-11-08T13:50:35.264Z",
+ "id": "VL-2-motor",
+ "claim": "every cue (safety, height, target, shape) is at least 6 dB over the motor in its own third-octave bands, where it sounds, for the simulator's default craft and the micro presets and a 5-inch quad, the slider at its default 15 % (control: the v0.12 path, the raw motor at the slider at 60 %)",
+ "thresholds": {
+  "minMarginDb": {
+   "value": 6,
+   "kind": "v13 plan"
+  },
+  "ownBands": {
+   "value": "within 10 dB of the cue's strongest band",
+   "kind": "proposal"
+  }
+ },
+ "measured": {
+  "worst": {
+   "marginDb": 15,
+   "craft": "air65-1s",
+   "cue": "shape"
+  },
+  "margins": {
+   "pavo20pro-3s": {
+    "safety": {
+     "activeFrames": 18,
+     "ownBandsHz": [
+      "315",
+      "397"
+     ],
+     "minMarginDb": 64.5,
+     "marginsDb": {
+      "315": 102.5,
+      "397": 64.5
+     }
+    },
+    "height": {
+     "activeFrames": 160,
+     "ownBandsHz": [
+      "397",
+      "500"
+     ],
+     "minMarginDb": 40,
+     "marginsDb": {
+      "397": 64.2,
+      "500": 40
+     }
+    },
+    "target": {
+     "activeFrames": 53,
+     "ownBandsHz": [
+      "157",
+      "198",
+      "500"
+     ],
+     "minMarginDb": 34.4,
+     "marginsDb": {
+      "157": 109.5,
+      "198": 96.1,
+      "500": 34.4
+     }
+    },
+    "shape": {
+     "activeFrames": 116,
+     "ownBandsHz": [
+      "157",
+      "198",
+      "250",
+      "315",
+      "397",
+      "500",
+      "630"
+     ],
+     "minMarginDb": 30.3,
+     "marginsDb": {
+      "157": 96,
+      "198": 95.4,
+      "250": 82.6,
+      "315": 67.1,
+      "397": 51.6,
+      "500": 33.5,
+      "630": 30.3
+     }
+    }
+   },
+   "meteor65pro-1s": {
+    "safety": {
+     "activeFrames": 18,
+     "ownBandsHz": [
+      "315",
+      "397"
+     ],
+     "minMarginDb": 81.1,
+     "marginsDb": {
+      "315": 100.3,
+      "397": 81.1
+     }
+    },
+    "height": {
+     "activeFrames": 160,
+     "ownBandsHz": [
+      "397",
+      "500"
+     ],
+     "minMarginDb": 48.7,
+     "marginsDb": {
+      "397": 71.8,
+      "500": 48.7
+     }
+    },
+    "target": {
+     "activeFrames": 53,
+     "ownBandsHz": [
+      "157",
+      "198",
+      "500"
+     ],
+     "minMarginDb": 45.6,
+     "marginsDb": {
+      "157": 110.1,
+      "198": 96.1,
+      "500": 45.6
+     }
+    },
+    "shape": {
+     "activeFrames": 116,
+     "ownBandsHz": [
+      "157",
+      "198",
+      "250",
+      "315",
+      "397",
+      "500",
+      "630"
+     ],
+     "minMarginDb": 20.1,
+     "marginsDb": {
+      "157": 96.3,
+      "198": 95.5,
+      "250": 84.6,
+      "315": 70.1,
+      "397": 58.7,
+      "500": 42.5,
+      "630": 20.1
+     }
+    }
+   },
+   "air65-1s": {
+    "safety": {
+     "activeFrames": 18,
+     "ownBandsHz": [
+      "315",
+      "397"
+     ],
+     "minMarginDb": 81.3,
+     "marginsDb": {
+      "315": 100.4,
+      "397": 81.3
+     }
+    },
+    "height": {
+     "activeFrames": 160,
+     "ownBandsHz": [
+      "397",
+      "500"
+     ],
+     "minMarginDb": 50.7,
+     "marginsDb": {
+      "397": 74.9,
+      "500": 50.7
+     }
+    },
+    "target": {
+     "activeFrames": 53,
+     "ownBandsHz": [
+      "157",
+      "198",
+      "500"
+     ],
+     "minMarginDb": 45.1,
+     "marginsDb": {
+      "157": 108.1,
+      "198": 96.6,
+      "500": 45.1
+     }
+    },
+    "shape": {
+     "activeFrames": 116,
+     "ownBandsHz": [
+      "157",
+      "198",
+      "250",
+      "315",
+      "397",
+      "500",
+      "630"
+     ],
+     "minMarginDb": 15,
+     "marginsDb": {
+      "157": 94.7,
+      "198": 95.8,
+      "250": 86.4,
+      "315": 75.3,
+      "397": 61.9,
+      "500": 44.4,
+      "630": 15
+     }
+    }
+   },
+   "pavopico-2s": {
+    "safety": {
+     "activeFrames": 18,
+     "ownBandsHz": [
+      "315",
+      "397"
+     ],
+     "minMarginDb": 81.6,
+     "marginsDb": {
+      "315": 100.5,
+      "397": 81.6
+     }
+    },
+    "height": {
+     "activeFrames": 160,
+     "ownBandsHz": [
+      "397",
+      "500"
+     ],
+     "minMarginDb": 55.8,
+     "marginsDb": {
+      "397": 80,
+      "500": 55.8
+     }
+    },
+    "target": {
+     "activeFrames": 53,
+     "ownBandsHz": [
+      "157",
+      "198",
+      "500"
+     ],
+     "minMarginDb": 49.8,
+     "marginsDb": {
+      "157": 110.9,
+      "198": 97.5,
+      "500": 49.8
+     }
+    },
+    "shape": {
+     "activeFrames": 116,
+     "ownBandsHz": [
+      "157",
+      "198",
+      "250",
+      "315",
+      "397",
+      "500",
+      "630"
+     ],
+     "minMarginDb": 22.3,
+     "marginsDb": {
+      "157": 96.5,
+      "198": 95.5,
+      "250": 87.9,
+      "315": 79.5,
+      "397": 67.5,
+      "500": 49.4,
+      "630": 22.3
+     }
+    }
+   },
+   "five-inch": {
+    "safety": {
+     "activeFrames": 18,
+     "ownBandsHz": [
+      "315",
+      "397"
+     ],
+     "minMarginDb": 68.1,
+     "marginsDb": {
+      "315": 68.1,
+      "397": 76.7
+     }
+    },
+    "height": {
+     "activeFrames": 160,
+     "ownBandsHz": [
+      "397",
+      "500"
+     ],
+     "minMarginDb": 48.8,
+     "marginsDb": {
+      "397": 75.4,
+      "500": 48.8
+     }
+    },
+    "target": {
+     "activeFrames": 53,
+     "ownBandsHz": [
+      "157",
+      "198",
+      "500"
+     ],
+     "minMarginDb": 42.9,
+     "marginsDb": {
+      "157": 102.1,
+      "198": 78.6,
+      "500": 42.9
+     }
+    },
+    "shape": {
+     "activeFrames": 116,
+     "ownBandsHz": [
+      "157",
+      "198",
+      "250",
+      "315",
+      "397",
+      "500",
+      "630"
+     ],
+     "minMarginDb": 24.2,
+     "marginsDb": {
+      "157": 88.4,
+      "198": 78.8,
+      "250": 55.3,
+      "315": 53,
+      "397": 62.9,
+      "500": 42.4,
+      "630": 24.2
+     }
+    }
+   }
+  },
+  "level": {
+   "cuesLufs": -30.49,
+   "pavo20pro-3s": {
+    "motorLufs": -41.97,
+    "motorUnderCuesLu": 11.48
+   },
+   "meteor65pro-1s": {
+    "motorLufs": -41.51,
+    "motorUnderCuesLu": 11.02
+   },
+   "air65-1s": {
+    "motorLufs": -41.75,
+    "motorUnderCuesLu": 11.26
+   },
+   "pavopico-2s": {
+    "motorLufs": -42.6,
+    "motorUnderCuesLu": 12.11
+   },
+   "five-inch": {
+    "motorLufs": -44.54,
+    "motorUnderCuesLu": 14.05
+   },
+   "rawMotor60Lufs": -35.7
+  }
+ },
+ "controls": [
+  {
+   "name": "raw motor at 60 % (no low-pass, no leveller, as v0.12 auxInput), the default craft",
+   "measured": {
+    "safety": {
+     "activeFrames": 18,
+     "ownBandsHz": [
+      "315",
+      "397"
+     ],
+     "minMarginDb": 25.9,
+     "marginsDb": {
+      "315": 51.8,
+      "397": 25.9
+     }
+    },
+    "height": {
+     "activeFrames": 160,
+     "ownBandsHz": [
+      "397",
+      "500"
+     ],
+     "minMarginDb": 7.4,
+     "marginsDb": {
+      "397": 25.5,
+      "500": 7.4
+     }
+    },
+    "target": {
+     "activeFrames": 53,
+     "ownBandsHz": [
+      "157",
+      "198",
+      "500"
+     ],
+     "minMarginDb": 1.9,
+     "marginsDb": {
+      "157": 51.9,
+      "198": 38.4,
+      "500": 1.9
+     }
+    },
+    "shape": {
+     "activeFrames": 116,
+     "ownBandsHz": [
+      "157",
+      "198",
+      "250",
+      "315",
+      "397",
+      "500",
+      "630"
+     ],
+     "minMarginDb": 0.9,
+     "marginsDb": {
+      "157": 38.1,
+      "198": 37.9,
+      "250": 29.4,
+      "315": 21.8,
+      "397": 12.9,
+      "500": 0.9,
+      "630": 1.9
+     }
+    }
+   },
+   "ok": true
+  }
+ ],
+ "valid": true,
+ "pass": true
+}

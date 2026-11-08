@@ -1,26 +1,26 @@
 {
   "what": "Fly by Sound audio proofs: the real engine rendered offline in headless Chromium, each check also run on an engine broken on purpose (control), which must fail",
   "run": "pnpm proof:audio",
-  "date": "2026-11-08T13:58:35.113Z",
+  "date": "2026-11-08T13:51:00.652Z",
   "browser": "156.0.8078.80",
   "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36",
   "sampleRate": 48000,
   "proofs": [
     {
       "name": "direction",
-      "claim": "a wall on the left is heard on the left and one on the right on the right: louder in the near ear over the whole band (2 dB or more) and above 2 kHz (8 dB or more), and earlier in the near ear below 800 Hz (0.25 ms or more)",
+      "claim": "a wall on the left is heard on the left and one on the right on the right: louder in the near ear over the whole band (2 dB or more) and above 2 kHz (8 dB or more), and earlier in the near ear below 800 Hz (0.25 ms or more); the craft 2.5 m from the wall drifts toward it at 1.2 m/s (2 s to contact: since v0.13 a still craft hears a wall only within 0.8 m)",
       "shipped": {
         "ok": true,
         "measured": {
           "leftWall": {
-            "LminusRdb": 3.1,
-            "LminusRdbAbove2kHz": 17.96,
-            "leftLeadsMsBelow800Hz": 0.813
+            "LminusRdb": 3.06,
+            "LminusRdbAbove2kHz": 17.91,
+            "leftLeadsMsBelow800Hz": 0.833
           },
           "rightWall": {
-            "LminusRdb": -3.25,
-            "LminusRdbAbove2kHz": -17.42,
-            "leftLeadsMsBelow800Hz": -0.812
+            "LminusRdb": -3.23,
+            "LminusRdbAbove2kHz": -18.47,
+            "leftLeadsMsBelow800Hz": -0.833
           },
           "thresholds": {
             "broadDb": 2,
@@ -33,13 +33,13 @@
         "ok": false,
         "measured": {
           "leftWall": {
-            "LminusRdb": -0.05,
-            "LminusRdbAbove2kHz": 0.36,
+            "LminusRdb": -0.12,
+            "LminusRdbAbove2kHz": -0.05,
             "leftLeadsMsBelow800Hz": 0
           },
           "rightWall": {
-            "LminusRdb": -0.05,
-            "LminusRdbAbove2kHz": 0.36,
+            "LminusRdb": -0.12,
+            "LminusRdbAbove2kHz": -0.05,
             "leftLeadsMsBelow800Hz": 0
           },
           "thresholds": {
@@ -54,7 +54,7 @@
     },
     {
       "name": "pulse-rate",
-      "claim": "the safety pulse period matches the time-to-collision rule within 5 % for times to collision of 0.6, 1.2, 2 and 3 s",
+      "claim": "the safety pulse period matches the time-to-collision rule within 5 % for times to collision of 0.6, 1.2, 2 and 2.4 s (a wall is heard from 2.5 s since v0.13)",
       "shipped": {
         "ok": true,
         "measured": {
@@ -62,8 +62,8 @@
             {
               "ttcS": 0.6,
               "expectedS": 0.1611,
-              "measuredS": 0.161,
-              "relError": 0.0006,
+              "measuredS": 0.162,
+              "relError": 0.0056,
               "pulses": 15
             },
             {
@@ -81,10 +81,10 @@
               "pulses": 8
             },
             {
-              "ttcS": 3,
-              "expectedS": 0.7412,
-              "measuredS": 0.741,
-              "relError": 0.0003,
+              "ttcS": 2.4,
+              "expectedS": 0.5061,
+              "measuredS": 0.506,
+              "relError": 0.0002,
               "pulses": 7
             }
           ],
@@ -117,10 +117,10 @@
               "pulses": 7
             },
             {
-              "ttcS": 3,
-              "expectedS": 0.7412,
-              "measuredS": 0.852,
-              "relError": 0.1495,
+              "ttcS": 2.4,
+              "expectedS": 0.5061,
+              "measuredS": 0.582,
+              "relError": 0.15,
               "pulses": 6
             }
           ],
@@ -136,7 +136,7 @@
       "shipped": {
         "ok": true,
         "measured": {
-          "peak": 0.50072,
+          "peak": 0.50055,
           "peakDbfs": -6.01,
           "ceilingDbfs": -6
         }
@@ -144,8 +144,8 @@
       "control": {
         "ok": false,
         "measured": {
-          "peak": 2.85415,
-          "peakDbfs": 9.11,
+          "peak": 2.9672,
+          "peakDbfs": 9.45,
           "ceilingDbfs": -6
         },
         "broken": "compressor and soft clipper removed"
@@ -160,21 +160,21 @@
         "measured": {
           "method": "rms of the render over rms of the same render without the fade, 25 ms windows",
           "start": {
-            "first50ms": 0.007,
-            "middle": 0.511,
+            "first50ms": 0.006,
+            "middle": 0.512,
             "afterFade": 1,
             "monotonic": true,
             "every100ms": [
               0.003,
-              0.036,
-              0.117,
-              0.233,
-              0.378,
-              0.532,
+              0.037,
+              0.116,
+              0.234,
+              0.377,
+              0.533,
               0.685,
-              0.819,
+              0.818,
               0.922,
-              0.983,
+              0.984,
               1
             ]
           },
@@ -186,12 +186,12 @@
             "every100ms": [
               0.002,
               0.036,
-              0.115,
-              0.231,
-              0.375,
-              0.529,
-              0.684,
-              0.816,
+              0.114,
+              0.233,
+              0.374,
+              0.531,
+              0.683,
+              0.817,
               0.921,
               0.983,
               1,

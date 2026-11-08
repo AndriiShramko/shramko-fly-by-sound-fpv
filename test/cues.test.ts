@@ -36,7 +36,7 @@ import { yawQuat } from '../src/util/vec';
 
 const soft = getBuiltinTheme('soft');
 const SAFETY = soft.layers.safety.params as Record<string, number>;
-const RULE = { periodNearMs: SAFETY['periodNearMs'] as number, periodFarMs: SAFETY['periodFarMs'] as number, ttcFarS: SAFETY['ttcFarS'] as number, distFarM: SAFETY['distFarM'] as number };
+const RULE = { periodNearMs: SAFETY['periodNearMs'] as number, periodFarMs: SAFETY['periodFarMs'] as number, ttcFarS: SAFETY['ttcFarS'] as number, distM: SAFETY['pulseDistM'] as number };
 
 function sample(pos: Vec3, vel: Vec3 = [0, 0, 0], yawDeg = 0, t = 0): FlightSample {
     return { t, tick: t, pos, vel, quat: yawQuat(yawDeg), rate: [0, 0, 0], yawDeg, pitchDeg: 0, rollDeg: 0, sticks: [0, 0, 0, 0], armed: true, touched: false, paused: false };
@@ -60,7 +60,7 @@ describe('the pulse period follows the time to collision', () => {
             expect(p).toBeLessThan(prev);
             prev = p;
         }
-        expect(pulsePeriodMs(null, RULE.distFarM / 2, RULE)).toBeCloseTo(Math.sqrt(RULE.periodNearMs * RULE.periodFarMs), 6);
+        expect(pulsePeriodMs(null, RULE.distM / 2, RULE)).toBeCloseTo(Math.sqrt(RULE.periodNearMs * RULE.periodFarMs), 6);
     });
 
     it('never sounds calmer for a near wall because the craft creeps toward it', () => {
@@ -147,13 +147,15 @@ describe('every pitch is a note of the scale', () => {
         { kind: 'preview', cue: 'target.off', dir: [-1, 0, 0] }
     ];
 
+    // every pitch but the height glide (it slides between the notes, M41-12: test/height.test.ts holds it);
+    // its target tone is a note again
     function collect(plan: FramePlan): number[] {
         const hz: number[] = [];
         for (const v of plan.voices) hz.push(v.hz);
-        if (plan.height !== null) hz.push(plan.height.hz);
+        if (plan.height !== null && plan.height.target !== null) hz.push(plan.height.target.hz);
         if (plan.speed !== null) hz.push(plan.speed.hz);
         if (plan.room !== null) hz.push(plan.room.hz);
-        for (const c of plan.cues) if (c.pitchHz !== null) hz.push(c.pitchHz);
+        for (const c of plan.cues) if (c.pitchHz !== null && c.id !== 'height.tone' && c.id !== 'height.rough') hz.push(c.pitchHz);
         return hz;
     }
 
@@ -342,7 +344,7 @@ describe('the planner hears the scene as the spec says', () => {
 
     it('turning the craft turns the scene: the same wall moves to the side', () => {
         const planner = new CuePlanner({ theme: soft });
-        const pos: Vec3 = [0, 1.5, front[2] + 3];
+        const pos: Vec3 = [0, 1.5, front[2] + 0.7]; // within 0.8 m of the hull: heard when still
         const plan = planner.plan({ sample: sample(pos, [0, 0, 0], 90), world: hall, target: null, floorY: 0 });
         const wall = plan.voices.find((x) => x.cue === 'safety.wall')!;
         expect(wall.dir[0]).toBeLessThan(-0.9); // yaw right 90: the front wall is now on the left
@@ -391,7 +393,7 @@ describe('the planner hears the scene as the spec says', () => {
         const plan = planner.plan({ sample: sample([0, 0.5, front[2] + 1], [0, 0, -3]), world: hall, target: null, floorY: 0 });
         expect(plan.voices).toEqual([]);
         expect(plan.height!.rough).toBeGreaterThan(0);
-        expect(plan.cues.map((c) => c.id)).toEqual(['height.rough']);
+        expect(plan.cues.map((c) => c.id)).toEqual(['height.rough', 'height.target']);
         planner.setLayers({ on: LAYER_IDS, heightBandM: null, hazardVoices: 1 });
         const corner = planner.plan({ sample: sample([19, 0.6, front[2] + 1], [2, -1, -3]), world: hall, target: null, floorY: 0 });
         expect(corner.voices.filter((v) => v.layer === 'safety').length).toBe(1);

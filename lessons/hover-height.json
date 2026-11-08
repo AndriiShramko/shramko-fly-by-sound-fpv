@@ -44,6 +44,7 @@
     "heightBandM": [2, 3],
     "on": [
       "height",
+      "room",
       "voice"
     ]
   },

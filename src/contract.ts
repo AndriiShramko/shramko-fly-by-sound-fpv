@@ -274,11 +274,27 @@ export interface SonicPrefs {
     /** speechSynthesis rate, 0.5 to 2 */
     readonly speechRate: number;
     readonly captions: boolean;
-    /** the simulator's motor sound in this mode (off by default: it masks cues) */
+    /**
+     * the simulator's motor sound in this mode: on by default since v0.13 (M41-16; v0.12 had it off because it
+     * masked the cues), played through the engine's motor bus (motorInput): low-passed, under the cues, ducked
+     * under speech
+     */
     readonly motorSound: boolean;
     readonly path: 'full' | 'fast';
     /** listener frame: 'heading' (default, tilt ignored) or the full body attitude */
     readonly listenerFrame: 'heading' | 'body';
+    /**
+     * v0.13 (lane s13-sound, M41-12): the height layer's target note, about once a second at the target
+     * height's pitch (the next gate, or the band centre). Absent in documents written before v0.13; absent
+     * or true: on.
+     */
+    readonly heightTarget?: boolean;
+    /**
+     * v0.13 (lane s13-sound, M41-16, review m3): the pilot's own motor level in this mode, dB over the
+     * calibrated one (-24 to 6; absent: 0). It acts after the motor bus's leveller, which otherwise holds
+     * the motor at one level whatever the simulator's own volume slider says.
+     */
+    readonly motorGainDb?: number;
 }
 
 // ------------------------------------------------------------------ lessons
@@ -620,8 +636,17 @@ export interface SonicEngine {
     activeCues(): readonly ActiveCue[];
     /** every spoken line, for captions and events.jsonl */
     onSpeech: ((line: SpeechLine, text: string) => void) | null;
-    /** an AudioNode before the limiter for other sounds (the simulator's motor sound); null before start */
+    /** an AudioNode before the limiter for other sounds, as they are; null before start */
     readonly auxInput: object | null;
+    /**
+     * v0.13 (lane s13-sound, M41-16): the AudioNode for the simulator's motor sound. It keeps the propellers'
+     * whine (1.1 to 2 kHz, over the cues' notes), evens out its level and sets it under the cues (every cue at
+     * least 6 dB over it in its own bands, measured for the default craft and the micro presets:
+     * evidence/listen/VL-2-motor.json), applies the pilot's motor level (SonicPrefs.motorGainDb), ducks it under
+     * speech and under an urgent hazard, and is silent while SonicPrefs.motorSound is off. Null before start;
+     * absent on an older engine (connect to auxInput then).
+     */
+    readonly motorInput?: object | null;
 }
 
 /**

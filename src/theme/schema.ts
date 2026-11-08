@@ -15,11 +15,18 @@ export interface ParamSpec {
     readonly scaleIndex: boolean;
     /** what it does, with its unit */
     readonly doc: string;
+    /**
+     * Added after the first theme files were exported (v0.13): a file without it still loads and the
+     * loader fills in `default`. Every other parameter must be in the file.
+     */
+    readonly optional: boolean;
 }
 
-const p = (min: number, max: number, def: number, doc: string): ParamSpec => ({ min, max, default: def, integer: false, scaleIndex: false, doc });
-const count = (min: number, max: number, def: number, doc: string): ParamSpec => ({ min, max, default: def, integer: true, scaleIndex: false, doc });
-const note = (def: number, doc: string): ParamSpec => ({ min: 0, max: 100, default: def, integer: true, scaleIndex: true, doc });
+const p = (min: number, max: number, def: number, doc: string): ParamSpec => ({ min, max, default: def, integer: false, scaleIndex: false, doc, optional: false });
+const count = (min: number, max: number, def: number, doc: string): ParamSpec => ({ min, max, default: def, integer: true, scaleIndex: false, doc, optional: false });
+const note = (def: number, doc: string): ParamSpec => ({ min: 0, max: 100, default: def, integer: true, scaleIndex: true, doc, optional: false });
+/** A parameter added in v0.13: optional in a file (older exports lack it), always in the loaded theme. */
+const added = (spec: ParamSpec): ParamSpec => ({ ...spec, optional: true });
 
 export const LAYER_PARAMS: Readonly<Record<LayerId, Readonly<Record<string, ParamSpec>>>> = {
     safety: {
@@ -27,7 +34,8 @@ export const LAYER_PARAMS: Readonly<Record<LayerId, Readonly<Record<string, Para
         periodNearMs: p(60, 500, 110, 'pulse period when a collision is imminent, ms'),
         periodFarMs: p(300, 3000, 1400, 'pulse period at the far end of the range, ms'),
         ttcFarS: p(1, 10, 4, 'time to collision at which the period is periodFarMs, s'),
-        distFarM: p(2, 40, 12, 'distance at which the period is periodFarMs when the craft is not closing, m'),
+        distFarM: p(2, 40, 12, 'distance at which the low-pass and the reverb send of a hazard reach their far values, m'),
+        pulseDistM: added(p(0.3, 10, 2, 'distance at which the period is periodFarMs when the craft is not closing; closer than this, nearness quickens the pulse whatever the time to collision, m')),
         ildBoostDb: p(0, 12, 6, 'extra level difference between the ears for hazards under 2 m, dB'),
         lowpassNearHz: p(2000, 20000, 16000, 'low-pass cutoff of a near hazard, Hz'),
         lowpassFarHz: p(500, 16000, 2500, 'low-pass cutoff of a far hazard, Hz'),
@@ -37,16 +45,21 @@ export const LAYER_PARAMS: Readonly<Record<LayerId, Readonly<Record<string, Para
         pitchWallStep: note(7, 'note of a wall pulse'),
         pitchFloorStep: note(0, 'note of a floor pulse'),
         pitchCeilingStep: note(12, 'note of a ceiling pulse'),
-        pitchObstacleStep: note(9, 'note of an obstacle pulse')
+        pitchObstacleStep: note(9, 'note of an obstacle pulse'),
+        freeStep: added(note(13, 'note of the open-way chime from the left or the right; three steps higher for a way above, three lower for a way below')),
+        freePeriodMs: added(p(250, 2000, 600, 'time between two open-way chimes, ms'))
     },
     height: {
         baseStep: note(3, 'note of the height tone at the floor'),
         maxStep: note(17, 'highest note of the height tone'),
-        metresPerStep: p(0.1, 5, 0.5, 'metres of height per scale step'),
-        glideMs: p(0, 400, 80, 'time to glide from one note to the next, ms'),
+        metresPerStep: p(0.1, 5, 0.5, 'metres of height per scale step: the height tone glides one step up per this much climb'),
+        glideMs: p(0, 400, 80, 'smoothing of the height glide and of a change of the target tone, ms'),
         roughDepth: p(0, 1, 0.6, 'roughness (amplitude modulation depth) outside the lesson band, 0 to 1'),
         roughHz: p(10, 90, 38, 'rate of the roughness, Hz'),
-        bandSoftM: p(0, 2, 0.3, 'distance outside the band over which the roughness grows to full, m')
+        bandSoftM: p(0, 2, 0.3, 'distance outside the band over which the roughness grows to full, m'),
+        targetDb: added(p(-30, 6, 0, 'level of the target-height note against the height tone it stands in for, dB')),
+        targetPeriodMs: added(p(600, 4000, 1250, 'time between two target-height notes, ms')),
+        targetNoteMs: added(p(120, 600, 280, 'length of a target-height note; the height tone gives way to it meanwhile, ms'))
     },
     speed: {
         tempoMinHz: p(0.3, 6, 1, 'tick rate at the slowest speed, Hz'),
@@ -94,6 +107,7 @@ export const PARAM_ORDER: readonly { readonly layer: LayerId; readonly low: stri
     { layer: 'safety', low: 'periodNearMs', high: 'periodFarMs' },
     { layer: 'safety', low: 'lowpassFarHz', high: 'lowpassNearHz' },
     { layer: 'height', low: 'baseStep', high: 'maxStep' },
+    { layer: 'height', low: 'targetNoteMs', high: 'targetPeriodMs' },
     { layer: 'speed', low: 'tempoMinHz', high: 'tempoMaxHz' },
     { layer: 'target', low: 'rateFarHz', high: 'rateNearHz' },
     { layer: 'target', low: 'nearM', high: 'farM' },

@@ -38,7 +38,9 @@
     "heightBandM": null,
     "on": [
       "safety",
+      "height",
       "shape",
+      "room",
       "voice"
     ]
   },

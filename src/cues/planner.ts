@@ -6,23 +6,25 @@
 //
 // Frames: directions are in the listener frame (heading by default, contract header), unit vectors.
 // The craft is the listener, at the origin of that frame.
-import type { ActiveCue, CueEvent, CueId, FlightSample, LayerId, LessonLayers, MaterialClass, ObjectShape, Quat, SonicFrameInput, SonicObject, SonicPrefs, ThemeDef, Timbre, Vec3 } from '../contract';
+import type { ActiveCue, CueEvent, CueId, FlightSample, LayerId, LessonLayers, MaterialClass, ObjectShape, Quat, SonicFrameInput, SonicObject, SonicPrefs, SonicWorld, ThemeDef, Timbre, Vec3 } from '../contract';
 import { LAYER_IDS } from '../contract';
 import { defaultPrefs } from '../prefs/prefs';
+import { findFreeWay, type FreeSide, type FreeWay } from '../sense/freeway';
 import { createSceneSampler, type SamplerOptions, type SceneSampler } from '../sense/sampler';
 import { headingBasis, listenerBasis, worldToListener, type Basis } from '../sense/frame';
 import type { Hazard, SceneSample } from '../sense/types';
 import { applyCalm } from '../theme/calm';
-import { gateMelody } from '../theme/pitch';
+import { gateMelody, noteHz, noteHzAt } from '../theme/pitch';
+import { alignOffset, heightTones, referenceHeightM, targetHeightM, type HeightToneRule, type TargetTone } from './height';
 import { add, dot, length, normalize, quatConjugate, quatRotate, scale, sub, yawQuat } from '../util/vec';
 import {
     aimMissM,
     clamp01,
     distanceCode,
     dopplerCents,
+    hazardDistanceCode,
     elevationSteps,
     expLerp,
-    heightTone,
     isUrgent,
     note,
     openness,
@@ -84,15 +86,29 @@ export interface VoicePlan {
     readonly beatHz: number;
     readonly beatDepth: number;
     readonly trace: TracePlan | null;
+    /** a second note played with every pulse (the open-way chime's upper note), Hz; null for none */
+    readonly harmonyHz?: number | null;
 }
 
+/**
+ * The height layer (M41-12, src/cues/height.ts): a tone that glides with the height, and a short note
+ * at the target height's pitch about once a second, the height tone giving way to it meanwhile (null
+ * when the lesson has no target height or the pilot turned it off).
+ */
 export interface HeightPlan {
+    /** the whole note nearest to the glide (the stepped tone of v0.12) */
     readonly noteIndex: number;
+    /** position on the scale of the glide: a note index with a fraction */
+    readonly position: number;
+    /** the glide's frequency now */
     readonly hz: number;
+    /** metres above the lesson floor (a preview: as if) */
+    readonly heightM: number;
     readonly rough: number;
     readonly roughHz: number;
     readonly glideS: number;
     readonly timbre: Timbre;
+    readonly target: TargetTone | null;
 }
 
 export interface SpeedPlan {
@@ -149,6 +165,8 @@ export interface FramePlan {
     /** a hazard is urgent: the safety layer ducks the others */
     readonly urgent: boolean;
     readonly cues: readonly ActiveCue[];
+    /** the free way beside an obstacle ahead, while the open-way chime sounds (M41-14), else null */
+    readonly freeWay: FreeWay | null;
 }
 
 // ------------------------------------------------------------------ constants
@@ -161,6 +179,32 @@ export const AIM_BY_VELOCITY_MPS = 1;
 export const GATE_MELODY_BASE = 5;
 /** How long a preview plays, s. */
 export const PREVIEW_S = 3;
+/**
+ * How long one play of a 'repeat-cue' lasts when the event gives no `durS`, s (M41-5). The runner gives every
+ * play its length (lane s13-lessons, src/lesson/sounds.ts: 2.5 s for a continuous cue, 1.2 s for a one-off one)
+ * and sends the next play about 1 s after it; the planner sounds a continuous cue for exactly that long and a
+ * one-off cue as its own notes, cut at that length.
+ */
+export const REPEAT_PLAY_DEFAULT_S = 2.5;
+/** The shortest and the longest play of a 'repeat-cue' the planner makes, s: a `durS` out of range is held to them. */
+export const REPEAT_PLAY_RANGE_S: readonly [number, number] = [0.2, 6];
+/** The praise figures, scale steps over the root an octave above the gate melody's start: one after the other, so praise does not tire. */
+export const PRAISE_FIGURES: readonly (readonly number[])[] = [
+    [0, 2, 4],
+    [2, 4, 5],
+    [0, 3, 5]
+];
+/** The open-way chime goes on this long after the obstacle ahead was last closer than its trigger time, ms. */
+export const FREE_HOLD_MS = 400;
+/** Where the open-way chime comes from, listener frame: 60 degrees left or right; up and down from ahead (pitch says which). */
+export const FREE_DIRS: Readonly<Record<FreeSide, Vec3>> = {
+    left: [-Math.sin(Math.PI / 3), 0, -Math.cos(Math.PI / 3)],
+    right: [Math.sin(Math.PI / 3), 0, -Math.cos(Math.PI / 3)],
+    up: [0, 0, -1],
+    down: [0, 0, -1]
+};
+/** How many scale steps above the side chime's note a way above starts (and a way below ends below it). */
+export const FREE_ELEVATION_STEPS = 3;
 /** Default direction of a preview, listener frame. */
 const FRONT: Vec3 = [0, 0, -1];
 
@@ -211,16 +255,17 @@ export function eventCue(e: CueEvent): CueId {
         case 'fanfare':
             return 'target.fanfare';
         case 'preview':
+            return e.cue;
+        case 'wrong-way':
+            return 'safety.wrong-way';
+        case 'wrong-side':
+            return 'safety.wrong-side';
+        case 'praise':
+            return 'target.praise';
+        case 'stage':
+            return 'target.stage';
         case 'repeat-cue':
             return e.cue;
-        // lane s13-lessons placeholders until lane s13-sound designs them
-        case 'praise':
-            return 'target.checkpoint';
-        case 'stage':
-            return 'target.lap';
-        case 'wrong-way':
-        case 'wrong-side':
-            return 'safety.reset';
     }
 }
 
@@ -265,6 +310,8 @@ export interface PlannerOptions {
     readonly sampler?: SamplerOptions;
     /** voices the allocator may give out at once (MAX_MOVING_VOICES); a larger number exists only for the proofs' negative control */
     readonly maxMovingVoices?: number;
+    /** the height tone rounded to whole notes as in v0.12: only the virtual listener's continuity control */
+    readonly steppedHeight?: boolean;
 }
 
 const tri = (u: number): number => {
@@ -284,12 +331,21 @@ export class CuePlanner {
     private on: Set<LayerId>;
     private readonly sampler: SceneSampler;
     private readonly moving: VoiceAllocator;
+    private readonly steppedHeight: boolean;
     private readonly staticSlots: (SoundingNote | null)[] = new Array<SoundingNote | null>(MAX_STATIC_VOICES).fill(null);
     private previews: Preview[] = [];
     private notes: SoundingNote[] = [];
     private previewCount = 0;
     private noteCount = 0;
     private lastT = 0;
+    /** praise figures played so far (the next one is PRAISE_FIGURES[count % length]) */
+    private praiseCount = 0;
+    /** the open-way chime: the side sounding, and the page time it stops if not renewed */
+    private freeSide: FreeSide | null = null;
+    private freeUntil = 0;
+    private freeLast: FreeWay | null = null;
+    /** the height mapping's alignment for the current world and band (height.ts alignOffset) */
+    private align: { readonly world: SonicWorld | null; readonly band: LessonLayers['heightBandM']; readonly floorY: number; readonly metresPerStep: number; readonly offset: number } | null = null;
 
     constructor(options: PlannerOptions) {
         this.baseTheme = options.theme;
@@ -300,6 +356,7 @@ export class CuePlanner {
         this.sampler = createSceneSampler(options.sampler);
         this.sampler.setMaxVoices(Math.min(this.layersValue.hazardVoices, 3));
         this.moving = new VoiceAllocator(options.maxMovingVoices ?? MAX_MOVING_VOICES);
+        this.steppedHeight = options.steppedHeight === true;
     }
 
     /** The theme as it sounds: the calm preset applied when the pilot asked for it. */
@@ -338,6 +395,11 @@ export class CuePlanner {
         this.previews = [];
         this.notes = [];
         this.staticSlots.fill(null);
+        this.align = null;
+        this.freeSide = null;
+        this.freeUntil = 0;
+        this.freeLast = null;
+        this.praiseCount = 0;
     }
 
     private pitch(layer: LayerId): number {
@@ -357,8 +419,11 @@ export class CuePlanner {
         const velL = worldToListener(basis, s.vel);
 
         const requests: Omit<VoicePlan, 'slot'>[] = [];
+        let freeWay: FreeWay | null = null;
         if (this.on.has('safety')) {
             for (const h of scene.hazards) requests.push(this.hazardVoice(h, velL, `safety:${h.sector}`, PRIORITY.hazard - h.rank));
+            freeWay = this.freeWayNow(input, frame);
+            if (freeWay !== null) requests.push(this.freeVoice(freeWay.side, `free:${freeWay.side}`, PRIORITY.free));
         }
         if (this.on.has('target') && input.target !== null) requests.push(this.targetVoice(input.target, s, basis));
         if (this.on.has('shape')) {
@@ -370,7 +435,7 @@ export class CuePlanner {
         }
         // previews (glossary, lesson narration) sound whatever layers the lesson has on
         this.previews = this.previews.filter((p) => t < p.t0 + p.durS * 1000 && t >= p.t0 - 1);
-        let height: HeightPlan | null = this.on.has('height') ? this.heightPlan(s.pos[1] - input.floorY) : null;
+        let height: HeightPlan | null = this.on.has('height') ? this.heightPlan(input) : null;
         let speed: SpeedPlan | null = this.on.has('speed') ? this.speedPlan(length(s.vel)) : null;
         let room: RoomPlan | null = this.on.has('room') ? this.roomPlan(openness(scene.meanFreeDistanceM, { opennessFullM: theme.layers.room.params['opennessFullM'] as number })) : null;
         for (const p of this.previews) {
@@ -400,14 +465,73 @@ export class CuePlanner {
             if (n !== null && n !== undefined && n.endT <= t) this.staticSlots[i] = null;
         }
         const cues = this.cues(voices, height, speed, room);
-        return { t, scene, voices, dropped: alloc.dropped, height, speed, room, urgent, cues };
+        return { t, scene, voices, dropped: alloc.dropped, height, speed, room, urgent, cues, freeWay };
+    }
+
+    /** The free way now, with a short hold so the chime does not stutter as the probes pass the obstacle's edge. */
+    private freeWayNow(input: SonicFrameInput, frame: SonicPrefs['listenerFrame']): FreeWay | null {
+        const t = input.sample.t;
+        if (this.freeUntil > t + FREE_HOLD_MS) this.freeUntil = t; // the clock went back (a seek)
+        const found = findFreeWay(input.sample, input.world, frame, { bodyRadiusM: this.sampler.config.bodyRadiusM, prefer: this.freeSide });
+        if (found !== null) {
+            this.freeSide = found.side;
+            this.freeUntil = t + FREE_HOLD_MS;
+            this.freeLast = found;
+            return found;
+        }
+        if (this.freeSide !== null && t < this.freeUntil) return this.freeLast;
+        this.freeSide = null;
+        this.freeLast = null;
+        return null;
+    }
+
+    /**
+     * The open-way chime from a side (review m2): two quick notes on the scale whose contour tells the way with no
+     * note to compare against: two equal notes from the left or the right; from ahead a rising pair for a way above
+     * (starting three steps over the side's note) and a falling pair for one below (ending three steps under it),
+     * turned over with the polarity as the height tone is.
+     */
+    private freeVoice(side: FreeSide, key: string, priority: number): Omit<VoicePlan, 'slot'> {
+        const theme = this.effectiveTheme;
+        const p = theme.layers.safety.params as Record<string, number>;
+        const toward = side === 'up' ? 1 : side === 'down' ? -1 : 0;
+        const move = this.prefsValue.heightPolarity === 'up-higher' ? toward : -toward;
+        const base = (p['freeStep'] as number | undefined) ?? 13;
+        const start = move > 0 ? FREE_ELEVATION_STEPS : move < 0 ? 2 - FREE_ELEVATION_STEPS : 0;
+        const lo = note(theme.scale, base, this.pitch('safety'), start);
+        const hi = note(theme.scale, lo.index, 2 * move);
+        const period = ((p['freePeriodMs'] as number | undefined) ?? 600) / 1000;
+        return {
+            key,
+            cue: 'safety.free',
+            layer: 'safety',
+            priority,
+            dir: FREE_DIRS[side],
+            distance: 1,
+            timbre: NOTE_TIMBRE[theme.layers.target.timbre],
+            noteIndex: lo.index,
+            hz: lo.hz,
+            periodS: period,
+            noteS: 0.16,
+            gainDb: -4,
+            lowpassHz: 12000,
+            reverbSend: 0.12,
+            ildDb: 0,
+            dopplerCents: 0,
+            rough: 0,
+            roughHz: 0,
+            beatHz: 0,
+            beatDepth: 0,
+            trace: null,
+            harmonyHz: hi.hz
+        };
     }
 
     private cues(voices: readonly VoicePlan[], height: HeightPlan | null, speed: SpeedPlan | null, room: RoomPlan | null): ActiveCue[] {
         const out: ActiveCue[] = [];
         for (const v of voices) {
             out.push({
-                id: v.key.startsWith('safety:') ? `${v.cue}:${v.key.slice(7)}` : v.key.startsWith('preview:') ? `${v.cue}:preview` : v.cue,
+                id: v.key.startsWith('safety:') ? `${v.cue}:${v.key.slice(7)}` : v.key.startsWith('free:') ? `${v.cue}:${v.key.slice(5)}` : v.key.startsWith('preview:') ? `${v.cue}:preview` : v.cue,
                 layer: v.layer,
                 dir: v.dir,
                 distance: v.distance,
@@ -417,6 +541,7 @@ export class CuePlanner {
             });
         }
         if (height !== null) out.push({ id: height.rough > 0 ? 'height.rough' : 'height.tone', layer: 'height', dir: null, distance: null, rateHz: null, pitchHz: height.hz, rough: height.rough });
+        if (height !== null && height.target !== null) out.push({ id: 'height.target', layer: 'height', dir: null, distance: null, rateHz: null, pitchHz: height.target.hz, rough: 0 });
         if (speed !== null && speed.tempoHz > 0) out.push({ id: 'speed.tick', layer: 'speed', dir: null, distance: null, rateHz: speed.tempoHz, pitchHz: speed.hz, rough: 0 });
         if (room !== null) out.push({ id: 'room.bed', layer: 'room', dir: null, distance: null, rateHz: null, pitchHz: room.hz, rough: 0 });
         for (const n of this.notes) out.push({ id: n.cue, layer: n.layer, dir: n.dir, distance: null, rateHz: null, pitchHz: n.hz, rough: 0 });
@@ -429,8 +554,8 @@ export class CuePlanner {
         const step = h.material === 'wall' ? p['pitchWallStep'] : h.material === 'floor' ? p['pitchFloorStep'] : h.material === 'ceiling' ? p['pitchCeilingStep'] : p['pitchObstacleStep'];
         const n = note(theme.scale, step as number, this.pitch('safety'));
         const rule: DistanceRule = { nearHz: p['lowpassNearHz'] as number, farHz: p['lowpassFarHz'] as number, farM: p['distFarM'] as number, sendNear: 0.04, sendFar: p['reverbSendFar'] as number, ildBoostDb: p['ildBoostDb'] as number };
-        const dc = distanceCode(h.distance, rule);
-        const periodMs = pulsePeriodMs(h.ttcS, h.distance, { periodNearMs: p['periodNearMs'] as number, periodFarMs: p['periodFarMs'] as number, ttcFarS: p['ttcFarS'] as number, distFarM: p['distFarM'] as number });
+        const dc = hazardDistanceCode(h.distance, h.ttcS, rule);
+        const periodMs = pulsePeriodMs(h.ttcS, h.distance, { periodNearMs: p['periodNearMs'] as number, periodFarMs: p['periodFarMs'] as number, ttcFarS: p['ttcFarS'] as number, distM: (p['pulseDistM'] as number | undefined) ?? 2 });
         return {
             key,
             cue: `safety.${h.material}`,
@@ -552,22 +677,72 @@ export class CuePlanner {
         };
     }
 
-    private heightPlan(heightM: number): HeightPlan {
-        const theme = this.effectiveTheme;
-        const p = theme.layers.height.params as Record<string, number>;
-        const ht = heightTone(heightM, this.layersValue.heightBandM, { baseStep: p['baseStep'] as number, maxStep: p['maxStep'] as number, metresPerStep: p['metresPerStep'] as number, roughDepth: p['roughDepth'] as number, bandSoftM: p['bandSoftM'] as number }, this.prefsValue.heightPolarity);
-        const n = note(theme.scale, ht.noteIndex, this.pitch('height'));
-        return { noteIndex: n.index, hz: n.hz, rough: ht.rough, roughHz: p['roughHz'] as number, glideS: (p['glideMs'] as number) / 1000, timbre: theme.layers.height.timbre };
+    private heightRule(): HeightToneRule {
+        const p = this.effectiveTheme.layers.height.params as Record<string, number>;
+        return {
+            baseStep: p['baseStep'] as number,
+            maxStep: p['maxStep'] as number,
+            metresPerStep: p['metresPerStep'] as number,
+            roughDepth: p['roughDepth'] as number,
+            bandSoftM: p['bandSoftM'] as number,
+            targetDb: (p['targetDb'] as number | undefined) ?? 0,
+            targetPeriodS: ((p['targetPeriodMs'] as number | undefined) ?? 1250) / 1000,
+            // a note never takes more than a third of its period, so the height tone is heard between two notes and the
+            // engine's swaps around them never run into each other (a theme of the Sound Lab may set any pair in range)
+            targetNoteS: Math.min((p['targetNoteMs'] as number | undefined) ?? 280, ((p['targetPeriodMs'] as number | undefined) ?? 1250) / 3) / 1000
+        };
     }
 
+    /** The mapping's alignment: once per world, band, floor and step size (the lesson's reference height on a note). */
+    private alignment(world: SonicWorld | null, floorY: number, metresPerStep: number): number {
+        const band = this.layersValue.heightBandM;
+        const a = this.align;
+        if (a !== null && a.world === world && a.band === band && a.floorY === floorY && a.metresPerStep === metresPerStep) return a.offset;
+        const offset = alignOffset(referenceHeightM(world, band, floorY), metresPerStep);
+        this.align = { world, band, floorY, metresPerStep, offset };
+        return offset;
+    }
+
+    private heightPlan(input: SonicFrameInput): HeightPlan {
+        const theme = this.effectiveTheme;
+        const p = theme.layers.height.params as Record<string, number>;
+        const rule = this.heightRule();
+        const band = this.layersValue.heightBandM;
+        const heightM = input.sample.pos[1] - input.floorY;
+        const targetM = this.prefsValue.heightTarget === false ? null : targetHeightM(input.target, band, input.floorY);
+        const offset = this.alignment(input.world, input.floorY, rule.metresPerStep);
+        const tones = heightTones(heightM, targetM, band, rule, theme.scale, this.prefsValue.heightPolarity, offset, this.pitch('height'));
+        const position = this.steppedHeight ? Math.round(tones.position) : tones.position;
+        const hz = this.steppedHeight ? noteHz(theme.scale, position) : tones.hz;
+        return { noteIndex: Math.round(tones.position), position, hz, heightM, rough: tones.rough, roughHz: p['roughHz'] as number, glideS: (p['glideMs'] as number) / 1000, timbre: theme.layers.height.timbre, target: tones.target };
+    }
+
+    /**
+     * The height cues of the glossary: 'height.tone' glides up four steps and back, 'height.rough' holds a
+     * rough tone, 'height.target' sounds the target note four steps up (at once, then about once a second)
+     * while the height tone glides up to its pitch and stays there for the last fifth.
+     */
     private previewHeight(cue: CueId, u: number): HeightPlan {
         const theme = this.effectiveTheme;
         const p = theme.layers.height.params as Record<string, number>;
+        const rule = this.heightRule();
         const base = p['baseStep'] as number;
-        const rough = cue === 'height.rough' ? (p['roughDepth'] as number) : 0;
-        const index = cue === 'height.rough' ? base + 3 : base + Math.round(4 * tri(u));
-        const n = note(theme.scale, index, this.pitch('height'));
-        return { noteIndex: n.index, hz: n.hz, rough, roughHz: p['roughHz'] as number, glideS: (p['glideMs'] as number) / 1000, timbre: theme.layers.height.timbre };
+        const shift = this.pitch('height');
+        const top = theme.scale.steps.length * theme.scale.octaves;
+        const place = (x: number): number => Math.min(Math.max(x + shift, 0), top);
+        const common = { roughHz: p['roughHz'] as number, glideS: (p['glideMs'] as number) / 1000, timbre: theme.layers.height.timbre };
+        if (cue === 'height.rough') {
+            const x = place(Math.round(base + 3));
+            return { ...common, noteIndex: x, position: x, hz: noteHz(theme.scale, x), heightM: 3 * rule.metresPerStep, rough: p['roughDepth'] as number, target: null };
+        }
+        if (cue === 'height.target') {
+            const t = place(Math.round(base + 4));
+            const x = place(Math.round(base + 4) - 2.5 * Math.max(0, 1 - u / 0.8) ** 2);
+            const target: TargetTone = { heightM: 4 * rule.metresPerStep, position: t, hz: noteHz(theme.scale, t), noteIndex: t, onScale: true, gainDb: rule.targetDb, periodS: rule.targetPeriodS, noteS: rule.targetNoteS };
+            return { ...common, noteIndex: Math.round(x), position: x, hz: x === t ? target.hz : noteHzAt(theme.scale, x), heightM: (x - base) * rule.metresPerStep, rough: 0, target };
+        }
+        const x = place(base + 4 * tri(u));
+        return { ...common, noteIndex: Math.round(x), position: x, hz: noteHzAt(theme.scale, x), heightM: (x - base) * rule.metresPerStep, rough: 0, target: null };
     }
 
     private speedPlan(speedMps: number): SpeedPlan {
@@ -599,10 +774,17 @@ export class CuePlanner {
         const priority = PRIORITY.preview;
         const [layer] = p.cue.split('.') as [string];
         if (layer === 'safety') {
+            if (p.cue === 'safety.free') {
+                // from the side the preview names (up and down by its height); with no direction, all four in turn
+                const still = Math.hypot(p.dir[0], p.dir[1], p.dir[2]) < 1e-9;
+                const side: FreeSide = still ? (['left', 'right', 'up', 'down'] as const)[Math.min(3, Math.floor(u * 4))] : p.dir[1] > 0.5 ? 'up' : p.dir[1] < -0.5 ? 'down' : p.dir[0] < 0 ? 'left' : 'right';
+                return this.freeVoice(side, `${key}:${side}`, priority);
+            }
             const material = p.cue.slice(7) as MaterialClass;
             if (!(material in MATERIAL_DIR)) return null;
-            // an approach from 8 m to 0.8 m at an even 3 m/s of closing: the pulses quicken as in flight
-            const distance = expLerp(8, 0.8, u);
+            // an approach from 8 m to 0.8 m at an even 3 m/s of closing: the pulses quicken as in flight (a short
+            // play of a repeat-cue runs from 3 m to 0.6 m, so its second also has several pulses)
+            const distance = p.durS < 1.5 ? expLerp(3, 0.6, u) : expLerp(8, 0.8, u);
             const closing = 3;
             return this.hazardVoice({ sector: 'front', distance, ttcS: distance / closing, dir: p.dir, material }, scale(p.dir, closing), key, priority);
         }
@@ -635,8 +817,9 @@ export class CuePlanner {
     /**
      * A one-off cue at page time `t`: the notes to play (and, for a continuous cue's preview, a
      * preview that the next frames sound). The planner keeps every note until it ends, for activeCues.
+     * `capS`: every note ends by then, s after `t` (a short play of a repeat-cue).
      */
-    cue(e: CueEvent, t: number = this.lastT): NotePlan[] {
+    cue(e: CueEvent, t: number = this.lastT, capS = Infinity): NotePlan[] {
         const theme = this.effectiveTheme;
         const scaleDef = theme.scale;
         const notes: Omit<NotePlan, 'key' | 'slot'>[] = [];
@@ -692,38 +875,54 @@ export class CuePlanner {
                 push('target.fanfare', 'target', PRIORITY.chime, 0.39, bright, base, 0.8, -14, null);
                 break;
             }
-            // lane s13-lessons placeholders until lane s13-sound designs them: a praise sounds as a checkpoint chime, a stage as the lap chime
-            case 'praise':
-                return this.cue({ kind: 'checkpoint' }, t).map((n) => ({ ...n, cue: 'target.checkpoint' }));
-            case 'stage':
-                return this.cue({ kind: 'lap' }, t);
-            // and flying back or through a gate's back side as the re-centre sweep
-            case 'wrong-way':
-            case 'wrong-side':
-                return this.cue({ kind: 'reset' }, t);
-            // lane s13-lessons placeholder until lane s13-sound designs it: a play of a named sound sounds as its preview, for its length
-            case 'repeat-cue':
-            case 'preview': {
+            case 'wrong-way': {
+                // "you are flying back": two falling pairs, low in the melody's register, in the safety layer's own timbre,
+                // from `dir` (the way forward: where to turn to), centred without one
+                const w = theme.layers.safety.timbre;
                 const dir = e.dir === null || e.dir === undefined ? null : normalize(e.dir);
-                const oneOff: Readonly<Record<string, CueEvent>> = {
-                    'safety.touch': { kind: 'touch', material: 'wall', dir, speed: 2 },
-                    'safety.reset': { kind: 'reset' },
-                    'target.note': { kind: 'gate', index: 0, of: 3 },
-                    'target.lap': { kind: 'lap' },
-                    'target.checkpoint': { kind: 'checkpoint' },
-                    'target.fanfare': { kind: 'fanfare' }
-                };
-                const event = oneOff[e.cue];
-                if (event !== undefined) return this.cue(event, t).map((n) => ({ ...n, cue: e.cue }));
-                const material = e.cue.startsWith('safety.') ? (e.cue.slice(7) as MaterialClass) : null;
-                const fallback = material !== null && material in MATERIAL_DIR ? MATERIAL_DIR[material] : FRONT;
-                this.previews.push({ key: `preview:${++this.previewCount}`, cue: e.cue, dir: dir ?? fallback, t0: t, durS: e.kind === 'repeat-cue' ? (e.durS ?? PREVIEW_S) : PREVIEW_S });
-                return [];
+                for (const at of [0, 0.34]) {
+                    push('safety.wrong-way', 'safety', PRIORITY.chime, at, w, base + 2, 0.12, -9, dir);
+                    push('safety.wrong-way', 'safety', PRIORITY.chime, at + 0.13, w, base, 0.16, -9, dir);
+                }
+                break;
             }
+            case 'wrong-side': {
+                // "that ring was passed from the wrong side": from the gate notes' register down by two big steps to the root
+                // below, from `dir` (where the gate is), centred without one
+                const w = theme.layers.safety.timbre;
+                const dir = e.dir === null || e.dir === undefined ? null : normalize(e.dir);
+                push('safety.wrong-side', 'safety', PRIORITY.chime, 0, w, base + 5, 0.11, -9, dir);
+                push('safety.wrong-side', 'safety', PRIORITY.chime, 0.11, w, base + 3, 0.11, -9, dir);
+                push('safety.wrong-side', 'safety', PRIORITY.chime, 0.22, w, base, 0.32, -8, dir);
+                break;
+            }
+            case 'praise': {
+                // a short bright rise, shorter and lighter than the fanfare; one of three figures in turn
+                const figure = PRAISE_FIGURES[this.praiseCount++ % PRAISE_FIGURES.length] as readonly number[];
+                figure.forEach((k, i) => push('target.praise', 'target', PRIORITY.chime, 0.08 * i, bright, base + 5 + k, i === figure.length - 1 ? 0.3 : 0.1, i === figure.length - 1 ? -7 : -9, null));
+                break;
+            }
+            case 'stage': {
+                // a stage of a long course: a run of five notes, one step higher with each stage (four at most), a soft root under its end
+                const lift = Math.min(Math.max(Math.round(e.stage ?? 1), 1), 5) - 1;
+                const run = [0, 2, 4, 5, 7];
+                run.forEach((k, i) => push('target.stage', 'target', PRIORITY.chime, 0.09 * i, bright, base + k + lift, i === run.length - 1 ? 0.6 : 0.14, i === run.length - 1 ? -6 : -9, null));
+                push('target.stage', 'target', PRIORITY.chime, 0.36, bright, base + lift, 0.6, -16, null);
+                break;
+            }
+            case 'repeat-cue': {
+                const [lo, hi] = REPEAT_PLAY_RANGE_S;
+                const durS = e.durS !== undefined && Number.isFinite(e.durS) ? Math.min(Math.max(e.durS, lo), hi) : REPEAT_PLAY_DEFAULT_S;
+                return this.previewCue(e.cue, e.dir ?? null, t, durS, true);
+            }
+            case 'preview':
+                return this.previewCue(e.cue, e.dir, t, PREVIEW_S);
         }
         // static slots for spatial notes: the first free one, else steal the least important or the oldest
         const out: NotePlan[] = [];
-        for (const n of notes) {
+        for (const raw of notes) {
+            if (raw.atS >= capS) continue;
+            const n = raw.atS + raw.durS > capS ? { ...raw, durS: Math.max(0.03, capS - raw.atS) } : raw;
             const key = `note:${++this.noteCount}`;
             const endT = t + (n.atS + n.durS) * 1000;
             let slot: number | null = null;
@@ -745,6 +944,34 @@ export class CuePlanner {
             out.push({ ...n, key, slot });
         }
         return out;
+    }
+
+    /**
+     * A cue's own sound as the glossary plays it, for `durS`: the notes of a one-off cue at once (cut at `durS` for
+     * a play of a 'repeat-cue'), or a preview of a continuous one that the next frames sound. An unknown cue
+     * sounds nothing.
+     */
+    private previewCue(cue: CueId, rawDir: Vec3 | null, t: number, durS: number, cut = false): NotePlan[] {
+        const dir = rawDir === null ? null : normalize(rawDir);
+        const oneOff: Readonly<Record<string, CueEvent>> = {
+            'safety.touch': { kind: 'touch', material: 'wall', dir, speed: 2 },
+            'safety.reset': { kind: 'reset' },
+            'safety.wrong-way': { kind: 'wrong-way', dir },
+            'safety.wrong-side': { kind: 'wrong-side', dir },
+            'target.note': { kind: 'gate', index: 0, of: 3 },
+            'target.lap': { kind: 'lap' },
+            'target.checkpoint': { kind: 'checkpoint' },
+            'target.fanfare': { kind: 'fanfare' },
+            'target.praise': { kind: 'praise' },
+            'target.stage': { kind: 'stage', stage: 1 }
+        };
+        const event = oneOff[cue];
+        if (event !== undefined) return this.cue(event, t, cut ? durS : Infinity).map((n) => ({ ...n, cue }));
+        const material = cue.startsWith('safety.') ? (cue.slice(7) as MaterialClass) : null;
+        // the open-way chime with no direction plays all four sides in turn: a zero vector says so
+        const fallback: Vec3 = cue === 'safety.free' ? [0, 0, 0] : material !== null && material in MATERIAL_DIR ? MATERIAL_DIR[material] : FRONT;
+        this.previews.push({ key: `preview:${++this.previewCount}`, cue, dir: dir ?? fallback, t0: t, durS });
+        return [];
     }
 
     /** How many previews are sounding at page time `t`. */

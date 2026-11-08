@@ -1,0 +1,11 @@
+# Shramko Virtual Listener, first measuring rig (docs/design/virtual-listener.md, VL-0 and a cheap part of
+# VL-2 and VL-6). Python 3.11. Install into its own environment on a data disk, for example:
+#   python -m venv <venv> && <venv>/Scripts/python -m pip install -r tools/listen/requirements.txt
+numpy==2.4.6
+scipy==1.17.1
+soundfile==0.14.0
+pyloudnorm==0.2.0
+# their dependencies, as resolved on 2026-11-08
+cffi==2.1.1
+pycparser==3.12
+typing_extensions==4.16.0

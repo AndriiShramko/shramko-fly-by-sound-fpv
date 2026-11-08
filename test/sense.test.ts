@@ -24,6 +24,12 @@ import {
 
 const DEG = Math.PI / 180;
 
+/**
+ * The enter distances of v0.12 (a wall ahead from 6 m). The default is 0.8 m in every sector since v0.13
+ * (test/ttc.test.ts); the hysteresis and ranking tests below keep their numbers by naming these.
+ */
+const V012_ENTER: Partial<Record<SectorId, number>> = { front: 6, 'front-left': 5, 'front-right': 5, 'front-up': 3, 'front-down': 1.8, left: 4, right: 4, back: 3, up: 1.5, down: 1.5 };
+
 function flight(over: Partial<FlightSample> = {}): FlightSample {
     return { t: 0, tick: 0, pos: [0, 0, 0], vel: [0, 0, 0], quat: [1, 0, 0, 0], rate: [0, 0, 0], yawDeg: 0, pitchDeg: 0, rollDeg: 0, sticks: [0, 0, 0, 0], armed: true, touched: false, paused: false, ...over };
 }
@@ -215,7 +221,7 @@ describe('a craft in the hall, in closed form', () => {
         const sampler = createSceneSampler();
         const far = sampler.sample(flight({ pos: [0, 5, 22], t: 0 }), pillars);
         expect(far.hazards).toEqual([]); // 14 m away and not moving
-        const near = sampler.sample(flight({ pos: [0, 5, 10], t: 20 }), pillars); // 2.5 m from the pillar's axis
+        const near = sampler.sample(flight({ pos: [0, 5, 10], vel: [0, 0, -1.5], t: 20 }), pillars); // 2.5 m from the pillar's axis, closing: 1.6 s
         const front = near.hazards.find((h) => h.sector === 'front')!;
         expect(front).toBeDefined();
         expect(front.objectId).toBe('pillar-1');
@@ -335,7 +341,7 @@ describe('who becomes a hazard', () => {
     const none = { bodyRadiusM: 0 };
 
     it('near and still: a distance alone is enough (hovering under a ceiling)', () => {
-        const s = createSceneSampler(none).sample(flight(), sectorWorld({ up: 1.0 }));
+        const s = createSceneSampler(none).sample(flight(), sectorWorld({ up: 0.6 }));
         expect(s.hazards.map((h) => h.sector)).toEqual(['up']);
         expect(s.hazards[0]!.ttcS).toBeNull();
         expect(s.hazards[0]!.material).toBe('wall'); // the scripted material
@@ -364,7 +370,7 @@ describe('who becomes a hazard', () => {
 });
 
 describe('at most three hazard voices, by priority', () => {
-    const all: Partial<Record<SectorId, number>> = Object.fromEntries(SECTORS.map((id) => [id, 1])) as Partial<Record<SectorId, number>>;
+    const all: Partial<Record<SectorId, number>> = Object.fromEntries(SECTORS.map((id) => [id, 0.5])) as Partial<Record<SectorId, number>>;
 
     it('ten hazards, three voices: the most urgent, ahead before behind', () => {
         const sampler = createSceneSampler({ bodyRadiusM: 0 });
@@ -376,9 +382,9 @@ describe('at most three hazard voices, by priority', () => {
     });
 
     it('priority weights put ahead over behind at the same distance', () => {
-        const s = createSceneSampler({ bodyRadiusM: 0, maxVoices: 2 }).sample(flight(), sectorWorld({ front: 3, back: 3 }));
+        const s = createSceneSampler({ bodyRadiusM: 0, maxVoices: 2 }).sample(flight(), sectorWorld({ front: 0.5, back: 0.5 }));
         expect(s.hazards.map((h) => h.sector)).toEqual(['front', 'back']);
-        const flat = createSceneSampler({ bodyRadiusM: 0, maxVoices: 1, enterDistM: { back: 6 }, weight: { back: 1 } }).sample(flight(), sectorWorld({ front: 3, back: 3 }));
+        const flat = createSceneSampler({ bodyRadiusM: 0, maxVoices: 1, weight: { back: 1 } }).sample(flight(), sectorWorld({ front: 0.5, back: 0.5 }));
         expect(flat.hazards).toHaveLength(1);
         expect(flat.hazards[0]!.sector).toBe('front'); // tie broken by sector order
     });
@@ -401,7 +407,7 @@ describe('at most three hazard voices, by priority', () => {
 });
 
 describe('hysteresis: voices do not flicker', () => {
-    const none = { bodyRadiusM: 0 };
+    const none = { bodyRadiusM: 0, enterDistM: V012_ENTER };
 
     /** the front sector's distance each frame, 20 ms apart; returns whether a front hazard sounded in each frame */
     function run(distances: number[], options: Parameters<typeof createSceneSampler>[0], dtMs = 20): boolean[] {
@@ -468,7 +474,7 @@ describe('hysteresis: voices do not flicker', () => {
 
 describe('a voice already sounding keeps its place against a near-equal newcomer', () => {
     // front urgency = 6 / d, left urgency = 4 / d * 0.8; one voice only
-    const config = { bodyRadiusM: 0, maxVoices: 1 };
+    const config = { bodyRadiusM: 0, maxVoices: 1, enterDistM: V012_ENTER };
     const frame = (sampler: ReturnType<typeof createSceneSampler>, t: number, front: number, left: number): SectorId =>
         sampler.sample(flight({ t }), sectorWorld({ front, left })).hazards[0]!.sector;
     const leftAt = (urgency: number): number => (4 * 0.8) / urgency; // the left distance that gives this urgency

@@ -1,8 +1,13 @@
 // Pitch in Fly by Sound lives on one pentatonic scale (spec principle 3): every pitched note is a
 // note of the theme's scale, so any mix of cues stays consonant. A note is named by its INDEX in
 // the scale: 0 is the root, 1 the next degree up, and `steps.length` the root an octave higher.
-// Everything that moves a pitch, the height layer, the melody, the pilot's per-layer pitch offset,
-// moves it by whole scale steps, so it never leaves the scale.
+// Everything that moves a pitch, the melody, the pilot's per-layer pitch offset, moves it by whole
+// scale steps, so it never leaves the scale.
+//
+// One exception (v0.13, M41-12): the height tone glides. Its pitch is a POSITION on the scale, a
+// note index with a fraction (`noteHzAt`): at a whole position it is that note exactly, between two
+// notes it slides evenly in semitones from one to the next. The target tone it is compared with is
+// a whole note again.
 import type { ThemeDef } from '../contract';
 
 export type Scale = ThemeDef['scale'];
@@ -22,6 +27,27 @@ export function noteSemitones(scale: Scale, index: number): number {
 /** Frequency of note `index`; an index beyond the scale is held at its first or last note. */
 export function noteHz(scale: Scale, index: number): number {
     return scale.rootHz * 2 ** (noteSemitones(scale, index) / 12);
+}
+
+/**
+ * Semitones above the root of a POSITION on the scale (a note index with a fraction): at a whole
+ * position the note's own semitones, between two notes linear in semitones, held at the ends. A
+ * continuous function of the position (the height glide, M41-12).
+ */
+export function noteSemitonesAt(scale: Scale, position: number): number {
+    const top = scaleSize(scale) - 1;
+    const x = Number.isFinite(position) ? Math.min(Math.max(position, 0), top) : 0;
+    const lo = Math.floor(x);
+    const f = x - lo;
+    const a = noteSemitones(scale, lo);
+    return f <= 0 ? a : a + f * (noteSemitones(scale, lo + 1) - a);
+}
+
+/** Frequency of a position on the scale (noteSemitonesAt): exactly noteHz at a whole position. */
+export function noteHzAt(scale: Scale, position: number): number {
+    const x = Number.isFinite(position) ? position : 0;
+    if (Number.isInteger(x)) return noteHz(scale, x);
+    return scale.rootHz * 2 ** (noteSemitonesAt(scale, x) / 12);
 }
 
 /** Every note of the scale, lowest first. */
@@ -69,13 +95,28 @@ export interface HeightMapping {
 }
 
 /**
- * The note of the height tone at `heightM` above the floor. Up-higher: the base note at the floor,
- * one scale step up per `metresPerStep`, held at `maxStep`. Up-lower: the same range turned over,
- * the top note at the floor and one step down per `metresPerStep`.
+ * The NEAREST note of the height mapping at `heightM` above the floor, rounded to a whole step: the
+ * stepped height tone of v0.12. Up-higher: the base note at the floor, one scale step up per
+ * `metresPerStep`, held at `maxStep`. Up-lower: the same range turned over. Since v0.13 the height
+ * tone glides (heightPosition); this stays as the nearest note and as the negative control of the
+ * glide's continuity test.
  */
 export function heightNoteIndex(heightM: number, m: HeightMapping): number {
     const range = Math.max(0, m.maxStep - m.baseStep);
     const raw = Number.isFinite(heightM) ? Math.round(heightM / m.metresPerStep) : 0;
+    const step = Math.min(Math.max(raw, 0), range);
+    return m.polarity === 'up-higher' ? m.baseStep + step : m.maxStep - step;
+}
+
+/**
+ * The position on the scale (a note index with a fraction) of the height tone at `heightM` above the
+ * floor: one scale step per `metresPerStep`, continuous, never rounded (M41-12). `offsetSteps` moves
+ * the whole mapping (the lesson's alignment of its target height on a note, |offset| <= 0.5). Held
+ * to [baseStep, maxStep]; up-lower turns the range over.
+ */
+export function heightPosition(heightM: number, m: HeightMapping, offsetSteps = 0): number {
+    const range = Math.max(0, m.maxStep - m.baseStep);
+    const raw = (Number.isFinite(heightM) ? heightM / m.metresPerStep : 0) + (Number.isFinite(offsetSteps) ? offsetSteps : 0);
     const step = Math.min(Math.max(raw, 0), range);
     return m.polarity === 'up-higher' ? m.baseStep + step : m.maxStep - step;
 }

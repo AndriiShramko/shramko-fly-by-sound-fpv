@@ -27,7 +27,7 @@ function set(obj: unknown, key: string, value: unknown): unknown {
 describe('the defaults', () => {
     const d = defaultPrefs();
 
-    it('are what the spec says: soft theme, not calm, up is higher, the app speaks, captions on, motors silent, the full path, the heading frame', () => {
+    it('are what the spec says: soft theme, not calm, up is higher, the app speaks, captions on, the motor on (v0.13, M41-16) at its calibrated level, the full path, the heading frame, the target tone on', () => {
         expect(d).toEqual({
             format: FORMATS.prefs,
             theme: 'soft',
@@ -38,10 +38,23 @@ describe('the defaults', () => {
             selfVoice: true,
             speechRate: 1,
             captions: true,
-            motorSound: false,
+            motorSound: true,
             path: 'full',
-            listenerFrame: 'heading'
+            listenerFrame: 'heading',
+            heightTarget: true,
+            motorGainDb: 0
         });
+    });
+
+    it("the pilot's motor level (review m3): -24 to 6 dB, optional (a document without it is valid), a bad one refused", () => {
+        expect(validatePrefs({ ...d, motorGainDb: -12 }).ok).toBe(true);
+        const { motorGainDb: _gone, ...without } = d;
+        expect(validatePrefs(without).ok).toBe(true);
+        expect(validatePrefs({ ...d, motorGainDb: 9 }).ok).toBe(false);
+        expect(validatePrefs({ ...d, motorGainDb: 'loud' }).ok).toBe(false);
+        const read = readPrefs({ ...d, motorGainDb: 40 });
+        expect(read.prefs.motorGainDb).toBe(0);
+        expect(read.issues.map((i) => i.path)).toEqual(['motorGainDb']);
     });
 
     it('are valid, and fresh every time', () => {
@@ -141,6 +154,27 @@ describe('the lenient reader never fails and never returns an invalid value', ()
         expect(prefs).not.toHaveProperty('volume');
         expect(validatePrefs(prefs).ok).toBe(true);
         expect(issues.map((i) => i.path).sort()).toEqual(['captions', 'layerGainDb.bass', 'layerGainDb.height', 'speechRate', 'volume']);
+    });
+
+    it('a document saved before v0.13 gets the motor on: its false was the v0.12 default; true stays, and from v0.13 on every choice is kept', () => {
+        // what the simulator saved in v0.12 after any change: the whole document, motorSound false, no heightTarget
+        const v012 = { ...defaultPrefs(), theme: 'clear', motorSound: false } as Record<string, unknown>;
+        delete v012['heightTarget'];
+        const old = readPrefs(v012);
+        expect(old.prefs.motorSound).toBe(true);
+        expect(old.prefs.theme).toBe('clear');
+        expect(old.prefs.heightTarget).toBe(true);
+        expect(old.issues.map((i) => i.path)).toEqual(['motorSound']);
+        expect(validatePrefs(old.prefs).ok).toBe(true);
+        expect(readPrefs({ ...v012, motorSound: true }).prefs.motorSound).toBe(true);
+        // control: a document saved by v0.13 (it carries heightTarget) keeps the pilot's off
+        const chosen = readPrefs({ ...defaultPrefs(), motorSound: false });
+        expect(chosen.prefs.motorSound).toBe(false);
+        expect(chosen.issues).toEqual([]);
+        // the strict validator (a session's manifest) never changes a recorded value
+        const strict = validatePrefs(v012);
+        expect(strict.ok).toBe(true);
+        if (strict.ok) expect(strict.value.motorSound).toBe(false);
     });
 
     it('another format version gives the defaults, and says so', () => {

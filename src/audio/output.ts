@@ -26,6 +26,8 @@ export interface OutputOptions {
     readonly limiter?: boolean;
     /** false: the fade jumps to full at once (only for the proofs' negative control) */
     readonly fade?: boolean;
+    /** where the chain ends instead of the context's destination (the virtual listener's rig) */
+    readonly destination?: AudioNode;
 }
 
 export function createOutputChain(ctx: BaseAudioContext, ceilingDb: number, options: OutputOptions = {}): OutputChain {
@@ -58,7 +60,7 @@ export function createOutputChain(ctx: BaseAudioContext, ceilingDb: number, opti
         clip.connect(fade);
         nodes.push(comp, trim, clip);
     }
-    fade.connect(ctx.destination);
+    fade.connect(options.destination ?? ctx.destination);
 
     return {
         master,

@@ -41,7 +41,9 @@
     "hazardVoices": 0,
     "heightBandM": null,
     "on": [
+      "height",
       "target",
+      "room",
       "voice"
     ]
   },

@@ -314,11 +314,22 @@ export function playNote(kit: SynthKit, dest: AudioNode, spec: NoteSpec): number
 
 // ------------------------------------------------------------------ continuous voices
 
+/** How a ToneVoice is built beyond its timbre. */
+export interface ToneOptions {
+    /** 'pad' or 'sine' family whatever the timbre says (the height tones are always 'sine', M41-12) */
+    readonly family?: 'pad' | 'sine';
+    /** false: no sub-octave (the target tone: one partial that beats against the height tone and nothing else) */
+    readonly sub?: boolean;
+}
+
 /**
- * A tone that holds and glides: the height tone, the shape trace, the room's drone. A pad is two
- * triangles over a sub-octave through a low-pass, the second 0.3 Hz above the first: a slow swirl
- * at every pitch, never a beating that could pass for the off-course cue; the other timbres are a
- * rounder sine over a sub-octave. The level is set by the caller (with ramps, never jumps).
+ * A tone that holds and glides: the height tone and its target tone, the shape trace, the room's
+ * drone. A pad is two triangles over a sub-octave through a low-pass, the second 0.3 Hz above the
+ * first: a slow swirl at every pitch, never a beating that could pass for the off-course cue; the
+ * other timbres are a rounder sine over a sub-octave. The level is set by the caller (with ramps,
+ * never jumps). v0.13 (M41-10): the swirl's second triangle is a quarter of the pad, not half, so the
+ * swirl dips 6 dB, not to the sub-octave alone every 3.3 s (v0.12's soft height tone did that: a
+ * near-silence inside the band).
  */
 export class ToneVoice {
     readonly output: GainNode;
@@ -334,7 +345,7 @@ export class ToneVoice {
      * `air`: level of a breath of filtered noise (around 3.5 kHz) under the tone, for a voice that
      * must be placed in space (the shape trace); 0 for the centred tones. Needs the kit's noise.
      */
-    constructor(private readonly ctx: BaseAudioContext, timbre: Timbre, startAt: number, air = 0, noise: AudioBuffer | null = null) {
+    constructor(private readonly ctx: BaseAudioContext, timbre: Timbre, startAt: number, air = 0, noise: AudioBuffer | null = null, options: ToneOptions = {}) {
         this.output = ctx.createGain();
         this.output.gain.value = 0;
         if (air > 0 && noise !== null) {
@@ -358,11 +369,11 @@ export class ToneVoice {
         this.lp.Q.value = 0.4;
         this.lp.frequency.value = 3000;
         this.lp.connect(this.output);
-        const pad = timbre === 'pad' || timbre === 'air' || timbre === 'mallet' || timbre === 'pluck' || timbre === 'wood' || timbre === 'thud';
-        const layers: { type: OscillatorType; ratio: number; amp: number; offsetHz: number }[] = pad
+        const pad = options.family === undefined ? timbre === 'pad' || timbre === 'air' || timbre === 'mallet' || timbre === 'pluck' || timbre === 'wood' || timbre === 'thud' : options.family === 'pad';
+        const all: { type: OscillatorType; ratio: number; amp: number; offsetHz: number }[] = pad
             ? [
-                  { type: 'triangle', ratio: 1, amp: 0.5, offsetHz: 0 },
-                  { type: 'triangle', ratio: 1, amp: 0.5, offsetHz: 0.3 },
+                  { type: 'triangle', ratio: 1, amp: 0.75, offsetHz: 0 },
+                  { type: 'triangle', ratio: 1, amp: 0.25, offsetHz: 0.3 },
                   { type: 'sine', ratio: 0.5, amp: 0.35, offsetHz: 0 }
               ]
             : [
@@ -370,6 +381,7 @@ export class ToneVoice {
                   { type: 'sine', ratio: 2, amp: 0.06, offsetHz: 0 },
                   { type: 'sine', ratio: 0.5, amp: 0.25, offsetHz: 0 }
               ];
+        const layers = options.sub === false ? all.filter((l) => l.ratio !== 0.5) : all;
         for (const l of layers) {
             const osc = ctx.createOscillator();
             osc.type = l.type;
@@ -388,10 +400,14 @@ export class ToneVoice {
         this.beat.start(startAt);
     }
 
-    /** Glides to `hz` over about `glideS` from `at`; the low-pass follows (four times the note, at most 3 kHz). */
+    /**
+     * Glides to `hz` over about `glideS` from `at`; the low-pass follows (four times the note, at most 3 kHz). The
+     * first note is set at once: a voice that has none yet would glide up from the oscillator's own 440 Hz (the
+     * target tone and the room's drone swept in from there as they faded in).
+     */
     setNote(hz: number, at: number, glideS: number): void {
         if (Math.abs(hz - this.hz) < 1e-6) return;
-        const tc = Math.max(glideS, 0.001) / 3;
+        const tc = this.hz === 0 ? 0.0005 : Math.max(glideS, 0.001) / 3;
         for (const o of this.oscs) o.osc.frequency.setTargetAtTime(hz * o.ratio + o.offsetHz, at, tc);
         this.beat.frequency.setTargetAtTime(hz + this.beatHzValue, at, tc);
         this.lp.frequency.setTargetAtTime(Math.min(4 * hz, 3000), at, tc);

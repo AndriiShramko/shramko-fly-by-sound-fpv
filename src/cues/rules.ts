@@ -4,7 +4,9 @@
 // the engine (src/audio) renders them, the Node tests hold them, the replay re-derives them.
 //
 // Every pitch is a note of the theme's pentatonic scale (src/theme/pitch.ts). Doppler and glides
-// bend a note for a moment; the note itself never leaves the scale.
+// bend a note for a moment; the note itself never leaves the scale. The one exception is the height
+// tone, which glides continuously with the height (v0.13, M41-12; src/cues/height.ts); its target tone
+// is a note again.
 import type { SonicPrefs, ThemeDef, Vec3 } from '../contract';
 import { heightNoteIndex, noteHz, scaleSize, shiftNote } from '../theme/pitch';
 
@@ -26,27 +28,33 @@ export interface PulseRule {
     readonly periodNearMs: number;
     readonly periodFarMs: number;
     readonly ttcFarS: number;
-    readonly distFarM: number;
+    /** the distance scale of the pulse (theme safety.pulseDistM): see pulsePeriodMs */
+    readonly distM: number;
 }
 
 /**
  * The pulse period of a hazard, ms (spec section 2: it follows the time to collision; the distance
- * when the craft is not closing). x = ttc / ttcFarS (or distance / distFarM), held in [0, 1]; the
- * period runs from periodNearMs at x = 0 to periodFarMs at x = 1 on a logarithmic scale, so every
- * halving of the time to collision quickens the pulse by the same musical step. When the craft is
- * closing, the urgency of the distance alone is a floor (min of the two x): a wall 30 cm away never
- * sounds calmer because the craft creeps toward it.
+ * when the craft is not closing). x = ttc / ttcFarS (or distance / distM), held in [0, 1]; the period
+ * runs from periodNearMs at x = 0 to periodFarMs at x = 1 on a logarithmic scale, so every halving of
+ * the time to collision quickens the pulse by the same musical step. When the craft is closing, the
+ * urgency of the distance alone is a floor (min of the two x): a wall 30 cm away never sounds calmer
+ * because the craft creeps toward it. Since v0.13 (M41-13) the floor's scale is short (2 m in the
+ * shipped themes, was 12 m), so the time to contact, not the distance, sets the rhythm: the same time
+ * to contact pulses alike at 1 m/s and at 5 m/s.
  */
 export function pulsePeriodMs(ttcS: number | null, distanceM: number, rule: PulseRule): number {
-    const byDistance = clamp01(distanceM / rule.distFarM);
+    const byDistance = clamp01(distanceM / rule.distM);
     const x = ttcS === null ? byDistance : Math.min(clamp01(ttcS / rule.ttcFarS), byDistance);
     return expLerp(rule.periodNearMs, rule.periodFarMs, x);
 }
 
 /** A hazard counts as urgent below this time to collision, s: the safety layer then ducks the others. */
 export const URGENT_TTC_S = 1.5;
-/** ... or below this distance, m. */
-export const URGENT_DISTANCE_M = 1;
+/**
+ * ... or below this distance, m (v0.13: was 1 m; a wall heard only because it is near is urgent only
+ * when a touch is imminent, so a narrow tunnel does not keep the other layers ducked all the time).
+ */
+export const URGENT_DISTANCE_M = 0.4;
 /** How far the other layers duck while a hazard is urgent, dB. */
 export const URGENT_DUCK_DB = 9;
 
@@ -100,6 +108,30 @@ export function distanceCode(distanceM: number, rule: DistanceRule): DistanceCod
         reverbSend: lerp(rule.sendNear, rule.sendFar, x),
         ildDb: d >= ILD_RANGE_M ? 0 : rule.ildBoostDb * clamp01((ILD_RANGE_M - d) / (ILD_RANGE_M - 0.3))
     };
+}
+
+/**
+ * The speed at which a closing hazard sounds as near as it is (M41-13, urgency follows the time to
+ * contact): a hazard closing in `ttc` seconds is at least as loud and bright as one `ttc` x this many
+ * metres away, m/s. A wall 12.5 m ahead at 5 m/s (2.5 s) then sounds like one 2.5 m away at 1 m/s.
+ */
+export const LEVEL_REF_MPS = 1;
+
+/** The distance a hazard's level and brightness follow: its distance, or less when it is closing fast (LEVEL_REF_MPS). */
+export function urgencyDistanceM(distanceM: number, ttcS: number | null): number {
+    const d = Math.max(distanceM, 0);
+    return ttcS === null || !(ttcS >= 0) ? d : Math.min(d, ttcS * LEVEL_REF_MPS);
+}
+
+/**
+ * The distance code of a hazard: level and low-pass follow its urgency distance (urgencyDistanceM), the
+ * reverb send and the ILD boost its true distance, so a far wall closing fast is loud and bright but
+ * still sounds far away.
+ */
+export function hazardDistanceCode(distanceM: number, ttcS: number | null, rule: DistanceRule): DistanceCode {
+    const near = distanceCode(urgencyDistanceM(distanceM, ttcS), rule);
+    const real = distanceCode(distanceM, rule);
+    return { gainDb: near.gainDb, lowpassHz: near.lowpassHz, reverbSend: real.reverbSend, ildDb: real.ildDb };
 }
 
 export const SPEED_OF_SOUND_MPS = 343;
@@ -183,7 +215,11 @@ export function bandRoughness(heightM: number, band: readonly [number, number] |
     return depth * (softM <= 0 ? 1 : clamp01(out / softM));
 }
 
-/** The height tone: the note for the height above the lesson floor (pitch.ts heightNoteIndex) and its roughness. */
+/**
+ * The STEPPED height tone of v0.12: the nearest note for the height above the lesson floor (pitch.ts
+ * heightNoteIndex) and its roughness. The planner no longer uses it (the tone glides: height.ts
+ * heightTones); it stays as the negative control of the glide's tests.
+ */
 export function heightTone(heightM: number, band: readonly [number, number] | null, rule: HeightRule, polarity: SonicPrefs['heightPolarity']): { readonly noteIndex: number; readonly rough: number } {
     return {
         noteIndex: heightNoteIndex(heightM, { baseStep: rule.baseStep, maxStep: rule.maxStep, metresPerStep: rule.metresPerStep, polarity }),

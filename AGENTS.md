@@ -20,6 +20,8 @@ Shramko Fly by Sound: the sound engine, lessons and session format that let blin
 | `src/survey/`, `src/prefs/`, `src/util/` | Surveys, pilot preferences, helpers (sha256, rng, vectors). |
 | `lessons/`, `themes/` | Lessons and themes as JSON. |
 | `tools/` | Report tool, layout check, locale lint (run through `node tools/run-tool.mjs`). |
+| `tools/listen.ts`, `tools/listen/`, `test-audio/page/listen*.ts` | The virtual listener's first rig: scripted flights rendered through the real engine, stems, truth, measurements (`measure.py`), clip maker. |
+| `evidence/` | Audio proofs, demo check, and `evidence/listen/` (the rig's checks, keyed by the hash of their inputs). |
 | `demo/` | Stand-alone demo and Sound Lab. |
 | `test/`, `test-audio/` | Node tests; browser proofs in headless Chrome. |
 
@@ -27,14 +29,15 @@ Shramko Fly by Sound: the sound engine, lessons and session format that let blin
 
 - **Everything in `src/` except `src/audio/` stays DOM-free.** `tsconfig.core.json` checks it.
 - **The contract is shared.** Change `src/contract.ts` only together with the matching change in ShramkoGSFPV.
-- **Read theme numbers by the names in `LAYER_PARAMS`** (`src/theme/schema.ts`). Build every pitch with `noteHz`, `heightNoteIndex`, `gateMelody` or `shiftNote`, never from raw frequencies: that keeps every mix in one pentatonic scale.
+- **Read theme numbers by the names in `LAYER_PARAMS`** (`src/theme/schema.ts`). Build every pitch with `noteHz`, `gateMelody` or `shiftNote`, never from raw frequencies: that keeps every mix in one pentatonic scale. **The height tone glides, everything else stays on the scale:** the height tone is a position on the scale (`heightPosition`, `noteHzAt`; `src/cues/height.ts`), continuous in height, never rounded to a note; its target note (about once a second, the height tone giving way to it) is a note again. A theme parameter added after v0.12 is `optional` in `LAYER_PARAMS`, so older exported themes still load.
 - **Strings go into all four locales.** Lesson ids and keys live in `src/i18n/catalog.ts`; the parity test and the speech lint fail on a missing key.
 - **Generators are pinned by golden tests.** Changing a generator or its defaults needs a `GENERATOR_VERSION` bump and regenerated goldens.
 - **`tools/*.ts` do not run under plain Node** (extensionless imports): use `node tools/run-tool.mjs <tool>`, vitest or a bundler.
 - **Hosts must record the replay markers:** a `lesson open` event, `key` events with the actions of `REPLAY_KEY_ACTIONS` (resets, next, previous, repeat, next and previous lesson) before the runner's call, a `speech` event with key `speech.end` whenever they call `runner.spoken(t)` (`SPEECH_END_KEY` in `src/replay`), and `session` pause and resume events where they call `runner.pause(t)` and `runner.resume(t)`. Without them the replay check fails on times.
 - **Hosts pass `say.interrupt` to speech and send `setLayers({ on: [] })` when frames stop**, or the demo keeps sounding.
 - **Privacy is enforced in code:** the session writer throws for a minor's package that claims `send` or `speechRecognition` without a confirmed guardian. Do not weaken it.
-- **Every claim about sound needs a measurement** in `test-audio/` with a negative control (an engine broken on purpose must fail). How it feels is for human ears; say so instead of guessing.
+- **Every claim about sound needs a measurement** in `test-audio/` or `pnpm listen` with a negative control (an engine broken on purpose must fail). How it feels is for human ears; say so instead of guessing.
+- **A change of the engine, a theme or a lesson re-runs `pnpm listen`** (its evidence is keyed by the hash of every input, so stale evidence shows). It needs the Python environment of `tools/listen/requirements.txt` (`SHRAMKO_LISTEN_PY`), a cache on a data disk (`SHRAMKO_LISTEN_CACHE`), and takes the GPU lock (`GPU_LOCK`) while headless Chrome renders.
 - **Never commit** keys, `.env` files, `.cache/`, or recordings of real testers (`voice.webm`, session packages with voice). Test fixtures are synthetic.
 
 ## Checks before a PR
@@ -44,4 +47,5 @@ pnpm install --frozen-lockfile
 pnpm typecheck
 pnpm test          # Node tests
 pnpm proof:audio   # headless Chrome; set GPU_LOCK to a lock directory if your machine shares the GPU
+pnpm listen        # the virtual listener's checks (needs SHRAMKO_LISTEN_PY; renders cached in SHRAMKO_LISTEN_CACHE)
 ```

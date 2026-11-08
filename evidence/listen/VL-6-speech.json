@@ -1,0 +1,216 @@
+{
+ "format": "shramko-listen-evidence/1",
+ "key": "ca2ea78c02fbf9da990b2b5b13abb7e25a036549c6358b7b9f1c52176610c1df",
+ "inputs": {
+  "hash": "ca2ea78c02fbf9da990b2b5b13abb7e25a036549c6358b7b9f1c52176610c1df",
+  "files": 109,
+  "driver": 2,
+  "measure": 2,
+  "chrome": "156.0.8078.80",
+  "tools": {
+   "python": "3.11.9",
+   "numpy": "2.4.6",
+   "scipy": "1.17.1",
+   "soundfile": "0.14.0",
+   "pyloudnorm": "0.2.0"
+  }
+ },
+ "date": "2026-11-08T13:50:35.264Z",
+ "id": "VL-6-speech",
+ "claim": "the voice (all its lines, at the engine's utterance volume, the Windows desktop voice) is 3 to 6 LU over the flight's mix, in every theme (control: the v0.12 utterance volume 1)",
+ "thresholds": {
+  "overLu": {
+   "value": [
+    3,
+    6
+   ],
+   "kind": "proposal (design VL-6)"
+  }
+ },
+ "measured": {
+  "soft": {
+   "voiceLufs": -23.82,
+   "mixLufs": -28.58,
+   "overLu": 4.76,
+   "volume": 0.74,
+   "lines": [
+    {
+     "key": "fly.go",
+     "t0": 1.2,
+     "volume": 0.74,
+     "speechLufs": -28.93,
+     "over3sBeforeLu": null
+    },
+    {
+     "key": "lesson.rings-first.hint.1",
+     "t0": 6.5,
+     "volume": 0.74,
+     "speechLufs": -22.96,
+     "over3sBeforeLu": 3.89
+    },
+    {
+     "key": "fly.attempt",
+     "t0": 11,
+     "volume": 0.74,
+     "speechLufs": -25.74,
+     "over3sBeforeLu": 10.54
+    }
+   ]
+  },
+  "clear": {
+   "voiceLufs": -20.57,
+   "mixLufs": -25.23,
+   "overLu": 4.66,
+   "volume": 0.87,
+   "lines": [
+    {
+     "key": "fly.go",
+     "t0": 1.2,
+     "volume": 0.87,
+     "speechLufs": -25.68,
+     "over3sBeforeLu": null
+    },
+    {
+     "key": "lesson.rings-first.hint.1",
+     "t0": 6.5,
+     "volume": 0.87,
+     "speechLufs": -19.71,
+     "over3sBeforeLu": 4.76
+    },
+    {
+     "key": "fly.attempt",
+     "t0": 11,
+     "volume": 0.87,
+     "speechLufs": -22.49,
+     "over3sBeforeLu": 12.95
+    }
+   ]
+  },
+  "race": {
+   "voiceLufs": -23.07,
+   "mixLufs": -27.71,
+   "overLu": 4.64,
+   "volume": 0.77,
+   "lines": [
+    {
+     "key": "fly.go",
+     "t0": 1.2,
+     "volume": 0.77,
+     "speechLufs": -28.18,
+     "over3sBeforeLu": null
+    },
+    {
+     "key": "lesson.rings-first.hint.1",
+     "t0": 6.5,
+     "volume": 0.77,
+     "speechLufs": -22.21,
+     "over3sBeforeLu": 3.95
+    },
+    {
+     "key": "fly.attempt",
+     "t0": 11,
+     "volume": 0.77,
+     "speechLufs": -24.99,
+     "over3sBeforeLu": 10.37
+    }
+   ]
+  }
+ },
+ "controls": [
+  {
+   "name": "utterance volume 1 (v0.12)",
+   "measured": {
+    "soft": {
+     "voiceLufs": -17.32,
+     "mixLufs": -28.58,
+     "overLu": 11.26,
+     "volume": 1,
+     "lines": [
+      {
+       "key": "fly.go",
+       "t0": 1.2,
+       "volume": 1,
+       "speechLufs": -22.43,
+       "over3sBeforeLu": null
+      },
+      {
+       "key": "lesson.rings-first.hint.1",
+       "t0": 6.5,
+       "volume": 1,
+       "speechLufs": -16.46,
+       "over3sBeforeLu": 10.39
+      },
+      {
+       "key": "fly.attempt",
+       "t0": 11,
+       "volume": 1,
+       "speechLufs": -19.24,
+       "over3sBeforeLu": 17.04
+      }
+     ]
+    },
+    "clear": {
+     "voiceLufs": -17.32,
+     "mixLufs": -25.23,
+     "overLu": 7.91,
+     "volume": 1,
+     "lines": [
+      {
+       "key": "fly.go",
+       "t0": 1.2,
+       "volume": 1,
+       "speechLufs": -22.43,
+       "over3sBeforeLu": null
+      },
+      {
+       "key": "lesson.rings-first.hint.1",
+       "t0": 6.5,
+       "volume": 1,
+       "speechLufs": -16.46,
+       "over3sBeforeLu": 8.01
+      },
+      {
+       "key": "fly.attempt",
+       "t0": 11,
+       "volume": 1,
+       "speechLufs": -19.24,
+       "over3sBeforeLu": 16.2
+      }
+     ]
+    },
+    "race": {
+     "voiceLufs": -17.32,
+     "mixLufs": -27.71,
+     "overLu": 10.39,
+     "volume": 1,
+     "lines": [
+      {
+       "key": "fly.go",
+       "t0": 1.2,
+       "volume": 1,
+       "speechLufs": -22.43,
+       "over3sBeforeLu": null
+      },
+      {
+       "key": "lesson.rings-first.hint.1",
+       "t0": 6.5,
+       "volume": 1,
+       "speechLufs": -16.46,
+       "over3sBeforeLu": 9.7
+      },
+      {
+       "key": "fly.attempt",
+       "t0": 11,
+       "volume": 1,
+       "speechLufs": -19.24,
+       "over3sBeforeLu": 16.12
+      }
+     ]
+    }
+   },
+   "ok": true
+  }
+ ],
+ "valid": true,
+ "pass": true
+}

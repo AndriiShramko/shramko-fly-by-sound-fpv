@@ -10,9 +10,12 @@
         "baseStep": 4,
         "glideMs": 20,
         "maxStep": 17,
-        "metresPerStep": 0.4,
+        "metresPerStep": 0.5,
         "roughDepth": 0.8,
-        "roughHz": 50
+        "roughHz": 50,
+        "targetDb": 0,
+        "targetNoteMs": 280,
+        "targetPeriodMs": 1250
       },
       "timbre": "sine"
     },
@@ -32,6 +35,8 @@
       "gainDb": -4,
       "params": {
         "distFarM": 10,
+        "freePeriodMs": 600,
+        "freeStep": 13,
         "ildBoostDb": 8,
         "lowpassFarHz": 5000,
         "lowpassNearHz": 16000,
@@ -43,6 +48,7 @@
         "pitchFloorStep": 0,
         "pitchObstacleStep": 9,
         "pitchWallStep": 7,
+        "pulseDistM": 2,
         "pulseMs": 30,
         "reverbSendFar": 0.35,
         "ttcFarS": 3
@@ -92,7 +98,7 @@
       "gainDb": -3,
       "params": {
         "pitch": 1,
-        "volume": 1
+        "volume": 0.77
       },
       "timbre": "sine"
     }
@@ -114,5 +120,5 @@
     "rootHz": 130.8128,
     "steps": [0, 2, 4, 7, 9]
   },
-  "version": 1
+  "version": 2
 }

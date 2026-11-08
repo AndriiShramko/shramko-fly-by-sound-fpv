@@ -1,6 +1,8 @@
 // The theme loader: a parsed file in, a ThemeDef or the list of everything wrong with it out. Themes
 // are plain data a sound engineer edits without code, so the loader is strict (unknown and missing
-// keys are refused, every number has a range) and says where and why.
+// keys are refused, every number has a range) and says where and why. The one leniency: a parameter
+// added after the first themes were exported (ParamSpec.optional, v0.13) may be missing from an older
+// file and takes its default, so a theme a sound engineer exported from the v0.12 Sound Lab still loads.
 import type { LayerId, LayerTheme, MaterialClass, ThemeDef } from '../contract';
 import { FORMATS, LAYER_IDS, MATERIAL_CLASSES } from '../contract';
 import { canonicalPretty } from '../util/canonical';
@@ -111,11 +113,21 @@ function validateParams(c: Collector, layer: LayerId, raw: unknown, path: string
     const rec = raw === undefined ? null : c.record(raw, path);
     if (rec === null) return undefined;
     const spec = LAYER_PARAMS[layer];
-    c.keys(rec, path, Object.keys(spec));
+    const names = Object.keys(spec);
+    c.keys(
+        rec,
+        path,
+        names,
+        names.filter((name) => !(spec[name] as (typeof spec)[string]).optional)
+    );
     const out: Record<string, number> = {};
     for (const [name, s] of Object.entries(spec)) {
         const v = rec[name];
-        if (v === undefined) continue; // reported by keys()
+        if (v === undefined) {
+            // a parameter added after the file was exported takes its default; a missing older one is reported by keys()
+            if (s.optional) out[name] = s.default;
+            continue;
+        }
         const at = joinPath(path, name);
         if (s.scaleIndex) {
             const top = scale === undefined ? undefined : scaleSize(scale) - 1;
