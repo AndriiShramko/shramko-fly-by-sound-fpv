@@ -3,7 +3,7 @@
 // its first line. A flying lesson has two steps (the task, flying), a lesson of module 0 its intro and one
 // step per sound, scene, trial or round. Every move is tested here; the replay re-derives them.
 import { describe, expect, it } from 'vitest';
-import type { CueEvent } from '../src/contract';
+import type { CueEvent, Vec3 } from '../src/contract';
 import { getLesson, lessonAfter, lessonBefore, lessonPaths, type RunnerAction } from '../src/lesson';
 import { checkSession, REPLAY_KEY_ACTIONS } from '../src/replay';
 import { RecordingHost } from './helpers/record';
@@ -295,8 +295,9 @@ describe('a key in the same millisecond as a step that was due (found while meas
         const host = new RecordingHost(getLesson('rings-first'));
         host.begin();
         host.until(() => host.runner.phase === 'flying', 120);
-        host.flyTo([0, 3, 66], 4);
-        host.flyTo([0, 3, 54], 4); // through the ring: the attempt counts, the pause between attempts begins
+        const ring = host.world?.objects().find((o) => o.id === 'ring-1')?.pos as Vec3;
+        host.flyTo([ring[0], ring[1], ring[2] + 3], 4);
+        host.flyTo([ring[0], ring[1], ring[2] - 3], 4); // through the ring: the attempt counts, the pause between attempts begins
         host.until(() => host.runner.attempt === 2, 30); // stops in the frame that began attempt 2
         host.press(REPLAY_KEY_ACTIONS.next); // N in that same millisecond: it leaves from attempt 2, as the live runner saw it
         host.hold(1);

@@ -125,8 +125,12 @@ describe('a session recorded with v0.12', () => {
         expect(codes).toContain('lesson-version');
         const shippedWorld = shipped.world.kind === 'analytic' ? createAnalyticWorld(shipped.world.spec) : null;
         if (shippedWorld !== null && shippedWorld.id !== pkg.manifest.scene.id) expect(codes).toContain('world-id');
+        // merge item d of s13-merge: an older lesson (and theme) version is the verdict 'older-build', told as such, with the
+        // versions and the walls it was flown in
         const line = formatReplayCheck(check);
-        expect(line).toMatch(/not the recording's own build: lesson walls-hall is version \d+ here, the session was flown with 1/);
+        expect(check.verdict).toBe('older-build');
+        expect(line).toMatch(/^replay check: recorded with an older build \(lesson walls-hall is version \d+ here, the session was flown with 1/);
+        if (codes.includes('world-id')) expect(line).toContain(`the session was flown in ${pkg.manifest.scene.id}`);
     });
 
     it('control: the same recording on other walls does not meet its first goal when it was recorded', () => {

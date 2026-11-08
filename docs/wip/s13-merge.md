@@ -104,7 +104,40 @@ Steps 7 to 11, lane s13-worlds:
   (`test/world-tunnels.test.ts`, the truth bot in tunnel-long, FF; `test/pass-rule.test.ts`, the truth bot in exactly r
   attempts and the pilot who fails every other attempt); with 1e-6 they pass, with `test/world-track-end.test.ts` and
   `test/track.test.ts` (133 tests in the four files).
-- [ ] 8c. Stale tests take their positions from the worlds; s13-sound's two; the v0.12 replays with item d's verdict
+- [x] 8c. The tests that flew v0.12's numbers take their positions from the worlds (landmarks, objects' `pos`, the
+  world's checkpoints and the lesson's), as s13-worlds did for its own; no assertion was dropped or loosened, three got
+  stronger. The 19 that failed after item b, each passing now (full suite 1030 of 1030):
+  - `test/direction.test.ts` 3: the corridor's wrong way flown on its first straight (to `section-obstacle`, 15 m, and
+    14 m back at 2 m/s: 2 lines, as before); "the world's own list" now starts from the shipped world having one (it
+    rules), the reversed list lies along that straight, a broken list hands the track to the lesson's checkpoints, and a
+    new control flies the same way with the shipped list (no line); the gate crossed from its back side flown in the
+    gates' own frame, beside ring 2 by its frame and 2.5 m (inside the 10 m room). Two passing tests of the file that
+    also flew v0.12's corridor and hall numbers through walls (the slow drift back, the same way back) take the same
+    positions; the drift also asserts that no touch moved the craft.
+  - `test/navigation.test.ts` 1, `test/pause.test.ts` 2: rings-first through its ring from 3 m before to 3 m past it.
+  - `test/praise.test.ts` 4: rings-first the same way; the corridor's stages: its line now reaches cp-6, the end
+    checkpoint the merge moved to the world's end, so the list is cp-1 to cp-6; R6's world list lies along the first
+    straight (stage 1 marked at -8 m, the lesson's cp-2 at -15 m reached at -14 m) and asserts no touch; R5's control,
+    whose "shipped 240 m" is gone (item a), is now a distance goal of the track less 5 m (120 m, s13-worlds' own goal
+    until item a), which passes in the last section without its end (cp-6), after the four stages.
+  - `test/respawn.test.ts` 4 (and three passing ones that flew through walls): the lesson-checkpoint respawn is tested
+    on the corridor's world without a list of its own (as v0.12 built it: `lessonTrack` source 'checkpoints'), at cp-3
+    facing the bends; 1 m before it lies 0.25 m from the straight's side wall, so the runner's rule (more than the hull
+    and 0.2 m clear) places the craft on cp-3 with its pose, which the test now says and checks; the world-list respawn
+    flies the same way into the first bend with the shipped list (back 1 m before `w10`, facing +X, not cp-3); "the
+    path flown goes back" now records where the goal is met (it returned the end of the flight, so it could not fail)
+    and touches at 13 m, back to 1 m before the world's point at 10 m; R9's attempt runs out 1 m past cp-2, which is
+    the world's point `w4`, and starts again 1 m before it.
+  - `test/runner.test.ts` 2: 1 m past cp-2, the last point passed is the world's `w4` at cp-2: back 1 m before it.
+  - s13-sound's `test/ttc.test.ts` "the 0.5 m pillar": v0.12's pillar pinned, `makeSpec('pillars', { layout:
+    'single', aheadM: 15 }, 0, 1)`.
+  - `test/replay-v012.test.ts`, the control "claiming the current versions": replayed on the recording's own walls
+    (this build's rings-first with v0.12's world, start, assists and goals from
+    `test/fixtures/v012-lesson-geometry.json`): no note, exact, verdict 'fail' and "replay check FAIL", never "older
+    build".
+  - `test/world-versions.test.ts` (s13-worlds, written before item d): the v0.12 walls-hall recording replayed with the
+    shipped lesson is verdict 'older-build', "recorded with an older build (lesson walls-hall is version 2 here, ...",
+    and names the walls it was flown in.
 - [ ] 8d. The corridor's `attemptLimitS` for its 126 m track; every tunnel's limit at 1 m/s
 - [ ] 8e. The open-way chime and the checkpoint chime with different words in the glossary, four languages
 - [ ] 8f. `ears-glossary` names s13-sound's six new cues

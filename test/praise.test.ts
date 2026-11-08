@@ -51,10 +51,11 @@ describe('praise of a counted attempt (M41-11)', () => {
         for (let seed = 0; seed < 3; seed++) {
             const p = new ScriptedPilot(getLesson('rings-first'), { seed });
             p.begin();
+            const ring = p.object('ring-1').pos;
             for (let k = 0; k < 2; k++) {
                 p.until(() => p.run.phase === 'flying', 60);
-                p.flyTo([0, 3, 64]);
-                p.flyTo([0, 3, 56]);
+                p.flyTo([ring[0], ring[1], ring[2] + 3]);
+                p.flyTo([ring[0], ring[1], ring[2] - 3]);
                 p.until(() => p.run.phase !== 'flying', 10);
             }
             const keys = praises(p);
@@ -115,7 +116,7 @@ describe('the pass and the stages', () => {
     }, 120000);
 
     it('the corridor says each stage it passes, with the stage cue; a checkpoint that ends no stage only chimes (control)', () => {
-        // the shipped corridor is passed at 240 m flown, in its fourth section: flown to its end here (300 m) to meet every stage
+        // the attempt is kept open (300 m, more than the corridor's 125 m track) so the whole corridor is flown whatever its goals
         const shipped = getLesson('corridor');
         const lesson = { ...shipped, goals: [shipped.goals[0] as Goal, { kind: 'fly-distance' as const, metres: 300 }] };
         const p = new ScriptedPilot(lesson);
@@ -127,7 +128,8 @@ describe('the pass and the stages', () => {
         const stages = cues(p).filter((c): c is Extract<CueEvent, { kind: 'stage' }> => c.kind === 'stage').map((c) => c.stage);
         expect(stages).toEqual([1, 2, 3, 4]);
         expect(said(p).filter((l) => l.key === 'fly.stage').map((l) => l.params?.['n'])).toEqual([1, 2, 3, 4]);
-        expect(p.of('checkpoint').map((c) => c.id)).toEqual(['cp-1', 'cp-2', 'cp-3', 'cp-4', 'cp-5']);
+        // every checkpoint, the end (cp-6, the world's end landmark since the s13-worlds merge) too
+        expect(p.of('checkpoint').map((c) => c.id)).toEqual(['cp-1', 'cp-2', 'cp-3', 'cp-4', 'cp-5', 'cp-6']);
         // control: the same corridor with its stages taken off says none and chimes at each checkpoint instead
         const plain = { ...lesson, checkpoints: lesson.checkpoints.map(({ stage: _s, ...cp }) => cp) };
         const q = new ScriptedPilot(plain);
@@ -143,29 +145,33 @@ describe('the pass and the stages', () => {
         const lesson = getLesson('corridor');
         if (lesson.world.kind !== 'analytic') throw new Error('the corridor has a world');
         const built = createAnalyticWorld(lesson.world.spec);
-        // a world list along the straight, every 6 m, that ends stage 1 at -30 m (the lesson's own stage 1 is cp-2 at -50 m)
+        // the corridor's first straight and the free stretch after it, up to 1 m before its first pillar (z = -21)
+        const cp2 = (lesson.checkpoints[1] as { at: Vec3; stage?: number }).at;
+        const y = cp2[1];
+        expect(lesson.checkpoints[1]?.stage).toBe(1);
+        // a world list along it, every 2 m, that ends stage 1 at -8 m (the lesson's own stage 1 is cp-2 at -15 m)
         const list = (withStage: boolean): SonicWorld =>
             Object.assign(Object.create(built) as SonicWorld, {
-                checkpoints: [0, -6, -12, -18, -24, -30, -36, -42].map((z) => ({ pos: [0, 2, z] as Vec3, dir: [0, 0, -1] as Vec3, ...(withStage && z === -30 ? { stage: 1 } : {}) }))
+                checkpoints: [0, -2, -4, -6, -8, -10, -12, -14, -16, -18, -20].map((z) => ({ pos: [0, y, z] as Vec3, dir: [0, 0, -1] as Vec3, ...(withStage && z === -8 ? { stage: 1 } : {}) }))
             });
-        const fly = (world: SonicWorld): { stages: (number | undefined)[]; at: number[] } => {
+        const fly = (world: SonicWorld): { stages: (number | undefined)[]; at: number[]; touches: number } => {
             const p = new ScriptedPilot(lesson, {}, world);
             p.begin();
             p.until(() => p.run.phase === 'flying', 60);
             const at: number[] = [];
             let seen = 0;
-            for (let z = -2; z >= -60; z -= 2) {
-                p.flyTo([0, 2, z]);
+            for (let z = -2; z >= -20; z -= 2) {
+                p.flyTo([0, y, z]);
                 const n = cues(p).filter((c) => c.kind === 'stage').length;
                 if (n > seen) at.push(z);
                 seen = n;
             }
-            return { stages: cues(p).flatMap((c) => (c.kind === 'stage' ? [c.stage] : [])), at };
+            return { stages: cues(p).flatMap((c) => (c.kind === 'stage' ? [c.stage] : [])), at, touches: p.of('touch').length };
         };
-        // the world marks stage 1 at -30 m: said there, and not again at cp-2
-        expect(fly(list(true))).toEqual({ stages: [1], at: [-30] });
-        // control: a world list with no stages leaves them to the lesson's checkpoints (cp-2 at -50 m, reached within its 2.5 m)
-        expect(fly(list(false))).toEqual({ stages: [1], at: [-48] });
+        // the world marks stage 1 at -8 m: said there, and not again at cp-2
+        expect(fly(list(true))).toEqual({ stages: [1], at: [-8], touches: 0 });
+        // control: a world list with no stages leaves them to the lesson's checkpoints (cp-2 at -15 m, reached within its 2.5 m)
+        expect(fly(list(false))).toEqual({ stages: [1], at: [-14], touches: 0 });
     }, 60000);
 });
 
@@ -184,17 +190,27 @@ describe('the corridor ends at its end (review R5)', () => {
         return { checkpoints: p.of('checkpoint').map((c) => c.id), stages: cues(p).flatMap((c) => (c.kind === 'stage' ? [c.stage] : [])), touches: p.of('touch').length, said: said(p).map((l) => l.key) };
     }
 
-    it("with the goal 'track-end' the corridor passes at its end, after all four stages and its last section; control: the shipped 240 m pass before stage 4", () => {
+    it("with the goal 'track-end' the corridor passes at its end, after all four stages and its last section; control: a distance goal of the track less 5 m passes before the end", () => {
         const shipped = getLesson('corridor');
+        // the shipped goals end on it since the s13-worlds merge (item 8a)
+        expect(shipped.goals.map((g) => g.kind)).toEqual(['fly-distance', 'track-end']);
         const end = flown([shipped.goals[0] as Goal, { kind: 'track-end' }]);
         expect(end.touches).toBe(0);
         expect(end.checkpoints).toEqual(['cp-1', 'cp-2', 'cp-3', 'cp-4', 'cp-5', 'cp-6']);
         expect(end.stages).toEqual([1, 2, 3, 4]);
         expect(end.said.slice(-2)).toEqual(['lesson.corridor.pass', 'fly.lesson-passed']); // "You flew the whole corridor." is true now
-        // control: the shipped goals (240 m flown) pass in the fourth section: stage 4 and the last section are never flown
-        const now = flown(shipped.goals);
-        expect(now.checkpoints).not.toContain('cp-5');
-        expect(now.stages).toEqual([1, 2, 3]);
+        // control: a distance goal (the review's finding; s13-worlds' 120 m of the 125 m track until the merge) passes in the
+        // last section: its end (cp-6) is never flown
+        const built = createAnalyticWorld((shipped.world as { spec: Parameters<typeof createAnalyticWorld>[0] }).spec);
+        const track = built.checkpoints ?? [];
+        let length = 0;
+        for (let i = 1; i < track.length; i++) {
+            const a = (track[i - 1] as { pos: Vec3 }).pos, b = (track[i] as { pos: Vec3 }).pos;
+            length += Math.hypot(b[0] - a[0], b[1] - a[1], b[2] - a[2]);
+        }
+        const now = flown([shipped.goals[0] as Goal, { kind: 'fly-distance', metres: Math.round(length - 5) }]);
+        expect(now.checkpoints).not.toContain('cp-6');
+        expect(now.stages).toEqual([1, 2, 3, 4]);
         expect(now.said).toContain('lesson.corridor.pass');
     }, 120000);
 

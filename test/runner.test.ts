@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { FlightSample, LessonDef, SessionEvent, SonicObject, SonicWorld, Vec3 } from '../src/contract';
 import { CuePlanner } from '../src/cues';
-import { createLessonRunner, getLesson, GIVE_UP_MS, type LessonSession, type Question, type RunnerAction, type DemoScene } from '../src/lesson';
+import { createLessonRunner, getLesson, GIVE_UP_MS, RESPAWN_BEFORE_M, type LessonSession, type Question, type RunnerAction, type DemoScene } from '../src/lesson';
 import { getBuiltinTheme } from '../src/theme';
 import { yawQuat } from '../src/util/vec';
 import { createAnalyticWorld } from '../src/world';
@@ -489,9 +489,14 @@ describe('pass rules, touches, resets and progress', () => {
 
     it('the corridor: checkpoints are reached in turn and a touch puts the craft back at the last one', () => {
         const lesson = getLesson('corridor');
+        const cp2 = lesson.checkpoints[1]!.at;
+        // the world's own track has a point where cp-2 is (its 4th, w4) and the next 1.875 m after it: 1 m past cp-2,
+        // the last point passed is the one at cp-2
+        const track = worldOf('corridor').checkpoints!;
+        expect(track[3]!.pos).toEqual(cp2);
         const p = new Pilot(lesson);
         p.begin();
-        p.flyTo(along(lesson.checkpoints[1]!.at, 2), 4);
+        p.flyTo(along(cp2, 1), 4);
         expect(p.of('checkpoint').map((c) => c.id)).toEqual(['cp-1', 'cp-2']);
         expect(goalEvents(p)).toEqual(['0:met']);
         p.touched = true;
@@ -499,19 +504,21 @@ describe('pass rules, touches, resets and progress', () => {
         const place = p.actions.filter((a): a is Extract<RunnerAction, { kind: 'place' }> => a.kind === 'place').at(-1)!;
         expect(place.to).toBe('checkpoint');
         // 1 m before the checkpoint, facing along the corridor (M41-20)
-        expect(place.pose).toEqual({ pos: [0, 2, -49], yawDeg: 0 });
-        expect(p.of('reset').at(-1)).toMatchObject({ to: 'checkpoint', checkpointId: 'cp-2' });
-        expect(p.pos).toEqual([0, 2, -49]);
+        expect(place.pose).toEqual({ pos: along(cp2, -RESPAWN_BEFORE_M), yawDeg: 0 });
+        expect(p.of('reset').at(-1)).toMatchObject({ to: 'checkpoint', checkpointId: 'w4' });
+        expect(p.pos).toEqual(along(cp2, -RESPAWN_BEFORE_M));
     });
 
     it('reset to the last checkpoint and to the start; a reset to the start begins the same attempt again', () => {
         const lesson = getLesson('corridor');
+        const cp2 = lesson.checkpoints[1]!.at;
         const p = new Pilot(lesson);
         p.begin();
-        p.flyTo(along(lesson.checkpoints[1]!.at, 2), 4);
+        p.flyTo(along(cp2, 1), 4);
+        // 1 m before the last point of the track passed: the world's point at cp-2 (w4)
         const cp = p.run.reset('checkpoint', p.t);
-        expect(cp.pose).toEqual({ pos: [0, 2, -49], yawDeg: 0 });
-        expect(cp.events[0]).toMatchObject({ kind: 'reset', to: 'checkpoint', checkpointId: 'cp-2' });
+        expect(cp.pose).toEqual({ pos: along(cp2, -RESPAWN_BEFORE_M), yawDeg: 0 });
+        expect(cp.events[0]).toMatchObject({ kind: 'reset', to: 'checkpoint', checkpointId: 'w4' });
         const start = p.run.reset('start', p.t);
         expect(start.pose).toEqual(lesson.start);
         expect(p.run.attempt).toBe(1);

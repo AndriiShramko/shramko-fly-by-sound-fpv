@@ -244,9 +244,10 @@ describe('objects on the path are heard by their time to contact, at any angle t
         }
     });
 
-    // walls-pillar's pillar: radius 0.5 m, its axis at x = 0, z = 7 (the lesson's world)
-    const lessonWorld = getLesson('walls-pillar').world;
-    const pillarWorld = createAnalyticWorld(lessonWorld.kind === 'analytic' ? lessonWorld.spec : makeSpec('pillars', { layout: 'single', aheadM: 15 }, 0));
+    // v0.12's walls-pillar pillar, pinned (version 1 of the generator, which still builds): radius 0.5 m, its axis at x = 0,
+    // z = 7, with the 22 m run-up these paths need. Since the s13-worlds merge the lesson's own pillar is 0.3 m in a 12.5 m
+    // room (version 2), too short a run-up for this check.
+    const pillarWorld = createAnalyticWorld(makeSpec('pillars', { layout: 'single', aheadM: 15 }, 0, 1));
     const pillar = pillarWorld.objects().find((o) => o.shape.kind === 'pillar') as SonicObject;
     const R = (pillar.shape as { radius: number }).radius;
     /** Time until the hull touches the pillar flying straight on, or null when the line passes it. */

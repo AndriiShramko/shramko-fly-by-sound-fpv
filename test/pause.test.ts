@@ -5,7 +5,7 @@
 // Each check has its control: the same host that only stops stepping the runner (v0.12's way, and this lane's
 // before the fix) fails it. The replay takes the pause from the host's `session` events.
 import { describe, expect, it } from 'vitest';
-import type { Goal, SessionEvent } from '../src/contract';
+import type { Goal, SessionEvent, Vec3 } from '../src/contract';
 import { getLesson, type RunnerAction } from '../src/lesson';
 import { checkSession } from '../src/replay';
 import { ScriptedPilot } from './helpers/pilot';
@@ -65,12 +65,13 @@ describe('a pause of the flight (the lesson menu) is not lesson time (review R8)
             const p = new ScriptedPilot(lesson);
             p.begin();
             p.until(() => p.run.phase === 'flying', 60);
-            p.flyTo([0, 3, 68]);
+            const ring = p.object('ring-1').pos;
+            p.flyTo([ring[0], ring[1], ring[2] + 3]); // on the way, 3 m before the ring
             pause(p, (lesson.attemptLimitS ?? 60) + 10, calls);
             p.tick();
             expect(p.lessonWhat().includes('attempt-fail'), String(calls)).toBe(!calls);
             if (calls) {
-                p.flyTo([0, 3, 55]);
+                p.flyTo([ring[0], ring[1], ring[2] - 3]);
                 expect(p.lessonWhat()).toContain('attempt-pass');
             }
         }
@@ -114,9 +115,10 @@ describe('a pause of the flight (the lesson menu) is not lesson time (review R8)
         const host = new RecordingHost(getLesson('rings-first'));
         host.begin();
         host.until(() => host.runner.phase === 'flying', 60);
-        host.flyTo([0, 3, 68], 3);
+        const ring = host.world?.objects().find((o) => o.id === 'ring-1')?.pos as Vec3;
+        host.flyTo([ring[0], ring[1], ring[2] + 3], 3);
         host.pauseFor(70);
-        host.flyTo([0, 3, 55], 3);
+        host.flyTo([ring[0], ring[1], ring[2] - 3], 3);
         host.hold(2);
         expect(host.events.filter((e) => e.kind === 'lesson' && e.what === 'attempt-pass')).toHaveLength(1);
         const { pkg } = await host.toPackage();

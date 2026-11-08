@@ -7,12 +7,14 @@
 // (rings-first: 2 of 10 events re-derived, walls-hall: 5 of 14). The theme (version 2) and the lessons (version
 // 2) say why, so the check's verdict is 'older-build', "recorded with an older build", naming the versions
 // (review m7 of lane s13-sound, merge note 1 of lane s13-lessons). Its negative control: a recording that
-// claims this build's versions and does not re-derive is still a FAIL.
+// claims this build's versions and does not re-derive is still a FAIL. Since the s13-worlds merge the lessons' worlds
+// changed too (the rooms of v0.13), so that control is replayed on the recording's own walls: the lesson it is handed
+// carries v0.12's world, start, assists and goals (test/fixtures/v012-lesson-geometry.json, lane s13-worlds).
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import type { SessionManifest } from '../src/contract';
+import type { LessonDef, SessionManifest } from '../src/contract';
 import { getLesson } from '../src/lesson';
 import { checkSession, formatReplayCheck } from '../src/replay';
 import { readPackage } from '../src/session';
@@ -20,6 +22,8 @@ import { getBuiltinTheme } from '../src/theme';
 
 const FIXTURES = fileURLToPath(new URL('./fixtures', import.meta.url));
 const load = (name: string): ReturnType<typeof readPackage> => readPackage(new Uint8Array(readFileSync(join(FIXTURES, name))));
+/** v0.12's world, start, assists and goals of each lesson v0.12 shipped with an analytic world (lane s13-worlds' fixture) */
+const V012_GEOMETRY = (JSON.parse(readFileSync(join(FIXTURES, 'v012-lesson-geometry.json'), 'utf8')) as { lessons: Record<string, Partial<LessonDef>> }).lessons;
 
 describe('a session recorded with v0.12', () => {
     it.each(['session-v012-rings-first.zip', 'session-v012-walls-hall.zip'])('%s verifies, or is reported as recorded with an older build, naming the versions, never as FAIL', (name) => {
@@ -45,7 +49,10 @@ describe('a session recorded with v0.12', () => {
         const m = pkg.manifest;
         const lesson = m.lesson as NonNullable<SessionManifest['lesson']>;
         const claimed: SessionManifest = { ...m, theme: { id: m.theme.id, version: getBuiltinTheme('soft').version }, lesson: { ...lesson, version: getLesson(lesson.id).version } };
-        const { check, setup } = checkSession({ ...pkg, manifest: claimed });
+        // on the recording's own walls: this build's lesson with v0.12's world (the world's id is then the recorded one)
+        const ownWalls: LessonDef = { ...getLesson(lesson.id), ...V012_GEOMETRY[lesson.id] };
+        const { check, setup } = checkSession({ ...pkg, manifest: claimed }, { lessons: { [lesson.id]: ownWalls } });
+        expect(setup.notes).toEqual([]);
         expect(setup.exact).toBe(true);
         expect(check.ok).toBe(false);
         expect(check.verdict).toBe('fail');
