@@ -86,7 +86,9 @@ and below change with it. In the same lane: "wrong way" between gates, which the
   v13-host e7612d3, 249 lines a language with K's help, the same round trip and bound. Heard with no error: 230, 232,
   230 and 203 of 249 (en, es, pl, ru); over the bound 4, 4, 9 and 21, each listed with its transcript; the name "Fly
   by Sound" in Russian and Polish and the key lines are the simulator's main items
-- [ ] E2-4 (the next agent's)
+- [ ] E2-4 All checks again, in progress: `pnpm typecheck` clean, `pnpm test` 49 files 1138 tests, locale lint 0
+  problems (526 keys), layout check 0 problems, `pnpm proof:audio` 3 files 9 proofs (numbers as before; the evidence's
+  dates), `pnpm listen:words` fresh (00c1d278316c); `pnpm listen` next (the locales and the rig's folder changed)
 
 ## E1-1 Audit: the cues of up and down in v0.13 (code as of 16c01a1)
 

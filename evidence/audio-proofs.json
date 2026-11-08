@@ -1,7 +1,7 @@
 {
   "what": "Fly by Sound audio proofs: the real engine rendered offline in headless Chromium, each check also run on an engine broken on purpose (control), which must fail",
   "run": "pnpm proof:audio",
-  "date": "2026-11-08T18:39:31.323Z",
+  "date": "2026-11-08T20:09:34.255Z",
   "browser": "156.0.8078.80",
   "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36",
   "sampleRate": 48000,
