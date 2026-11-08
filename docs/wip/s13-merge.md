@@ -186,8 +186,8 @@ Steps 7 to 11, lane s13-worlds:
   `test/repeat-plays.test.ts` 78 plays (was 60), `test/progress.test.ts` and `test/navigation.test.ts` 1 + 26 steps
   (was 21); the schedule's every-sound-three-times check passes with all five speech models; the glossary takes 8.4
   minutes with the measured voice (its bound in `test/lesson-schedule.test.ts` is 9). Full suite 1032 of 1032.
-- [x] 8g. The truth bot in the ring and shape lessons (rings-first, rings-line, rings-small, rings-heights, rings-course,
-  shapes-square, shapes-series, shapes-cube), flown to each lesson's pass (a probe, then a test): no wrong-way event.
+- [x] 8g. The truth bot in the ring and shape lessons (rings-first, rings-line, rings-small, rings-heights,
+  rings-course, shapes-square, shapes-series, shapes-cube), flown to each lesson's pass (a probe, then a test): no wrong-way event.
   Its 4 m before and past each gate does fly back 1 to 3 m between gates 5 to 7 m apart, but that stays within
   `LINE_UP_M` (8 m) in front of the gate that counts next, where s13-lessons' rule (review R1) tells nothing, so its
   track stays as it is and the pass-rule tests keep their exact numbers. The same probe found a wrong-SIDE event at the
@@ -203,7 +203,24 @@ Steps 7 to 11, lane s13-worlds:
   pass, no touch, no wrong-way and no wrong-side cue or line. Broken on purpose (neither rule): 7 of the 8 fail
   (rings-course passes in one attempt); either rule alone makes them pass, the jump rule also the replay. Full suite
   1040 of 1040.
-- [ ] 8h. rings-heights: the target tone follows the next ring and the glide meets it in unison there
+- [x] 8h. rings-heights' target tone follows the next ring, and the glide meets it in unison there; its rings are on
+  the lesson's 0.5 m grid (s13-sound's item for s13-worlds), which they were not: the rings' centres were 2.5, 1.2, 3.8,
+  1.2 and 2.5 m (middle, floor, ceiling, floor, middle in a 5 m room), 1.3 m (2.6 steps) from the first ring, the
+  reference the height mapping is aligned on, so the target notes of rings 2 to 4 were off the scale (`onScale` false;
+  in exact unison all the same). The levels follow the room (floor and ceiling 0.3 m plus the ring's reach of 0.9 m,
+  the middle half the height), so a grid needs the middle 1.5 m from the floor and the ceiling (1 m would join the
+  bands of 1.4 m rings, review M3), and then a floor-to-ceiling change of 3 m does not fit a 6 m leg at the climb cap
+  of 1.5 m/s. Now: a room 5.4 m high (9 x 36.5 x 5.4) and the order middle, floor, middle, ceiling, middle: centres
+  2.7, 1.2, 2.7, 4.2, 2.7 m, every leg a change of 1.5 m (3 notes; 1.37 s of climb in the 2.34 s of the leg), the bands
+  floor 0.62 to 1.78, middle 2.12 to 3.28, ceiling 3.62 to 4.78 m (0.34 m apart), the start at 2.7 m, the ceiling 2.09
+  s from it; ring size, spacing, caps, layers, goals and lines as s13-worlds set them (the intro names no order). New
+  test in `test/height.test.ts`: the truth bot flies the five rings with the planner of the lesson's layers; in every
+  frame the target is the centre of the ring that counts next and a note of the scale, every ring is on the 0.5 m grid
+  of the first, and on the last metres to each ring the glide is in unison with the target (the same position and
+  frequency). On the merged lesson it failed ("ring-2: expected 0.6000000000000001 to be less than 1e-9"). s13-worlds'
+  tests pass on the new layout (the bands, the margins, every change fits its leg, the truth bot, the room in 2 to 3 s);
+  the M3 control (the same lesson with 2 m rings) still finds one height through four of the five rings, now 2 m
+  through rings 1, 2, 3 and 5. Full suite 1041 of 1041.
 - [ ] 8i. A recording that differs only in the world's id stays FAIL
 - [ ] 8j. CHANGELOG (Unreleased) for s13-sound and s13-worlds; README, llms.txt and AGENTS.md agree
 - [ ] 9. Full checks on the final code with fresh evidence

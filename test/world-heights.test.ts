@@ -103,12 +103,13 @@ describe('rings at different heights (M41-22)', () => {
         const band = (level: string): { lo: number; hi: number } => win[(w.resolved['heights'] as string).split(',').indexOf(level)]!;
         expect(band('floor').hi).toBeLessThan(band('middle').lo);
         expect(band('middle').hi).toBeLessThan(band('ceiling').lo);
-        // control: the same lesson with its first rings of 2 m (fef8869): 1.62 to 2.38 m passes four of the five
+        // control: the same lesson with its first rings of 2 m (fef8869; in the room and order of merge item 8h of s13-merge,
+        // 5.4 m high, middle, floor, middle, ceiling, middle): 2 m passes four of the five, as 1.62 to 2.38 m did then
         const spec = (lesson.world as { spec: AnalyticWorldSpec }).spec;
         const first = createAnalyticWorld({ ...spec, params: { ...spec.params, sizeM: 2 } });
         expect(sharedHeights(first).length).toBeGreaterThan(0);
         const common = windows(first).filter((x) => x.lo <= 2 && x.hi >= 2).map((x) => x.id);
-        expect(common).toEqual(['ring-1', 'ring-2', 'ring-4', 'ring-5']);
+        expect(common).toEqual(['ring-1', 'ring-2', 'ring-3', 'ring-5']);
     });
 
     it('keeps every ring inside the room: 1 m from the walls, 0.3 m from the floor and the ceiling', () => {

@@ -11,6 +11,8 @@ import { defaultPrefs } from '../src/prefs';
 import { applyCalm, BUILTIN_THEME_IDS, getBuiltinTheme, heightNoteIndex, isInScale, noteHz, noteHzAt } from '../src/theme';
 import { yawQuat } from '../src/util/vec';
 import { createAnalyticWorld } from '../src/world';
+import { ScriptedPilot } from './helpers/pilot';
+import { flyTruth } from './helpers/truth';
 
 const THEMES: readonly ThemeDef[] = BUILTIN_THEME_IDS.map((id) => getBuiltinTheme(id));
 const POLARITIES = ['up-higher', 'up-lower'] as const;
@@ -278,6 +280,48 @@ describe('the lessons hear it', () => {
             expect(p.target!.onScale, id).toBe(true);
         }
     });
+
+    it("rings-heights: the target is the next ring's centre, every one a note on the lesson's 0.5 m grid, and the glide meets it in unison at that ring", () => {
+        // the truth bot flies one attempt through the five rings (lane s13-worlds' lesson of M41-22); every frame is planned
+        // with the lesson's layers and the gate that counts next, as the host plans it
+        const lesson = getLesson('rings-heights');
+        const theme = getBuiltinTheme('soft');
+        const planner = new CuePlanner({ theme, layers: lesson.layers });
+        const p = new ScriptedPilot(lesson);
+        p.begin();
+        p.until(() => p.run.phase === 'flying', 600);
+        const gates = p.objects().filter((o) => o.order !== null).sort((a, b) => (a.order as number) - (b.order as number));
+        expect(gates).toHaveLength(5);
+        // every ring on the 0.5 m grid of the lesson's first ring (the reference the mapping is aligned on)
+        for (const g of gates) expect(Math.abs(((g.pos[1] - (gates[0] as SonicObject).pos[1]) / 0.5) % 1), g.id).toBeLessThan(1e-9);
+        const seen: { next: SonicObject; plan: HeightPlan }[] = [];
+        const tick = p.tick.bind(p);
+        p.tick = () => {
+            tick();
+            if (p.run.phase !== 'flying') return;
+            const next = gates[p.of('gate').length];
+            const plan = planner.plan({ sample: p.sample(false), world: p.world, target: p.run.target(), floorY: 0 }).height as HeightPlan;
+            if (next !== undefined) seen.push({ next, plan });
+        };
+        flyTruth(p);
+        expect(p.of('gate').map((g) => g.gateId)).toEqual(gates.map((g) => g.id));
+        for (const g of gates) {
+            const frames = seen.filter((x) => x.next === g);
+            expect(frames.length, g.id).toBeGreaterThan(10);
+            // the target is that ring's centre, a note of the scale, in every frame until it is passed
+            for (const { plan } of frames) {
+                expect(plan.target?.heightM, g.id).toBeCloseTo(g.pos[1], 9);
+                expect(plan.target?.onScale, g.id).toBe(true);
+            }
+            // the bot flies the last metres to the ring at its centre's height: the glide is in unison with the target
+            const last = frames.at(-1)!.plan;
+            expect(last.heightM, g.id).toBeCloseTo(g.pos[1], 6);
+            expect(last.position, g.id).toBe(last.target!.position);
+            expect(last.hz, g.id).toBe(last.target!.hz);
+        }
+        // and between two rings of different heights the target changes with the ring that counts next
+        expect(new Set(seen.map((x) => x.plan.target!.heightM)).size).toBe(new Set(gates.map((g) => g.pos[1])).size);
+    }, 60000);
 
     it('the reference is the first gate, else the band centre; the alignment moves the mapping by at most half a step', () => {
         expect(referenceHeightM(gateWorld([4, 3]), [1, 2], 0)).toBe(4);

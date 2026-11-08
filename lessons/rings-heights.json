@@ -67,7 +67,7 @@
     }
   },
   "start": {
-    "pos": [0, 2.5, 16.75],
+    "pos": [0, 2.7, 16.75],
     "yawDeg": 0
   },
   "title": {
@@ -82,8 +82,8 @@
         "aheadM": 5.5,
         "count": 5,
         "depthM": 36.5,
-        "heightM": 5,
-        "heights": "middle,floor,ceiling,floor,middle",
+        "heightM": 5.4,
+        "heights": "middle,floor,middle,ceiling,middle",
         "layout": "line",
         "sizeM": 1.4,
         "spacingM": 6,
