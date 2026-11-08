@@ -23,7 +23,7 @@ Review fixes (`docs/wip/s13-worlds-review.md`; what was done and why: "Review fi
 - [x] M1, M2, M8. The corridor's last goal, the tunnels' lesson checkpoints, `track-end` at the merge
 - [x] M5, M7, m1, m2, m3. walls-hall's words and stop distance, the new lessons' layers, wording
 - [x] m4, m5, m7, M4, M6. AGENTS.md, this doc, the merge notes (m6 left open: the lead's plan)
-- [ ] All checks, final status
+- [x] All checks, final status (below: Final status)
 
 ## Ownership
 
@@ -629,31 +629,68 @@ The resolutions:
 
 ## Final status
 
-Done, one commit per step on `s13-worlds` (base `eee530b`, not pushed): d4876e5 (1, facts), ea90804 (2, versions),
-32c2163 (3, cavities), 75140b5 (4, world checkpoints), b56085a (5, micro scale), 8e28b36 (6, tunnels), 5b7c29c (7,
-rings at heights), and the commit of step 8 (this status, `AGENTS.md`).
+After the review fixes. Branch `s13-worlds`, base `eee530b`, not pushed.
 
-Checks at the end (Node 22.13, pnpm 11.5): `pnpm install --frozen-lockfile`; `pnpm typecheck` (three projects) passes;
-`pnpm test` 30 files, 855 tests pass, among them the lesson validation (`test/lessons.test.ts`: every shipped file
-valid, canonical, its world built, its start and checkpoints free, its keys in the catalogue), the locale parity and
-lint (`test/locales.test.ts`) and the layout check (`test/layout.test.ts`). `node tools/run-tool.mjs check-layout` and
-`... locale-lint` cannot run: those two tools export no `main` (they are libraries of those tests), so the tests are
-how they run. No browser was needed; `pnpm proof:audio` was not run (no sound changed here).
+Done:
+
+- Steps 1 to 8, one commit each: d4876e5 (1, facts), ea90804 (2, versions), 32c2163 (3, cavities), 75140b5 (4, world
+  checkpoints), b56085a (5, micro scale), 8e28b36 (6, tunnels), 5b7c29c (7, rings at heights), 601c31c (8, checks),
+  then f90f05c (the doc in English only) and fef8869 (rings-heights' last leg).
+- The review (`docs/wip/s13-worlds-review.md`, e099fa7 and 030f7d0), fixed one commit per finding or small group (what
+  and why: "Review fixes" above): 4af8278 (B1), 2336a0a (M9), 575c5c8 (M3), 18e3e93 (M1, M2, M8), 32a1671 (M5, M7,
+  m1, m2, m3), 0e50e5a (M2: a corridor's track ends 2.5 m before its closing wall), 31f9d82 (M2: the goal checks hold
+  before and after the merge), 516410c (m4, m5, m7, M4, M6), and this status.
+- Every finding: B1, M1, M3, M5, M7, M8, M9, m1, m2, m3, m5 and m7 fixed here; M2 fixed here for the world's part (the
+  tracks end where a pilot passes them, the tunnels carry the two checkpoints `track-end` needs, the test that flies it
+  after the merge) and at the merge for the goals, which are lane s13-lessons' `track-end`; m4 answered by rewording
+  `AGENTS.md` (the replay table it offers is left open, below); M4 and M6 are the lead's merge, with their resolutions
+  checked in trial merges (For the lead's merge); m6 left open. No finding was refuted.
+
+Checks at the end (Node 22.13, pnpm 11.5), at 516410c and this status:
+
+- `pnpm install --frozen-lockfile`; `pnpm typecheck` (three projects) passes.
+- `pnpm test`: 31 files, 879 tests pass, 7 skipped by design: the merged cases of `test/world-track-end.test.ts`, which
+  run once the validator knows lane s13-lessons' `track-end` (a test makes sure they skip for no other reason); in the
+  trial merge with that lane they run and pass.
+- The lesson validation, the locale parity and lint and the layout check: in `pnpm test` (`test/lessons.test.ts`,
+  `test/locales.test.ts`, `test/layout.test.ts`, 38 tests) and as tools. At this lane's base `tools/check-layout.ts`
+  and `tools/locale-lint.ts` export no `main`, so `node tools/run-tool.mjs check-layout` and `... locale-lint` stop with
+  "exports no main(argv)"; loaded through Vite's module loader as `run-tool.mjs` does, they report 0 problems (layout;
+  parity and the four languages). In the trial merge with lane s13-lessons, whose tools have a `main`, `node
+  tools/run-tool.mjs check-layout` and `node tools/run-tool.mjs locale-lint` report 0 problems (507 keys).
+- Trial merges in scratch clones (For the lead's merge): with lane s13-sound's 3c73658 the typecheck passes and 973 of
+  975 tests pass (975 with the two edits given); with lane s13-lessons' 14e00f0, resolved as given, the typecheck
+  passes and 912 of 930 pass (the 18 others fly v0.12's numbers). The open-way chime sounds before every tunnel
+  obstacle in the merged sound engine.
+- No browser was needed; `pnpm proof:audio` was not run (no sound code changed here).
 
 Left open, with the reason:
 
-- The simulator draws the tunnels wrong until it reads `world.cavities` (Needs from the simulator 1): not this lane's
-  repository.
+- The simulator draws the tunnels wrong until it reads `world.cavities` (Needs from the simulator 1, at the gitlink
+  move): not this lane's repository.
+- The goals of the corridor and the six tunnels end on lane s13-lessons' `track-end` only at the merge (For the lead's
+  merge): this lane's validator and runner do not know it. Until then the tunnels count `fly-distance` of their
+  track's length less under 4 m and the corridor 120 m of its 125 m.
+- Lane s13-lessons' runner needs a micrometre of tolerance where a craft crosses a point of the track, or its truth bot
+  never ends tunnel-long with `track-end` (Needs from other lanes 7): their code.
+- 18 tests of lane s13-lessons and 2 of lane s13-sound fly v0.12's numbers or worlds (For the lead's merge): their
+  files; the edits for the two of s13-sound are given and checked.
 - The runner of this lane's base does not use the world's checkpoints for respawn, wrong way and stage praise (M41-20
   runner side, M41-15, M41-11): lane s13-lessons' runner does, and only with it is the respawn near the crash. Here
   alone the corridor's five lesson checkpoints are 12 to 32 m apart along the track, the last 35 m from its end
   (review m5), and a touch in a tunnel goes back to its start (review M8).
-- The sounds the new lessons teach (the steady target tone, M41-12; the open-way chime, M41-14) and the new lessons'
-  `layers`: lane s13-sound.
-- walls-hall's title, first line and stop distance (Needs from other lanes 1 and 2): lane s13-lessons' strings and goal.
+- The sounds the new lessons teach (the steady target tone, M41-12; the open-way chime, M41-14): lane s13-sound; their
+  Russian glossary names the open-way chime and the checkpoint chime alike (Needs from other lanes).
+- One long tunnel with one kind of obstacle (review m6): the plan's M41-21; more long tunnels with other obstacles are
+  the lead's to plan (corridor version 2 is unpublished and can grow).
+- A replay table of the v0.12 lessons (review m4): a v0.12 recording rebuilds on its own walls when the replay is handed
+  its v0.12 lesson (`test/world-versions.test.ts`) and is otherwise reported as flown with lesson version 1; no
+  recording of v0.12 by a pilot exists, and `src/replay` is no lane's in this wave. Its events after the first attempt
+  do not re-derive, because lane s13-lessons changed the pass rule (by design, their step 2).
 - The hover lessons are outside the 2 to 3 s rule (their cap is 0.5 m/s); hover-turn's room is small and its ring 4 m
   away, on the same bearing.
 - The seconds are a model, not a flight (Needs from the simulator 4). The tunnels' margins are the widest sphere
-  sampled on 52 points along the track; the exact corner clearance of the 1.2 m tunnels is 0.424 m.
-- A v0.12 recording rebuilds on its own walls and is reported as flown with lesson version 1; its events after the
-  first attempt do not re-derive, because lane s13-lessons changed the pass rule (by design, their step 2).
+  sampled along the track (0.344 m in tunnel-long, whose free ways are 0.7 m); the exact corner clearance of the 1.2 m
+  tunnels is 0.424 m.
+
+Needs from the simulator, needs from other lanes and for the lead's merge: the sections of those names above.
