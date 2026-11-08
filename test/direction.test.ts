@@ -193,11 +193,12 @@ describe('a gate crossed from its back side', () => {
         const p = new ScriptedPilot(getLesson(id));
         p.answerer = truthAnswerer(p);
         p.begin();
-        for (let k = 0; k < 6 && p.run.phase !== 'passed'; k++) {
-            p.until(() => p.run.phase === 'flying' || p.run.phase === 'passed', 600);
-            if (p.run.phase !== 'passed') flyTruth(p);
+        const phase = (): string => p.run.phase;
+        for (let k = 0; k < 6 && phase() !== 'passed'; k++) {
+            p.until(() => phase() === 'flying' || phase() === 'passed', 600);
+            if (phase() !== 'passed') flyTruth(p);
         }
-        expect(p.run.phase).toBe('passed');
+        expect(phase()).toBe('passed');
         expect(p.of('touch')).toEqual([]);
         expect(cueOf(p, 'wrong-way')).toEqual([]);
         expect(cueOf(p, 'wrong-side')).toEqual([]);

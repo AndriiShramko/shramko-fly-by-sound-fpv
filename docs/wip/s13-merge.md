@@ -241,8 +241,10 @@ Steps 7 to 11, lane s13-worlds:
   pinned version by version. AGENTS.md: the map's world, sense and lessons rows (28, the fast path of 8) and a rule
   that every cue id is in the glossary and every flying lesson has the height and room layers; its generator rule was
   s13-worlds'. Also "21 lessons" in the full tier of `docs/design/virtual-listener.md` and the examples of two
-  comments in `src/lesson/runner.ts` ("Lesson 6 of 28"). `test/docs.test.ts` 8 of 8, typecheck clean, full suite 1042
-  of 1042.
+  comments in `src/lesson/runner.ts` ("Lesson 6 of 28"). `test/docs.test.ts` 8 of 8, full suite 1042 of 1042. The
+  typecheck was not clean from item g's commit (7a60194) to this one (04f1b9c): item g's new test compared
+  `p.run.phase` with 'passed' after the loop had narrowed it (TS2367; vitest does not typecheck). Fixed in the next
+  commit (the phase read through a function, as the other tests do); the typecheck is clean since.
 - [ ] 9. Full checks on the final code with fresh evidence
 - [ ] 10. The lanes' notes as public dev notes (`docs/dev/`); no build-machine folder in `docs/`, README, AGENTS, llms
 - [ ] 11. Final status of the whole merge
