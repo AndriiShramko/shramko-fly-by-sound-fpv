@@ -110,8 +110,9 @@ the code, then fixed with a test and its control (section "Review fixes" below):
   name as a word of its own; its control, v0.13's key lines said by their voices, loses the key in 4 Spanish, 1 Polish
   and 7 Russian lines), the percent records for Polish and Russian; `pnpm listen:words` PASS (217fe5790a33), the
   English, Spanish, Polish and Russian lines that name a key all heard with it
-- [ ] F4 Review E5: VL-6 and VL-2 hear the floor, the ceiling and the chime with their breaths (part 1 committed: the
-  rig's gaps flight, tunnel-gaps along its track, and the measurer's VL-6 and VL-2 over it; the run next)
+- [ ] F4 Review E5: VL-6 and VL-2 hear the floor, the ceiling and the chime with their breaths (parts 1 and 2
+  committed: the rig's gaps flight, the motor's fourth-order low-pass, VL-6 and VL-2 over the tunnel; `pnpm listen`
+  PASS, 9 of 9, inputs 543c687b88a2; the controls by hand next)
 - [x] F5 Review E6: the target note's two timings measured (two new audio proofs, `target-note-gap` and
   `target-note-pan`, each with its control), and both found wrong on the shipped engine and fixed: the height tone now
   comes back 12 ms after a placed note (`HRTF_TAIL_S`; 6.5 ms left 2.3 to 2.8 ms of overlap), and a constant input 140 dB

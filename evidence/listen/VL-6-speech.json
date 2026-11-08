@@ -1,11 +1,11 @@
 {
  "format": "shramko-listen-evidence/1",
- "key": "ee49704722eadf15ae24584a66fe450a476a95b8011a9593d8f7839a170ec0f7",
+ "key": "543c687b88a2b112f5eb5ee03a57cd713443f99b1365e3f88dfa604fe74fc91b",
  "inputs": {
-  "hash": "ee49704722eadf15ae24584a66fe450a476a95b8011a9593d8f7839a170ec0f7",
-  "files": 126,
-  "driver": 3,
-  "measure": 3,
+  "hash": "543c687b88a2b112f5eb5ee03a57cd713443f99b1365e3f88dfa604fe74fc91b",
+  "files": 127,
+  "driver": 4,
+  "measure": 4,
   "chrome": "156.0.8078.80",
   "tools": {
    "python": "3.11.9",
@@ -15,197 +15,423 @@
    "pyloudnorm": "0.2.0"
   }
  },
- "date": "2026-11-08T20:12:34.015Z",
+ "date": "2026-11-08T21:59:14.585Z",
  "id": "VL-6-speech",
- "claim": "the voice (all its lines, at the engine's utterance volume, the Windows desktop voice) is 3 to 6 LU over the flight's mix, in every theme (control: the v0.12 utterance volume 1)",
+ "claim": "the voice (all its lines, at the engine's utterance volume, the Windows desktop voice) is 3 to 6 LU over the ring flight's mix, in every theme (control: the v0.12 utterance volume 1); in tunnel-gaps flown with the chime above and below, the ceiling and the floor, the breath of air lowers the voice's margin over the mix by at most 0.5 LU in every theme (against the same flight with Sound from above and below off); the tunnel's own margin is reported",
  "thresholds": {
   "overLu": {
    "value": [
     3,
     6
    ],
-   "kind": "proposal (design VL-6)"
+   "kind": "proposal (design VL-6), the ring flight, where the voice was set (M41-17)"
+  },
+  "breathCostLu": {
+   "value": 0.5,
+   "kind": "proposal (review E5)"
+  },
+  "gapsCoverFrames": {
+   "value": 30,
+   "kind": "proposal (review E5)"
   }
  },
  "measured": {
-  "soft": {
-   "voiceLufs": -23.82,
-   "mixLufs": -28.49,
-   "overLu": 4.67,
-   "volume": 0.74,
-   "lines": [
-    {
-     "key": "fly.go",
-     "t0": 1.2,
+  "flights": {
+   "flight": {
+    "soft": {
+     "voiceLufs": -23.82,
+     "mixLufs": -28.42,
+     "overLu": 4.61,
      "volume": 0.74,
-     "speechLufs": -28.93,
-     "over3sBeforeLu": null
+     "lines": [
+      {
+       "key": "fly.go",
+       "t0": 1.2,
+       "volume": 0.74,
+       "speechLufs": -28.93,
+       "over3sBeforeLu": null
+      },
+      {
+       "key": "lesson.rings-first.hint.1",
+       "t0": 6.5,
+       "volume": 0.74,
+       "speechLufs": -22.96,
+       "over3sBeforeLu": 3.67
+      },
+      {
+       "key": "fly.attempt",
+       "t0": 11,
+       "volume": 0.74,
+       "speechLufs": -25.74,
+       "over3sBeforeLu": 10.41
+      }
+     ]
     },
-    {
-     "key": "lesson.rings-first.hint.1",
-     "t0": 6.5,
-     "volume": 0.74,
-     "speechLufs": -22.96,
-     "over3sBeforeLu": 3.73
+    "clear": {
+     "voiceLufs": -20.57,
+     "mixLufs": -25.13,
+     "overLu": 4.56,
+     "volume": 0.87,
+     "lines": [
+      {
+       "key": "fly.go",
+       "t0": 1.2,
+       "volume": 0.87,
+       "speechLufs": -25.68,
+       "over3sBeforeLu": null
+      },
+      {
+       "key": "lesson.rings-first.hint.1",
+       "t0": 6.5,
+       "volume": 0.87,
+       "speechLufs": -19.71,
+       "over3sBeforeLu": 4.59
+      },
+      {
+       "key": "fly.attempt",
+       "t0": 11,
+       "volume": 0.87,
+       "speechLufs": -22.49,
+       "over3sBeforeLu": 12.85
+      }
+     ]
     },
-    {
-     "key": "fly.attempt",
-     "t0": 11,
-     "volume": 0.74,
-     "speechLufs": -25.74,
-     "over3sBeforeLu": 10.54
+    "race": {
+     "voiceLufs": -23.07,
+     "mixLufs": -27.81,
+     "overLu": 4.74,
+     "volume": 0.77,
+     "lines": [
+      {
+       "key": "fly.go",
+       "t0": 1.2,
+       "volume": 0.77,
+       "speechLufs": -28.18,
+       "over3sBeforeLu": null
+      },
+      {
+       "key": "lesson.rings-first.hint.1",
+       "t0": 6.5,
+       "volume": 0.77,
+       "speechLufs": -22.21,
+       "over3sBeforeLu": 4.22
+      },
+      {
+       "key": "fly.attempt",
+       "t0": 11,
+       "volume": 0.77,
+       "speechLufs": -24.99,
+       "over3sBeforeLu": 10.27
+      }
+     ]
     }
-   ]
+   },
+   "gaps": {
+    "soft": {
+     "voiceLufs": -23.82,
+     "mixLufs": -26.7,
+     "overLu": 2.88,
+     "volume": 0.74,
+     "lines": [
+      {
+       "key": "fly.go",
+       "t0": 1.2,
+       "volume": 0.74,
+       "speechLufs": -28.93,
+       "over3sBeforeLu": null
+      },
+      {
+       "key": "lesson.rings-first.hint.1",
+       "t0": 5,
+       "volume": 0.74,
+       "speechLufs": -22.96,
+       "over3sBeforeLu": 6.58
+      },
+      {
+       "key": "fly.attempt",
+       "t0": 10.5,
+       "volume": 0.74,
+       "speechLufs": -25.74,
+       "over3sBeforeLu": 1.01
+      }
+     ]
+    },
+    "clear": {
+     "voiceLufs": -20.57,
+     "mixLufs": -22.56,
+     "overLu": 1.99,
+     "volume": 0.87,
+     "lines": [
+      {
+       "key": "fly.go",
+       "t0": 1.2,
+       "volume": 0.87,
+       "speechLufs": -25.68,
+       "over3sBeforeLu": null
+      },
+      {
+       "key": "lesson.rings-first.hint.1",
+       "t0": 5,
+       "volume": 0.87,
+       "speechLufs": -19.71,
+       "over3sBeforeLu": 7.57
+      },
+      {
+       "key": "fly.attempt",
+       "t0": 10.5,
+       "volume": 0.87,
+       "speechLufs": -22.49,
+       "over3sBeforeLu": -0.13
+      }
+     ]
+    },
+    "race": {
+     "voiceLufs": -23.07,
+     "mixLufs": -24.99,
+     "overLu": 1.93,
+     "volume": 0.77,
+     "lines": [
+      {
+       "key": "fly.go",
+       "t0": 1.2,
+       "volume": 0.77,
+       "speechLufs": -28.18,
+       "over3sBeforeLu": null
+      },
+      {
+       "key": "lesson.rings-first.hint.1",
+       "t0": 5,
+       "volume": 0.77,
+       "speechLufs": -22.21,
+       "over3sBeforeLu": 6
+      },
+      {
+       "key": "fly.attempt",
+       "t0": 10.5,
+       "volume": 0.77,
+       "speechLufs": -24.99,
+       "over3sBeforeLu": -0.39
+      }
+     ]
+    }
+   }
   },
-  "clear": {
-   "voiceLufs": -20.57,
-   "mixLufs": -25.17,
-   "overLu": 4.6,
-   "volume": 0.87,
-   "lines": [
-    {
-     "key": "fly.go",
-     "t0": 1.2,
-     "volume": 0.87,
-     "speechLufs": -25.68,
-     "over3sBeforeLu": null
-    },
-    {
-     "key": "lesson.rings-first.hint.1",
-     "t0": 6.5,
-     "volume": 0.87,
-     "speechLufs": -19.71,
-     "over3sBeforeLu": 4.64
-    },
-    {
-     "key": "fly.attempt",
-     "t0": 11,
-     "volume": 0.87,
-     "speechLufs": -22.49,
-     "over3sBeforeLu": 12.95
-    }
-   ]
+  "breathInTheTunnel": {
+   "soft": {
+    "overLuWithBreath": 2.88,
+    "overLuWithout": 3,
+    "mixLufsWithBreath": -26.7,
+    "mixLufsWithout": -26.81,
+    "breathCostLu": 0.12
+   },
+   "clear": {
+    "overLuWithBreath": 1.99,
+    "overLuWithout": 2.16,
+    "mixLufsWithBreath": -22.56,
+    "mixLufsWithout": -22.72,
+    "breathCostLu": 0.17
+   },
+   "race": {
+    "overLuWithBreath": 1.93,
+    "overLuWithout": 2.03,
+    "mixLufsWithBreath": -24.99,
+    "mixLufsWithout": -25.09,
+    "breathCostLu": 0.1
+   }
   },
-  "race": {
-   "voiceLufs": -23.07,
-   "mixLufs": -27.87,
-   "overLu": 4.8,
-   "volume": 0.77,
-   "lines": [
-    {
-     "key": "fly.go",
-     "t0": 1.2,
-     "volume": 0.77,
-     "speechLufs": -28.18,
-     "over3sBeforeLu": null
-    },
-    {
-     "key": "lesson.rings-first.hint.1",
-     "t0": 6.5,
-     "volume": 0.77,
-     "speechLufs": -22.21,
-     "over3sBeforeLu": 4.28
-    },
-    {
-     "key": "fly.attempt",
-     "t0": 11,
-     "volume": 0.77,
-     "speechLufs": -24.99,
-     "over3sBeforeLu": 10.37
-    }
-   ]
-  }
+  "gapsCover": {
+   "frames": {
+    "chimeAbove": 152,
+    "chimeBelow": 160,
+    "ceiling": 203,
+    "floor": 205
+   },
+   "ok": true,
+   "minFrames": 30
+  },
+  "reported": "the tunnel's own margin (flights.gaps) is not held to 3 to 6 LU: the voices were set for the ring flight, and one utterance volume cannot hold both (docs/dev/status-v0.13-sound.md, step 8); see docs/dev/status-v0.13-elev.md, F4"
  },
  "controls": [
   {
    "name": "utterance volume 1 (v0.12)",
    "measured": {
-    "soft": {
-     "voiceLufs": -17.32,
-     "mixLufs": -28.49,
-     "overLu": 11.17,
-     "volume": 1,
-     "lines": [
-      {
-       "key": "fly.go",
-       "t0": 1.2,
-       "volume": 1,
-       "speechLufs": -22.43,
-       "over3sBeforeLu": null
-      },
-      {
-       "key": "lesson.rings-first.hint.1",
-       "t0": 6.5,
-       "volume": 1,
-       "speechLufs": -16.46,
-       "over3sBeforeLu": 10.23
-      },
-      {
-       "key": "fly.attempt",
-       "t0": 11,
-       "volume": 1,
-       "speechLufs": -19.24,
-       "over3sBeforeLu": 17.04
-      }
-     ]
+    "flight": {
+     "soft": {
+      "voiceLufs": -17.32,
+      "mixLufs": -28.42,
+      "overLu": 11.11,
+      "volume": 1,
+      "lines": [
+       {
+        "key": "fly.go",
+        "t0": 1.2,
+        "volume": 1,
+        "speechLufs": -22.43,
+        "over3sBeforeLu": null
+       },
+       {
+        "key": "lesson.rings-first.hint.1",
+        "t0": 6.5,
+        "volume": 1,
+        "speechLufs": -16.46,
+        "over3sBeforeLu": 10.17
+       },
+       {
+        "key": "fly.attempt",
+        "t0": 11,
+        "volume": 1,
+        "speechLufs": -19.24,
+        "over3sBeforeLu": 16.91
+       }
+      ]
+     },
+     "clear": {
+      "voiceLufs": -17.32,
+      "mixLufs": -25.13,
+      "overLu": 7.81,
+      "volume": 1,
+      "lines": [
+       {
+        "key": "fly.go",
+        "t0": 1.2,
+        "volume": 1,
+        "speechLufs": -22.43,
+        "over3sBeforeLu": null
+       },
+       {
+        "key": "lesson.rings-first.hint.1",
+        "t0": 6.5,
+        "volume": 1,
+        "speechLufs": -16.46,
+        "over3sBeforeLu": 7.84
+       },
+       {
+        "key": "fly.attempt",
+        "t0": 11,
+        "volume": 1,
+        "speechLufs": -19.24,
+        "over3sBeforeLu": 16.1
+       }
+      ]
+     },
+     "race": {
+      "voiceLufs": -17.32,
+      "mixLufs": -27.81,
+      "overLu": 10.49,
+      "volume": 1,
+      "lines": [
+       {
+        "key": "fly.go",
+        "t0": 1.2,
+        "volume": 1,
+        "speechLufs": -22.43,
+        "over3sBeforeLu": null
+       },
+       {
+        "key": "lesson.rings-first.hint.1",
+        "t0": 6.5,
+        "volume": 1,
+        "speechLufs": -16.46,
+        "over3sBeforeLu": 9.97
+       },
+       {
+        "key": "fly.attempt",
+        "t0": 11,
+        "volume": 1,
+        "speechLufs": -19.24,
+        "over3sBeforeLu": 16.02
+       }
+      ]
+     }
     },
-    "clear": {
-     "voiceLufs": -17.32,
-     "mixLufs": -25.17,
-     "overLu": 7.85,
-     "volume": 1,
-     "lines": [
-      {
-       "key": "fly.go",
-       "t0": 1.2,
-       "volume": 1,
-       "speechLufs": -22.43,
-       "over3sBeforeLu": null
-      },
-      {
-       "key": "lesson.rings-first.hint.1",
-       "t0": 6.5,
-       "volume": 1,
-       "speechLufs": -16.46,
-       "over3sBeforeLu": 7.89
-      },
-      {
-       "key": "fly.attempt",
-       "t0": 11,
-       "volume": 1,
-       "speechLufs": -19.24,
-       "over3sBeforeLu": 16.2
-      }
-     ]
-    },
-    "race": {
-     "voiceLufs": -17.32,
-     "mixLufs": -27.87,
-     "overLu": 10.55,
-     "volume": 1,
-     "lines": [
-      {
-       "key": "fly.go",
-       "t0": 1.2,
-       "volume": 1,
-       "speechLufs": -22.43,
-       "over3sBeforeLu": null
-      },
-      {
-       "key": "lesson.rings-first.hint.1",
-       "t0": 6.5,
-       "volume": 1,
-       "speechLufs": -16.46,
-       "over3sBeforeLu": 10.03
-      },
-      {
-       "key": "fly.attempt",
-       "t0": 11,
-       "volume": 1,
-       "speechLufs": -19.24,
-       "over3sBeforeLu": 16.12
-      }
-     ]
+    "gaps": {
+     "soft": {
+      "voiceLufs": -17.32,
+      "mixLufs": -26.7,
+      "overLu": 9.38,
+      "volume": 1,
+      "lines": [
+       {
+        "key": "fly.go",
+        "t0": 1.2,
+        "volume": 1,
+        "speechLufs": -22.43,
+        "over3sBeforeLu": null
+       },
+       {
+        "key": "lesson.rings-first.hint.1",
+        "t0": 5,
+        "volume": 1,
+        "speechLufs": -16.46,
+        "over3sBeforeLu": 13.08
+       },
+       {
+        "key": "fly.attempt",
+        "t0": 10.5,
+        "volume": 1,
+        "speechLufs": -19.24,
+        "over3sBeforeLu": 7.51
+       }
+      ]
+     },
+     "clear": {
+      "voiceLufs": -17.32,
+      "mixLufs": -22.56,
+      "overLu": 5.24,
+      "volume": 1,
+      "lines": [
+       {
+        "key": "fly.go",
+        "t0": 1.2,
+        "volume": 1,
+        "speechLufs": -22.43,
+        "over3sBeforeLu": null
+       },
+       {
+        "key": "lesson.rings-first.hint.1",
+        "t0": 5,
+        "volume": 1,
+        "speechLufs": -16.46,
+        "over3sBeforeLu": 10.82
+       },
+       {
+        "key": "fly.attempt",
+        "t0": 10.5,
+        "volume": 1,
+        "speechLufs": -19.24,
+        "over3sBeforeLu": 3.12
+       }
+      ]
+     },
+     "race": {
+      "voiceLufs": -17.32,
+      "mixLufs": -24.99,
+      "overLu": 7.68,
+      "volume": 1,
+      "lines": [
+       {
+        "key": "fly.go",
+        "t0": 1.2,
+        "volume": 1,
+        "speechLufs": -22.43,
+        "over3sBeforeLu": null
+       },
+       {
+        "key": "lesson.rings-first.hint.1",
+        "t0": 5,
+        "volume": 1,
+        "speechLufs": -16.46,
+        "over3sBeforeLu": 11.75
+       },
+       {
+        "key": "fly.attempt",
+        "t0": 10.5,
+        "volume": 1,
+        "speechLufs": -19.24,
+        "over3sBeforeLu": 5.36
+       }
+      ]
+     }
     }
    },
    "ok": true

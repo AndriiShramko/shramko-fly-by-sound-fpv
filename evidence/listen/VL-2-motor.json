@@ -1,11 +1,11 @@
 {
  "format": "shramko-listen-evidence/1",
- "key": "ee49704722eadf15ae24584a66fe450a476a95b8011a9593d8f7839a170ec0f7",
+ "key": "543c687b88a2b112f5eb5ee03a57cd713443f99b1365e3f88dfa604fe74fc91b",
  "inputs": {
-  "hash": "ee49704722eadf15ae24584a66fe450a476a95b8011a9593d8f7839a170ec0f7",
-  "files": 126,
-  "driver": 3,
-  "measure": 3,
+  "hash": "543c687b88a2b112f5eb5ee03a57cd713443f99b1365e3f88dfa604fe74fc91b",
+  "files": 127,
+  "driver": 4,
+  "measure": 4,
   "chrome": "156.0.8078.80",
   "tools": {
    "python": "3.11.9",
@@ -15,9 +15,9 @@
    "pyloudnorm": "0.2.0"
   }
  },
- "date": "2026-11-08T20:12:34.015Z",
+ "date": "2026-11-08T21:59:14.585Z",
  "id": "VL-2-motor",
- "claim": "every cue (safety, height, target, shape) is at least 6 dB over the motor in its own third-octave bands, where it sounds, for the simulator's default craft and the micro presets and a 5-inch quad, the slider at its default 15 % (control: the v0.12 path, the raw motor at the slider at 60 %)",
+ "claim": "every cue (safety, height, target, shape) is at least 6 dB over the motor in its own third-octave bands, where it sounds, for the simulator's default craft and the micro presets and a 5-inch quad, the slider at its default 15 %, in the ring flight and in tunnel-gaps flown (safety and height there: the chime above and below, the ceiling and the floor), and there the breath of air of those cues is 12 dB over the motor in every third octave from 4 to 16 kHz, as the motor bus is made to keep off the cues' highs (control: the v0.12 path, the raw motor at the slider at 60 %)",
  "thresholds": {
   "minMarginDb": {
    "value": 6,
@@ -26,6 +26,14 @@
   "ownBands": {
    "value": "within 10 dB of the cue's strongest band",
    "kind": "proposal"
+  },
+  "breathBands": {
+   "value": "4 to 16 kHz third octaves, frames with a safety voice that has the breath",
+   "kind": "proposal (review E5)"
+  },
+  "breathMarginDb": {
+   "value": 12,
+   "kind": "the motor bus design"
   }
  },
  "measured": {
@@ -42,10 +50,10 @@
       "315",
       "397"
      ],
-     "minMarginDb": 64.5,
+     "minMarginDb": 65.4,
      "marginsDb": {
       "315": 102.5,
-      "397": 64.5
+      "397": 65.4
      }
     },
     "height": {
@@ -54,10 +62,10 @@
       "397",
       "500"
      ],
-     "minMarginDb": 40,
+     "minMarginDb": 40.8,
      "marginsDb": {
-      "397": 64.2,
-      "500": 40
+      "397": 64.8,
+      "500": 40.8
      }
     },
     "target": {
@@ -67,11 +75,11 @@
       "198",
       "500"
      ],
-     "minMarginDb": 34.4,
+     "minMarginDb": 35.2,
      "marginsDb": {
-      "157": 109.5,
-      "198": 96.1,
-      "500": 34.4
+      "157": 107.7,
+      "198": 94.1,
+      "500": 35.2
      }
     },
     "shape": {
@@ -85,15 +93,15 @@
       "500",
       "630"
      ],
-     "minMarginDb": 30.3,
+     "minMarginDb": 30.9,
      "marginsDb": {
-      "157": 96,
-      "198": 95.4,
-      "250": 82.6,
-      "315": 67.1,
-      "397": 51.6,
-      "500": 33.5,
-      "630": 30.3
+      "157": 94.3,
+      "198": 93.7,
+      "250": 82.3,
+      "315": 67,
+      "397": 52.2,
+      "500": 34.3,
+      "630": 30.9
      }
     }
    },
@@ -104,10 +112,10 @@
       "315",
       "397"
      ],
-     "minMarginDb": 81.1,
+     "minMarginDb": 81.6,
      "marginsDb": {
-      "315": 100.3,
-      "397": 81.1
+      "315": 100.6,
+      "397": 81.6
      }
     },
     "height": {
@@ -116,10 +124,72 @@
       "397",
       "500"
      ],
-     "minMarginDb": 48.7,
+     "minMarginDb": 49.4,
      "marginsDb": {
       "397": 71.7,
-      "500": 48.7
+      "500": 49.4
+     }
+    },
+    "target": {
+     "activeFrames": 53,
+     "ownBandsHz": [
+      "157",
+      "198",
+      "500"
+     ],
+     "minMarginDb": 46.4,
+     "marginsDb": {
+      "157": 110,
+      "198": 95.6,
+      "500": 46.4
+     }
+    },
+    "shape": {
+     "activeFrames": 116,
+     "ownBandsHz": [
+      "157",
+      "198",
+      "250",
+      "315",
+      "397",
+      "500",
+      "630"
+     ],
+     "minMarginDb": 20.6,
+     "marginsDb": {
+      "157": 95.8,
+      "198": 94.7,
+      "250": 84.6,
+      "315": 70,
+      "397": 58.7,
+      "500": 43.3,
+      "630": 20.6
+     }
+    }
+   },
+   "air65-1s": {
+    "safety": {
+     "activeFrames": 18,
+     "ownBandsHz": [
+      "315",
+      "397"
+     ],
+     "minMarginDb": 81,
+     "marginsDb": {
+      "315": 99.5,
+      "397": 81
+     }
+    },
+    "height": {
+     "activeFrames": 160,
+     "ownBandsHz": [
+      "397",
+      "500"
+     ],
+     "minMarginDb": 51.2,
+     "marginsDb": {
+      "397": 74.7,
+      "500": 51.2
      }
     },
     "target": {
@@ -131,71 +201,9 @@
      ],
      "minMarginDb": 45.6,
      "marginsDb": {
-      "157": 110.1,
-      "198": 96.1,
+      "157": 107.5,
+      "198": 96.8,
       "500": 45.6
-     }
-    },
-    "shape": {
-     "activeFrames": 116,
-     "ownBandsHz": [
-      "157",
-      "198",
-      "250",
-      "315",
-      "397",
-      "500",
-      "630"
-     ],
-     "minMarginDb": 20.1,
-     "marginsDb": {
-      "157": 96.3,
-      "198": 95.5,
-      "250": 84.6,
-      "315": 70.1,
-      "397": 58.7,
-      "500": 42.5,
-      "630": 20.1
-     }
-    }
-   },
-   "air65-1s": {
-    "safety": {
-     "activeFrames": 18,
-     "ownBandsHz": [
-      "315",
-      "397"
-     ],
-     "minMarginDb": 81.3,
-     "marginsDb": {
-      "315": 100.4,
-      "397": 81.3
-     }
-    },
-    "height": {
-     "activeFrames": 160,
-     "ownBandsHz": [
-      "397",
-      "500"
-     ],
-     "minMarginDb": 50.6,
-     "marginsDb": {
-      "397": 74.9,
-      "500": 50.6
-     }
-    },
-    "target": {
-     "activeFrames": 53,
-     "ownBandsHz": [
-      "157",
-      "198",
-      "500"
-     ],
-     "minMarginDb": 45.1,
-     "marginsDb": {
-      "157": 108.1,
-      "198": 96.6,
-      "500": 45.1
      }
     },
     "shape": {
@@ -211,12 +219,12 @@
      ],
      "minMarginDb": 15,
      "marginsDb": {
-      "157": 94.7,
-      "198": 95.8,
+      "157": 93.7,
+      "198": 95.4,
       "250": 86.4,
-      "315": 75.3,
-      "397": 61.9,
-      "500": 44.4,
+      "315": 75.2,
+      "397": 61.8,
+      "500": 44.9,
       "630": 15
      }
     }
@@ -228,10 +236,10 @@
       "315",
       "397"
      ],
-     "minMarginDb": 81.6,
+     "minMarginDb": 80.6,
      "marginsDb": {
-      "315": 100.4,
-      "397": 81.6
+      "315": 99.6,
+      "397": 80.6
      }
     },
     "height": {
@@ -240,10 +248,10 @@
       "397",
       "500"
      ],
-     "minMarginDb": 55.7,
+     "minMarginDb": 55.3,
      "marginsDb": {
-      "397": 80,
-      "500": 55.7
+      "397": 79.5,
+      "500": 55.3
      }
     },
     "target": {
@@ -253,11 +261,11 @@
       "198",
       "500"
      ],
-     "minMarginDb": 49.8,
+     "minMarginDb": 49.5,
      "marginsDb": {
-      "157": 110.9,
-      "198": 97.5,
-      "500": 49.8
+      "157": 108.6,
+      "198": 95.8,
+      "500": 49.5
      }
     },
     "shape": {
@@ -271,15 +279,15 @@
       "500",
       "630"
      ],
-     "minMarginDb": 22.3,
+     "minMarginDb": 22.2,
      "marginsDb": {
-      "157": 96.6,
-      "198": 95.5,
-      "250": 87.9,
-      "315": 79.5,
-      "397": 67.5,
-      "500": 49.4,
-      "630": 22.3
+      "157": 94.5,
+      "198": 94.8,
+      "250": 87.4,
+      "315": 79,
+      "397": 67.1,
+      "500": 49.1,
+      "630": 22.2
      }
     }
    },
@@ -290,10 +298,10 @@
       "315",
       "397"
      ],
-     "minMarginDb": 68.1,
+     "minMarginDb": 68.9,
      "marginsDb": {
-      "315": 68.1,
-      "397": 76.7
+      "315": 68.9,
+      "397": 76.9
      }
     },
     "height": {
@@ -302,10 +310,10 @@
       "397",
       "500"
      ],
-     "minMarginDb": 48.8,
+     "minMarginDb": 48.7,
      "marginsDb": {
-      "397": 75.3,
-      "500": 48.8
+      "397": 75.4,
+      "500": 48.7
      }
     },
     "target": {
@@ -315,11 +323,11 @@
       "198",
       "500"
      ],
-     "minMarginDb": 42.9,
+     "minMarginDb": 42.7,
      "marginsDb": {
-      "157": 102.1,
-      "198": 78.6,
-      "500": 42.9
+      "157": 101.1,
+      "198": 78,
+      "500": 42.7
      }
     },
     "shape": {
@@ -333,15 +341,15 @@
       "500",
       "630"
      ],
-     "minMarginDb": 24.2,
+     "minMarginDb": 24.3,
      "marginsDb": {
-      "157": 88.4,
-      "198": 78.8,
-      "250": 55.3,
-      "315": 53,
-      "397": 62.9,
-      "500": 42.4,
-      "630": 24.2
+      "157": 86.8,
+      "198": 78.1,
+      "250": 56.2,
+      "315": 53.9,
+      "397": 63,
+      "500": 42.3,
+      "630": 24.3
      }
     }
    }
@@ -349,26 +357,286 @@
   "level": {
    "cuesLufs": -30.43,
    "pavo20pro-3s": {
-    "motorLufs": -41.97,
-    "motorUnderCuesLu": 11.54
+    "motorLufs": -41.28,
+    "motorUnderCuesLu": 10.84
    },
    "meteor65pro-1s": {
-    "motorLufs": -41.51,
-    "motorUnderCuesLu": 11.08
+    "motorLufs": -40.89,
+    "motorUnderCuesLu": 10.45
    },
    "air65-1s": {
-    "motorLufs": -41.75,
-    "motorUnderCuesLu": 11.31
+    "motorLufs": -41.49,
+    "motorUnderCuesLu": 11.06
    },
    "pavopico-2s": {
-    "motorLufs": -42.6,
-    "motorUnderCuesLu": 12.16
+    "motorLufs": -42.85,
+    "motorUnderCuesLu": 12.42
    },
    "five-inch": {
-    "motorLufs": -44.54,
-    "motorUnderCuesLu": 14.11
+    "motorLufs": -43.99,
+    "motorUnderCuesLu": 13.56
    },
    "rawMotor60Lufs": -35.7
+  },
+  "gaps": {
+   "worst": {
+    "marginDb": 41.7,
+    "craft": "pavo20pro-3s",
+    "cue": "safety"
+   },
+   "margins": {
+    "pavo20pro-3s": {
+     "safety": {
+      "activeFrames": 126,
+      "ownBandsHz": [
+       "125",
+       "157",
+       "198",
+       "315",
+       "397",
+       "500"
+      ],
+      "minMarginDb": 41.7,
+      "marginsDb": {
+       "125": 101.1,
+       "157": 108.7,
+       "198": 105.9,
+       "315": 99.1,
+       "397": 84.9,
+       "500": 41.7
+      }
+     },
+     "height": {
+      "activeFrames": 189,
+      "ownBandsHz": [
+       "250",
+       "315"
+      ],
+      "minMarginDb": 83.4,
+      "marginsDb": {
+       "250": 90.7,
+       "315": 83.4
+      }
+     }
+    },
+    "meteor65pro-1s": {
+     "safety": {
+      "activeFrames": 126,
+      "ownBandsHz": [
+       "125",
+       "157",
+       "198",
+       "315",
+       "397",
+       "500"
+      ],
+      "minMarginDb": 62.7,
+      "marginsDb": {
+       "125": 105,
+       "157": 109.6,
+       "198": 104.8,
+       "315": 97.4,
+       "397": 83,
+       "500": 62.7
+      }
+     },
+     "height": {
+      "activeFrames": 189,
+      "ownBandsHz": [
+       "250",
+       "315"
+      ],
+      "minMarginDb": 86.3,
+      "marginsDb": {
+       "250": 92.9,
+       "315": 86.3
+      }
+     }
+    },
+    "air65-1s": {
+     "safety": {
+      "activeFrames": 126,
+      "ownBandsHz": [
+       "125",
+       "157",
+       "198",
+       "315",
+       "397",
+       "500"
+      ],
+      "minMarginDb": 66.5,
+      "marginsDb": {
+       "125": 99.8,
+       "157": 105.1,
+       "198": 104.3,
+       "315": 97.2,
+       "397": 82.7,
+       "500": 66.5
+      }
+     },
+     "height": {
+      "activeFrames": 189,
+      "ownBandsHz": [
+       "250",
+       "315"
+      ],
+      "minMarginDb": 91.2,
+      "marginsDb": {
+       "250": 93.9,
+       "315": 91.2
+      }
+     }
+    },
+    "pavopico-2s": {
+     "safety": {
+      "activeFrames": 126,
+      "ownBandsHz": [
+       "125",
+       "157",
+       "198",
+       "315",
+       "397",
+       "500"
+      ],
+      "minMarginDb": 65.7,
+      "marginsDb": {
+       "125": 105.1,
+       "157": 108.2,
+       "198": 104.8,
+       "315": 96.9,
+       "397": 81.9,
+       "500": 65.7
+      }
+     },
+     "height": {
+      "activeFrames": 189,
+      "ownBandsHz": [
+       "250",
+       "315"
+      ],
+      "minMarginDb": 94.4,
+      "marginsDb": {
+       "250": 95.3,
+       "315": 94.4
+      }
+     }
+    },
+    "five-inch": {
+     "safety": {
+      "activeFrames": 126,
+      "ownBandsHz": [
+       "125",
+       "157",
+       "198",
+       "315",
+       "397",
+       "500"
+      ],
+      "minMarginDb": 58.2,
+      "marginsDb": {
+       "125": 97.7,
+       "157": 102.4,
+       "198": 90,
+       "315": 69.8,
+       "397": 77.4,
+       "500": 58.2
+      }
+     },
+     "height": {
+      "activeFrames": 189,
+      "ownBandsHz": [
+       "250",
+       "315"
+      ],
+      "minMarginDb": 63,
+      "marginsDb": {
+       "250": 63,
+       "315": 69.3
+      }
+     }
+    }
+   },
+   "breath": {
+    "pavo20pro-3s": {
+     "frames": 110,
+     "marginsDb": {
+      "4000": 35.7,
+      "5040": 47.7,
+      "6350": 58.7,
+      "8000": 70.1,
+      "10079": 79.1,
+      "12699": 98.2,
+      "16000": 102.1
+     },
+     "minMarginDb": 35.7
+    },
+    "meteor65pro-1s": {
+     "frames": 110,
+     "marginsDb": {
+      "4000": 19.2,
+      "5040": 43.8,
+      "6350": 55.2,
+      "8000": 66.6,
+      "10079": 75.6,
+      "12699": 95.2,
+      "16000": 100.7
+     },
+     "minMarginDb": 19.2
+    },
+    "air65-1s": {
+     "frames": 110,
+     "marginsDb": {
+      "4000": 17.8,
+      "5040": 41.3,
+      "6350": 52.7,
+      "8000": 64.2,
+      "10079": 73.3,
+      "12699": 93.1,
+      "16000": 100.3
+     },
+     "minMarginDb": 17.8
+    },
+    "pavopico-2s": {
+     "frames": 110,
+     "marginsDb": {
+      "4000": 27.2,
+      "5040": 22.8,
+      "6350": 49.5,
+      "8000": 61.2,
+      "10079": 70.3,
+      "12699": 90.6,
+      "16000": 102.4
+     },
+     "minMarginDb": 22.8
+    },
+    "five-inch": {
+     "frames": 110,
+     "marginsDb": {
+      "4000": 36.8,
+      "5040": 48,
+      "6350": 59,
+      "8000": 70.4,
+      "10079": 79.4,
+      "12699": 98.7,
+      "16000": 103.6
+     },
+     "minMarginDb": 36.8
+    }
+   },
+   "breathWorst": {
+    "marginDb": 17.8,
+    "craft": "air65-1s"
+   },
+   "cover": {
+    "frames": {
+     "chimeAbove": 152,
+     "chimeBelow": 160,
+     "ceiling": 203,
+     "floor": 205
+    },
+    "ok": true,
+    "minFrames": 30
+   }
   }
  },
  "controls": [
@@ -434,6 +702,59 @@
       "500": 0.9,
       "630": 1.9
      }
+    }
+   },
+   "ok": true
+  },
+  {
+   "name": "the same in tunnel-gaps (its margins and the breath bands)",
+   "measured": {
+    "margins": {
+     "safety": {
+      "activeFrames": 126,
+      "ownBandsHz": [
+       "125",
+       "157",
+       "198",
+       "315",
+       "397",
+       "500"
+      ],
+      "minMarginDb": 8.5,
+      "marginsDb": {
+       "125": 49.3,
+       "157": 51.8,
+       "198": 48.6,
+       "315": 48.5,
+       "397": 42.2,
+       "500": 8.5
+      }
+     },
+     "height": {
+      "activeFrames": 189,
+      "ownBandsHz": [
+       "250",
+       "315"
+      ],
+      "minMarginDb": 37.7,
+      "marginsDb": {
+       "250": 37.7,
+       "315": 38
+      }
+     }
+    },
+    "breath": {
+     "frames": 110,
+     "marginsDb": {
+      "4000": 4.5,
+      "5040": 6.9,
+      "6350": 8.5,
+      "8000": 10,
+      "10079": 8.9,
+      "12699": 17.7,
+      "16000": 17.7
+     },
+     "minMarginDb": 4.5
     }
    },
    "ok": true

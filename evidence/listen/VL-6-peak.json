@@ -1,11 +1,11 @@
 {
  "format": "shramko-listen-evidence/1",
- "key": "ee49704722eadf15ae24584a66fe450a476a95b8011a9593d8f7839a170ec0f7",
+ "key": "543c687b88a2b112f5eb5ee03a57cd713443f99b1365e3f88dfa604fe74fc91b",
  "inputs": {
-  "hash": "ee49704722eadf15ae24584a66fe450a476a95b8011a9593d8f7839a170ec0f7",
-  "files": 126,
-  "driver": 3,
-  "measure": 3,
+  "hash": "543c687b88a2b112f5eb5ee03a57cd713443f99b1365e3f88dfa604fe74fc91b",
+  "files": 127,
+  "driver": 4,
+  "measure": 4,
   "chrome": "156.0.8078.80",
   "tools": {
    "python": "3.11.9",
@@ -15,9 +15,9 @@
    "pyloudnorm": "0.2.0"
   }
  },
- "date": "2026-11-08T20:12:34.015Z",
+ "date": "2026-11-08T21:59:14.585Z",
  "id": "VL-6-peak",
- "claim": "the true peak of what reaches the ears (the engine and the voice) is at most -1 dBTP in every theme (control: the v0.12 utterance volume 1)",
+ "claim": "the true peak of what reaches the ears (the engine and the voice) is at most -1 dBTP in every theme, in the ring flight and in tunnel-gaps flown with the chime above and below, the ceiling and the floor and their breath of air (control: the v0.12 utterance volume 1)",
  "thresholds": {
   "truePeakDbtp": {
    "value": -1,
@@ -25,29 +25,67 @@
   }
  },
  "measured": {
-  "soft": {
-   "mixWithSpeechDbtp": -6.99,
-   "engineOnlyDbtp": -10.49,
-   "engineLufs": -28.73
+  "flights": {
+   "flight": {
+    "soft": {
+     "mixWithSpeechDbtp": -6.96,
+     "engineOnlyDbtp": -10.33,
+     "engineLufs": -28.66
+    },
+    "clear": {
+     "mixWithSpeechDbtp": -3.72,
+     "engineOnlyDbtp": -11.28,
+     "engineLufs": -25.52
+    },
+    "race": {
+     "mixWithSpeechDbtp": -6.19,
+     "engineOnlyDbtp": -13.55,
+     "engineLufs": -28.11
+    }
+   },
+   "gaps": {
+    "soft": {
+     "mixWithSpeechDbtp": -4.89,
+     "engineOnlyDbtp": -9.1,
+     "engineLufs": -26.9
+    },
+    "clear": {
+     "mixWithSpeechDbtp": -1.98,
+     "engineOnlyDbtp": -6.96,
+     "engineLufs": -22.79
+    },
+    "race": {
+     "mixWithSpeechDbtp": -4.53,
+     "engineOnlyDbtp": -7.06,
+     "engineLufs": -25.18
+    }
+   }
   },
-  "clear": {
-   "mixWithSpeechDbtp": -3.74,
-   "engineOnlyDbtp": -11.3,
-   "engineLufs": -25.56
-  },
-  "race": {
-   "mixWithSpeechDbtp": -6.26,
-   "engineOnlyDbtp": -13.66,
-   "engineLufs": -28.17
+  "gapsCover": {
+   "frames": {
+    "chimeAbove": 152,
+    "chimeBelow": 160,
+    "ceiling": 203,
+    "floor": 205
+   },
+   "ok": true,
+   "minFrames": 30
   }
  },
  "controls": [
   {
    "name": "utterance volume 1 (v0.12)",
    "measured": {
-    "soft": -0.52,
-    "clear": -0.51,
-    "race": -0.49
+    "flight": {
+     "soft": -0.51,
+     "clear": -0.5,
+     "race": -0.45
+    },
+    "gaps": {
+     "soft": 0.26,
+     "clear": 0.55,
+     "race": 0.17
+    }
    },
    "ok": true
   }
