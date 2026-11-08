@@ -21,7 +21,7 @@
 // 5. Evidence: evidence/listen/VL-4-words.json, keyed by the hash of every input. With nothing changed since the last
 //    passing run, nothing runs again (--force runs it anyway).
 //
-// --sim runs the same on the simulator's Fly by Sound lines (its fly/sonic, sonicentry, sonickeys and sonicrec files)
+// --sim runs the same on the simulator's Fly by Sound lines (its fly/sonic, sonicentry, sonickeys, sonicrec and soniclook files)
 // and writes a report, not evidence: the simulator owns those texts.
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
@@ -331,7 +331,7 @@ export function keyHeard(line: Pick<Line, 'locale' | 'keyName'>, hyp: string): b
 }
 
 /** The simulator's Fly by Sound files (under its packages/i18n/locales). */
-export const SIM_FILES = ['fly/sonic', 'fly/sonicentry', 'fly/sonickeys', 'fly/sonicrec'] as const;
+export const SIM_FILES = ['fly/sonic', 'fly/sonicentry', 'fly/sonickeys', 'fly/sonicrec', 'fly/soniclook'] as const;
 
 /** Keys of those files that are not lines a person hears or reads as words: a language tag and the phrases the recogniser listens for. */
 export const SIM_NOT_LINES: readonly RegExp[] = [/^sonicrec\.voice\.lang$/, /^sonicrec\.voice\.phrases\./];
@@ -382,7 +382,10 @@ export function simulatorLines(root: string): Line[] {
             n: '2',
             done: '1',
             of: '3',
-            code: '503'
+            code: '503',
+            // fly/soniclook (the sound panel's and the attitude display's words): a play of a named sound, a height in metres
+            k: '1',
+            v: '1.5'
         });
         for (const [key, template] of Object.entries(dict)) {
             if (SIM_NOT_LINES.some((r) => r.test(key))) continue;
