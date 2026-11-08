@@ -47,12 +47,15 @@ Fixes after the review (`docs/wip/s13-sound-review.md`), one commit per fix or s
   s13-lessons' (its worktree at 1862a33 plus its uncommitted R2 fix, read 2026-11-08); the planner sounds a repeat-cue
   for the play's `durS`, a stage by `stage`, wrong-way and wrong-side from `dir`; the engine plans a repeat-cue at once
   (`test/events.test.ts`, 16 tests; `test/replay-v012.test.ts` relaxed as s13-lessons' review R2 asks)
-- [ ] M1 the open way in narrow tunnels
+- [x] M1 the open way in narrow tunnels: probes from 0.25 m out in steps of 0.15 m with the hull's half width and
+  3 cm; tunnels 2, 1.6 and 1.2 m wide, a way on every side, the craft at three places across the obstacle: each way
+  named, never another (`src/sense/freeway.ts`, `test/freeway.test.ts`, 21 tests with the controls)
 - [ ] M2 the target height without a beat that sounds like "out of band" or "off aim"
 - [ ] M3 the motor calibrated on the default craft and the micro presets
 - [ ] M4 the voice the owner's Chrome speaks
 - [ ] M5, M6, m4, m7 what the simulator, the lead and s13-lessons must do, in this doc
-- [ ] m1, m2 the open-way chime on gates and its above and below
+- [x] m1 no open-way chime at a gate ahead (the target layer leads through it), with its control (same commit as M1)
+- [ ] m2 the open-way chime's above and below
 - [ ] m3 the pilot's motor level
 - [ ] m5 the new lines in their languages
 - [ ] m6, m8 stale statements, build-machine folders
@@ -267,11 +270,18 @@ Left open, with reasons:
 - Trigger: one ray straight along the nose; something closing on it in under 3 s (`FREE_TTC_S`). Not the front
   sector: its side rays see a side wall the craft drifts toward, which the first version took for "an obstacle
   ahead" (and then said "free on the right" inside the left gap). A dead end gives the trigger and no free side.
-- Search (`findFreeWay`): a point 0.25 m past the obstacle's front, 0.7, 1.2 or 1.8 m to the left, right, above or
-  below the craft's line (nearest first; at one offset the side already sounding first, then the side of the drift,
-  then left, right, up, down). A side is free when the straight line there is clear (hull included) and the passage
-  past the front stays free for 1.5 m at its middle and 0.2 m to either side (a 0.35 m slot is no way). At most 4 rays
-  a probe, 12 probes, only while the trigger holds.
+- Search (`findFreeWay`), as fixed after the review (M1): a point 0.25 m past the obstacle's front, 0.25 to 1.8 m to
+  the left, right, above or below the craft's line in steps of 0.15 m (0.2 m past 1 m; nearest first; at one offset the
+  side already sounding first, then the side of the drift, then left, right, up, down). A side is free when the
+  straight line there is clear (hull included) and the passage past the front stays free for 1.5 m at its middle and
+  0.15 m to either side (the hull and 3 cm: a way is at least 0.3 m wide; a 0.26 m slot is no way). At most 4 rays a
+  probe (one when the probe cannot see its point), 40 probes, only while the trigger holds. The first probes (0.7, 1.2
+  and 1.8 m, 0.2 m to either side) needed a way reaching 0.9 m from the line: in 48 starts (tunnels 3, 2, 1.6 and
+  1.2 m wide, a way of 1.2, 0.8, 0.6 and 0.5 m on each side, the craft at three places where the obstacle is ahead)
+  they named the way in 27, the new probes in all 48, each from the first frame (1.96 s before the obstacle here).
+- No chime when the obstacle ahead is a gate (a ring, a square or a cube frame with a place in the course; review m1):
+  the target hum leads through it, and the first version, flying at a ring's tube, said "left" outside the ring while
+  the hum said "right". The hazard still sounds when the path meets the tube (B1).
 - The chime (`safety.free`, safety layer, priority 90: under every hazard, over the target): a quick two-note figure on
   the scale (the note and two steps up, 70 ms apart), every `safety.freePeriodMs` (600 ms; calm x 1.3), at -4 dB in the
   safety bus. Left and right: from 60 degrees to that side. Above and below: from straight ahead, the figure three
@@ -282,7 +292,10 @@ Left open, with reasons:
   direction plays the four sides in turn.
 - Measured on box tunnels (3 x 3 m, an obstacle leaving 1.2 m free on one side): each gap gives its side and no other;
   control: a closed tunnel gives no chime while the obstacle's knocks sound; control: a gap on the left gives no
-  right chime from 36 starts (three lateral positions, three heights, four drifts). What it cannot show: whether a
+  right chime from 36 starts (three lateral positions, three heights, four drifts). Narrow tunnels (review M1): 2 x 2,
+  1.6 x 2 and 1.2 x 1.5 m with a way of 0.8, 0.6 and 0.5 m on each side, the craft at three places: that side and no
+  other every time; controls: the same tunnels closed give none, and the first probes miss 6 or more of the 8 ways of
+  the 1.6 and 1.2 m tunnels. What it cannot show: whether a
   pilot takes a high two-note figure from ahead for "over" without training (the glossary line says it).
 
 ### Step 5, event sounds (M41-15, M41-11, M41-5)
@@ -428,8 +441,10 @@ Environment: `SHRAMKO_LISTEN_PY` (the Python of `tools/listen/requirements.txt`;
   saved v0.13 document keeps the pilot's motor choice).
 - The voice: the menus and the progress lines of M41-3, 4 and 7 must go through the engine's `say()` so they get the
   theme's measured volume (a separate speechSynthesis call would be 7 to 11 LU louder than the mix).
-- The cost bench (`tools/bench/src/sonic-analytic-cost.ts`): the planner now casts one more ray a frame while flying,
-  and up to 48 (12 probes of 4) while something closes straight ahead in under 3 s; worth one bench run.
+- The cost bench (`tools/bench/src/sonic-analytic-cost.ts`): the planner now casts six more rays a frame while flying
+  (the five path rays of B1 and the free way's trigger), and while something closes straight ahead in under 3 s up to
+  160 more (40 probes of 4; a probe that cannot see its point costs one, so a dead end costs about 40); worth one
+  bench run.
 
 ## Needs from other lanes
 

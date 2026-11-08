@@ -5,11 +5,15 @@
 // ahead), the world is probed for a passage beside it: a point just past the obstacle's front, offset to the left,
 // the right, up or down, must be reachable in a straight line and free for FREE_DEPTH_M beyond, wide
 // enough for the hull. The planner sounds an "open way" chime from the free side (src/cues/planner.ts).
+// The probes start 0.25 m beside the craft's line and step out by 0.15 m (0.2 m past 1 m), so a way of
+// 0.5 m in a tunnel 1.2 m wide is found wherever the craft is in it (review M1: the first probes began at
+// 0.7 m and missed every way that did not reach that far from the line). A gate (a ring, a square, a cube
+// frame with a place in the course) ahead gives no chime: the target layer leads through it (review m1).
 //
 // Pure and deterministic: rays only (SonicWorld.castRay), so analytic and scan worlds both work, and a
-// replay re-derives the same answer. At most 4 rays per probe and 12 probes a frame, and only while an
-// obstacle is that close ahead.
-import type { FlightSample, SonicWorld, Vec3 } from '../contract';
+// replay re-derives the same answer. At most 4 rays per probe and 40 probes a frame (a probe that cannot
+// see its point costs one), and only while an obstacle is that close ahead.
+import type { FlightSample, ObjectShape, SonicWorld, Vec3 } from '../contract';
 import { add, length, normalize, scale, sub } from '../util/vec';
 import { listenerBasis, listenerToWorld, worldToListener } from './frame';
 import type { ListenerFrame } from './types';
@@ -19,14 +23,22 @@ export type FreeSide = (typeof FREE_SIDES)[number];
 
 /** An obstacle ahead counts when the front sector's time to contact is under this, s (the owner: "about 3 s"). */
 export const FREE_TTC_S = 3;
-/** How far beside the craft's line a passage is looked for, m: the nearest first. */
-export const FREE_OFFSETS_M: readonly number[] = [0.7, 1.2, 1.8];
+/**
+ * How far beside the craft's line a passage is looked for, m: the nearest first. Steps of 0.15 m (0.2 m past
+ * 1 m) with the half width below: any way at least 0.45 m wide (0.5 m past 1 m) holds a probe.
+ */
+export const FREE_OFFSETS_M: readonly number[] = [0.25, 0.4, 0.55, 0.7, 0.85, 1, 1.2, 1.4, 1.6, 1.8];
 /** How far past the obstacle's front the passage must stay free, m. */
 export const FREE_DEPTH_M = 1.5;
 /** The probe point lies this far past the obstacle's front, m, so it is beside the obstacle, not before it. */
 export const FREE_PAST_M = 0.25;
-/** Half the width a passage must have across the side direction, m (the hull 0.12 and a margin). */
-export const FREE_HALF_WIDTH_M = 0.2;
+/** Half the width a passage must have across the side direction, m: the hull (0.12) and 3 cm, so a way is at least 0.3 m wide. */
+export const FREE_HALF_WIDTH_M = 0.15;
+/** The probes of v0.13 before the review (M1), for the tests' control only: 0.7, 1.2 and 1.8 m, half width 0.2 m. */
+export const FREE_PROBES_V013_FIRST = { offsetsM: [0.7, 1.2, 1.8], halfWidthM: 0.2 } as const;
+
+/** The shapes of a gate: with a place in the course (`order`), the target layer leads through it. */
+const GATE_SHAPES: ReadonlySet<ObjectShape['kind']> = new Set(['ring', 'square', 'cube-frame']);
 
 /** The listener-frame unit vector of each side (heading frame: x right, y up, z back). */
 export const FREE_SIDE_AXES: Readonly<Record<FreeSide, Vec3>> = {
@@ -52,6 +64,8 @@ export interface FreeWayOptions {
     readonly prefer?: FreeSide | null;
     /** the trigger: the time to contact with what is straight ahead under this, s (FREE_TTC_S) */
     readonly ttcS?: number;
+    /** the probes' offsets and half width (FREE_OFFSETS_M, FREE_HALF_WIDTH_M); another set only for a test's control */
+    readonly probes?: { readonly offsetsM: readonly number[]; readonly halfWidthM: number };
 }
 
 /** The order the sides are tried in: the preferred one, then the side the craft drifts toward, then left, right, up, down. */
@@ -74,7 +88,8 @@ const MIN_CLOSING_MPS = 0.2;
 
 /**
  * The free way around the obstacle ahead, or null: nothing straight ahead closing in under the trigger
- * time, or no side free (a closed tunnel, a dead end, a wall with no way past it).
+ * time, a gate ahead (the target layer's), or no side free (a closed tunnel, a dead end, a wall with no way
+ * past it).
  */
 export function findFreeWay(flight: FlightSample, world: SonicWorld | null, frame: ListenerFrame, options: FreeWayOptions): FreeWay | null {
     if (world === null) return null;
@@ -89,10 +104,17 @@ export function findFreeWay(flight: FlightSample, world: SonicWorld | null, fram
     const obstacleM = Math.max(0, ahead.distance - options.bodyRadiusM);
     const ttcS = obstacleM / closing;
     if (!(ttcS < trigger)) return null;
+    if (ahead.objectId !== null) {
+        const id = ahead.objectId;
+        const gate = world.objects().find((o) => o.id === id && o.order !== null && GATE_SHAPES.has(o.shape.kind));
+        if (gate !== undefined) return null;
+    }
     const depth = ahead.distance + FREE_PAST_M;
     const order = sideOrder(velL, options.prefer);
     const blocked = (from: Vec3, dir: Vec3, dist: number): boolean => world.castRay(from, dir, dist) !== null;
-    for (const offset of FREE_OFFSETS_M) {
+    const offsets = options.probes?.offsetsM ?? FREE_OFFSETS_M;
+    const halfWidth = options.probes?.halfWidthM ?? FREE_HALF_WIDTH_M;
+    for (const offset of offsets) {
         for (const side of order) {
             const across = listenerToWorld(basis, FREE_SIDE_AXES[side]);
             const point = add(add(flight.pos, scale(fwd, depth)), scale(across, offset));
@@ -102,8 +124,8 @@ export function findFreeWay(flight: FlightSample, world: SonicWorld | null, fram
             if (blocked(flight.pos, normalize(to), reach + options.bodyRadiusM)) continue;
             // and the passage past the obstacle's front free for FREE_DEPTH_M, at its middle and at both edges
             if (blocked(point, fwd, FREE_DEPTH_M)) continue;
-            if (blocked(add(point, scale(across, FREE_HALF_WIDTH_M)), fwd, FREE_DEPTH_M)) continue;
-            if (blocked(add(point, scale(across, -FREE_HALF_WIDTH_M)), fwd, FREE_DEPTH_M)) continue;
+            if (blocked(add(point, scale(across, halfWidth)), fwd, FREE_DEPTH_M)) continue;
+            if (blocked(add(point, scale(across, -halfWidth)), fwd, FREE_DEPTH_M)) continue;
             return { side, offsetM: offset, obstacleM, ttcS };
         }
     }

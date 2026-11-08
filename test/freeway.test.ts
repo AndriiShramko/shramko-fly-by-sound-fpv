@@ -4,12 +4,13 @@
 // Worlds here are tunnels of boxes with exact ray casts. Controls: a closed tunnel gives no chime, and a
 // gap on the left never gives a right chime.
 import { describe, expect, it } from 'vitest';
-import type { FlightSample, SonicPrefs, SonicWorld, Vec3 } from '../src/contract';
+import type { FlightSample, SonicObject, SonicPrefs, SonicWorld, Vec3 } from '../src/contract';
 import { CuePlanner, FREE_DIRS, type FramePlan, type VoicePlan } from '../src/cues';
 import { defaultPrefs } from '../src/prefs';
-import { createSceneSampler, findFreeWay, FREE_TTC_S, sideOrder, type FreeSide } from '../src/sense';
+import { createSceneSampler, findFreeWay, FREE_PROBES_V013_FIRST, FREE_TTC_S, sideOrder, type FreeSide, type FreeWayOptions } from '../src/sense';
 import { BUILTIN_THEME_IDS, getBuiltinTheme, isInScale } from '../src/theme';
 import { yawQuat } from '../src/util/vec';
+import { createAnalyticWorld, makeSpec } from '../src/world';
 import { block, boxTunnel } from './helpers/boxes';
 
 // a 3 x 3 m tunnel; the obstacle 6 to 8 m ahead of a craft at z = 0, leaving one way 1.2 m wide
@@ -175,8 +176,97 @@ describe('the probes', () => {
     });
 
     it('a gap too narrow for the hull is no way (control for the width check)', () => {
-        const narrow = boxTunnel([block(-1.5, -0.95, 0, 3), block(-0.6, 1.5, 0, 3)]); // a 0.35 m slot at x = -0.775
+        const narrow = boxTunnel([block(-1.5, -0.89, 0, 3), block(-0.63, 1.5, 0, 3)]); // a 0.26 m slot at x = -0.76: the hull and 1 cm
         const plans = fly(narrow, 3);
         expect(chimes(plans)).toEqual([]);
+    });
+});
+
+// Review M1: the first probes began 0.7 m off the craft's line with a half width of 0.2 m, so a way had to reach
+// 0.9 m from the line: in tunnels under about 2 m wide the obstacle knocked and no chime came.
+describe('narrow tunnels: the way is found wherever the craft is in the tunnel', () => {
+    /** A tunnel `w` wide and `h` high with an obstacle 6 to 8 m ahead that leaves a way `gap` across on `side`. */
+    const narrowTunnel = (w: number, h: number, side: FreeSide | 'closed', gap: number): SonicWorld => {
+        const x0 = -w / 2, x1 = w / 2;
+        const b = side === 'left' ? block(x0 + gap, x1, 0, h) : side === 'right' ? block(x0, x1 - gap, 0, h) : side === 'up' ? block(x0, x1, 0, h - gap) : side === 'down' ? block(x0, x1, gap, h) : block(x0, x1, 0, h);
+        return boxTunnel([b], { min: [x0, 0, -200], max: [x1, h, 20] });
+    };
+    const CASES: readonly (readonly [number, number, number])[] = [
+        [2, 2, 0.8],
+        [1.6, 2, 0.6],
+        [1.2, 1.5, 0.5]
+    ];
+    /**
+     * Three places across the tunnel where the obstacle is straight ahead (elsewhere nothing is ahead and no chime is
+     * due): 0.15 m inside its edge by the way, its middle, and 0.2 m from the far wall, across the way's own axis.
+     */
+    const starts = (w: number, h: number, side: FreeSide, gap: number): Vec3[] => {
+        const span = side === 'left' || side === 'right' ? w : h;
+        const lo = side === 'left' || side === 'down' ? gap : 0;
+        const hi = side === 'left' || side === 'down' ? span : span - gap;
+        const near = side === 'left' || side === 'down' ? lo + 0.15 : hi - 0.15;
+        const far = side === 'left' || side === 'down' ? hi - 0.2 : lo + 0.2;
+        const across = [near, (lo + hi) / 2, far];
+        return side === 'left' || side === 'right' ? across.map((x): Vec3 => [x - w / 2, h / 2, 0]) : across.map((y): Vec3 => [0, y, 0]);
+    };
+    /** The sides findFreeWay names, frame by frame, flying straight at 3 m/s from `pos` (no hold, no planner). */
+    const found = (world: SonicWorld, pos: Vec3, probes?: FreeWayOptions['probes']): Set<FreeSide> => {
+        const out = new Set<FreeSide>();
+        for (let k = 0; k < 120; k++) {
+            const z = pos[2] - (3 * k) / 60;
+            if (z < -5.7) break;
+            const w = findFreeWay(flight([pos[0], pos[1], z], [0, 0, -3], (k * 1000) / 60), world, 'heading', { bodyRadiusM: 0.12, ...(probes === undefined ? {} : { probes }) });
+            if (w !== null) out.add(w.side);
+        }
+        return out;
+    };
+
+    it.each(CASES)('a tunnel %s m wide and %s m high, a way of %s m on each side in turn: that side is named, never another', (w, h, gap) => {
+        for (const side of ['left', 'right', 'up', 'down'] as const) {
+            for (const pos of starts(w, h, side, gap)) {
+                const plans = fly(narrowTunnel(w, h, side, gap), 3, { pos, seconds: 1.8 });
+                expect([...sides(plans)], `${side} from ${pos.join(',')}`).toEqual([side]);
+                expect(chimes(plans).length, `${side} from ${pos.join(',')}`).toBeGreaterThan(0);
+            }
+        }
+    });
+
+    it('control: the same tunnels closed give no chime', () => {
+        for (const [w, h] of CASES) expect(chimes(fly(narrowTunnel(w, h, 'closed', 0), 3, { pos: [0, h / 2, 0], seconds: 1.8 }))).toEqual([]);
+    });
+
+    it('control: the first v0.13 probes (0.7 m out, 0.2 m half width) miss the ways of the 1.6 m and 1.2 m tunnels', () => {
+        let missed = 0;
+        let tried = 0;
+        for (const [w, h, gap] of CASES.slice(1)) {
+            for (const side of ['left', 'right', 'up', 'down'] as const) {
+                const world = narrowTunnel(w, h, side, gap);
+                tried++;
+                if (found(world, [0, h / 2, 0], FREE_PROBES_V013_FIRST).size === 0) missed++;
+                expect(found(world, [0, h / 2, 0]).has(side), `${w} m, ${side}`).toBe(true);
+            }
+        }
+        expect(missed, `${missed} of ${tried} ways missed`).toBeGreaterThanOrEqual(6);
+    });
+});
+
+// Review m1: the trigger took any hit, so flying at a ring's tube gave a chime that could point outside the ring.
+describe('a gate ahead gives no open-way chime: the target layer leads through it', () => {
+    const rings = createAnalyticWorld(makeSpec('rings', { layout: 'single', aheadM: 12, sizeM: 3 }, 1));
+    const ring = rings.objects().find((o) => o.order !== null) as SonicObject;
+    const tube = (ring.shape as { diameter: number }).diameter / 2;
+    /** Flies at 3 m/s at the ring's height from 6 m before it, the nose at the left or the right tube. */
+    const at = (world: SonicWorld, dx: number): FramePlan[] => fly(world, 3, { pos: [ring.pos[0] + dx, ring.pos[1], ring.pos[2] + 6], seconds: 1.7 });
+
+    it('nose on the left or the right tube: no chime', () => {
+        for (const dx of [-tube, tube]) {
+            const plans = at(rings, dx);
+            expect(plans.every((p) => p.freeWay === null), `dx ${dx}`).toBe(true);
+        }
+    });
+
+    it('control: the same ring without a place in the course (an obstacle, not a gate) gives one', () => {
+        const plain: SonicWorld = { ...rings, objects: () => rings.objects().map((o) => ({ ...o, order: null })) };
+        expect(at(plain, -tube).some((p) => p.freeWay !== null)).toBe(true);
     });
 });
