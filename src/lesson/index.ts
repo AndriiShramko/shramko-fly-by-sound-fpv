@@ -2,4 +2,5 @@
 export * from './goals';
 export * from './library';
 export * from './runner';
+export * from './schedule';
 export * from './validate';
