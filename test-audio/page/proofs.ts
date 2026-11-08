@@ -205,10 +205,10 @@ const BODY = 0.12;
 // ------------------------------------------------------------------ 1. direction
 
 async function direction(): Promise<ProofResult> {
-    const claim = 'a wall on the left is heard on the left and one on the right on the right: louder in the near ear over the whole band (2 dB or more) and above 2 kHz (8 dB or more), and earlier in the near ear below 800 Hz (0.25 ms or more)';
+    const claim = 'a wall on the left is heard on the left and one on the right on the right: louder in the near ear over the whole band (2 dB or more) and above 2 kHz (8 dB or more), and earlier in the near ear below 800 Hz (0.25 ms or more); the craft 2.5 m from the wall drifts toward it at 1.2 m/s (2 s to contact: since v0.13 a still craft hears a wall only within 0.8 m)';
     const run = async (hooks: EngineOptions['testHooks']): Promise<Check> => {
         const side = async (x: number): Promise<{ broad: number; high: number; leadMs: number }> => {
-            const r = await render({ seconds: 2, engine: { testHooks: hooks }, layers: safetyOnly, frame: (t) => ({ sample: flight([x, 3, 0], [0, 0, 0], 0, t), world: hall, target: null, floorY: 0 }) });
+            const r = await render({ seconds: 2, engine: { testHooks: hooks }, layers: safetyOnly, frame: (t) => ({ sample: flight([x, 3, 0], [Math.sign(x) * 1.2, 0, 0], 0, t), world: hall, target: null, floorY: 0 }) });
             const broad = db(rms(r.left, 0.3, 2)) - db(rms(r.right, 0.3, 2));
             const high = db(rms(highpass(r.left, 2000), 0.3, 2)) - db(rms(highpass(r.right, 2000), 0.3, 2));
             const leadMs = 1000 * leftLeadS(lowpass(r.left, 800), lowpass(r.right, 800), 0.3, 1.3);
@@ -234,8 +234,8 @@ async function direction(): Promise<ProofResult> {
 // ------------------------------------------------------------------ 2. pulse rate
 
 async function pulseRate(): Promise<ProofResult> {
-    const claim = 'the safety pulse period matches the time-to-collision rule within 5 % for times to collision of 0.6, 1.2, 2 and 3 s';
-    const cases = [0.6, 1.2, 2, 3];
+    const claim = 'the safety pulse period matches the time-to-collision rule within 5 % for times to collision of 0.6, 1.2, 2 and 2.4 s (a wall is heard from 2.5 s since v0.13)';
+    const cases = [0.6, 1.2, 2, 2.4];
     const distance = 11.9; // from the craft's centre to the front wall: the time to collision governs (x_ttc < x_distance)
     const run = async (hooks: EngineOptions['testHooks']): Promise<Check> => {
         const rows: Record<string, number>[] = [];
