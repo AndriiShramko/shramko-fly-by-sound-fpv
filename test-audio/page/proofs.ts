@@ -199,7 +199,7 @@ const HALL_HALF_W = 20;
 const frontZ = -30;
 const safetyOnly: LessonLayers = { on: ['safety'], heightBandM: null, hazardVoices: 3 };
 const SAFETY = soft.layers.safety.params as Record<string, number>;
-const RULE = { periodNearMs: SAFETY['periodNearMs'] as number, periodFarMs: SAFETY['periodFarMs'] as number, ttcFarS: SAFETY['ttcFarS'] as number, distFarM: SAFETY['distFarM'] as number };
+const RULE = { periodNearMs: SAFETY['periodNearMs'] as number, periodFarMs: SAFETY['periodFarMs'] as number, ttcFarS: SAFETY['ttcFarS'] as number, distM: SAFETY['pulseDistM'] as number };
 const BODY = 0.12;
 
 // ------------------------------------------------------------------ 1. direction

@@ -17,6 +17,10 @@
 //   - risk of a sector = max(enterDist / distance, enterTtc / ttc): 1 at the threshold, growing as
 //     the craft gets closer or closes faster. A distance alone is enough (a hovering craft under a
 //     ceiling), so is a closing speed alone (a far wall approached fast)
+//   - v0.13 (M41-13, the owner's message 41): walls by time to contact, not by distance. A hazard
+//     turns on when its time to contact drops under 2.5 s (fast flight hears far walls early), a slow
+//     craft does not hear far walls, and within 0.8 m of the hull everything is heard (enterDistM 0.8
+//     in every sector; v0.12 had 1.5 to 6 m, so a wall ahead sounded from 6 m at any speed)
 //   - a hazard turns on at risk >= 1 at once (danger first, no debounce) and turns off only when the
 //     risk has fallen under releaseRatio AND holdMs have passed since it last reached 1
 //   - ranking uses risk x a priority weight per sector (ahead outranks behind); a voice that is
@@ -61,25 +65,30 @@ export type SamplerOptions = Partial<Omit<SamplerConfig, 'enterDistM' | 'weight'
     readonly weight?: Partial<Record<SectorId, number>>;
 };
 
-/** Starting values, to be tuned with pilots. */
+/** Under this distance from the hull every surface is heard, closing or not, m (M41-13). */
+export const ALWAYS_HEARD_M = 0.8;
+/** A hazard turns on when its time to contact drops under this, s (M41-13). */
+export const ONSET_TTC_S = 2.5;
+
+/** Starting values, to be tuned with pilots. The range (40 m) covers 3 s of flight up to 13 m/s. */
 export const DEFAULT_SAMPLER_CONFIG: SamplerConfig = {
     rangeM: 40,
     spreadDeg: 20,
     bodyRadiusM: 0.12,
     maxVoices: MAX_HAZARD_VOICES,
     enterDistM: {
-        front: 6,
-        'front-left': 5,
-        'front-right': 5,
-        'front-up': 3,
-        'front-down': 1.8,
-        left: 4,
-        right: 4,
-        back: 3,
-        up: 1.5,
-        down: 1.5
+        front: ALWAYS_HEARD_M,
+        'front-left': ALWAYS_HEARD_M,
+        'front-right': ALWAYS_HEARD_M,
+        'front-up': ALWAYS_HEARD_M,
+        'front-down': ALWAYS_HEARD_M,
+        left: ALWAYS_HEARD_M,
+        right: ALWAYS_HEARD_M,
+        back: ALWAYS_HEARD_M,
+        up: ALWAYS_HEARD_M,
+        down: ALWAYS_HEARD_M
     },
-    enterTtcS: 3,
+    enterTtcS: ONSET_TTC_S,
     releaseRatio: 0.8,
     holdMs: 300,
     stickiness: 1.25,
@@ -165,6 +174,22 @@ const SLANT_MIN = 0.05;
 /** Below this the distance or the time is treated as this, so the risk stays finite. */
 const FLOOR = 0.05;
 
+/** How far beyond the hull the craft's straight path may pass a point on an object and still be on a collision course with it, m. */
+export const OBJECT_CLEARANCE_M = 0.3;
+
+/**
+ * How far the craft's straight path (from its centre, along `vel`) passes from a point `toPoint` away, m:
+ * the distance at the closest approach, never looking back (a point behind counts its full distance).
+ */
+export function pathMissM(toPoint: Vec3, vel: Vec3): number {
+    const v2 = dot(vel, vel);
+    const full = length(toPoint);
+    if (!(v2 > 1e-12)) return full;
+    const t = dot(toPoint, vel) / v2;
+    if (t <= 0) return full;
+    return length(sub(toPoint, scale(vel, t)));
+}
+
 export function riskOf(distance: number, ttcS: number | null, enterDistM: number, enterTtcS: number): number {
     const byDistance = enterDistM / Math.max(distance, FLOOR);
     const byTime = ttcS === null ? 0 : enterTtcS / Math.max(ttcS, FLOOR);
@@ -221,7 +246,12 @@ export function createSceneSampler(options: SamplerOptions = {}): SceneSampler {
                     // weight a neighbour sector ahead has), and a wall on the left is voiced by the left sector, not
                     // by the front-left one whose side ray sees it 25 degrees off its normal
                     const facing = hit.normal === null ? 1 : Math.max(0, -dot(worldRay, hit.normal));
-                    const ttc = closing >= config.minClosingMps && facing > SLANT_MIN ? reach / closing / (facing * facing) : null;
+                    let ttc = closing >= config.minClosingMps && facing > SLANT_MIN ? reach / closing / (facing * facing) : null;
+                    // an object (a ring's tube, a pillar, a bar) is curved and small: the time to its surface along the
+                    // normal says nothing when the craft's straight path passes beside the point the ray found, as when
+                    // it flies through a ring and the side rays meet the tube (v0.13: such a frame raised every side
+                    // sector at once, and the hold kept them on for 300 ms, voicing the far walls they saw next)
+                    if (ttc !== null && hit.objectId !== null && pathMissM(toHit, flight.vel) > config.bodyRadiusM + OBJECT_CLEARANCE_M) ttc = null;
                     const risk = riskOf(distance, ttc, config.enterDistM[id], config.enterTtcS);
                     if (distance < minDistance) minDistance = distance;
                     if (ttc !== null && (minTtc === null || ttc < minTtc)) minTtc = ttc;

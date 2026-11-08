@@ -21,6 +21,7 @@ import {
     clamp01,
     distanceCode,
     dopplerCents,
+    hazardDistanceCode,
     elevationSteps,
     expLerp,
     isUrgent,
@@ -435,8 +436,8 @@ export class CuePlanner {
         const step = h.material === 'wall' ? p['pitchWallStep'] : h.material === 'floor' ? p['pitchFloorStep'] : h.material === 'ceiling' ? p['pitchCeilingStep'] : p['pitchObstacleStep'];
         const n = note(theme.scale, step as number, this.pitch('safety'));
         const rule: DistanceRule = { nearHz: p['lowpassNearHz'] as number, farHz: p['lowpassFarHz'] as number, farM: p['distFarM'] as number, sendNear: 0.04, sendFar: p['reverbSendFar'] as number, ildBoostDb: p['ildBoostDb'] as number };
-        const dc = distanceCode(h.distance, rule);
-        const periodMs = pulsePeriodMs(h.ttcS, h.distance, { periodNearMs: p['periodNearMs'] as number, periodFarMs: p['periodFarMs'] as number, ttcFarS: p['ttcFarS'] as number, distFarM: p['distFarM'] as number });
+        const dc = hazardDistanceCode(h.distance, h.ttcS, rule);
+        const periodMs = pulsePeriodMs(h.ttcS, h.distance, { periodNearMs: p['periodNearMs'] as number, periodFarMs: p['periodFarMs'] as number, ttcFarS: p['ttcFarS'] as number, distM: (p['pulseDistM'] as number | undefined) ?? 2 });
         return {
             key,
             cue: `safety.${h.material}`,

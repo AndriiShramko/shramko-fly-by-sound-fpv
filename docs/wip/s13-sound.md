@@ -19,7 +19,8 @@ Shared event kinds (plan, "Lanes"): the runner emits the cue events `wrong-way`,
   recorded by the v0.12 engine, `test/fixtures/session-v012-*.zip`, for the replay check of step 10)
 - [x] 2 Height (M41-12): a continuous glide and a steady target tone on the scale (`src/cues/height.ts`,
   `test/height.test.ts`, 15 tests); `pnpm proof:audio` after it: see step 10
-- [ ] 3 Time to contact (M41-13): hazards by time to contact, quiet far walls when slow, always heard within 0.8 m
+- [x] 3 Time to contact (M41-13): hazards by time to contact, quiet far walls when slow, always heard within 0.8 m
+  (`src/sense/sampler.ts`, `src/cues/rules.ts`, `test/ttc.test.ts`, 22 tests)
 - [ ] 4 Free way (M41-14): the open-way chime from the free side
 - [ ] 5 Event sounds (M41-15, M41-11, M41-5): wrong-way, wrong-side, praise, stage, repeat-cue
 - [ ] 6 Motor (M41-16): on by default, under the cues, ducked under speech
@@ -128,10 +129,41 @@ Shared event kinds (plan, "Lanes"): the runner emits the cue events `wrong-way`,
   note, and the shape trace bends by Doppler around it; where both layers are on (rings-first, shapes-*) the two can
   beat against each other. The virtual listener's informational-masking flag (VL-2) is the check for it.
 
+### Step 3, time to contact (M41-13)
+
+- Sampler (`DEFAULT_SAMPLER_CONFIG`): enter distance 0.8 m in every sector (`ALWAYS_HEARD_M`), enter time to contact
+  2.5 s (`ONSET_TTC_S`); range 40 m kept (3 s up to 13 m/s; the fastest shipped lesson is 5 m/s, a Node test holds it
+  for every lesson). Release (risk 0.8, hold 300 ms) and ranking unchanged. Measured on the analytic plane at 60 frames
+  a second: onset 2.5 s before contact at 1, 3 and 5 m/s (12.4 m at 5 m/s, 2.4 m at 1 m/s); at 0.5 m/s nothing until
+  1.25 m (v0.12: 6 m). Control: the v0.12 distance rule alone gives 1.2 s at 5 m/s.
+- Side walls follow the same rule (no "rails"): in a corridor the pilot hears a wall when drifting toward it (under
+  2.5 s) or within 0.8 m, and nothing when centred and flying straight. One rule for every sector is what the owner
+  asked ("everything by speed"); the corridor's intro ("if the knocks are louder on one side, move away from that
+  side") still holds, but a 5 m corridor is quiet in the middle now.
+- Urgency follows the time to contact: the pulse rhythm's distance floor has its own scale, `safety.pulseDistM` (2 m,
+  new and optional; it was `distFarM`, 12 m, so under 12 m the distance set the rhythm), and the level and brightness of
+  a closing hazard follow `min(distance, ttc x 1 m/s)` (`urgencyDistanceM`, `hazardDistanceCode`): a wall 12.5 m ahead
+  at 5 m/s is as loud and bright as one 2.5 m ahead at 1 m/s, while its reverb send still says far. Measured in the
+  planner: the same time to contact (2.4, 1.6, 1 s) gives the same period (within 2 %), level (0.5 dB) and low-pass
+  (5 %) at 1, 3 and 5 m/s; control: the v0.12 rules give a 1.3 times slower rhythm and 6 dB less level at 5 m/s.
+- Urgent (the other layers 9 dB down): time to contact under 1.5 s, or within 0.4 m (was 1 m), so a narrow tunnel
+  whose walls are 0.7 m away does not keep every other layer ducked.
+- Objects (rings, pillars, bars): a time to contact counts only when the straight path passes within the hull plus
+  0.3 m of the point the ray found (`pathMissM`). Without it, flying through a ring made its tube look like a wall
+  closing in 0.7 s in one frame; every side sector came on, and the 300 ms hold then voiced the far hall walls they
+  saw next. That frame-sized flash also broke the replay check of the recorded rings-course flight (94.1 % of the
+  frames agreed, under the 95 % rule) because a 30 Hz replay never sees it; with the filter the recorded flights
+  replay again. Walls, floor and ceiling (no object id) keep the time to their plane along its normal.
+
 ## Needs from the simulator
 
 (Filled step by step.)
 
 ## Needs from other lanes
 
-(Filled step by step.)
+- s13-lessons: `walls-hall` asks to stop within 3 m of a wall (`approach-stop`, `stopWithinM` 3). Since v0.13 a
+  slowing craft stops hearing a wall once its time to contact is over about 3 s (and the distance over 1 m): stopping
+  where the knocks start (about 1.25 m at 0.5 m/s) passes, braking at 6 m does not. The intro line "The knocks speed up
+  as you get close" still holds; a hint like "Fly slowly until you hear knocks, then stop" would fit the new rule.
+- s13-lessons and s13-worlds: in a corridor a centred, straight flight is quiet now (side walls sound when drifting
+  toward them under 2.5 s, or within 0.8 m).

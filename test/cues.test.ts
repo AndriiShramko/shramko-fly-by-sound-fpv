@@ -36,7 +36,7 @@ import { yawQuat } from '../src/util/vec';
 
 const soft = getBuiltinTheme('soft');
 const SAFETY = soft.layers.safety.params as Record<string, number>;
-const RULE = { periodNearMs: SAFETY['periodNearMs'] as number, periodFarMs: SAFETY['periodFarMs'] as number, ttcFarS: SAFETY['ttcFarS'] as number, distFarM: SAFETY['distFarM'] as number };
+const RULE = { periodNearMs: SAFETY['periodNearMs'] as number, periodFarMs: SAFETY['periodFarMs'] as number, ttcFarS: SAFETY['ttcFarS'] as number, distM: SAFETY['pulseDistM'] as number };
 
 function sample(pos: Vec3, vel: Vec3 = [0, 0, 0], yawDeg = 0, t = 0): FlightSample {
     return { t, tick: t, pos, vel, quat: yawQuat(yawDeg), rate: [0, 0, 0], yawDeg, pitchDeg: 0, rollDeg: 0, sticks: [0, 0, 0, 0], armed: true, touched: false, paused: false };
@@ -60,7 +60,7 @@ describe('the pulse period follows the time to collision', () => {
             expect(p).toBeLessThan(prev);
             prev = p;
         }
-        expect(pulsePeriodMs(null, RULE.distFarM / 2, RULE)).toBeCloseTo(Math.sqrt(RULE.periodNearMs * RULE.periodFarMs), 6);
+        expect(pulsePeriodMs(null, RULE.distM / 2, RULE)).toBeCloseTo(Math.sqrt(RULE.periodNearMs * RULE.periodFarMs), 6);
     });
 
     it('never sounds calmer for a near wall because the craft creeps toward it', () => {
@@ -344,7 +344,7 @@ describe('the planner hears the scene as the spec says', () => {
 
     it('turning the craft turns the scene: the same wall moves to the side', () => {
         const planner = new CuePlanner({ theme: soft });
-        const pos: Vec3 = [0, 1.5, front[2] + 3];
+        const pos: Vec3 = [0, 1.5, front[2] + 0.7]; // within 0.8 m of the hull: heard when still
         const plan = planner.plan({ sample: sample(pos, [0, 0, 0], 90), world: hall, target: null, floorY: 0 });
         const wall = plan.voices.find((x) => x.cue === 'safety.wall')!;
         expect(wall.dir[0]).toBeLessThan(-0.9); // yaw right 90: the front wall is now on the left

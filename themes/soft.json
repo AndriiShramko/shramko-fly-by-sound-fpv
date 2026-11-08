@@ -44,6 +44,7 @@
         "pitchFloorStep": 0,
         "pitchObstacleStep": 9,
         "pitchWallStep": 7,
+        "pulseDistM": 2,
         "pulseMs": 60,
         "reverbSendFar": 0.35,
         "ttcFarS": 4
