@@ -13,12 +13,13 @@ navigation and truth bot `test/helpers/truth.ts`). No push. Every step one commi
 - [x] 5. Micro-drone scale (M41-18): version 2 of the room generators, the lessons' world, start and assists
 - [x] 6. Tunnels (M41-21): corridor version 2 and the tunnel lessons
 - [x] 7. Rings at different heights (M41-22): the heights parameter and lesson rings-heights
-- [ ] 8. All checks, final status
+- [x] 8. All checks, final status (below: Final status)
 
 ## Ownership
 
 Mine: `src/world/*`, the lesson files' `world`, `start` and `assists`, new lesson files, generator goldens and digests,
-`docs/wip/s13-worlds.md`, the test helpers I add (`test/helpers/reach.ts`). Additions only in `src/contract.ts`.
+`docs/wip/s13-worlds.md`, the tests and helpers I add (`test/world-*.test.ts`, `test/helpers/reach.ts`,
+`test/helpers/new-lessons.ts`, `test/fixtures/v012-*` of worlds and lessons). Additions only in `src/contract.ts`.
 Not mine: the runner, goals, pass, intro, speech, the meaning of the lesson files' `checkpoints` (lane s13-lessons);
 cues, sense, theme, audio and the lesson files' `layers` (lane s13-sound). Edits outside this that cannot be avoided
 (registering new lessons, numbers in lesson files that follow the geometry) are additive and listed under "For the
@@ -113,12 +114,12 @@ lesson with a goal other than hold-height, approach-stop or around): the owner's
 
 ### Step 2: versions that keep old recordings
 
-- `src/world/generators.ts`: a version table per generator (schema and builder per version). `GENERATOR_VERSION` is the
-  CURRENT version (what `makeSpec` writes), `GENERATOR_VERSIONS` every version this build builds, `buildsVersion()`,
-  `paramSchema(generator, version)`; `resolveParams`, `buildWorld` and `makeSpec` take an optional version (the current
-  one by default), `PARAM_SCHEMAS` stays the current versions' schemas. `createAnalyticWorld` builds the spec's own
-  version and refuses only a version this build lacks: "generator 'hall' builds versions 1, 2 here (current 2), the
-  spec asks for 99" (the replay passes it on as `ReplayError('world')`).
+- `src/world/generators.ts`: a version table per generator (schema and builder per version). `GENERATOR_VERSIONS`
+  lists every version this build builds, `buildsVersion()`, `paramSchema(generator, version)`; `resolveParams`,
+  `buildWorld` and `makeSpec` take an optional version (default `GENERATOR_VERSION`, which stays 1: see step 5),
+  `PARAM_SCHEMAS` stays the default versions' schemas. `createAnalyticWorld` builds the spec's own version and refuses
+  only a version this build lacks: "generator 'hall' builds versions 1, 2 here, the spec asks for 99" (the replay
+  passes it on as `ReplayError('world')`).
 - Version 1 moved unchanged to `src/world/v1.ts` (the builders byte for byte; parameters `src/world/params.ts`, shared
   helpers `src/world/build.ts`). Its goldens in `test/world.test.ts` are untouched and pass.
 - Fixtures written by the v0.12 build itself (sources of 7d4b4b9 under `U:/Temp`, its own test host):
@@ -327,8 +328,23 @@ lesson with a goal other than hold-height, approach-stop or around): the owner's
    version 1 of the corridor and treats every other generator as one box; the tunnels (corridor version 2, step 6) are
    other boxes, so until this switch the helper's view draws walls where there are none and none where there are.
    `tools/bench/test/sonic-primitives.test.ts:83-115` keeps working (it then holds the package's boxes to `solidAt`;
-   its left-for-right control stays meaningful). Expected meanwhile: that test fails for every world of a new
-   version whose hollow is not one box centred on (0, h/2, 0).
+   its left-for-right control stays meaningful). Expected meanwhile, checked here with a copy of the mirror (135-231)
+   run against every shipped world of this branch: the six tunnels (corridor version 2) disagree with `solidAt` on
+   430 to 4 028 of 20 000 points (the mirror walks them as version 1's `full` corridor: 7 to 23 boxes for 6 to 31);
+   every other world agrees on every point and its boxes are equal to the package's (the version-2 rooms are one box
+   centred on (0, h/2, 0), the corridor lesson is version 1). So that test fails for exactly tunnel-wide,
+   tunnel-narrow, tunnel-narrower, tunnel-bends, tunnel-gaps and tunnel-long until the switch above.
+2. Nothing else is needed for the new worlds to fly: the obstacles are `box` objects (`shapePrims` 101-102 draws them,
+   the collider takes them through `solidAt`); a respawn at a checkpoint pose in mid air (1.5 m before an obstacle, on
+   its free way, up to 2.4 m high) rests on the respawn platform as any start does. Two tunnels name `voxelM` 0.05
+   (tunnel-narrower, tunnel-long, for walls 1.2 m apart): `lesson-world.ts:74` builds the collider at it; tunnel-long's
+   bounds are 102 x 4.4 x 65 m, 455 000 cells of 8^3 voxels, under `ANALYTIC_MAX_CELLS` (2^25) and the distance cache's
+   2^22 (`packages/collision/src/analytic.ts:26-28`); its frame cost is lane v13-look's to measure.
+3. The start screen lists 28 lessons (`start-model.ts:40` sorts by `order`, which is now each lesson's place on the full
+   path; 7 new: six tunnels in module 4, rings-heights in module 5).
+4. The seconds-to-wall table is a model of the lesson pilot (`test/helpers/reach.ts`, from `play/game.ts` and
+   `play/assist.ts`); a flight in the page (full stick from the start of walls-hall, time to the first touch) would
+   measure it: worth one headless run in wave 2.
 
 ## Needs from other lanes
 
@@ -347,7 +363,6 @@ Lane s13-lessons (owner of the strings, goals and the truth bot):
    7 m apart it flies back between two gates (rings-small: 3 m back, 1.2 s at 2.5 m/s), which a wrong-way rule of more
    than 1 s (M41-15) would hear. The world's checkpoints (1.5 m before, 1 m past each gate) are a track to fly.
 4. corridor's `attemptLimitS` 900 s was for a 335 m corridor; the track is 126 m now (about 50 s at 3 m/s).
-
 5. The six tunnels' lesson-file checkpoints (above) are for the present runner; when it reads the world's
    checkpoints (M41-20), keep or drop them. Their intro lines carry no `cues` (format 2 at eee530b has none):
    tunnel-gaps' intro.2 names the open-way chime (`safety.free`, lane s13-sound) for the three plays of M41-5.
@@ -383,3 +398,35 @@ rule and `pathMissM` filter are expected to raise it. Nothing to do unless it dr
   the list of new lessons is `test/helpers/new-lessons.ts`.
 - Tests of other lanes edited only to take positions from the worlds (step 5 lists them); when lane s13-lessons or
   s13-sound adds a flight with v0.12's numbers (z = 72, -27.5, -55, a zone at 30 m ...), it needs the same treatment.
+- `AGENTS.md`: the rule on generators now says version by version (a change is a new version; `GENERATOR_VERSION` is
+  only `makeSpec`'s default).
+
+## Final status
+
+Done, one commit per step on `s13-worlds` (base `eee530b`, not pushed): d4876e5 (1, facts), ea90804 (2, versions),
+32c2163 (3, cavities), 75140b5 (4, world checkpoints), b56085a (5, micro scale), 8e28b36 (6, tunnels), 5b7c29c (7,
+rings at heights), and the commit of step 8 (this status, `AGENTS.md`).
+
+Checks at the end (Node 22.13, pnpm 11.5): `pnpm install --frozen-lockfile`; `pnpm typecheck` (three projects) passes;
+`pnpm test` 30 files, 855 tests pass, among them the lesson validation (`test/lessons.test.ts`: every shipped file
+valid, canonical, its world built, its start and checkpoints free, its keys in the catalogue), the locale parity and
+lint (`test/locales.test.ts`) and the layout check (`test/layout.test.ts`). `node tools/run-tool.mjs check-layout` and
+`... locale-lint` cannot run: those two tools export no `main` (they are libraries of those tests), so the tests are
+how they run. No browser was needed; `pnpm proof:audio` was not run (no sound changed here).
+
+Left open, with the reason:
+
+- The simulator draws the tunnels wrong until it reads `world.cavities` (Needs from the simulator 1): not this lane's
+  repository.
+- The runner does not yet use the world's checkpoints for respawn, wrong way and stage praise (M41-20 runner side,
+  M41-15, M41-11): lane s13-lessons; until then the tunnels' own lesson checkpoints (bends, obstacles, stages) and the
+  corridor's five keep the present respawn near the crash.
+- The sounds the new lessons teach (the steady target tone, M41-12; the open-way chime, M41-14) and the new lessons'
+  `layers`: lane s13-sound.
+- walls-hall's title, first line and stop distance (Needs from other lanes 1 and 2): lane s13-lessons' strings and goal.
+- The hover lessons are outside the 2 to 3 s rule (their cap is 0.5 m/s); hover-turn's room is small and its ring 4 m
+  away, on the same bearing.
+- The seconds are a model, not a flight (Needs from the simulator 4). The tunnels' margins are the widest sphere
+  sampled on 52 points along the track; the exact corner clearance of the 1.2 m tunnels is 0.424 m.
+- A v0.12 recording rebuilds on its own walls and is reported as flown with lesson version 1; its events after the
+  first attempt do not re-derive, because lane s13-lessons changed the pass rule (by design, their step 2).

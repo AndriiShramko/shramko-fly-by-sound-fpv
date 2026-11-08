@@ -29,7 +29,7 @@ Shramko Fly by Sound: the sound engine, lessons and session format that let blin
 - **The contract is shared.** Change `src/contract.ts` only together with the matching change in ShramkoGSFPV.
 - **Read theme numbers by the names in `LAYER_PARAMS`** (`src/theme/schema.ts`). Build every pitch with `noteHz`, `heightNoteIndex`, `gateMelody` or `shiftNote`, never from raw frequencies: that keeps every mix in one pentatonic scale.
 - **Strings go into all four locales.** Lesson ids and keys live in `src/i18n/catalog.ts`; the parity test and the speech lint fail on a missing key.
-- **Generators are pinned by golden tests.** Changing a generator or its defaults needs a `GENERATOR_VERSION` bump and regenerated goldens.
+- **Generators are pinned by golden tests, version by version.** A change of a generator's geometry, defaults, random draws or track is a new version in its version table (`src/world/generators.ts`), with its own goldens; a published version never changes, so every recording rebuilds on its own walls (`test/world-versions.test.ts`). `GENERATOR_VERSION` is only what `makeSpec` writes when no version is named (1); lesson files name theirs, `NEWEST_VERSION` is the newest.
 - **`tools/*.ts` do not run under plain Node** (extensionless imports): use `node tools/run-tool.mjs <tool>`, vitest or a bundler.
 - **Hosts must record the replay markers:** a `lesson open` event, `key` events with `reset.checkpoint`, `reset.start` or `next`, and a `speech` event with key `speech.end` whenever they call `runner.spoken(t)` (`REPLAY_KEY_ACTIONS`, `SPEECH_END_KEY` in `src/replay`). Without them the replay check fails on times.
 - **Hosts pass `say.interrupt` to speech and send `setLayers({ on: [] })` when frames stop**, or the demo keeps sounding.
