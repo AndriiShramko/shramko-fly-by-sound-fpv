@@ -95,8 +95,8 @@ The review's fixes (`docs/wip/s13-sound-review.md`, 2 blockers, 6 majors, 8 mino
 | B1 objects heard late | five path rays decide the collision course and read their own sector | bbcda98 |
 | B2 shared events disagree | s13-lessons' text of the five members; `durS`, `stage`, `dir` honoured; repeat-cue planned at once | c48de8c |
 | M1 no open way in narrow tunnels | probes from 0.25 m in steps of 0.15 m, half width 0.15 m | 36a723e |
-| M2 the target beat | a target note about once a second, one tone at a time | ea9eaff, 302ae05 |
-| M3 motor set on a 5-inch quad | the whine band, measured on five crafts | abe5428, 07c36bd, 302ae05 |
+| M2 the target beat | a target note about once a second, one tone at a time | ea9eaff, 9467a23, 302ae05, 2c22bd8 |
+| M3 motor set on a 5-inch quad | the whine band, measured on five crafts | abe5428, 07c36bd, 302ae05, 2c22bd8 |
 | M4 voice set on a voice Chrome does not use | local voice first, local voices measured | 783dd8b |
 | M5, M6 the motor hookup, five simulator tests | in "Needs from the simulator" | this doc |
 | m1 chime at a ring's tube | none at a gate | 36a723e |
@@ -107,7 +107,7 @@ The review's fixes (`docs/wip/s13-sound-review.md`, 2 blockers, 6 majors, 8 mino
 | m6 stale motor statements | contract, engine, this doc | 9cecf7c |
 | m7 v0.12 recordings FAIL on the replay page | in "Needs from other lanes" (the lead) | this doc |
 | m8 build-machine folders | placeholders here; the design document is the lead's | this doc |
-| (proofs' evidence after the engine changes) | | 2f5a671 |
+| (proofs' and rig's evidence on the final inputs; this doc) | | 2f5a671, 2c22bd8; 9b29018, e4d0b2e, d552c55 |
 
 Checks on the last commit: `pnpm typecheck` clean; `pnpm test` 26 files, 674 tests; the locale lint (0 problems, 4
 languages, 425 keys) and the layout check (0 problems), run as tools through Vite's loader as `tools/run-tool.mjs`
