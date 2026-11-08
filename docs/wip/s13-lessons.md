@@ -22,7 +22,7 @@ Review fixes (`docs/wip/s13-lessons-review.md`, one commit per fix or small grou
 - [x] R2 shared cue events: payloads that take lane s13-sound's, the play length checked against the planner
 - [x] R3 G's way back: 'go next' is the host's advance(), a lesson opened by G is not marked skipped
 - [ ] R4 the simulator's tests the gitlink move breaks, listed
-- [ ] R5 the corridor ends at its end: a goal 'track-end'
+- [x] R5 the corridor ends at its end: a goal 'track-end' (the corridor's goals field is the lead's to set at the merge)
 - [x] R6 a stage said once: from the world's list when it marks stages, else from the lesson's checkpoints
 - [x] R7 a lesson that moves on by itself is saved skipped, not passed
 - [x] R8 pause: the lesson waits with the flight (runner pause and resume), and the host contract
@@ -57,7 +57,8 @@ Left open, with the reason:
 3. The owner's own flights were not recorded, so the hover-turn failure is reproduced by a model pilot (front/back
    reversal) that gives exactly "15 attempts without a pass" under the v0.12 rule; other causes cannot be ruled out.
 4. The corridor is passed at 240 m flown, during its fourth section (goals are not in my ownership): its last section and
-   stage 4 are never flown in a passing attempt. For the lead or s13-worlds: end it at its last checkpoint, or 335 m.
+   stage 4 are never flown in a passing attempt. Review R5: the goal `track-end` and the checkpoint cp-6 at the end are
+   in place; the corridor's `goals[1]` becomes `{ "kind": "track-end" }` at the merge ("For the lead's merge" item 2).
 5. Respawn points are as dense as the checkpoints: 30 to 75 m apart in the corridor until lane s13-worlds gives the
    world's checkpoint list (the runner already reads it).
 6. Recordings made with v0.12 (lesson version 1) do not verify: the rules changed. The replay says so ("lesson X is
@@ -445,6 +446,23 @@ walls line) go through the same queue, so the fix (wait for the report) also wai
   a recording with a 70 s pause replays to the same events (control: without its session events it does not).
 - What it cannot do: lines the menu cut are not said again by themselves (Z gives the step again).
 
+### Review R5: the corridor ends at its end
+
+- A new goal kind `{ kind: 'track-end' }` (contract `Goal`, `src/lesson/goals.ts`, validated): met when the furthest
+  point of the lesson's track passed in the attempt is its last one: the last point of the world's checkpoint list (lane
+  s13-worlds), else the lesson's last checkpoint. It ends a course where it ends, whatever its length or the corners a
+  pilot cuts (a distance goal does neither: lane s13-worlds' 15 m and 100 m end the shorter corridor 26 m before its
+  end). The loader refuses it in a lesson with fewer than two checkpoints. Its reason: "The end was not reached."
+  (`reason.track-end`, four languages).
+- `lessons/corridor.json` (checkpoints, this lane's): cp-6 at the corridor's end (90, 2, -245), the world's `end`
+  landmark, so its track ends there, not at the start of the last section. The corridor's `goals` are not this lane's:
+  the shipped corridor still passes at 240 m until the lead sets its second goal ("For the lead's merge" item 2).
+- The truth bot's corridor line now flies the last section too (bends with pillars, each passed on its other side,
+  `test/helpers/truth.ts`); it passed nowhere near the end before.
+- Test (`test/praise.test.ts`): the corridor with goals [fly-distance 50, track-end] flown along that line passes at
+  cp-6, with no touch, after stages 1 to 4, saying "You flew the whole corridor."; control: the shipped goals pass
+  before cp-5, stages 1 to 3 only (the review's finding, measured).
+
 ## Needs from the simulator
 
 All in `C:/dev/gsfpv-v03/apps/fly/src/sonic/` (read only here; lane v13-host):
@@ -518,3 +536,7 @@ Lane s13-sound (`src/cues/*`, `src/audio/*`):
    - s13-sound's `test/replay-v012.test.ts` asserts that only lesson events differ on its v0.12 sessions; with this
      runner goal, gate, reset and speech events differ too (review probe: rings-first 2 of 10 events re-derived,
      walls-hall 5 of 14): relax it to "told as an older build" when the lesson version differs.
+2. Review R5, the corridor ends at its end: set `lessons/corridor.json` `goals[1]` to `{ "kind": "track-end" }` (lane
+   s13-worlds' first goal, 15 m, stays). With s13-worlds' world list (87 points, version 1 of the corridor) the track's
+   end is the world's last point; cp-6 then moves with the geometry like cp-1 to cp-5 (to the world's `end` landmark),
+   or goes. The tunnels of s13-worlds that run to an end may take the same goal.

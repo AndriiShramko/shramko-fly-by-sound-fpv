@@ -13,7 +13,7 @@ import { sceneCues, sceneSilentReason } from './sounds';
 export const LESSON_ID = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 const OBJECT_ID = /^[A-Za-z0-9][A-Za-z0-9._-]{0,39}$/;
 const QUESTION_GOALS = ['name-cues', 'locate'] as const;
-const GOAL_KINDS = ['name-cues', 'locate', 'hold-height', 'turn-to', 'reach-zone', 'approach-stop', 'around', 'fly-distance', 'pass-gates', 'name-shape', 'timed-course'] as const;
+const GOAL_KINDS = ['name-cues', 'locate', 'hold-height', 'turn-to', 'reach-zone', 'approach-stop', 'around', 'fly-distance', 'pass-gates', 'name-shape', 'timed-course', 'track-end'] as const;
 
 let catalogue: Set<string> | null = null;
 function keyKnown(key: string): boolean {
@@ -252,6 +252,10 @@ function goal(c: Collector, v: unknown, path: string): Goal | undefined {
             const objectId = id('objectId');
             return objectId === undefined ? undefined : { kind, objectId };
         }
+        case 'track-end': {
+            c.keys(r, path, ['kind']);
+            return { kind };
+        }
         case 'fly-distance': {
             c.keys(r, path, ['kind', 'metres']);
             const metres = c.number(r.metres, at('metres'), { min: 1, max: 5000 });
@@ -412,6 +416,7 @@ export function validateLesson(input: unknown): Validation<LessonDef> {
         if (w.kind === 'none' && asks !== goals.length) c.add('goals', "a lesson without a world (module 0, the ears) can only have 'name-cues' and 'locate' goals");
         if (w.kind !== 'none' && asks > 0) c.add('goals', "'name-cues' and 'locate' goals belong to a lesson without a world");
         if (module !== undefined && (module === 0) !== (w.kind === 'none')) c.add('world', 'module 0 (the ears) and only module 0 runs without a world');
+        if (goals.some((g) => g.kind === 'track-end') && (checkpoints?.length ?? 0) < 2) c.add('goals', "a 'track-end' goal needs the lesson's track: two checkpoints or more");
         // M41-9: a scene of module 0 is heard through the lesson's own layers (a preview sounds whatever is on), so every scene must have its layer on
         if (w.kind === 'none' && l !== undefined && c.ok) {
             for (const cue of sceneCues({ world: w, goals })) {

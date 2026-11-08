@@ -331,7 +331,12 @@ export type Goal =
     | { readonly kind: 'fly-distance'; readonly metres: number }
     | { readonly kind: 'pass-gates'; readonly gateIds: readonly string[] | 'all'; readonly inOrder: boolean }
     | { readonly kind: 'name-shape'; readonly objectId: string }
-    | { readonly kind: 'timed-course'; readonly laps: number };
+    | { readonly kind: 'timed-course'; readonly laps: number }
+    /**
+     * v0.13 (review R5): the end of the lesson's track reached: the last point of the world's checkpoint list, or
+     * else the lesson's last checkpoint (a corridor flown to its end, every stage of it). Needs two checkpoints or more.
+     */
+    | { readonly kind: 'track-end' };
 
 /**
  * Lesson format 2: "r counted attempts in total, with at most m touches each". Failures in between do

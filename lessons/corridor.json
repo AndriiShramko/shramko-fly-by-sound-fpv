@@ -58,6 +58,15 @@
       },
       "radiusM": 2.5,
       "stage": 4
+    },
+    {
+      "at": [90, 2, -245],
+      "id": "cp-6",
+      "pose": {
+        "pos": [90, 2, -245],
+        "yawDeg": 0
+      },
+      "radiusM": 2.5
     }
   ],
   "fastPath": true,

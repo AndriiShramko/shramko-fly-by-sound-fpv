@@ -36,6 +36,8 @@ export interface TrackContext {
     passedGate(gate: SonicObject, index: number, of: number, missM: number, lapDone: boolean, t: number): void;
     /** a gate that counts next was crossed through its opening from its back side (M41-15): told, never counted */
     wrongSide?(gate: SonicObject, t: number): void;
+    /** the last point of the lesson's track was passed in this attempt (the runner knows the track; a 'track-end' goal) */
+    trackEnded?(): boolean;
 }
 
 /** How good a met goal was, for "better than last time": a number and which way is better. */
@@ -316,6 +318,14 @@ export function createTracker(goal: Goal, ctx: TrackContext): GoalTracker {
                 step: () => (ctx.attemptPathM() >= goal.metres ? 'met' : null),
                 target: () => null,
                 reason: () => ({ key: 'reason.distance', params: { metres: Math.min(Math.floor(ctx.attemptPathM()), Math.max(0, goal.metres - 1)), total: goal.metres } }),
+                score: () => null
+            };
+        case 'track-end':
+            return {
+                goal,
+                step: () => (ctx.trackEnded?.() === true ? 'met' : null),
+                target: () => null,
+                reason: () => ({ key: 'reason.track-end' }),
                 score: () => null
             };
         case 'pass-gates':

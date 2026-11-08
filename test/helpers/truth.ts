@@ -63,6 +63,15 @@ export function corridorLine(params: Readonly<Record<string, unknown>>): Vec3[] 
         out.push(at());
         forward(seg);
     }
+    // bends with obstacles: a pillar a sixth of the width to one side at 0.55 of each segment, passed on the other side
+    for (let i = 0; i < bends; i++) {
+        turn(i % 2 === 0 ? 'right' : 'left');
+        const off = (i % 2 === 0 ? -1 : 1) * (w / 4);
+        const along = seg * 0.55;
+        out.push([x + hx * 2 + -hz * off, y + y0, z + hz * 2 + hx * off]);
+        out.push([x + hx * (along + 3) + -hz * off, y + y0, z + hz * (along + 3) + hx * off]);
+        forward(seg);
+    }
     return out;
 }
 
@@ -133,6 +142,7 @@ function flyGoal(p: ScriptedPilot, goal: Goal, attempt: number): void {
             }
             return;
         }
+        case 'track-end':
         case 'fly-distance': {
             const track = worldTrack(p.world);
             if (track !== null) {
@@ -156,7 +166,7 @@ function flyGoal(p: ScriptedPilot, goal: Goal, attempt: number): void {
                 x = bestGap;
             }
             p.flyTo([x, p.pos[1], p.pos[2]], Infinity, false);
-            p.flyTo([x, p.pos[1], p.pos[2] - (goal.metres + 2)]);
+            p.flyTo([x, p.pos[1], p.pos[2] - ((goal.kind === 'fly-distance' ? goal.metres : 0) + 2)]);
             return;
         }
         case 'pass-gates':

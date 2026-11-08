@@ -806,6 +806,12 @@ class Runner implements LessonSession {
                 this.actions.push({ kind: 'cue', event: { kind: 'gate', index, of } });
                 if (lapDone) this.actions.push({ kind: 'cue', event: { kind: 'lap' } });
             },
+            // a 'track-end' goal: the furthest point passed is the track's last (the world's list, else the lesson's checkpoints)
+            trackEnded: () => {
+                const track = this.track();
+                const pp = this.passedPoint;
+                return track !== null && track.source !== 'gates' && pp !== null && pp.index >= track.points.length - 1;
+            },
             wrongSide: (gate, at) => {
                 if (at - this.lastWrongSide < WRONG_SIDE_EVERY_S * 1000) return;
                 this.lastWrongSide = at;

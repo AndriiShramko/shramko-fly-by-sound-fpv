@@ -386,6 +386,7 @@
     "reason.around": "Tylko {degrees, plural, one {# stopień} few {# stopnie} many {# stopni} other {# stopnia}} z pełnego koła.",
     "reason.around-none": "Okrążenia nie było.",
     "reason.distance": "Przelecone {metres} z {total, plural, one {# metra} few {# metrów} many {# metrów} other {# metra}}.",
+    "reason.track-end": "Nie udało się dolecieć do końca.",
     "reason.gate-missed": "Bramka {n} ominięta.",
     "reason.gates": "Zaliczone bramki: {passed} z {total}.",
     "reason.touches": "Za dużo dotknięć: {n}. Najwyżej {limit}.",

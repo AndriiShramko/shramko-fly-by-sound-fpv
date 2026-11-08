@@ -386,6 +386,7 @@
     "reason.around": "Пройдено только {degrees, plural, one {# градус} few {# градуса} many {# градусов} other {# градуса}} из 360.",
     "reason.around-none": "Облёта не было.",
     "reason.distance": "Пролетено {metres} из {total, plural, one {# метра} few {# метров} many {# метров} other {# метра}}.",
+    "reason.track-end": "До конца долететь не удалось.",
     "reason.gate-missed": "Мимо ворот номер {n}.",
     "reason.gates": "Пройдено ворот: {passed} из {total}.",
     "reason.touches": "Слишком много касаний: {n}. Можно не больше {limit}.",

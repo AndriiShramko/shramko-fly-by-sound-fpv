@@ -95,10 +95,10 @@ describe('the shipped lessons', () => {
             const l = getLesson(id);
             expect(l.world.kind === 'none', id).toBe(l.module === 0);
         }
-        // the corridor's checkpoints sit at the starts of its sections
+        // the corridor's checkpoints sit at the starts of its sections, and the last at its end (review R5)
         const c = getLesson('corridor');
         const w = c.world.kind === 'analytic' ? createAnalyticWorld(c.world.spec) : null;
-        const sections = (w?.landmarks ?? []).filter((m) => m.id.startsWith('section-')).map((m) => m.pos);
+        const sections = (w?.landmarks ?? []).filter((m) => m.id.startsWith('section-') || m.id === 'end').map((m) => m.pos);
         expect(c.checkpoints.map((cp) => cp.at)).toEqual(sections);
         // Winter Garden x5 with its ring track (spec section 3, module 7; plan v12-flight step 10)
         const g = getLesson('free-garden');

@@ -386,6 +386,7 @@
     "reason.around": "Solo {degrees} grados de la vuelta completa.",
     "reason.around-none": "No has dado la vuelta.",
     "reason.distance": "Volaste {metres} de {total, plural, one {# metro} other {# metros}}.",
+    "reason.track-end": "No llegaste al final.",
     "reason.gate-missed": "Fallaste la puerta {n}.",
     "reason.gates": "Puertas pasadas: {passed} de {total}.",
     "reason.touches": "Demasiados contactos: {n}. Como mucho {limit}.",

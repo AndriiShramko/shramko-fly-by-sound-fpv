@@ -1,10 +1,11 @@
 // M41-11: praise and stages. A counted attempt is praised in a short line from a pool, never the same
 // twice in a row; "Better than last time!" only when its score really improved; the pass is the fanfare,
 // the lesson's own line and what comes next; a checkpoint that ends a stage says "Stage k passed".
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import type { CueEvent, Goal, SonicWorld, Vec3 } from '../src/contract';
 import { createTranslator, DICTS } from '../src/i18n';
-import { getLesson, lessonAfter, PRAISE_LINES, type RunnerAction } from '../src/lesson';
+import { getLesson, lessonAfter, PRAISE_LINES, validateLesson, type RunnerAction } from '../src/lesson';
 import { LOCALES } from '../src/contract';
 import { createAnalyticWorld } from '../src/world';
 import { ScriptedPilot } from './helpers/pilot';
@@ -166,4 +167,39 @@ describe('the pass and the stages', () => {
         // control: a world list with no stages leaves them to the lesson's checkpoints (cp-2 at -50 m, reached within its 2.5 m)
         expect(fly(list(false))).toEqual({ stages: [1], at: [-48] });
     }, 60000);
+});
+
+describe('the corridor ends at its end (review R5)', () => {
+    /** the corridor flown along its line to the end: when it passed, which stages were said before, and the touches */
+    function flown(goals: readonly Goal[]): { checkpoints: string[]; stages: (number | undefined)[]; touches: number; said: string[] } {
+        const lesson = { ...getLesson('corridor'), goals };
+        const p = new ScriptedPilot(lesson);
+        p.begin();
+        p.until(() => p.run.phase === 'flying', 60);
+        const built = p.analytic;
+        if (built === null) throw new Error('the corridor has a world');
+        const line = corridorLine(built.resolved);
+        const phase = (): string => p.run.phase;
+        for (const q of line) if (phase() === 'flying') p.flyTo(q);
+        return { checkpoints: p.of('checkpoint').map((c) => c.id), stages: cues(p).flatMap((c) => (c.kind === 'stage' ? [c.stage] : [])), touches: p.of('touch').length, said: said(p).map((l) => l.key) };
+    }
+
+    it("with the goal 'track-end' the corridor passes at its end, after all four stages and its last section; control: the shipped 240 m pass before stage 4", () => {
+        const shipped = getLesson('corridor');
+        const end = flown([shipped.goals[0] as Goal, { kind: 'track-end' }]);
+        expect(end.touches).toBe(0);
+        expect(end.checkpoints).toEqual(['cp-1', 'cp-2', 'cp-3', 'cp-4', 'cp-5', 'cp-6']);
+        expect(end.stages).toEqual([1, 2, 3, 4]);
+        expect(end.said.slice(-2)).toEqual(['lesson.corridor.pass', 'fly.lesson-passed']); // "You flew the whole corridor." is true now
+        // control: the shipped goals (240 m flown) pass in the fourth section: stage 4 and the last section are never flown
+        const now = flown(shipped.goals);
+        expect(now.checkpoints).not.toContain('cp-5');
+        expect(now.stages).toEqual([1, 2, 3]);
+        expect(now.said).toContain('lesson.corridor.pass');
+    }, 120000);
+
+    it("the goal needs the lesson's track: the loader refuses it in a lesson with fewer than two checkpoints", () => {
+        const r = validateLesson({ ...JSON.parse(readFileSync(new URL('../lessons/rings-first.json', import.meta.url), 'utf8')), goals: [{ kind: 'track-end' }] });
+        expect(r.ok ? [] : r.issues.map((i) => i.message).join(' ')).toMatch(/track-end/);
+    });
 });
