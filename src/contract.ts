@@ -528,7 +528,18 @@ export type CueEvent =
     | { readonly kind: 'checkpoint' }
     | { readonly kind: 'reset' }
     | { readonly kind: 'fanfare' }
-    | { readonly kind: 'preview'; readonly cue: CueId; readonly dir: Vec3 | null };
+    | { readonly kind: 'preview'; readonly cue: CueId; readonly dir: Vec3 | null }
+    // v0.13 (plan v13 "Lanes"): the runner (lane s13-lessons) emits these, the planner (lane s13-sound) owns how they sound
+    /** flying back along a corridor or a course (M41-15) */
+    | { readonly kind: 'wrong-way' }
+    /** a ring passed from its back side, not counted (M41-15) */
+    | { readonly kind: 'wrong-side' }
+    /** a counted attempt (M41-11); the planner varies the figure itself */
+    | { readonly kind: 'praise' }
+    /** a stage of a long course passed (M41-11); `stage` 1, 2, ...: each stage ends a step higher (four at most) */
+    | { readonly kind: 'stage'; readonly stage?: number }
+    /** the named cue's own sound as in the glossary, short (REPEAT_CUE_S): a step plays it three times about 1 s apart (M41-5) */
+    | { readonly kind: 'repeat-cue'; readonly cue: CueId; readonly dir?: Vec3 | null };
 
 /** A cue sounding now: what the recording stores and the captions may show. */
 export interface ActiveCue {

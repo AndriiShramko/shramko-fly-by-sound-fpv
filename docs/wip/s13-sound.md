@@ -23,7 +23,8 @@ Shared event kinds (plan, "Lanes"): the runner emits the cue events `wrong-way`,
   (`src/sense/sampler.ts`, `src/cues/rules.ts`, `test/ttc.test.ts`, 22 tests)
 - [x] 4 Free way (M41-14): the open-way chime from the free side (`src/sense/freeway.ts`, planner, engine;
   `test/freeway.test.ts`, 14 tests on box tunnels, `test/helpers/boxes.ts`)
-- [ ] 5 Event sounds (M41-15, M41-11, M41-5): wrong-way, wrong-side, praise, stage, repeat-cue
+- [x] 5 Event sounds (M41-15, M41-11, M41-5): wrong-way, wrong-side, praise, stage, repeat-cue (contract
+  `CueEvent`, planner; `test/events.test.ts`, 14 tests)
 - [ ] 6 Motor (M41-16): on by default, under the cues, ducked under speech
 - [ ] 7 Never silence (M41-10), the planner's part
 - [ ] 8 Speech level (M41-17): speech 3 to 6 LU over the mix, true peak at most -1 dBTP
@@ -179,11 +180,38 @@ Shared event kinds (plan, "Lanes"): the runner emits the cue events `wrong-way`,
   right chime from 36 starts (three lateral positions, three heights, four drifts). What it cannot show: whether a
   pilot takes a high two-note figure from ahead for "over" without training (the glossary line says it).
 
+### Step 5, event sounds (M41-15, M41-11, M41-5)
+
+- Contract (`src/contract.ts`, `CueEvent`, added members only): `{ kind: 'wrong-way' }`, `{ kind: 'wrong-side' }`,
+  `{ kind: 'praise' }`, `{ kind: 'stage'; stage?: number }`, `{ kind: 'repeat-cue'; cue: CueId; dir?: Vec3 | null }`.
+  Cue ids (glossary names and lines in four languages): `safety.wrong-way`, `safety.wrong-side`, `target.praise`,
+  `target.stage`.
+- The figures, all notes of the scale, around the gate melody's root (note 5, C4) and an octave above it:
+  wrong-way, two falling pairs (2 to 0, twice, 0.34 s apart) in the safety layer's own timbre; wrong-side, three notes
+  falling from the gate notes' register to the root (5, 3, 0); praise, a short bright rise an octave up, one of three
+  figures in turn (0 2 4, 2 4 5, 0 3 5) so it does not tire; stage, a run of five notes and a soft root under its end,
+  one step higher with each stage (four at most). Shorter and lighter than the fanfare (the lesson's pass). Every
+  event's figure is unlike every other earcon's (onset times and notes compared for all ten, in every theme and calm).
+- Never louder than the safety sound: planned peaks (layer gain plus note gains, notes within 20 ms summed) are at
+  least 3 dB under a hazard pulse at 1 m in every theme and calm (wrong-way and wrong-side 3 dB, praise and stage on the
+  target bus 4 dB lower again); the rendered check is the rig's (step 9).
+- repeat-cue plays the cue's glossary sound in a short form: one-off cues as they are, cut to end by 0.9 s
+  (`REPEAT_CUE_S`); continuous cues as a 0.9 s preview (a wall approach from 3 m, not 8 m, so it still has four or more
+  pulses). ONE event is ONE play: for M41-5 the runner emits three 'repeat-cue' events with onsets at least 1 s apart
+  (each play is over by 0.9 s). An unknown cue id plays nothing.
+
 ## Needs from the simulator
 
 (Filled step by step.)
 
 ## Needs from other lanes
+
+- s13-lessons (runner): emit `{ kind: 'repeat-cue', cue }` once per play, three times about 1 s apart (onsets at least
+  `REPEAT_CUE_S` + 0.1 s apart, `REPEAT_CUE_S` = 0.9 from `src/cues`), with no speech over them; `{ kind: 'praise' }` on
+  each counted attempt (the planner varies the figure), `{ kind: 'stage', stage: k }` for stage k of the long tunnel,
+  `{ kind: 'wrong-way' }` after more than 1 s of flying back, `{ kind: 'wrong-side' }` for a ring passed from its back;
+  the glossary can name the new cues (`safety.free`, `safety.wrong-way`, `safety.wrong-side`, `height.target`,
+  `target.praise`, `target.stage` are in `CUE_IDS` with their lines).
 
 - s13-lessons: `walls-hall` asks to stop within 3 m of a wall (`approach-stop`, `stopWithinM` 3). Since v0.13 a
   slowing craft stops hearing a wall once its time to contact is over about 3 s (and the distance over 1 m): stopping
