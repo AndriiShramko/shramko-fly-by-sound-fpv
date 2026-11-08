@@ -123,7 +123,70 @@ the code, then fixed with a test and its control (section "Review fixes" below):
 - [x] F6 Review E7: rings-course in the numbers: every leg of the gate lessons measured again, 5 to 7.05 m (rings-course
   6.0, 6.10, 7.05, 6.46, 6.57, 7.05), line-up distances 2.86 to 4.03 m; the CHANGELOG and section E1-5 say so (and the
   CHANGELOG the rule of F1)
-- [ ] F7 Every check again; final status of the review fixes
+- [x] F7 Every check again (section "Final status" below)
+
+## Final status (2026-11-08, after the review)
+
+Branch `s13-elev`, not pushed; the lead merges. The review (`docs/dev/review-v0.13-elev.md`, dbce5fd) found eight
+things; each was tried against the code first, all eight held, and each is fixed with a test and its control (section
+"Review fixes"). Commits: F1 fabfbbe; F2 b6497b0; F3 1dc2d8d, a2e4250; F5 96c7ee7; F6 7c13006; F4 9f776c7, 7da428b,
+e3e4cdc, 4b2a6b6; F7 this commit.
+
+What changed for the pilot since the review:
+
+- Up and down by direction, as the owner asked (message 42), now holds where the review found it did not. The lines:
+  with Sound from above and below off, nothing says a way above or below comes from above or below; the glossary and
+  tunnel-gaps tell the way by its pitch and say "from there too" only with the setting's name; the corridor tells the
+  pitch; the setting's description says what off does and that the ceiling and the floor come from above and below
+  either way, in four languages. The target note comes from its target from its first milliseconds (the first note
+  after the target moved began from the old side: Chrome left the panner idle between notes). The height tone and a
+  placed target note never sound together (the tone back 12 ms after the note; they overlapped 2.3 to 2.8 ms). The
+  motor no longer masks the breath of air that carries the height cues: 17.8 dB or more under it from 4 to 16 kHz with
+  every craft (5.7 dB at 4 kHz before).
+- The wrong way between gates: a pilot who turns back on a leg he has flown is told within a few metres; one who carries
+  on out of a gate where the course turns back (free-garden's Winter Garden, ring 4 to 5, the last lesson of both paths)
+  or backs away at the start is no longer told "You are flying back"; one who flies away from the next gate is told once
+  8 m from it, as in v0.13. A later lap's first gate is reached from the course's last.
+- K's help and every line that names a key: in Spanish, Polish and Russian the lint holds "la tecla", "klawisz",
+  "клавишу" before the key, and the words check hears every key's name.
+
+Measured on this tree:
+
+- `pnpm typecheck` clean; `pnpm test` 49 files, 1167 tests (1138 at the review); locale lint 0 problems (526 keys);
+  layout check 0 problems.
+- `pnpm proof:audio`: 3 files, 9 tests passing: the audio page's 7 proofs (two new: `target-note-gap`,
+  `target-note-pan`), each passing with its control failing, and the demo's keyboard checks.
+- `pnpm listen` 9 of 9 valid and passing (543c687b88a2), the tunnel flown too: the voice 4.56 to 4.74 LU over the ring
+  flight's mix; the breath's cost to the voice in the tunnel 0.10 to 0.17 LU; true peak at most -1.98 dBTP; every cue
+  15.0 dB or more over every craft's motor, the breath 17.8 dB or more; VL-1-elevation 3.57, 3.05 and 4.94 dB (control
+  0.57).
+- `pnpm listen:words` PASS (217fe5790a33): every line within 0.2 in its language; every line that names a key heard with
+  it (17 of 17 in each language); the key control loses the key in 4 Spanish, 1 Polish and 7 Russian lines of v0.13.
+- The reworded lines with each language's local voice: 11.7 to 23.3 s, none longer than the runner waits.
+
+Open, with reasons:
+
+- In a busy tunnel the voice sits 1.9 to 2.9 LU over the mix (VL-6 asks 3 to 6 on the ring flight, where the voices
+  were set; the breath costs 0.1 to 0.2 LU of it): the owner's call between about 1 dB more voice (the clear theme's
+  tunnel peak then near -1 dBTP) and a voice level that follows the mix (F4).
+- VL-4's 2 % of a lesson's words: nine lessons' own lines are over it by one to three words on clean speech (F3); the
+  check's bound is per line.
+- Laps and courses in any order: the leg's rule is tested on a synthetic loop and on rings-line in any order; no shipped
+  lesson has either.
+- The truth bot's line in rings-small flown at 1 m/s or slower is told three times (the review's observation: it flies
+  back 3 m between two rings; not a pilot's line).
+
+Not checked by any machine:
+
+- A person hearing it: whether pilots hear the chime above or below and the target note by their direction (the model
+  predicts 7 points fewer up/down errors on average, above more than below), whether the soft hiss is pleasant, and
+  whether "You are flying back" comes at the right moments in the simulator's Winter Garden; the first testers, with the
+  setting to turn it off.
+- A native reading of the Spanish, Polish and Russian lines: the four reworded in F2, the key lines and the habits
+  recorded (Polish "węższy" heard "wyższy", Russian "пролети" and "гул"); Whisper shows the voices say every word, not
+  that the words are natural.
+- The simulator with this branch: the setting (W13), the panel (W14), free-garden on the real scan.
+- Voices other than the four Windows desktop ones (Chrome's OneCore and online voices).
 
 ## E1-1 Audit: the cues of up and down in v0.13 (code as of 16c01a1)
 
@@ -727,6 +790,11 @@ By hand, each fix taken back once: the tail at 6.5 ms fails the gap (2.25 to 2.7
   `sonicrec.send.notice.asked`, `sonicrec.survey.listening`) lose the key's name the same way said by the local voices
   (section "Simulator lines") and would take the same words; the Russian ones would take one register with the package's
   ("Нажми"). No simulator test holds the changed texts (searched v13-host: `apps/fly`, `tools/bench`).
+- Review fixes (section "Review fixes"): nothing in the host has to change. The setting's description
+  (`menu.setting.height-direction-what`) now says what off does, 16 to 21 s with the local voices: the spoken settings
+  (W13) should let the next item interrupt it, as any long line. free-garden on the Winter Garden no longer says "You
+  are flying back" after ring 4 in a correct flight. The engine keeps one constant source on the target panner
+  (-140 dBFS, inaudible) and its motor low-pass is fourth order: worth a line in the cost bench (W16).
 - E2, the simulator's lines over the bound (section "Simulator lines"), above all "Fly by Sound" said by the Russian and
   Polish voices; `node tools/run-tool.mjs listen-words --sim <its packages/i18n/locales>` hears them again after a change
   (a report, not evidence: the texts are the simulator's).
