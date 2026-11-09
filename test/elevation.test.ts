@@ -13,6 +13,7 @@ import { CuePlanner, ELEVATION_AIR_DB, ELEVATION_LOWPASS_HZ, FREE_DIRS, FREE_PRE
 import { defaultPrefs } from '../src/prefs';
 import { FREE_SPAN_MAX_M, type FreeSide } from '../src/sense';
 import { getBuiltinTheme } from '../src/theme';
+import { canonicalJson } from '../src/util';
 import { yawQuat } from '../src/util/vec';
 import { block, boxTunnel } from './helpers/boxes';
 import { flyPlacement, placementHashes, PLACEMENT_BLOCK_FRAMES, PLACEMENT_FLIGHT_IDS, v013Prefs, type FrameRecord, type PlacementFlightId } from './helpers/placement';
@@ -25,9 +26,13 @@ const V013 = JSON.parse(readFileSync(new URL('./fixtures/placement-v013.json', i
 
 const withDirection = (id: PlacementFlightId, on: boolean): SonicPrefs => ({ ...v013Prefs(id), heightDirection: on }) as SonicPrefs;
 const cache = new Map<string, FrameRecord[]>();
-const flown = (id: PlacementFlightId, on: boolean): FrameRecord[] => {
-    const key = `${id}:${on}`;
-    if (!cache.has(key)) cache.set(key, flyPlacement(id, withDirection(id, on)));
+/**
+ * A placement flight. `v013Ties`: with the scene sampler's rule of v0.13 for two mirror sectors (no dead band; lane s13-int
+ * K1 made two mirror sectors within MIRROR_DEAD_BAND one tie, which orders two tied voices by the sectors instead)
+ */
+const flown = (id: PlacementFlightId, on: boolean, v013Ties = false): FrameRecord[] => {
+    const key = `${id}:${on}:${v013Ties}`;
+    if (!cache.has(key)) cache.set(key, flyPlacement(id, withDirection(id, on), v013Ties ? { mirrorDeadBand: 0 } : undefined));
     return cache.get(key) as FrameRecord[];
 };
 const voices = (rs: readonly FrameRecord[], cue: string): VoicePlan[] => rs.flatMap((r) => r.plan.voices.filter((v) => v.cue === cue));
@@ -38,8 +43,8 @@ describe('the setting off gives back v0.13 exactly', () => {
         expect(Object.keys(V013.flights).sort()).toEqual([...PLACEMENT_FLIGHT_IDS].sort());
     });
 
-    it.each(PLACEMENT_FLIGHT_IDS)('%s: every frame\'s plan is v0.13\'s, voice for voice, note for note', (id) => {
-        const h = placementHashes(flown(id, false));
+    it.each(PLACEMENT_FLIGHT_IDS)('%s: every frame\'s plan is v0.13\'s, voice for voice, note for note (with v0.13\'s rule for two mirror sectors)', (id) => {
+        const h = placementHashes(flown(id, false, true));
         const want = V013.flights[id] as Fixture['flights'][string];
         expect(h.frames).toBe(want.frames);
         const first = h.blocks.findIndex((b, i) => b !== want.blocks[i]);
@@ -49,6 +54,27 @@ describe('the setting off gives back v0.13 exactly', () => {
 
     it.each(PLACEMENT_FLIGHT_IDS)('control: %s with the setting on differs from v0.13', (id) => {
         expect(placementHashes(flown(id, true)).hash).not.toBe((V013.flights[id] as Fixture['flights'][string]).hash);
+    });
+
+    it.each(PLACEMENT_FLIGHT_IDS)('%s: the mirror tie of s13-int (K1) sounds the same voices in every frame, voice for voice; it only orders two tied voices by the sectors', (id) => {
+        const before = flown(id, false, true);
+        const now = flown(id, false);
+        const sorted = (r: FrameRecord): string[] => r.plan.voices.map((v) => canonicalJson({ ...v, slot: 0, priority: 0 })).sort();
+        // the rest of the plan with its lists in a fixed order: the active cues, and the sampler's hazards without their ranks (the order is the tie's)
+        const rest = (r: FrameRecord): string => {
+            const scene = r.plan.scene;
+            return canonicalJson({ ...r.plan, voices: [], cues: r.plan.cues.map((c) => canonicalJson(c)).sort(), scene: scene === null ? null : { ...scene, hazards: scene.hazards.map((h) => canonicalJson({ ...h, rank: 0 })).sort() } });
+        };
+        let reordered = 0;
+        now.forEach((r, i) => {
+            const was = before[i] as FrameRecord;
+            expect(sorted(r), `${id} at ${r.t} ms`).toEqual(sorted(was));
+            expect(rest(r), `${id} at ${r.t} ms`).toBe(rest(was));
+            if (r.plan.voices.map((v) => v.key).join() !== was.plan.voices.map((v) => v.key).join()) reordered++;
+        });
+        // measured on the placement flights: tunnel-gaps 90 frames of 1044 in each theme (the ceiling ahead and above it), rings-heights 10 of 1545
+        // (the floor and the ceiling), none in the others
+        expect(reordered, id).toBe(({ 'tunnel-gaps-soft': 90, 'tunnel-gaps-race': 90, 'rings-heights': 10 } as Record<string, number>)[id] ?? 0);
     });
 
     it('a document without the setting is on (absent: on), and only false turns it off', () => {

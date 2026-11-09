@@ -89,6 +89,15 @@
   the new geometry (the sampler's hold for a clock that goes back), and a one-off note of the last lesson stayed listed
   until the new clock reached its end. Node test `test/reset.test.ts` and the audio proof `engine-reset`, each with its
   control (the same frames without the reset).
+- A flight dead ahead at a wall replays as it was flown (lane s13-int, K1 of the simulator's v0.13 review): two mirror
+  sectors of the scene sampler (left and right of the axis ahead, above and below it: `MIRROR_PAIRS`) whose risks lie
+  within `SamplerConfig.mirrorDeadBand` (default `MIRROR_DEAD_BAND`, 2 %) of each other are one tie: both take the higher
+  risk for turning on, holding, turning off and ranking, and the order of `SECTORS` chooses between them. Before, a yaw
+  far under what a recording keeps (its quaternion to 1e-4) broke the tie of the two front-side sectors one way live
+  and the replay of the rounded frame broke it the other way: the simulator's straight flight at a wall replayed with
+  83.7 % of its sounds the same and read FAIL. A voice keeps its own urgency (its loudness); only the order of two tied
+  voices changes (on the placement flights: 90 of 1044 frames of tunnel-gaps, 10 of 1545 of rings-heights, the same
+  voices). `mirrorTie()`; Node test `test/mirror-tie.test.ts` with its control (`mirrorDeadBand: 0`).
 - The replay check has a verdict of its own for a recording of an older build: `ReplayCheck.verdict` ('pass',
   'older-build', 'fail'; `replayVerdict(check)` for a check put together elsewhere) and the line "replay check:
   recorded with an older build (the versions), so this build cannot verify it" when a recording does not re-derive

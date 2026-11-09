@@ -11,6 +11,7 @@ import { CuePlanner, type FramePlan, type NotePlan } from '../../src/cues';
 import { courseGates, getLesson, toLocal, worldCheckpoints } from '../../src/lesson';
 import { defaultPrefs } from '../../src/prefs/prefs';
 import { getBuiltinTheme, type BuiltinThemeId } from '../../src/theme';
+import type { SamplerOptions } from '../../src/sense';
 import { canonicalJson, sha256Hex } from '../../src/util';
 import { quatRotate, yawQuat } from '../../src/util/vec';
 import { createAnalyticWorld, type AnalyticWorldInfo } from '../../src/world';
@@ -45,8 +46,8 @@ interface Flight {
 const sample = (t: number, s: Step): FlightSample => ({ t, tick: Math.round(t), pos: s.pos, vel: s.vel, quat: yawQuat(s.yawDeg), rate: [0, 0, 0], yawDeg: s.yawDeg, pitchDeg: 0, rollDeg: 0, sticks: [0, 0, 0, 0], armed: true, touched: false, paused: false });
 
 /** Flies `flight` through one planner with `prefs`: one record a frame. */
-function fly(flight: Flight, prefs: SonicPrefs): FrameRecord[] {
-    const planner = new CuePlanner({ theme: getBuiltinTheme(flight.theme), prefs, ...(flight.layers === undefined ? {} : { layers: flight.layers }) });
+function fly(flight: Flight, prefs: SonicPrefs, sampler?: SamplerOptions): FrameRecord[] {
+    const planner = new CuePlanner({ theme: getBuiltinTheme(flight.theme), prefs, ...(flight.layers === undefined ? {} : { layers: flight.layers }), ...(sampler === undefined ? {} : { sampler }) });
     const out: FrameRecord[] = [];
     flight.steps.forEach((s, i) => {
         const t = i * FRAME_MS;
@@ -171,8 +172,8 @@ export function v013Prefs(id: PlacementFlightId): Omit<SonicPrefs, 'heightDirect
 }
 
 /** Flies one of the flights with these prefs. */
-export function flyPlacement(id: PlacementFlightId, prefs: SonicPrefs): FrameRecord[] {
-    return fly(PLACEMENT_FLIGHTS[id](), prefs);
+export function flyPlacement(id: PlacementFlightId, prefs: SonicPrefs, sampler?: SamplerOptions): FrameRecord[] {
+    return fly(PLACEMENT_FLIGHTS[id](), prefs, sampler);
 }
 
 /** A number as the record keeps it: 1e-9 (the last bits of a sum are not the placement), -0 as 0. */

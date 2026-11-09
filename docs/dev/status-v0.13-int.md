@@ -12,6 +12,11 @@ needs from the package. Not pushed; the lead merges it to `main` after gh_preche
   and a rule in AGENTS.md.
 - [x] I2. The words check on the simulator's Fly by Sound lines after the simulator's rewording (its key lines, its
   Russian register, the mode's name in Russian and Polish): before and after, per language.
+- [x] I4. A flight dead ahead at a wall replays as it was flown (K1 of the simulator's v0.13 review): the scene sampler's
+  mirror tie with a dead band (`MIRROR_PAIRS`, `mirrorDeadBand`, default 2 %), the same rule live and in the replay.
+- [ ] I5. The mode's name in the package's own Russian and Polish lines (K3 of the simulator's review): `app.name` and
+  `menu.welcome`, their lengths measured with the local voices, the words check again.
+- [ ] I6. The checks on the new head (I4 changed the planner: the audio proofs and `pnpm listen` too).
 - [x] I3. The checks on the branch's head: typecheck, tests, locale lint, layout, the audio proofs (the engine changed),
   `pnpm listen` (the engine's files changed, so its evidence is keyed again).
   - `pnpm typecheck` clean; `pnpm test` 50 files, 1172 tests (1167 at s13-elev's end, 5 new); locale lint 0 problems in 4
@@ -88,3 +93,34 @@ language (the simulator names the mode with a key of its own now); whether the p
 is the owner's call (they would need new lengths measured and the package's words check again).
 
 Not checked by a machine: a native reading of the reworded Russian and Polish lines, the Polish name above all.
+
+## I4, the mirror tie (K1)
+
+Why: the simulator's page proof sonic-v13-page F2 flew rings-first with W alone, dead ahead at its front wall (the craft
+at x 0 to the millimetre), recorded it and replayed the recording: 0 events different, 100 % of the sounds by kind, but
+83.7 % of 172 frames by cue id, so the verdict was FAIL. For 28 frames the live engine voiced `safety.wall:front-right`
+and the replay's planner `safety.wall:front-left`. The two front-side sectors see the wall at the same angle on the
+room's axis: their risks tie. Live, a yaw far below what a recording keeps (the quaternion to 1e-4: up to about 0.01
+degrees) broke the tie toward one side, and stickiness (1.25) kept that voice; the replay's frame, rounded to no yaw at
+all, saw the tie exact and broke it by the order of `SECTORS` (front-left first). Reproduced in Node: the simulator's
+lesson rig with a yaw of 1e-5 rad at the attempt's start replayed with 89.2 % of its sounds by id (front-right live,
+front-left in the replay), with a yaw of +1e-5 rad or none at 100 %.
+
+What it does: two mirror sectors (front-left and front-right, left and right, front-up and front-down, up and down)
+whose risks lie within `mirrorDeadBand` of each other (default 2 % of the higher) both take the higher risk for turning
+on, holding, turning off and ranking, so they turn on together and the order of `SECTORS` chooses, live and in the replay
+alike. A voice keeps its own urgency (its loudness and rhythm); only which of two tied sectors sounds, and in what order,
+follows the tie. The recording's rounding moves the two front-side risks apart by under 0.05 % (measured in the test: a
+yaw of 0.0115 degrees at 2.6 to 7.2 m), 40 times under the band; a yaw of 0.6 degrees moves them 2 % apart, and beyond
+that the side that faces the wall more squarely is voiced as before.
+
+Checks: `test/mirror-tie.test.ts` (12 tests): the approach at 60 Hz live and every second frame rounded as a recording
+keeps it (`roundFrame`), with a yaw of +-1e-5 rad and none: the same sectors at every frame, front-left; control, the rule
+before (`mirrorDeadBand: 0`): with the yaw to the right, front-right live and front-left in the replay for more than 20
+frames. A real yaw of 3 degrees still voices its own side in both. The tie itself (`mirrorTie`), two tied sectors turning
+on together (risks 1.01 and 0.995: both voiced; control: one), the band checked (0 to 0.2). Negative control in the code,
+run once and restored: `MIRROR_DEAD_BAND` 0 fails 3 of the tests. `test/elevation.test.ts`: the plans with
+`heightDirection` off are v0.13's exactly with v0.13's rule for mirror ties (the placement helper takes sampler options);
+with the tie, the same voices in every frame, only two tied voices change their order: 90 of 1044 frames of tunnel-gaps
+in each theme (the ceiling ahead and above; their urgencies differed by 3e-16) and 10 of 1545 of rings-heights (the floor
+and the ceiling through a ring), none in the other flights. `pnpm test` 51 files, 1191 tests.

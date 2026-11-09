@@ -31,6 +31,13 @@
 //     risk has fallen under releaseRatio AND holdMs have passed since it last reached 1
 //   - ranking uses risk x a priority weight per sector (ahead outranks behind); a voice that is
 //     already sounding counts `stickiness` times, so two near-equal hazards do not swap places
+//   - v0.13 (lane s13-int, K1 of the simulator's review): two mirror sectors (left and right of the axis
+//     ahead, above and below it: MIRROR_PAIRS) whose risks lie within `mirrorDeadBand` of each other are
+//     one tie: both take the higher risk for turning on, holding, turning off and ranking, so they turn on
+//     together and the order of SECTORS chooses between them. A craft flying dead ahead at a wall sees its
+//     two front-side sectors tie; a yaw far below what a recording keeps (its quaternion to 1e-4, about
+//     0.01 degrees) broke that tie one way live, while the replay of the rounded frame saw it exact and
+//     broke it the other way. The voice's own urgency (its loudness) stays the sector's own risk
 //   - never more than 3 voices (contract: LessonLayers.hazardVoices is 3 or fewer)
 import type { FlightSample, RayHit, SectorId, SonicWorld, Vec3 } from '../contract';
 import { SECTORS } from '../contract';
@@ -72,7 +79,32 @@ export interface SamplerConfig {
      * (every object hit keeps its time, as v0.12)
      */
     readonly collisionCourse: CollisionCourse;
+    /**
+     * Two mirror sectors (MIRROR_PAIRS) whose risks differ by at most this share of the higher one are one tie: both
+     * take the higher risk, and the order of SECTORS chooses between them, live and in a replay alike. 0 to 0.2; 0
+     * turns it off (the rule before s13-int, the control of test/mirror-tie.test.ts)
+     */
+    readonly mirrorDeadBand: number;
 }
+
+/**
+ * The mirror sectors: left and right of the axis ahead, above and below it. Each pair has one weight, and on the axis
+ * of a symmetric room the two see the same surface at the same angle (MIRROR_DEAD_BAND).
+ */
+export const MIRROR_PAIRS: readonly (readonly [SectorId, SectorId])[] = [
+    ['front-left', 'front-right'],
+    ['left', 'right'],
+    ['front-up', 'front-down'],
+    ['up', 'down']
+];
+
+/**
+ * The default dead band of a mirror tie: 2 % of the risk. A recording keeps the craft's quaternion to 1e-4 (a yaw of
+ * up to about 0.01 degrees) and its position to the millimetre, which moves a front-side sector's risk by under 0.05 %
+ * (test/mirror-tie.test.ts measures it); 2 % is a yaw of about 0.6 degrees at a wall dead ahead, under which the wall
+ * is ahead, not to one side.
+ */
+export const MIRROR_DEAD_BAND = 0.02;
 
 /** How the sampler tells that the craft is on a collision course with an object (SamplerConfig.collisionCourse). */
 export type CollisionCourse = 'path-rays' | 'hit-point' | 'none';
@@ -123,7 +155,8 @@ export const DEFAULT_SAMPLER_CONFIG: SamplerConfig = {
         back: 0.6
     },
     minClosingMps: 0.2,
-    collisionCourse: 'path-rays'
+    collisionCourse: 'path-rays',
+    mirrorDeadBand: MIRROR_DEAD_BAND
 };
 
 export class SamplerConfigError extends Error {
@@ -156,7 +189,8 @@ export function resolveSamplerConfig(options: SamplerOptions = {}): SamplerConfi
         stickiness: options.stickiness ?? base.stickiness,
         weight: { ...base.weight, ...options.weight },
         minClosingMps: options.minClosingMps ?? base.minClosingMps,
-        collisionCourse: options.collisionCourse ?? base.collisionCourse
+        collisionCourse: options.collisionCourse ?? base.collisionCourse,
+        mirrorDeadBand: options.mirrorDeadBand ?? base.mirrorDeadBand
     };
     between('rangeM', cfg.rangeM, 1, 500);
     between('spreadDeg', cfg.spreadDeg, 0, 60);
@@ -167,6 +201,7 @@ export function resolveSamplerConfig(options: SamplerOptions = {}): SamplerConfi
     between('holdMs', cfg.holdMs, 0, 10000);
     between('stickiness', cfg.stickiness, 1, 10);
     between('minClosingMps', cfg.minClosingMps, 0, 50);
+    between('mirrorDeadBand', cfg.mirrorDeadBand, 0, 0.2);
     if (!COLLISION_COURSES.includes(cfg.collisionCourse)) throw new SamplerConfigError(`collisionCourse must be one of ${COLLISION_COURSES.join(', ')}, got ${String(cfg.collisionCourse)}`);
     for (const id of SECTORS) {
         between(`enterDistM.${id}`, cfg.enterDistM[id], 0.05, 200);
@@ -276,6 +311,28 @@ export function pathMissM(toPoint: Vec3, vel: Vec3): number {
     return length(sub(toPoint, scale(vel, t)));
 }
 
+/** MIRROR_PAIRS by their places in SECTORS. */
+const MIRROR_INDEXES: readonly (readonly [number, number])[] = MIRROR_PAIRS.map(([a, b]) => [SECTORS.indexOf(a), SECTORS.indexOf(b)] as const);
+
+/**
+ * The risks by sector (SECTORS order) with every mirror tie made exact: two mirror sectors whose risks differ by at most
+ * `band` of the higher one both take it (K1). Sectors that are not tied keep their own.
+ */
+export function mirrorTie(risk: readonly number[], band: number): number[] {
+    const out = [...risk];
+    if (!(band > 0)) return out;
+    for (const [a, b] of MIRROR_INDEXES) {
+        const ra = risk[a] as number;
+        const rb = risk[b] as number;
+        const hi = Math.max(ra, rb);
+        if (hi > 0 && hi - Math.min(ra, rb) <= band * hi) {
+            out[a] = hi;
+            out[b] = hi;
+        }
+    }
+    return out;
+}
+
 export function riskOf(distance: number, ttcS: number | null, enterDistM: number, enterTtcS: number): number {
     const byDistance = enterDistM / Math.max(distance, FLOOR);
     const byTime = ttcS === null ? 0 : enterTtcS / Math.max(ttcS, FLOOR);
@@ -383,22 +440,28 @@ export function createSceneSampler(options: SamplerOptions = {}): SceneSampler {
         for (let i = 0; i < n; i++) {
             const r = readings[i] as SectorReading;
             risk[i] = r.hit ? riskOf(r.distance, r.ttcS, config.enterDistM[r.sector], config.enterTtcS) : 0;
+        }
+        // a mirror tie (K1): two mirror sectors within the dead band of each other both take the higher risk, so the
+        // hysteresis and the ranking below treat them alike and the order of SECTORS chooses (live and in a replay)
+        const tied = mirrorTie(risk, config.mirrorDeadBand);
+        for (let i = 0; i < n; i++) {
             if (holdUntil[i] as number > t + config.holdMs) holdUntil[i] = t + config.holdMs; // the clock went back (a seek)
-            if ((risk[i] as number) >= 1) {
+            if ((tied[i] as number) >= 1) {
                 active[i] = true;
                 holdUntil[i] = t + config.holdMs;
-            } else if (active[i] && (risk[i] as number) < config.releaseRatio && t >= (holdUntil[i] as number)) {
+            } else if (active[i] && (tied[i] as number) < config.releaseRatio && t >= (holdUntil[i] as number)) {
                 active[i] = false;
             }
         }
 
-        // the voices: the active sectors with something to point at, most urgent first
+        // the voices: the active sectors with something to point at, most urgent first (a voice's urgency is its own
+        // sector's; its rank takes the mirror tie)
         const candidates: { i: number; urgency: number; rank: number }[] = [];
         for (let i = 0; i < n; i++) {
             const r = readings[i] as SectorReading;
             if (!active[i] || !r.hit) continue;
             const urgency = (risk[i] as number) * config.weight[r.sector];
-            candidates.push({ i, urgency, rank: urgency * (voiced[i] ? config.stickiness : 1) });
+            candidates.push({ i, urgency, rank: (tied[i] as number) * config.weight[r.sector] * (voiced[i] ? config.stickiness : 1) });
         }
         candidates.sort((a, b) => b.rank - a.rank || a.i - b.i);
         const chosen = candidates.slice(0, maxVoices);
