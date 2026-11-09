@@ -172,9 +172,11 @@ describe('locale files', () => {
     });
 
     it('have no text copied from English into another language', () => {
-        for (const locale of ['es', 'pl', 'ru'] as const) {
+        // the mode's name: Spanish keeps "Fly by Sound"; Polish and Russian name it in their own words since lane s13-int (K3 of the
+        // simulator's review: "Lot na słuch", "Полёт по звуку", as the simulator names it)
+        for (const [locale, kept] of [['es', ['app.name']], ['pl', []], ['ru', []]] as const) {
             const same = Object.keys(DICTS.en).filter((k) => (DICTS[locale][k] as string) === (DICTS.en[k] as string) && (DICTS.en[k] as string).length > 3);
-            expect(same, locale).toEqual(['app.name']);
+            expect(same, locale).toEqual(kept);
         }
     });
 

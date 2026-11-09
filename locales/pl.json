@@ -1,5 +1,5 @@
 {
-    "app.name": "Fly by Sound",
+    "app.name": "Lot na słuch",
     "cue.safety.wall.name": "Ściana",
     "cue.safety.wall.glossary": "Krótkie drewniane stuknięcie z miejsca, gdzie jest ściana. Im bliżej jesteś, tym szybsze stuknięcia.",
     "cue.safety.floor.name": "Podłoga",
@@ -320,7 +320,7 @@
     "quiz.where-options": "Naciśnij 1 dla lewej, 2 dla prawej, 3 dla przodu, 4 dla tyłu.",
     "quiz.skip": "Naciśnij 0, aby pominąć.",
     "narrate.coming": "Nadchodzi: {name}.",
-    "menu.welcome": "Witaj w Fly by Sound. Poruszaj się po menu strzałkami albo drążkiem. Naciśnij Enter albo przycisk pierwszy, aby wybrać. Naciśnij Escape, aby wrócić.",
+    "menu.welcome": "Witaj w trybie „Lot na słuch”. Poruszaj się po menu strzałkami albo drążkiem. Naciśnij Enter albo przycisk pierwszy, aby wybrać. Naciśnij Escape, aby wrócić.",
     "menu.main.title": "Menu główne",
     "menu.main.continue": "Kontynuuj od ostatniego miejsca",
     "menu.main.start": "Zacznij od początku",

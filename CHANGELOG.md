@@ -107,6 +107,11 @@
   tunnel re-derives where the live run put the craft back; a host's recorder must keep every sample with a touch as a
   frame, also between two due ones.
 - Live in the simulator: ShramkoGSFPV v0.12 (2026-11-08) ships this engine as its submodule at 1eea4d5; the mode starts at https://gsfpv.flyreelstudio.eu/en/sound/ (es, pl, ru too). Ordinary pages of the simulator load none of it.
+- The mode's name in Russian and Polish (lane s13-int, K3 of the simulator's v0.13 review): `app.name` and `menu.welcome` name
+  the mode as the simulator does, «Полёт по звуку» and „Lot na słuch” (the local voices spelled or garbled the English name: Irina said "F.L.Y.B.Y."
+  and "flui bui", Paulina "Flajby"); Spanish keeps "Fly by Sound". Their lengths are measured again with Irina and Paulina
+  (`test/fixtures/tts-ru-irina.json`, `tts-pl-paulina.json`), and the words check hears all four lines exactly
+  (`evidence/listen/VL-4-words.json`); the two records of the English name are gone from `HEARD`.
 - Spoken lines asked for by the simulator's recorder: `survey.howto` no longer tells the pilot to say the number (that works only with speech recognition on, now `survey.howto-voice`); new `survey.mic-on` (the microphone stays on during the questions), `send.none` (nothing to send) and `send.cancelled` (not sent, the flight stays on the device). English, Spanish, Polish and Russian.
 
 ## 0.1.0-rc1 — 2026-11-07 (tag `stage1-rc1`)

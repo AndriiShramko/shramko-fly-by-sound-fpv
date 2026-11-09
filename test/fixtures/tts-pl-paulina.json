@@ -2,7 +2,7 @@
   "about": "Spoken length in seconds of each line without parameters, measured with test/fixtures/measure-tts.ps1.",
   "voice": "Microsoft Paulina Desktop",
   "seconds": {
-    "app.name": 1.79,
+    "app.name": 1.675,
     "cue.height.rough.glossary": 5.6,
     "cue.height.rough.name": 2.205,
     "cue.height.target.glossary": 13.695,
@@ -352,7 +352,7 @@
     "menu.value.on": 1.465,
     "menu.value.up-higher": 2.19,
     "menu.value.up-lower": 2.2,
-    "menu.welcome": 12.535,
+    "menu.welcome": 12.705,
     "module.0.name": 1.245,
     "module.1.name": 1.395,
     "module.2.name": 1.935,

@@ -14,7 +14,7 @@ needs from the package. Not pushed; the lead merges it to `main` after gh_preche
   Russian register, the mode's name in Russian and Polish): before and after, per language.
 - [x] I4. A flight dead ahead at a wall replays as it was flown (K1 of the simulator's v0.13 review): the scene sampler's
   mirror tie with a dead band (`MIRROR_PAIRS`, `mirrorDeadBand`, default 2 %), the same rule live and in the replay.
-- [ ] I5. The mode's name in the package's own Russian and Polish lines (K3 of the simulator's review): `app.name` and
+- [x] I5. The mode's name in the package's own Russian and Polish lines (K3 of the simulator's review): `app.name` and
   `menu.welcome`, their lengths measured with the local voices, the words check again.
 - [ ] I6. The checks on the new head (I4 changed the planner: the audio proofs and `pnpm listen` too).
 - [x] I3. The checks on the branch's head: typecheck, tests, locale lint, layout, the audio proofs (the engine changed),
@@ -88,9 +88,8 @@ English name. Heard with the same voices, Whisper large-v3 and bound 0.2 (the re
 
 What is left is Whisper's spelling (the brand Telegram written in Cyrillic, "1,5 metra" for "1.5 m", "Control-N-C") or a
 habit of a voice that no rewording here fixes (a key's name alone, the copy keys, a browser's own button name); the
-simulator's doc lists each line. This package's own `app.name` and `menu.welcome` still say "Fly by Sound" in every
-language (the simulator names the mode with a key of its own now); whether the package's Russian and Polish lines follow
-is the owner's call (they would need new lengths measured and the package's words check again).
+simulator's doc lists each line. This package's own `app.name` and `menu.welcome` said "Fly by Sound" in every
+language until I5 (below): the simulator's review (its K3) asked the Russian and Polish ones to follow.
 
 Not checked by a machine: a native reading of the reworded Russian and Polish lines, the Polish name above all.
 
@@ -124,3 +123,21 @@ run once and restored: `MIRROR_DEAD_BAND` 0 fails 3 of the tests. `test/elevatio
 with the tie, the same voices in every frame, only two tied voices change their order: 90 of 1044 frames of tunnel-gaps
 in each theme (the ceiling ahead and above; their urgencies differed by 3e-16) and 10 of 1545 of rings-heights (the floor
 and the ceiling through a ring), none in the other flights. `pnpm test` 51 files, 1191 tests.
+
+## I5, the mode's name in Russian and Polish (K3)
+
+`app.name` is «Полёт по звуку» in Russian and „Lot na słuch” in Polish; `menu.welcome` says «Добро пожаловать в режим «Полёт по
+звуку».» and „Witaj w trybie „Lot na słuch”.”, the rest of each line as it was: the name stands after the word for "mode" in its
+case, in quotes, as the simulator writes it (its v13-int step 6). Spanish keeps the English name (Helena says it).
+
+- Lengths with the local voices (`test/fixtures/measure-tts.ps1`, SAPI rate 0): Irina `app.name` 2.6 -> 2.08 s,
+  `menu.welcome` 15.2 -> 15.405 s; Paulina `app.name` 1.79 -> 1.675 s, `menu.welcome` 12.535 -> 12.705 s. Every other
+  line measured the same to the millisecond (471 lines in each), so only these four values changed in the fixtures.
+- The words check (`pnpm listen:words`, the same voices, Whisper large-v3, bound 0.2): before, Irina's `app.name` was
+  heard "F.L.Y.B.Y. Sound" (raw rate 1, put back to 0 by a record) and her `menu.welcome` "... FLUI BUI SOUND ..." (0.087);
+  Paulina's `app.name` "Flajby Sound" (raw 0.667, put back by a record). After, all four lines are heard exactly (raw rate 0)
+  and the two records are gone. ru 511 of 526 lines heard exactly (510 before), mean 0.0031 (0.0033); pl 516 of 526, mean
+  0.0025 (as before); every language 0 over the bound, PASS. `test/locales.test.ts`: the text kept from English is
+  `app.name` in Spanish only.
+
+Not checked by a machine: a native reading of the two names (the Polish one above all, a non-native choice).

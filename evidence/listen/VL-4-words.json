@@ -1,8 +1,8 @@
 {
  "format": "shramko-listen-evidence/1",
- "key": "217fe5790a331569925db6f8a1a578002adb5bbe40980be4cc126ca625db73bc",
+ "key": "e3840983357cb2833652ed3ea644a328f697645bafb3221be06a0dbbb401b7e7",
  "inputs": {
-  "hash": "217fe5790a331569925db6f8a1a578002adb5bbe40980be4cc126ca625db73bc",
+  "hash": "e3840983357cb2833652ed3ea644a328f697645bafb3221be06a0dbbb401b7e7",
   "files": 15,
   "version": 2,
   "voices": {
@@ -32,7 +32,7 @@
    "numpy": "2.4.6"
   }
  },
- "date": "2026-11-08T21:39:35.609Z",
+ "date": "2026-11-09T07:56:01.529Z",
  "id": "VL-4-words",
  "claim": "every line of the four locales, said by the local Windows voice of its language and transcribed by Whisper large-v3, has a word error rate (case and punctuation normalised) at most its language's bound, and every line that names a key is heard with the key's name as a word of its own; the Russian lines said by the English voice fail the bound, and v0.13's lines that name a key, said by their voices, lose a key in each of Spanish, Polish and Russian",
  "run": "pnpm listen:words",
@@ -229,7 +229,7 @@
   "pl": {
    "voice": "Microsoft Paulina Desktop",
    "lines": 526,
-   "words": 3456,
+   "words": 3457,
    "bound": 0.2,
    "exact": 516,
    "meanRate": 0.0025,
@@ -298,13 +298,6 @@
     },
     {
      "locale": "pl",
-     "key": "app.name",
-     "said": "Fly by",
-     "heard": "Flajby",
-     "why": "the name alone: Paulina says Fly the Polish way, flaj, and Whisper joins the two words"
-    },
-    {
-     "locale": "pl",
      "key": "cue.shape.pillar.name",
      "said": "Słup",
      "heard": "Swoop",
@@ -329,10 +322,10 @@
   "ru": {
    "voice": "Microsoft Irina Desktop",
    "lines": 526,
-   "words": 3287,
+   "words": 3288,
    "bound": 0.2,
-   "exact": 510,
-   "meanRate": 0.0033,
+   "exact": 511,
+   "meanRate": 0.0031,
    "maxRate": 0.2,
    "over": [],
    "keys": {
@@ -416,13 +409,6 @@
      "said": "коснёшься стены",
      "heard": "кознёшь со стены",
      "why": "коснёшься (you touch) before стены is heard as кознёшь со"
-    },
-    {
-     "locale": "ru",
-     "key": "app.name",
-     "said": "Fly by",
-     "heard": "F.L.Y.B.Y.",
-     "why": "Irina spells Fly by letter by letter (in the menu's welcome it comes out as flui bui)"
     },
     {
      "locale": "ru",
@@ -515,8 +501,8 @@
   "locale": "ru",
   "voice": "Microsoft David Desktop",
   "lines": 526,
-  "overBound": 525,
-  "share": 0.9981,
+  "overBound": 526,
+  "share": 1,
   "medianRate": 1,
   "fails": true
  },
@@ -1452,14 +1438,6 @@
   },
   {
    "locale": "pl",
-   "key": "app.name",
-   "text": "Fly by Sound",
-   "heard": "Flajby Sound",
-   "rawRate": 0.6667,
-   "rate": 0
-  },
-  {
-   "locale": "pl",
    "key": "cue.safety.reset.glossary",
    "text": "Szybki przesuw, który mówi, że dron wrócił do ostatniego punktu kontrolnego.",
    "heard": "Szybki przesuw, który mówi, że dran wrócił do ostatniego punktu kontrolnego.",
@@ -1858,14 +1836,6 @@
    "text": "Gdy dron leci w górę, jaki dźwięk wydawał ci się naturalny?",
    "heard": "Gdy dran leci w górę, jaki dźwięk wydawał ci się naturalny?",
    "rawRate": 0.0909,
-   "rate": 0
-  },
-  {
-   "locale": "ru",
-   "key": "app.name",
-   "text": "Fly by Sound",
-   "heard": "F.L.Y.B.Y. Sound",
-   "rawRate": 1,
    "rate": 0
   },
   {
@@ -2301,14 +2271,6 @@
    "rate": 0,
    "keyName": "Z",
    "keyHeard": true
-  },
-  {
-   "locale": "ru",
-   "key": "menu.welcome",
-   "text": "Добро пожаловать в Fly by Sound. Двигайся по меню стрелками или стиком. Нажми Enter или первую кнопку, чтобы выбрать. Нажми Escape, чтобы вернуться.",
-   "heard": "Добро пожаловать в FLUI BUI SOUND Двигайся по меню стрелками или стиком Нажми Enter или первую кнопку, чтобы выбрать Нажми Escape, чтобы вернуться",
-   "rawRate": 0.087,
-   "rate": 0.087
   },
   {
    "locale": "ru",
