@@ -1,8 +1,8 @@
 {
  "format": "shramko-listen-evidence/1",
- "key": "d0f4d5a92ed7d7029c1adba655837dfe41c88fc76f162fde49413d3cbe21341b",
+ "key": "88d883ccff549f600c79f1b6fdac64a052f4a60972df2302b1488888e28a4cde",
  "inputs": {
-  "hash": "d0f4d5a92ed7d7029c1adba655837dfe41c88fc76f162fde49413d3cbe21341b",
+  "hash": "88d883ccff549f600c79f1b6fdac64a052f4a60972df2302b1488888e28a4cde",
   "files": 127,
   "driver": 4,
   "measure": 4,
@@ -15,7 +15,7 @@
    "pyloudnorm": "0.2.0"
   }
  },
- "date": "2026-11-08T23:38:27.843Z",
+ "date": "2026-11-09T08:04:09.481Z",
  "id": "VL-0a",
  "claim": "two renders of one scenario are the same within float32 rounding (control: another noise seed differs by more than 1e-3)",
  "thresholds": {

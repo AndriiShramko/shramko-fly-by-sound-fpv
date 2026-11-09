@@ -16,7 +16,14 @@ needs from the package. Not pushed; the lead merges it to `main` after gh_preche
   mirror tie with a dead band (`MIRROR_PAIRS`, `mirrorDeadBand`, default 2 %), the same rule live and in the replay.
 - [x] I5. The mode's name in the package's own Russian and Polish lines (K3 of the simulator's review): `app.name` and
   `menu.welcome`, their lengths measured with the local voices, the words check again.
-- [ ] I6. The checks on the new head (I4 changed the planner: the audio proofs and `pnpm listen` too).
+- [x] I6. The checks on the new head (I4 changed the planner: the audio proofs and `pnpm listen` too), on eafd417:
+  `pnpm typecheck` clean; `pnpm test` 51 files, 1191 tests; locale lint 0 problems (4 languages, 526 keys); layout 0;
+  `GPU_LOCK=C:/dev/.gpu-lock pnpm proof:audio` 3 files, 9 tests (the 8 audio proofs, each with its broken control, and the
+  demo's keyboard checks); `pnpm listen` 9 of 9 valid and passing, the evidence keyed again (88d883ccff54: src and
+  locales changed). Every measured number as before but three, all far inside their bounds: the stems' residual against
+  the mix (VL-0b) -131.8 -> -132.7 dB, one third-octave margin of VL-2 95.8 -> 95.9 dB (the order of two tied voices
+  changes their slots: I4), and the demo's keyboard climb 1.25 -> 1.27 m (a flight timed by the browser). `pnpm
+  listen:words` PASS (I5).
 - [x] I3. The checks on the branch's head: typecheck, tests, locale lint, layout, the audio proofs (the engine changed),
   `pnpm listen` (the engine's files changed, so its evidence is keyed again).
   - `pnpm typecheck` clean; `pnpm test` 50 files, 1172 tests (1167 at s13-elev's end, 5 new); locale lint 0 problems in 4
