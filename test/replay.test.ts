@@ -88,7 +88,7 @@ async function wallsHall(options: HostOptions = {}): Promise<{ host: RecordingHo
 
 /** ears-headphones: module 0, no world: questions asked by digits, answered by the pilot. */
 async function earsHeadphones(options: HostOptions = {}): Promise<{ host: RecordingHost; pkg: SessionPackage }> {
-    const host = new RecordingHost(getLesson('ears-headphones'), { answerer: (_q, i) => [1, 2, 2][i] ?? 0, ...options });
+    const host = new RecordingHost(getLesson('ears-headphones'), { answerer: (_q, i) => [1, 2, 1][i] ?? 0, ...options });
     host.begin();
     host.until(() => host.runner.phase === 'passed', 400);
     host.hold(1);

@@ -223,6 +223,8 @@ export function lessonSchedule(lesson: LessonDef, options: ScheduleOptions = {})
                 }
                 case 'cue': {
                     const e = a.event;
+                    // the answer sound (sonic-keys) goes with its word ("Taken", "Not taken", the keys while waiting): not a named sound
+                    if (e.kind === 'answer') break;
                     const kind: Play['kind'] = e.kind === 'preview' ? 'preview' : (e.kind as string) === 'repeat-cue' ? 'repeat-cue' : 'one-off';
                     const x = e as { readonly durS?: number; readonly index?: number; readonly of?: number };
                     const durMs = kind === 'preview' ? PREVIEW_PLAY_S * 1000 : kind === 'repeat-cue' ? (x.durS ?? PREVIEW_PLAY_S) * 1000 : ONE_OFF_S * 1000;

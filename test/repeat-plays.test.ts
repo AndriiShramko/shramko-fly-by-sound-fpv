@@ -116,8 +116,8 @@ describe('the planner sounds every play of a named sound for as long as the runn
             }
         }
         expect(total).toBeGreaterThan(180);
-        // the glossary: every one of its 26 sounds (every cue id), three plays each
-        expect(renderPlays('ears-glossary')).toHaveLength(78);
+        // the glossary: every one of its 27 sounds (every cue id), three plays each
+        expect(renderPlays('ears-glossary')).toHaveLength(81);
     }, 120000);
 
     it('control: a planner that plays every repeat-cue for 0.9 s whatever durS says (REPEAT_CUE_S, lane s13-sound before its review fix B2) fails it', () => {

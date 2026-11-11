@@ -84,8 +84,12 @@ describe('review D2: a key the pilot presses cuts the speech in progress', () =>
         expect(events.some((e) => e.kind === 'answer')).toBe(true);
         const after = says(run.takeActions());
         expect(after.length).toBeGreaterThan(0);
-        expect(after[0]?.line.key === 'quiz.right' || after[0]?.line.key === 'quiz.wrong').toBe(true);
+        // sonic-keys: "Taken: 1." first, cutting the options still being read, then whether it was right
+        expect(after[0]?.line.key).toBe('answer.got');
         expect(after[0]?.interrupt, 'the feedback must not wait behind the options still being read').toBe(true);
+        run.spoken(t + 200);
+        const feedback = says(run.takeActions());
+        expect(feedback[0]?.line.key === 'quiz.right' || feedback[0]?.line.key === 'quiz.wrong').toBe(true);
     });
 
     it('R (back to the start or to a checkpoint) interrupts too, and nothing else does by itself', () => {
@@ -151,36 +155,33 @@ function playHeadphoneCheck(answer: (questionId: string) => number, seconds = 12
     return { said, events, run };
 }
 
-// the check puts a sound on the left, on the right and behind; its question ids end in :side or :front-back
-const lateralRight = (id: string): number => (id.split(':')[2] === '1' ? 1 : 2);
+// the check puts a sound on the left, then on the right, in turn (sonic-keys: no front and back question any more); ids end in :side
+const lateralRight = (id: string): number => (Number(id.split(':')[2]) % 2 === 1 ? 1 : 2);
 
 describe('review D3: the headphone check is about left and right, not about front and back', () => {
-    it('a pilot who tells left from right passes whatever they say about front and behind', () => {
-        for (const frontBack of [1, 3]) {
-            // 1: heard the sound behind as in front (a front/back reversal), 3: "not sure"
-            const r = playHeadphoneCheck((id) => (id.endsWith(':side') ? lateralRight(id) : frontBack));
-            expect(r.run.phase, `front/back answer ${frontBack}`).toBe('passed');
-            expect(r.said).toContain('headphones.good');
-            expect(r.said).not.toContain('headphones.unclear');
-        }
+    it('a pilot who tells left from right passes', () => {
+        const r = playHeadphoneCheck(lateralRight);
+        expect(r.run.phase).toBe('passed');
+        expect(r.said).toContain('headphones.good');
+        expect(r.said).not.toContain('headphones.unclear');
     });
 
     it('stays strict where it must: swapped or unsure left and right still fail, with their own message', () => {
-        const swapped = playHeadphoneCheck((id) => (id.endsWith(':side') ? 3 - lateralRight(id) : 2));
+        const swapped = playHeadphoneCheck((id) => 3 - lateralRight(id));
         expect(swapped.run.phase).not.toBe('passed');
         expect(swapped.said).toContain('headphones.swapped');
-        const unsure = playHeadphoneCheck((id) => (id.endsWith(':side') ? 3 : 2));
+        const unsure = playHeadphoneCheck(() => 3);
         expect(unsure.run.phase).not.toBe('passed');
         expect(unsure.said).toContain('headphones.unclear');
-        const oneWrong = playHeadphoneCheck((id) => (id.endsWith(':side') ? (id.split(':')[2] === '1' ? 1 : 1) : 2));
+        const oneWrong = playHeadphoneCheck(() => 1);
         expect(oneWrong.run.phase).not.toBe('passed');
     });
 
-    it('still asks the front and behind question and records the answer for the report', () => {
-        const r = playHeadphoneCheck((id) => (id.endsWith(':side') ? lateralRight(id) : 1));
+    it('asks only left and right, and records every answer for the report', () => {
+        const r = playHeadphoneCheck(lateralRight);
         const answers = r.events.filter((e): e is Extract<SessionEvent, { kind: 'answer' }> => e.kind === 'answer');
-        expect(answers.map((a) => a.item.split(':').slice(-1)[0])).toEqual(['side', 'side', 'front-back']);
-        expect(answers[2]?.value).toBe(1);
+        expect(answers.map((a) => a.item.split(':').slice(-1)[0])).toEqual(['side', 'side', 'side']);
+        expect(answers.map((a) => a.value)).toEqual([1, 2, 1]);
     });
 });
 

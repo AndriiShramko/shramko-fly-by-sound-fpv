@@ -1039,7 +1039,8 @@ export class CuePlanner {
             'target.checkpoint': { kind: 'checkpoint' },
             'target.fanfare': { kind: 'fanfare' },
             'target.praise': { kind: 'praise' },
-            'target.stage': { kind: 'stage', stage: 1 }
+            'target.stage': { kind: 'stage', stage: 1 },
+            'target.answer': { kind: 'answer', what: 'yes' }
         };
         const event = oneOff[cue];
         if (event !== undefined) return this.cue(event, t, cut ? durS : Infinity).map((n) => ({ ...n, cue }));
