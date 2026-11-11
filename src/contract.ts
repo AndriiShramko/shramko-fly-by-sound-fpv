@@ -632,7 +632,9 @@ export type CueEvent =
     /** M41-15: flying back for more than a second; `dir`: the way forward (the track's, or toward the gate that counts next), listener frame */
     | { readonly kind: 'wrong-way'; readonly dir?: Vec3 | null }
     /** M41-15: a gate crossed from its back side (not counted); `dir`: where the gate is, listener frame */
-    | { readonly kind: 'wrong-side'; readonly dir?: Vec3 | null };
+    | { readonly kind: 'wrong-side'; readonly dir?: Vec3 | null }
+    /** sonic-keys: a digit the pilot pressed was taken (`yes`) or not (`no`); `wait`: a question still waits for its answer */
+    | { readonly kind: 'answer'; readonly what: 'yes' | 'no' | 'wait' };
 
 /** A cue sounding now: what the recording stores and the captions may show. */
 export interface ActiveCue {

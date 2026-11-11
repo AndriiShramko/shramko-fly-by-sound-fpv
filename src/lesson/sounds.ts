@@ -31,6 +31,7 @@ export const ONE_OFF_PLAY_S: Readonly<Record<CueId, number>> = {
     'target.checkpoint': 0.5,
     'target.fanfare': 1.2,
     'target.praise': 0.5,
+    'target.answer': 0.3,
     'target.stage': 1.0
 };
 /** A narrated scene of module 0 lasts this long, s; a scene of the game a little less. */

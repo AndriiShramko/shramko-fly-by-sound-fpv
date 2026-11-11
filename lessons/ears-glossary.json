@@ -36,6 +36,7 @@
         "target.fanfare",
         "target.praise",
         "target.stage",
+        "target.answer",
         "shape.ring",
         "shape.square",
         "shape.cube",
@@ -99,7 +100,7 @@
   "title": {
     "key": "lesson.ears-glossary.title"
   },
-  "version": 2,
+  "version": 3,
   "world": {
     "kind": "none"
   }
