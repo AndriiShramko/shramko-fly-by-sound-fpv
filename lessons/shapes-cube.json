@@ -83,7 +83,7 @@
   "title": {
     "key": "lesson.shapes-cube.title"
   },
-  "version": 2,
+  "version": 3,
   "world": {
     "kind": "analytic",
     "spec": {

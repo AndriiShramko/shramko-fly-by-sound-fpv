@@ -1,8 +1,8 @@
 {
  "format": "shramko-listen-evidence/1",
- "key": "88d883ccff549f600c79f1b6fdac64a052f4a60972df2302b1488888e28a4cde",
+ "key": "12ef49effe442391d82bd336e6c01ec681a9c8a31ee118ea48985bcede57a622",
  "inputs": {
-  "hash": "88d883ccff549f600c79f1b6fdac64a052f4a60972df2302b1488888e28a4cde",
+  "hash": "12ef49effe442391d82bd336e6c01ec681a9c8a31ee118ea48985bcede57a622",
   "files": 127,
   "driver": 4,
   "measure": 4,
@@ -15,7 +15,7 @@
    "pyloudnorm": "0.2.0"
   }
  },
- "date": "2026-11-09T08:04:09.481Z",
+ "date": "2026-11-12T12:34:50.155Z",
  "id": "VL-1-elevation",
  "claim": "the open-way chime of a way above and of a way below, rendered through Chrome's HRTF in headless Chrome as the engine plays it in a lesson: with the up/down direction on, the HRTF's response over 4 to 16 kHz (each render over its dry twin) differs by at least 1 dB rms between above, ahead and below, the chime carries energy up to 16 kHz, and its notes are the same as with the direction off (control: the direction off, both from ahead: no difference and no energy at 16 kHz)",
  "thresholds": {

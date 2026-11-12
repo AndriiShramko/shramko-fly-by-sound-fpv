@@ -254,7 +254,7 @@ export const KEY_OF: Readonly<Record<string, string>> = {
 };
 
 /** The numbers the lines with numbers are said with. */
-const NUMBERS: Readonly<Record<string, number>> = { n: 2, total: 5, right: 4, counted: 1, required: 3, lesson: 6, lessons: 28, step: 2, steps: 3, percent: 20, degrees: 30, metres: 3, limit: 2, passed: 3, seconds: 5 };
+const NUMBERS: Readonly<Record<string, number>> = { n: 2, total: 5, right: 4, counted: 1, required: 3, lesson: 6, lessons: 28, step: 2, steps: 3, percent: 20, degrees: 30, metres: 3, limit: 2, passed: 3, seconds: 5, max: 3 };
 
 /** What a host fills a line's parameters with (every argument of locales/; an unknown one throws). */
 export function sampleParams(key: string, template: string, tr: Translator): NonNullable<SpeechLine['params']> {
@@ -262,6 +262,7 @@ export function sampleParams(key: string, template: string, tr: Translator): Non
     for (const { name } of messageArguments(template)) {
         if (name === 'key') params[name] = KEY_OF[key] ?? 'K';
         else if (name === 'skip') params[name] = 'Escape';
+        else if (name === 'repeat') params[name] = 'Z';
         else if (name === 'title') params[name] = tr.say('lesson.hover-height.title');
         else if (name === 'name') params[name] = tr.say(key === 'status.theme' ? 'theme.soft.name' : 'cue.safety.wall.name');
         else if (name === 'label') params[name] = tr.say(key === 'menu.item' ? 'menu.setting.height-direction' : 'cue.safety.wall.name');

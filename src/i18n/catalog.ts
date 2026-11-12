@@ -41,6 +41,7 @@ export const CUE_IDS = [
     'target.checkpoint',
     'target.fanfare',
     'target.praise',
+    'target.answer',
     'target.stage',
     'shape.ring',
     'shape.square',
@@ -137,6 +138,14 @@ export const FREE_KEYS = [
     'quiz.score',
     'quiz.option',
     'quiz.where-options',
+    // sonic-keys: every digit acknowledged, a wait never silent, a skip said
+    'answer.got',
+    'answer.skipped',
+    'answer.not-now',
+    'answer.range',
+    'answer.need-123',
+    'answer.waiting',
+    'answer.timeout',
     'quiz.skip',
     // narration before a sound is previewed
     'narrate.coming',

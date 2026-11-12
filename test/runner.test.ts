@@ -348,8 +348,8 @@ describe('every goal kind: a scripted pass and a near miss', () => {
         expect(near.run.progress().bestTimeMs).toBeNull();
     });
 
-    it('locate (the headphone check): left, right, behind passes; swapped answers say so and repeat', () => {
-        const right = (q: Question): number => (q.id.endsWith(':side') ? (q.id.split(':')[2] === '1' ? 1 : 2) : 2);
+    it('locate (the headphone check): left, right, left passes; swapped answers say so and repeat', () => {
+        const right = (q: Question): number => (Number(q.id.split(':')[2]) % 2 === 1 ? 1 : 2);
         const pass = new Pilot(getLesson('ears-headphones'));
         pass.answerer = right;
         pass.begin();

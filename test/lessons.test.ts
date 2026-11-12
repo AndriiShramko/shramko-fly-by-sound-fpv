@@ -203,10 +203,12 @@ describe('lesson format 2 and the files of format 1 (v0.12)', () => {
     });
 
     it('every shipped lesson is format 2, version 2 (v0.12 recordings of version 1 are told apart by the replay)', () => {
+        // sonic-keys changed the headphone check (left and right only, digits during the sound) and the glossary (the answer sound),
+        // and what the runner says and sounds around every answer (the game's rounds, the cube's shape; review B2).
         // lane s13-elev changed two lessons after v0.13's main (16c01a1), which the simulator pins: tunnel-gaps' intro.3
         // plays the chime above and below, walls-pillar names its chime in a line of its own; a recording of that build
         // is told apart as older, as v0.12's are
-        const CHANGED_AFTER_V013: Readonly<Record<string, number>> = { 'tunnel-gaps': 2, 'walls-pillar': 3 };
+        const CHANGED_AFTER_V013: Readonly<Record<string, number>> = { 'tunnel-gaps': 2, 'walls-pillar': 3, 'ears-headphones': 3, 'ears-glossary': 3, 'ears-game': 3, 'shapes-cube': 3 };
         for (const id of SHIPPED_LESSON_IDS) {
             const l = getLesson(id);
             expect(current(id)['format'], id).toBe('shramko-sonic-lesson/2');

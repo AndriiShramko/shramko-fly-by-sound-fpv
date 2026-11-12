@@ -1,8 +1,8 @@
 {
  "format": "shramko-listen-evidence/1",
- "key": "e3840983357cb2833652ed3ea644a328f697645bafb3221be06a0dbbb401b7e7",
+ "key": "58bf2ecfda35be38883e6db937858c86ca36d12f13fe0c7c030080826c5f592d",
  "inputs": {
-  "hash": "e3840983357cb2833652ed3ea644a328f697645bafb3221be06a0dbbb401b7e7",
+  "hash": "58bf2ecfda35be38883e6db937858c86ca36d12f13fe0c7c030080826c5f592d",
   "files": 15,
   "version": 2,
   "voices": {
@@ -32,7 +32,7 @@
    "numpy": "2.4.6"
   }
  },
- "date": "2026-11-09T07:56:01.529Z",
+ "date": "2026-11-12T12:27:27.215Z",
  "id": "VL-4-words",
  "claim": "every line of the four locales, said by the local Windows voice of its language and transcribed by Whisper large-v3, has a word error rate (case and punctuation normalised) at most its language's bound, and every line that names a key is heard with the key's name as a word of its own; the Russian lines said by the English voice fail the bound, and v0.13's lines that name a key, said by their voices, lose a key in each of Spanish, Polish and Russian",
  "run": "pnpm listen:words",
@@ -42,10 +42,10 @@
  "languages": {
   "en": {
    "voice": "Microsoft David Desktop",
-   "lines": 526,
-   "words": 4026,
+   "lines": 535,
+   "words": 4118,
    "bound": 0.2,
-   "exact": 519,
+   "exact": 528,
    "meanRate": 0.0011,
    "maxRate": 0.1667,
    "over": [],
@@ -170,11 +170,11 @@
   },
   "es": {
    "voice": "Microsoft Helena Desktop",
-   "lines": 526,
-   "words": 4073,
+   "lines": 535,
+   "words": 4168,
    "bound": 0.2,
-   "exact": 512,
-   "meanRate": 0.0026,
+   "exact": 520,
+   "meanRate": 0.0029,
    "maxRate": 0.2,
    "over": [],
    "keys": {
@@ -228,11 +228,11 @@
   },
   "pl": {
    "voice": "Microsoft Paulina Desktop",
-   "lines": 526,
-   "words": 3457,
+   "lines": 535,
+   "words": 3538,
    "bound": 0.2,
-   "exact": 516,
-   "meanRate": 0.0025,
+   "exact": 525,
+   "meanRate": 0.0024,
    "maxRate": 0.2,
    "over": [],
    "keys": {
@@ -321,10 +321,10 @@
   },
   "ru": {
    "voice": "Microsoft Irina Desktop",
-   "lines": 526,
-   "words": 3288,
+   "lines": 535,
+   "words": 3362,
    "bound": 0.2,
-   "exact": 511,
+   "exact": 520,
    "meanRate": 0.0031,
    "maxRate": 0.2,
    "over": [],
@@ -500,8 +500,8 @@
  "control": {
   "locale": "ru",
   "voice": "Microsoft David Desktop",
-  "lines": 526,
-  "overBound": 526,
+  "lines": 535,
+  "overBound": 535,
   "share": 1,
   "medianRate": 1,
   "fails": true
@@ -1211,6 +1211,14 @@
    "heard": "Sonido 2D5",
    "rawRate": 0.5,
    "rate": 0
+  },
+  {
+   "locale": "es",
+   "key": "answer.timeout",
+   "text": "Sin respuesta. Paso a lo siguiente.",
+   "heard": "Sin respuesta. Pasó a lo siguiente.",
+   "rawRate": 0.1667,
+   "rate": 0.1667
   },
   {
    "locale": "es",

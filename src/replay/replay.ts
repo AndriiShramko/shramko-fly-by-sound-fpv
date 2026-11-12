@@ -8,7 +8,8 @@
 // What the replay takes from the recording as INPUTS, because the replay cannot know them:
 //   touches        `touch` events: the contact flag of the sample at their time (contacts come from
 //                  the flight model); the runner works out material, speed and position again
-//   answers        `answer` events: digits or voice given to a question
+//   answers        `answer` events: digits or voice given to a question; `key` events with the action
+//                  REFUSED_DIGIT_ACTION: digits the runner refused (written by the runner, review I2 of sonic-keys)
 //   keys           `key` events whose action is REPLAY_KEY_ACTIONS.*: reset to a checkpoint, reset
 //                  to the start, next step, previous step, repeat the step (v0.13: N, B, Z), next
 //                  lesson and previous lesson (the lesson menu)
@@ -32,7 +33,7 @@ import type { FlightFrame, FlightSample, LessonProgress, SessionEvent, SonicFram
 import { CuePlanner } from '../cues/planner';
 import { DICTS } from '../i18n/dicts';
 import { createTranslator, type Translator } from '../i18n/translator';
-import { createLessonRunner, type LessonSession, type RunnerAction } from '../lesson/runner';
+import { createLessonRunner, REFUSED_DIGIT_ACTION, type LessonSession, type RunnerAction } from '../lesson/runner';
 import { frameToSample } from './frames';
 import type { ReplayNote, ReplaySetup } from './rebuild';
 
@@ -100,6 +101,10 @@ function inputsOf(events: readonly SessionEvent[], firstT: number): { readonly i
             inputs.push({ t: e.t, kind: 'spoken' });
         } else if (e.kind === 'answer') {
             inputs.push({ t: e.t, kind: 'answer', value: e.value ?? 0, via: e.via === 'voice' ? 'voice' : 'key' });
+        } else if (e.kind === 'key' && e.action === REFUSED_DIGIT_ACTION) {
+            // a digit the runner refused: refused again, its sound and word derived (the runner wrote this event)
+            const n = /(\d+)$/.exec(e.code);
+            if (n !== null) inputs.push({ t: e.t, kind: 'answer', value: Number(n[1]), via: e.code.startsWith('Voice') ? 'voice' : 'key' });
         } else if (e.kind === 'key' && e.action === REPLAY_KEY_ACTIONS.resetCheckpoint) inputs.push({ t: e.t, kind: 'reset', to: 'checkpoint' });
         else if (e.kind === 'key' && e.action === REPLAY_KEY_ACTIONS.resetStart) inputs.push({ t: e.t, kind: 'reset', to: 'start' });
         else if (e.kind === 'key' && e.action === REPLAY_KEY_ACTIONS.next) inputs.push({ t: e.t, kind: 'next' });

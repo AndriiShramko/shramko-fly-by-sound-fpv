@@ -297,6 +297,8 @@ export function eventCue(e: CueEvent): CueId {
             return 'target.stage';
         case 'repeat-cue':
             return e.cue;
+        case 'answer':
+            return 'target.answer';
     }
 }
 
@@ -977,6 +979,13 @@ export class CuePlanner {
                 push('target.stage', 'target', PRIORITY.chime, 0.36, bright, base + lift, 0.6, -16, null);
                 break;
             }
+            case 'answer': {
+                // a digit (sonic-keys): taken, two notes up; not taken, two notes down; waiting, one soft note twice. Ahead, about 0.3 s
+                const figure = e.what === 'yes' ? [0, 4] : e.what === 'no' ? [2, -2] : [0, 0];
+                const gain = e.what === 'wait' ? -14 : -9;
+                figure.forEach((k, i) => push('target.answer', 'target', PRIORITY.chime, 0.12 * i, bright, base + k, i === 1 ? 0.16 : 0.1, gain, null));
+                break;
+            }
             case 'repeat-cue': {
                 const [lo, hi] = REPEAT_PLAY_RANGE_S;
                 const durS = e.durS !== undefined && Number.isFinite(e.durS) ? Math.min(Math.max(e.durS, lo), hi) : REPEAT_PLAY_DEFAULT_S;
@@ -1030,7 +1039,8 @@ export class CuePlanner {
             'target.checkpoint': { kind: 'checkpoint' },
             'target.fanfare': { kind: 'fanfare' },
             'target.praise': { kind: 'praise' },
-            'target.stage': { kind: 'stage', stage: 1 }
+            'target.stage': { kind: 'stage', stage: 1 },
+            'target.answer': { kind: 'answer', what: 'yes' }
         };
         const event = oneOff[cue];
         if (event !== undefined) return this.cue(event, t, cut ? durS : Infinity).map((n) => ({ ...n, cue }));

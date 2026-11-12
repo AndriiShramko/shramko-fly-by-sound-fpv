@@ -287,6 +287,16 @@ export interface V012PassRule {
 
 /** A question waits this long for an answer, then counts as skipped (never blocks), s. */
 export const ASK_TIMEOUT_S = 20;
+/**
+ * While a question waits (after its lines), every ASK_REMIND_S the pilot hears the waiting sound and which keys answer it
+ * (sonic-keys, the owner's complaint of 2026-11-10: 20 s of silence, then the check moved on without a word). Not in v0.12 timing.
+ */
+export const ASK_REMIND_S = 7;
+/**
+ * The action of the `key` event the runner writes for a digit it refuses (review I2 of sonic-keys): the replay refuses the
+ * same digit at the same time (code `Digit<n>` or `Voice<n>`), so the "no" sound and its word are derived, not the host's.
+ */
+export const REFUSED_DIGIT_ACTION = 'answer.refused';
 /** Pause between attempts, s. */
 export const BETWEEN_S = 1.5;
 /** v0.12 (testHooks.speechWait only): a preview was given this long, s. */
@@ -358,12 +368,14 @@ const SIDES: readonly { readonly dir: Vec3; readonly sector: 'left' | 'right' | 
 // ------------------------------------------------------------------ the script
 
 type Step =
-    | { readonly kind: 'say'; readonly lines: readonly SpeechLine[]; readonly interrupt?: boolean }
+    /** `once`: said when its step begins, not when the repeat key plays the step again (the headphone check's intro) */
+    | { readonly kind: 'say'; readonly lines: readonly SpeechLine[]; readonly interrupt?: boolean; readonly once?: boolean }
     | { readonly kind: 'cue'; readonly event: CueEvent; readonly waitS: number }
     /** a sound the step names: once the speech is over, `plays` plays REPEAT_GAP_S apart */
     | { readonly kind: 'sound'; readonly cue: CueId; readonly dir: Vec3 | null; readonly plays: number }
     | { readonly kind: 'scene'; readonly scene: DemoScene; readonly plays: number }
-    | { readonly kind: 'ask'; readonly question: Question; readonly onAnswer: (value: number | null, t: number) => void }
+    /** `early`: a digit pressed while the sound step just before it plays answers it (the headphone check's trials) */
+    | { readonly kind: 'ask'; readonly question: Question; readonly onAnswer: (value: number | null, t: number) => void; readonly early?: boolean }
     | { readonly kind: 'wait'; readonly s: number }
     | { readonly kind: 'do'; readonly run: (t: number) => void };
 
@@ -384,6 +396,8 @@ interface Running {
     spokenSeen: boolean;
     /** ask: when its lines had been said (its time to answer runs from here) */
     askSpokenAt: number | null;
+    /** ask: how many times the waiting sound and the keys were said */
+    reminded: number;
     /** sound, scene: when the plays began (after the speech), how many have begun, and the end of the one going on */
     playT0: number | null;
     played: number;
@@ -397,6 +411,8 @@ interface EarsAnswer {
     readonly kind: 'what' | 'where' | 'moving' | 'side' | 'front-back';
     readonly value: number | null;
     readonly right: boolean;
+    /** the headphone check: the side the sound came from */
+    readonly sector?: 'left' | 'right';
 }
 
 const speedOf = (s: FlightSample): number => Math.hypot(s.vel[0], s.vel[1], s.vel[2]);
@@ -418,6 +434,19 @@ class Runner implements LessonSession {
     private handed = 0;
     private spokenUpTo = 0;
     private speechDeadline = 0;
+    /** the last batch of the lesson's own lines (a reminder is not one: a refusal's word may cut it) */
+    private ownHanded = 0;
+    /**
+     * A refused digit's word (review I1, I2 of sonic-keys). It is no line of the lesson's own: the runner's clocks never wait
+     * for it (the replay derives no refusal: its timing would differ), and the host's report that the queue ran empty, recorded,
+     * is all the replay sees of it. Held while the lesson says something of its own and said right after that (a newer refusal
+     * replaces the held one); said at once otherwise, cutting a reminder or an earlier refusal still being said.
+     */
+    private heldRefusal: SpeechLine | null = null;
+    /** a refusal's word was handed and the host has not reported its queue empty since */
+    private refusalOut = false;
+    /** a held word was said in this run of the lesson's own speech: the rest of the run holds no other (only the "no" sound) */
+    private refusalInRun = false;
     // steps: the task or the intro first, then (module 0) one per sound, scene, trial or round
     private blocks: Block[] = [];
     private blockIndex = 0;
@@ -434,6 +463,8 @@ class Runner implements LessonSession {
     /** set while the pilot's own key (N, an answer) is being handled: the first line said after it interrupts the speech in progress */
     private interruptNext = false;
     private earsAnswers = new Map<string, EarsAnswer>();
+    /** the headphone check after a failed attempt: the sides it asks again (the trials answered wrong or not at all), no intro */
+    private earsRetry: ('left' | 'right')[] | null = null;
     /** the scores of the goals met in this attempt, and the score of the last counted attempt of this sitting */
     private goalScores: GoalScore[] = [];
     private lastScore: GoalScore | null = null;
@@ -579,12 +610,12 @@ class Runner implements LessonSession {
     }
 
     /** Runs step `index` of the lesson's steps from its beginning (what was going on stops). */
-    private startBlock(index: number, t: number): void {
+    private startBlock(index: number, t: number, again = false): void {
         this.blockIndex = index;
         this.script.length = 0;
         this.stopCurrent();
         const block = this.blocks[index];
-        if (block !== undefined) this.push(...block.steps);
+        if (block !== undefined) this.push(...(again ? block.steps.filter((s) => !(s.kind === 'say' && s.once === true)) : block.steps));
         this.advance(t);
     }
 
@@ -603,7 +634,7 @@ class Runner implements LessonSession {
             if (this.current === null) {
                 const step = this.script.shift();
                 if (step === undefined) return;
-                this.current = { step, t0: t, answered: false, batch: 0, spokenSeen: false, askSpokenAt: null, playT0: null, played: 0, playEnd: 0 };
+                this.current = { step, t0: t, answered: false, batch: 0, spokenSeen: false, askSpokenAt: null, reminded: 0, playT0: null, played: 0, playEnd: 0 };
                 this.startStep(this.current, t);
             }
             const c = this.current;
@@ -617,6 +648,8 @@ class Runner implements LessonSession {
                 // timed out: a skip, never a block
                 this.emit({ t, kind: 'answer', item: c.step.question.id, value: null, via: 'skip' });
                 c.step.onAnswer(null, t);
+                // the skip is said, before what follows (sonic-keys: never a silent skip)
+                if (!this.v012) this.script.unshift({ kind: 'say', lines: [{ key: 'answer.timeout' }] });
             }
         }
     }
@@ -632,12 +665,28 @@ class Runner implements LessonSession {
     }
 
     /** Hands lines to the host's speech queue; the first one interrupts what is being said when the pilot's key asked for it. */
-    private sayLines(lines: readonly SpeechLine[], interrupt: boolean, t: number): number {
+    private sayLines(lines: readonly SpeechLine[], interrupt: boolean, t: number, own = true): number {
         lines.forEach((line, i) => this.actions.push({ kind: 'say', line, interrupt: i === 0 && interrupt }));
         let ms = 0;
         for (const l of lines) ms += this.fallbackMs(l);
         this.speechDeadline = (interrupt ? t : Math.max(t, this.speechDeadline)) + ms;
-        return ++this.handed;
+        this.handed++;
+        if (own) this.ownHanded = this.handed;
+        return this.handed;
+    }
+
+    /** The lesson's own lines (not a reminder) were handed and are still being said. */
+    private lessonTalking(t: number): boolean {
+        return this.spokenUpTo < this.ownHanded && t < this.speechDeadline;
+    }
+
+    /** The held refusal's word, once the lesson's own lines are over. */
+    private refusalWord(t: number): void {
+        if (this.lessonTalking(t) || this.heldRefusal === null) return;
+        this.actions.push({ kind: 'say', line: this.heldRefusal, interrupt: false });
+        this.heldRefusal = null;
+        this.refusalOut = true;
+        this.refusalInRun = true;
     }
 
     /** Lines were handed that the host has not reported said (and the longest wait for them has not run out). */
@@ -728,7 +777,15 @@ class Runner implements LessonSession {
                 if (this.v012) return age >= this.sayS(c.step.question.lines) + ASK_TIMEOUT_S;
                 // the time to answer runs from the end of the question's lines
                 if (c.askSpokenAt === null && (this.spokenUpTo >= c.batch || t >= this.speechDeadline)) c.askSpokenAt = t;
-                return c.askSpokenAt !== null && t - c.askSpokenAt >= ASK_TIMEOUT_S * 1000;
+                if (c.askSpokenAt === null) return false;
+                if (t - c.askSpokenAt >= ASK_TIMEOUT_S * 1000) return true;
+                // the waiting sound and the keys, every ASK_REMIND_S while the time to answer runs (not over a line still said)
+                if (t - c.askSpokenAt >= (c.reminded + 1) * ASK_REMIND_S * 1000 && !this.speaking(t)) {
+                    c.reminded++;
+                    this.actions.push({ kind: 'cue', event: { kind: 'answer', what: 'wait' } });
+                    this.sayLines([{ key: 'answer.waiting', params: { max: c.step.question.options, repeat: this.key('repeat') } }], false, t, false);
+                }
+                return false;
             case 'wait':
                 return age >= c.step.s;
             case 'do':
@@ -743,9 +800,13 @@ class Runner implements LessonSession {
         // every line handed so far has been said (the host's queue ran empty)
         this.spokenUpTo = this.handed;
         this.speechDeadline = t;
+        this.refusalOut = false;
+        // a refusal held while the lesson spoke is said now, before the lesson goes on
+        this.refusalWord(t);
         if (this.current !== null) this.current.spokenSeen = true;
         this.advance(t);
         this.afterScript(t);
+        if (!this.lessonTalking(t)) this.refusalInRun = false;
         return this.drain();
     }
 
@@ -910,6 +971,8 @@ class Runner implements LessonSession {
         if (!this.began || this.left || this.phaseValue === 'passed') return this.drain();
         const jump = prev !== null && dist3(prev.pos, sample.pos) >= JUMP_M;
         if (prev !== null && !this.listening && !jump) this.pathM += dist3(prev.pos, sample.pos); // a longer jump is a reset, not flight
+        // the lesson's lines were not reported said and the longest wait for them ran out: a held refusal goes before what follows
+        this.refusalWord(t);
         this.advance(t);
         if (this.phaseValue === 'flying' && !this.ears && !this.listening) {
             // a place (an attempt begun at the start, or where the last one got to) is no flight: in advance() it set prev
@@ -921,6 +984,7 @@ class Runner implements LessonSession {
             this.advance(t);
         }
         this.afterScript(t);
+        if (!this.lessonTalking(t)) this.refusalInRun = false;
         return this.drain();
     }
 
@@ -1403,33 +1467,33 @@ class Runner implements LessonSession {
         return out;
     }
 
-    /** The headphone check: a sound on the left, on the right, behind; answered by digits. */
+    /**
+     * The headphone check: a sound on the left, then on the right, in turn; answered by digits (1 left, 2 right, 3 not sure),
+     * also while the sound plays. Only left and right (sonic-keys): telling front from behind with a generic HRTF is
+     * unreliable (research 01: 10 to 50 % reversals), and the question about it was never graded. After a failed attempt
+     * only the trials answered wrong or not at all are asked again, without the headphone intro.
+     */
     private headphoneBlocks(trials: number): Block[] {
-        const order = [SIDES[0], SIDES[1], SIDES[3], SIDES[2]] as (typeof SIDES)[number][];
-        const out: Block[] = [];
-        for (let i = 0; i < trials; i++) {
-            const side = order[i % order.length] as (typeof SIDES)[number];
-            const lateral = side.sector === 'left' || side.sector === 'right';
-            const correct = lateral ? (side.sector === 'left' ? 1 : 2) : side.sector === 'front' ? 1 : 2;
-            const id = `${this.lesson.id}:${this.attemptNo}:${i + 1}:${lateral ? 'side' : 'front-back'}`;
+        const sides = this.earsRetry ?? Array.from({ length: trials }, (_, i) => (i % 2 === 0 ? 'left' : 'right') as 'left' | 'right');
+        return sides.map((sector, i) => {
+            const side = SIDES[sector === 'left' ? 0 : 1] as (typeof SIDES)[number];
+            const correct = sector === 'left' ? 1 : 2;
+            const id = `${this.lesson.id}:${this.attemptNo}:${i + 1}:side`;
             const steps: Step[] = [];
-            // every trial begins with a line, so a key that moves here cuts what was being said (N, B, Z)
-            const trial: SpeechLine = { key: 'headphones.trial', params: { n: i + 1, total: trials } };
-            steps.push({ kind: 'say', lines: i === 0 ? [{ key: 'headphones.intro' }, { key: 'headphones.wired' }, { key: 'headphones.os-spatial' }, trial] : [trial] });
+            // every trial begins with a line, so a key that moves here cuts what was being said (N, B, Z); the intro once, in the first attempt
+            if (i === 0 && this.earsRetry === null) steps.push({ kind: 'say', lines: [{ key: 'headphones.intro' }, { key: 'headphones.wired' }, { key: 'headphones.os-spatial' }], once: true });
+            steps.push({ kind: 'say', lines: [{ key: 'headphones.trial', params: { n: i + 1, total: sides.length } }] });
             steps.push({ kind: 'sound', cue: 'target.hum', dir: side.dir, plays: REPEAT_PLAYS });
             steps.push({
                 kind: 'ask',
-                question: { id, lines: [{ key: lateral ? 'headphones.q-side' : 'headphones.q-front-back' }], options: 3, skippable: true },
+                early: true,
+                question: { id, lines: [{ key: 'headphones.q-side' }], options: 3, skippable: true },
                 onAnswer: (value) => {
-                    // only left and right are graded: the check is that the headphones are the right way round, and telling
-                    // front from behind with a generic HRTF is unreliable (research 01: 10 to 50 % reversals), so that answer is
-                    // asked and recorded for the report but never fails the check
-                    this.earsAnswers.set(id, { kind: lateral ? 'side' : 'front-back', value, right: value === correct });
+                    this.earsAnswers.set(id, { kind: 'side', value, right: value === correct, sector });
                 }
             });
-            out.push({ kind: 'trial', steps });
-        }
-        return out;
+            return { kind: 'trial', steps };
+        });
     }
 
     /** The game "what is it, where is it, is it moving" (rounds of three questions). */
@@ -1512,6 +1576,8 @@ class Runner implements LessonSession {
             const swapped = side[0]?.value === 2 && side[1]?.value === 1;
             const good = results.every((r) => r.met);
             this.actions.push({ kind: 'say', line: { key: good ? 'headphones.good' : swapped ? 'headphones.swapped' : 'headphones.unclear' }, interrupt: false });
+            const missed = side.flatMap((a) => (!a.right && a.sector !== undefined ? [a.sector] : []));
+            this.earsRetry = good || missed.length === 0 ? null : missed;
         }
         this.endAttempt(results.every((r) => r.met), t);
     }
@@ -1538,17 +1604,46 @@ class Runner implements LessonSession {
         this.t = Math.max(this.t, t);
         if (this.left) return this.drain();
         this.catchUp(t);
-        const c = this.current;
-        if (c === null || c.step.kind !== 'ask' || c.answered) return this.drain();
+        let c = this.current;
+        // a digit while the sound of a step plays answers the question right after it, when that one takes early answers:
+        // the rest of the plays and the question's lines are left out (sonic-keys: the digit was dropped without a word)
+        const next = this.script[0];
+        const early = !this.v012 && c !== null && c.step.kind === 'sound' && c.playT0 !== null && next?.kind === 'ask' && next.early === true ? next : null;
+        if (early !== null && !this.inRange(value, early.question)) {
+            // 1 to 3 are taken now: the word says which (review I3), not that there is nothing to answer
+            const max = early.question.options;
+            this.refuse(max === 3 ? { key: 'answer.need-123' } : { key: 'answer.range', params: { max } }, value, via, t);
+            return this.drain();
+        }
+        if (early !== null) {
+            this.script.shift();
+            this.stopCurrent();
+            c = { step: early, t0: t, answered: false, batch: 0, spokenSeen: false, askSpokenAt: t, reminded: 0, playT0: null, played: 0, playEnd: 0 };
+            this.current = c;
+        }
+        if (c === null || c.step.kind !== 'ask' || c.answered) {
+            this.refuse({ key: 'answer.not-now' }, value, via, t);
+            return this.drain();
+        }
         const q = c.step.question;
         const skip = value === 0 && q.skippable;
-        if (!skip && !(Number.isInteger(value) && value >= 1 && value <= q.options)) return this.drain();
+        if (!this.inRange(value, q)) {
+            this.refuse({ key: 'answer.range', params: { max: q.options } }, value, via, t);
+            return this.drain();
+        }
         c.answered = true;
+        // the answer's own words come now: a refusal not yet said is over
+        this.heldRefusal = null;
         this.emit({ t, kind: 'answer', item: q.id, value: skip ? null : value, via: skip ? 'skip' : via });
         this.current = null;
         this.interruptNext = true;
         try {
             c.step.onAnswer(skip ? null : value, t);
+            // the answer is acknowledged at once: its sound, then "Taken: n." (or "Skipped."), cutting what was being said
+            if (!this.v012) {
+                this.actions.push({ kind: 'cue', event: { kind: 'answer', what: 'yes' } });
+                this.script.unshift({ kind: 'say', lines: [skip ? { key: 'answer.skipped' } : { key: 'answer.got', params: { n: value } }] });
+            }
             this.advance(t);
             if (!this.ears && this.prev !== null && this.phaseValue === 'flying') this.evaluateGoals(this.prev, this.prev, t);
             this.afterScript(t);
@@ -1556,6 +1651,34 @@ class Runner implements LessonSession {
             this.interruptNext = false;
         }
         return this.drain();
+    }
+
+    /** A digit answers `q`: 1 to its options, or 0 when it may be skipped. */
+    private inRange(value: number, q: Question): boolean {
+        return (value === 0 && q.skippable) || (Number.isInteger(value) && value >= 1 && value <= q.options);
+    }
+
+    /**
+     * A digit that answers nothing: the "no" sound at once and a word ("Not taken. Nothing to answer now.", "Not taken. Press
+     * 1 to {max}.", "Press 1, 2 or 3."). Its event is a `key` with the action REFUSED_DIGIT_ACTION (the replay's input, compared with nothing).
+     * The word comes right after the sound when the lesson says nothing of its own, cutting a reminder or an earlier refusal;
+     * while the lesson speaks it waits for the end of those lines (a newer refusal replaces it), and one such word at most
+     * holds back a run of the lesson's speech (review I1). Cutting the lesson's own lines to say it first is not done: the
+     * browser's speech has one queue, so the cut line would be said again from its start, and a digit every second would
+     * hold it for ever.
+     */
+    private refuse(line: SpeechLine, value: number, via: 'key' | 'voice', t: number): void {
+        if (this.v012 || !this.began || this.pausedAt !== null) return;
+        // the replay's input: it refuses the digit again at the same time, so the "no" sound and the word are derived too
+        this.emit({ t, kind: 'key', code: via === 'voice' ? `Voice${value}` : `Digit${value}`, action: REFUSED_DIGIT_ACTION });
+        this.actions.push({ kind: 'cue', event: { kind: 'answer', what: 'no' } });
+        if (this.lessonTalking(t)) {
+            if (!this.refusalInRun) this.heldRefusal = line;
+            return;
+        }
+        this.heldRefusal = null;
+        this.actions.push({ kind: 'say', line, interrupt: this.refusalOut || this.speaking(t) });
+        this.refusalOut = true;
     }
 
     // -------------------------------------------------------------- N, B, Z and the lesson menu
@@ -1578,6 +1701,8 @@ class Runner implements LessonSession {
         this.t = Math.max(this.t, t);
         if (!this.began || this.left) return this.drain();
         this.catchUp(t);
+        // the lesson moves on by the key: a refusal not yet said is over
+        this.heldRefusal = null;
         this.interruptNext = true;
         try {
             run();
@@ -1636,7 +1761,7 @@ class Runner implements LessonSession {
         return this.byKey(t, () => {
             if (this.phaseValue === 'intro' || (this.ears && this.phaseValue === 'flying')) {
                 this.abandonQuestion(t);
-                this.startBlock(this.blockIndex, t);
+                this.startBlock(this.blockIndex, t, true);
                 return;
             }
             if (this.phaseValue === 'flying') {

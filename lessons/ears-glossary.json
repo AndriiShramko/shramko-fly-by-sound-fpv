@@ -35,6 +35,7 @@
         "target.checkpoint",
         "target.fanfare",
         "target.praise",
+        "target.answer",
         "target.stage",
         "shape.ring",
         "shape.square",
@@ -99,7 +100,7 @@
   "title": {
     "key": "lesson.ears-glossary.title"
   },
-  "version": 2,
+  "version": 3,
   "world": {
     "kind": "none"
   }
