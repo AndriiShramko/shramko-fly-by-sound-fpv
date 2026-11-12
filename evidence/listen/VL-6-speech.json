@@ -1,11 +1,11 @@
 {
  "format": "shramko-listen-evidence/1",
- "key": "7ce445985290bec30dbdef66e73aae37ec314ae0e9456689558319a25c332887",
+ "key": "6a519f49a1c9e959be764ba1f7f153052ecc39162474f3a970a2e1d129ce34d9",
  "inputs": {
-  "hash": "7ce445985290bec30dbdef66e73aae37ec314ae0e9456689558319a25c332887",
+  "hash": "6a519f49a1c9e959be764ba1f7f153052ecc39162474f3a970a2e1d129ce34d9",
   "files": 128,
   "driver": 4,
-  "measure": 7,
+  "measure": 8,
   "chrome": "156.0.8078.80",
   "tools": {
    "python": "3.11.9",
@@ -15,7 +15,7 @@
    "pyloudnorm": "0.2.0"
   }
  },
- "date": "2026-11-12T21:32:02.483Z",
+ "date": "2026-11-12T21:46:19.161Z",
  "id": "VL-6-speech",
  "claim": "the voice (all its lines, at the engine's utterance volume, the Windows desktop voice) is 3 to 6 LU over the ring flight's mix, in every theme (control: the v0.12 utterance volume 1); in tunnel-gaps flown with the chime above and below, the ceiling and the floor, the breath of air lowers the voice's margin over the mix by at most 0.5 LU in every theme (against the same flight with Sound from above and below off); the tunnel's own margin is reported",
  "thresholds": {
