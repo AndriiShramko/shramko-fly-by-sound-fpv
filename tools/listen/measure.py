@@ -21,7 +21,7 @@ import pyloudnorm as pyln
 import soundfile as sf
 from scipy.signal import hilbert, resample_poly
 
-MEASURE_VERSION = 5
+MEASURE_VERSION = 6
 RATE = 48000
 
 # thresholds (kind: standard, calibrated on controls, proposal)
@@ -788,26 +788,65 @@ def hum_pitch(x, meta, t0, t1):
     if not hz:
         return None, None
     mono = x[:, 0] + x[:, 1]
-    # n = 16384 (2.9 Hz bins): with 4096 the track of a 165 Hz note read 7 cents sharp of the plan (measured 2026-11-12)
-    track = pitch_track(mono, t0, t1, hop=0.01, n=16384, fmin=0.8 * min(hz), fmax=1.25 * max(hz))
-    level = [rms(mono[int(t * RATE) - 240 : int(t * RATE) + 240]) for t, _ in track]
-    top = max(level) if level else 0.0
-    fs = [f for (t, f), lv in zip(track, level) if lv > top * 10 ** (-20 / 20)]
-    return (float(np.median(fs)) if fs else None), float(np.median(hz))
+    return note_pitch(mono, t0, t1, 0.8 * min(hz), 1.25 * max(hz)), float(np.median(hz))
+
+
+def note_pitch(mono, t0, t1, fmin, fmax, pad=1 << 19):
+    """Median pitch of the notes sounding between t0 and t1, one estimate per note: the note's own samples (found on
+    the 5 ms envelope, 20 dB under the window's loudest), their middle 60 % under a Hann window of that length,
+    zero-padded to `pad` (0.09 Hz bins), the strongest peak between fmin and fmax with parabolic interpolation.
+    A fixed long window (pitch_track, n 16384) straddles the gaps between the hum's short notes, its peak is not the
+    Hann shape the interpolation assumes, and it read the 165 Hz hum 4 to 7 cents sharp (VL-B3, 2026-11-12)."""
+    i0, i1 = int(t0 * RATE), int(t1 * RATE)
+    seg = mono[i0:i1]
+    hop = RATE // 200
+    env = np.array([rms(seg[k : k + hop]) for k in range(0, len(seg) - hop + 1, hop)])
+    if env.size == 0 or env.max() <= 0:
+        return None
+    on = env > env.max() * 10 ** (-20 / 20)
+    freqs = np.fft.rfftfreq(pad, 1.0 / RATE)
+    lo, hi = int(np.searchsorted(freqs, fmin)), int(np.searchsorted(freqs, fmax))
+    out = []
+    k = 0
+    while k < len(on):
+        if not on[k]:
+            k += 1
+            continue
+        j = k
+        while j < len(on) and on[j]:
+            j += 1
+        a, b = k * hop, j * hop
+        k = j
+        if b - a < int(0.06 * RATE):
+            continue  # a note cut by the window's edge or a click: too short to read
+        cut = int(0.2 * (b - a))
+        part = seg[a + cut : b - cut]
+        spec = np.abs(np.fft.rfft(part * np.hanning(len(part)), pad))
+        m = lo + int(np.argmax(spec[lo:hi]))
+        p, q, r = (math.log(max(spec[m + d], 1e-20)) for d in (-1, 0, 1))
+        delta = 0.5 * (p - r) / (p - 2 * q + r) if (p - 2 * q + r) != 0 else 0.0
+        out.append((m + delta) * RATE / pad)
+    return float(np.median(out)) if out else None
 
 
 def check_beacon_octave(d):
-    """VL-B3: the hum at 0 and 5 degrees (on course) is an octave (1200 cents, within 5) above the hum at 12 degrees,
-    on both sides. Control: the octave off (SonicPrefs.beacon false)."""
+    """VL-B3: the hum at 0 and 5 degrees (on course) is an octave (1200 cents, within 5) above the hum's own note off
+    course, on both sides. Control: the octave off (SonicPrefs.beacon false).
+    The reference is the hum straight ahead with the beacon off, not the hum at 12 degrees as the task first put it:
+    at 12 degrees b102ce6's off-course roughness adds a second tone 4.8 Hz above at 0.55 of the level (rules.ts
+    targetBeat), and a 0.24 s note cannot part the two, so its read pitch wandered 163.4 to 165.4 Hz. Straight ahead
+    there is no beating, and the planner gives the hum the same note there with the beacon off as at 12 degrees with it
+    on (test/beacon.test.ts: humAt(off, 0).hz equals humAt(on, 12).hz)."""
+    rx, rmeta, rw = ring(d, 'beacon-ring-soft-beacon-off-solo-target')
+    ref, ref_plan = hum_pitch(rx, rmeta, *rw[(0, 10)])
     def measure(job):
         x, meta, w = ring(d, job)
         rows = []
         for s in (1, -1):
-            ref, ref_plan = hum_pitch(x, meta, *w[(s * 12, 10)])
             for az in (0, 5):
                 f, plan = hum_pitch(x, meta, *w[(s * az, 10)])
                 cents = 1200 * math.log2(f / ref) if f and ref else None
-                rows.append({'azDeg': s * az, 'vsAzDeg': s * 12, 'measuredHz': round(f, 2) if f else None, 'refHz': round(ref, 2) if ref else None, 'planHz': plan, 'refPlanHz': ref_plan, 'cents': round(cents, 2) if cents is not None else None, 'ok': cents is not None and abs(cents - BEACON_OCTAVE_CENTS) <= BEACON_OCTAVE_TOL_CENTS})
+                rows.append({'azDeg': s * az, 'vs': 'beacon off, 0 degrees', 'measuredHz': round(f, 3) if f else None, 'refHz': round(ref, 3) if ref else None, 'planHz': plan, 'refPlanHz': ref_plan, 'cents': round(cents, 2) if cents is not None else None, 'ok': cents is not None and abs(cents - BEACON_OCTAVE_CENTS) <= BEACON_OCTAVE_TOL_CENTS})
         return rows
     shipped = measure('beacon-ring-soft-solo-target')
     control = measure('beacon-ring-soft-beacon-off-solo-target')
@@ -815,7 +854,7 @@ def check_beacon_octave(d):
     ctrl_fails = not all(r['ok'] for r in control)
     return {
         'id': 'VL-B3-octave',
-        'claim': 'the target stem\'s measured pitch with the target at 0 and 5 degrees from the nose (on course) is 1200 cents (within 5) above its pitch at 12 degrees, on both sides (control: the octave off, SonicPrefs.beacon false)',
+        'claim': 'the target stem\'s measured pitch with the target at 0 and 5 degrees from the nose (on course) is 1200 cents (within 5) above the hum\'s off-course note (measured straight ahead with the beacon off, where no off-course beating blurs it), on both sides (control: the octave off, SonicPrefs.beacon false)',
         'thresholds': {'octaveCents': {'value': BEACON_OCTAVE_CENTS, 'kind': 'design decision 3'}, 'toleranceCents': {'value': BEACON_OCTAVE_TOL_CENTS, 'kind': 'task bound'}},
         'measured': {'rows': shipped},
         'controls': [{'name': 'the octave off (SonicPrefs.beacon false)', 'measured': {'rows': control}, 'ok': ctrl_fails}],
