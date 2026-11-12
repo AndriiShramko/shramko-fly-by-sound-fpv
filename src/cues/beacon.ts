@@ -15,6 +15,11 @@ import { pannerDirection } from './rules';
  */
 export const ON_COURSE_DEG = 8;
 /**
+ * Once on course, the hum stays on course until the target is more than this many degrees from the nose (review R9: a
+ * nose wavering round 8 degrees would flip the octave and the side boost frame by frame). An estimate, not measured.
+ */
+export const ON_COURSE_OUT_DEG = 11;
+/**
  * A point of a track is a corner when the way turns there by more than this, degrees. An estimate (the lead's design
  * decision of stage 1), not measured.
  */
@@ -44,14 +49,14 @@ export interface BeaconBearing {
  */
 export const DEMO_TARGET_ID = 'demo';
 
-/** Where a direction of the listener frame lies from the nose. */
-export function beaconBearing(dirL: Vec3): BeaconBearing {
+/** Where a direction of the listener frame lies from the nose; `wasOnCourse`: on course in the frame before (ON_COURSE_OUT_DEG). */
+export function beaconBearing(dirL: Vec3, wasOnCourse = false): BeaconBearing {
     const [x, y, z] = dirL;
     const h = Math.hypot(x, z);
     const level = h > 1e-9;
     const azimuthDeg = level ? Math.atan2(x, -z) * DEG : 0;
     const elevationDeg = Math.atan2(y, h) * DEG;
-    return { azimuthDeg, elevationDeg, behind: Math.abs(azimuthDeg) > 90, onCourse: level && Math.abs(azimuthDeg) <= ON_COURSE_DEG };
+    return { azimuthDeg, elevationDeg, behind: Math.abs(azimuthDeg) > 90, onCourse: level && Math.abs(azimuthDeg) <= (wasOnCourse ? ON_COURSE_OUT_DEG : ON_COURSE_DEG) };
 }
 
 /**
@@ -112,9 +117,14 @@ export function trackCorners(points: readonly Vec3[]): number[] {
  * way is straight and the beacon does not call through a wall; `clear` (the world's line of sight, lineClear) steps back
  * to a nearer point where the craft, off the track, would hear it through a solid.
  */
-export function beaconPointIndex(points: readonly Vec3[], next: number, pos: Vec3, clear?: (from: Vec3, to: Vec3) => boolean): number | null {
+export function beaconPointIndex(
+    points: readonly Vec3[],
+    next: number,
+    pos: Vec3,
+    clear?: (from: Vec3, to: Vec3) => boolean,
+    corners: ReadonlySet<number> = new Set(trackCorners(points))
+): number | null {
     if (next < 0 || next >= points.length) return null;
-    const corners = new Set(trackCorners(points));
     let found = points.length - 1;
     for (let i = next; i < points.length; i++) {
         const p = points[i] as Vec3;

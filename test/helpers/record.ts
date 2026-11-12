@@ -155,7 +155,7 @@ export class RecordingHost {
         this.touchFlag = false;
         this.record(this.runner.step(sample, this.world));
         this.drain();
-        const input = this.runner.demoFrame(this.t) ?? { sample, world: this.world, target: this.runner.target(), ...(this.oldHost ? {} : { beacon: this.runner.beaconTarget?.() ?? null }), floorY: 0 };
+        const input = this.runner.demoFrame(this.t) ?? { sample, world: this.world, target: this.runner.target(), ...(this.oldHost || !this.runner.beaconTarget ? {} : { beacon: this.runner.beaconTarget() }), floorY: 0 };
         const plan = this.planner.plan(input);
         // as the simulator's recorder writes a frame: the sample the runner was given (a place the runner asked for shows in
         // the next one), one in recordHz; and every sample with a touch, whose position the replay derives the touch from

@@ -40,6 +40,7 @@ import {
     expLerp,
     isUrgent,
     note,
+    topNote,
     openness,
     pulsePeriodMs,
     roomCode,
@@ -372,6 +373,8 @@ export class CuePlanner {
     private baseTheme: ThemeDef;
     private effectiveTheme: ThemeDef;
     private prefsValue: SonicPrefs;
+    /** the id of the hum's target when it was on course in the frame before (review R9: two thresholds), else null */
+    private onCourseId: string | null = null;
     private layersValue: LessonLayers;
     private on: Set<LayerId>;
     private readonly sampler: SceneSampler;
@@ -664,10 +667,14 @@ export class CuePlanner {
         const rough = targetRoughness(aimMissM(toWorld, travel), distance, rule);
         const beat = targetBeat(rough);
         const rate = targetRateHz(distance, rule);
-        const bearing = this.beacon && !trueDir ? beaconBearing(dirL) : null;
-        // on course: one octave up, as many scale steps as the scale has degrees (note() keeps it on the scale)
-        const octave = bearing !== null && bearing.onCourse ? [theme.scale.steps.length] : [];
-        const n = note(theme.scale, p['humStep'] as number, this.pitch('target'), elevationSteps(dirL[1], this.prefsValue.heightPolarity), ...octave);
+        const bearing = this.beacon && !trueDir ? beaconBearing(dirL, this.onCourseId === target.id) : null;
+        if (!trueDir) this.onCourseId = bearing !== null && bearing.onCourse ? target.id : null;
+        // on course: one octave up, as many scale steps as the scale has degrees; where that would pass the top of the
+        // scale (the pilot's pitch at its limit and the target above) one octave down instead, so the change is always
+        // exactly an octave (review R11, decision D17)
+        const off = note(theme.scale, p['humStep'] as number, this.pitch('target'), elevationSteps(dirL[1], this.prefsValue.heightPolarity));
+        const steps = theme.scale.steps.length;
+        const n = bearing === null || !bearing.onCourse ? off : off.index + steps <= topNote(theme.scale) ? note(theme.scale, off.index, steps) : note(theme.scale, off.index, -steps);
         const safety = theme.layers.safety.params as Record<string, number>;
         const dc = distanceCode(distance, { nearHz: 9000, farHz: 1400, farM: rule.farM, sendNear: 0.05, sendFar: 0.4, ildBoostDb: safety['ildBoostDb'] as number });
         const period = 1 / rate;

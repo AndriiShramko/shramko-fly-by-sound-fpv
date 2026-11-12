@@ -103,7 +103,7 @@ import { getLesson, isShippedLesson, lessonAfter, lessonPaths } from './library'
 import { APPROACHES, GAME_SCENE_S, isGlossary, NARRATED_SCENE_S, playS, REPEAT_GAP_S, REPEAT_PLAYS, SHAPE_ORDER } from './sounds';
 import { lessonTrack, yawOf, type LessonTrack, type TrackPoint } from './track';
 import { headingBasis, worldToListener } from '../sense/frame';
-import { beaconPointIndex, DEMO_TARGET_ID, lineClear } from '../cues/beacon';
+import { beaconPointIndex, DEMO_TARGET_ID, lineClear, trackCorners } from '../cues/beacon';
 
 // ------------------------------------------------------------------ host interface
 
@@ -472,6 +472,8 @@ class Runner implements LessonSession {
     private lastPraise = -1;
     // direction: the track (built once the world is known), since when the craft flies against it, the last warnings
     private trackValue: LessonTrack | null | undefined = undefined;
+    /** the track's positions and corner indices for beaconTarget(), built once (the track never changes; review R12) */
+    private beaconTrackValue: { readonly positions: readonly Vec3[]; readonly corners: ReadonlySet<number> } | null = null;
     private backSince: number | null = null;
     private lastWrongWay = -Infinity;
     private lastWrongSide = -Infinity;
@@ -1993,11 +1995,16 @@ class Runner implements LessonSession {
         const passed = this.phaseValue === 'flying' ? this.passedPoint : null;
         const pos = this.prev?.pos ?? this.startPose(Math.max(this.attemptNo, 1)).pos;
         const sdf = (this.worldRef as { sdf?: (x: number, y: number, z: number) => number } | null)?.sdf;
+        if (this.beaconTrackValue === null) {
+            const positions = track.points.map((p) => p.pos);
+            this.beaconTrackValue = { positions, corners: new Set(trackCorners(positions)) };
+        }
         const i = beaconPointIndex(
-            track.points.map((p) => p.pos),
+            this.beaconTrackValue.positions,
             passed === null ? 0 : passed.index + 1,
             pos,
-            typeof sdf === 'function' ? (a, b) => lineClear(sdf, a, b) : undefined
+            typeof sdf === 'function' ? (a, b) => lineClear(sdf, a, b) : undefined,
+            this.beaconTrackValue.corners
         );
         const point = i === null ? undefined : track.points[i];
         if (point === undefined) return null;

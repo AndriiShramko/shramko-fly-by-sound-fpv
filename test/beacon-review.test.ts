@@ -5,7 +5,7 @@
 //   - R2: the headphone check's "behind" and the ears-game scene from behind are planned from behind (no fold, no side
 //     boost, no octave): a preview or a module-0 scene tells the true direction it names.
 import { describe, expect, it } from 'vitest';
-import type { LessonDef, Question, RunnerAction, SonicPrefs, Vec3 } from '../src/contract';
+import type { LessonDef, Question, RunnerAction, SonicObject, SonicPrefs, Vec3 } from '../src/contract';
 import { CuePlanner } from '../src/cues';
 import { demoFrame } from '../src/lesson/runner';
 import { getLesson, SHIPPED_LESSON_IDS } from '../src/lesson';
@@ -138,6 +138,35 @@ describe('R2: a preview and a module-0 scene keep the true direction', () => {
             expect(on?.dir, `${dir}`).toEqual(off?.dir);
             expect(on?.hz, `${dir}`).toBe(off?.hz);
             expect(on?.ildDb, `${dir}`).toBe(off?.ildDb);
+        }
+    });
+});
+
+describe('R9 and R11: the on-course octave', () => {
+    const zoneAt = (azDeg: number, up = 0): SonicObject => {
+        const a = (azDeg * Math.PI) / 180;
+        return { id: 'gate-1', shape: { kind: 'zone', size: [1, 1, 1] }, pos: [Math.sin(a) * 10, 1.5 + up, -Math.cos(a) * 10], quat: [1, 0, 0, 0], order: 0, solid: false, material: 'obstacle' };
+    };
+    const still = (t: number) => ({ t, tick: t, pos: [0, 1.5, 0] as Vec3, vel: [0, 0, 0] as Vec3, quat: [1, 0, 0, 0] as const, rate: [0, 0, 0] as Vec3, yawDeg: 0, pitchDeg: 0, rollDeg: 0, sticks: [0, 0, 0, 0] as const, armed: true, touched: false, paused: false });
+    const hums = (prefs: SonicPrefs, frames: readonly SonicObject[]): number[] => {
+        const p = new CuePlanner({ theme, prefs, layers: { on: ['target'], heightBandM: null, hazardVoices: 0 } });
+        return frames.map((target, i) => p.plan({ sample: still(1000 + i * 33) as never, world: null, target, floorY: 0 }).voices.find((v) => v.cue === 'target.hum')?.hz ?? Number.NaN);
+    };
+
+    it('R9: a nose wavering round 8 degrees keeps the octave; it leaves past 11 and comes back within 8', () => {
+        const az = [0, 7.9, 8.1, 7.9, 8.1, -8.1, 9, 10.9, 11.1, 10, 9, 8.1, 7.9];
+        const hz = hums(prefsWith(true), az.map((a) => zoneAt(a)));
+        const high = hz[0] as number;
+        const low = hums(prefsWith(true), [zoneAt(20)])[0] as number;
+        expect(high / low).toBeCloseTo(2, 9);
+        expect(hz.map((h) => (h === high ? 'on' : h === low ? 'off' : '?'))).toEqual(['on', 'on', 'on', 'on', 'on', 'on', 'on', 'on', 'off', 'off', 'off', 'off', 'on']);
+    });
+
+    it('R11: at the top of the scale (target pitch +12, the target high above) on course is still exactly an octave from off course', () => {
+        const prefs = { ...prefsWith(true), heightPolarity: 'up-higher', layerPitchSteps: { ...defaultPrefs().layerPitchSteps, target: 12 } } as SonicPrefs;
+        for (const up of [0, 6, 20]) {
+            const [on, off] = [hums(prefs, [zoneAt(0, up)])[0] as number, hums(prefs, [zoneAt(30, up)])[0] as number];
+            expect(Math.abs(Math.log2(on / off)), `up ${up} m`).toBeCloseTo(1, 9);
         }
     });
 });

@@ -193,7 +193,8 @@ export class DemoHost {
         const sample = craft.sample(tMs, Math.round(craft.elapsedS * 1000));
         this.record(runner.step(sample, this.world));
         this.handle(runner, runner.takeActions());
-        this.engine.update(runner.demoFrame(tMs) ?? { sample, world: this.world, target: runner.target(), floorY: this.world?.floorY ?? 0 });
+        // lane sonic-beacon (review R7): the runner's beacon beside the target, omitted for a runner without the method
+        this.engine.update(runner.demoFrame(tMs) ?? { sample, world: this.world, target: runner.target(), ...(runner.beaconTarget ? { beacon: runner.beaconTarget() } : {}), floorY: this.world?.floorY ?? 0 });
     }
 
     /** A digit (or the same number said aloud): the answer to the question being asked. 0 skips. */

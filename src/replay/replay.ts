@@ -299,7 +299,7 @@ export class Replayer {
             this.add(runner.step(sample, s.world), events);
             this.take(t, events, actions);
         }
-        const input: SonicFrameInput = (runner === null ? null : runner.demoFrame(t)) ?? { sample, world: s.world, target: runner === null ? null : runner.target(), beacon: runner === null ? null : (runner.beaconTarget?.() ?? null), floorY: s.floorY };
+        const input: SonicFrameInput = (runner === null ? null : runner.demoFrame(t)) ?? { sample, world: s.world, target: runner === null ? null : runner.target(), ...(runner?.beaconTarget ? { beacon: runner.beaconTarget() } : {}), floorY: s.floorY };
         const plan = this.planner.plan(input);
         const cues = plan.cues.map((c) => c.id);
         this.cueLog.push(cues);
