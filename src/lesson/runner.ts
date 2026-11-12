@@ -103,7 +103,7 @@ import { getLesson, isShippedLesson, lessonAfter, lessonPaths } from './library'
 import { APPROACHES, GAME_SCENE_S, isGlossary, NARRATED_SCENE_S, playS, REPEAT_GAP_S, REPEAT_PLAYS, SHAPE_ORDER } from './sounds';
 import { lessonTrack, yawOf, type LessonTrack, type TrackPoint } from './track';
 import { headingBasis, worldToListener } from '../sense/frame';
-import { beaconPointIndex, lineClear } from '../cues/beacon';
+import { beaconPointIndex, DEMO_TARGET_ID, lineClear } from '../cues/beacon';
 
 // ------------------------------------------------------------------ host interface
 
@@ -1983,6 +1983,11 @@ class Runner implements LessonSession {
         const target = this.target();
         if (target !== null || this.ears || this.left) return target;
         if (this.phaseValue !== 'flying' && this.phaseValue !== 'between') return null;
+        // review R1: only a goal flown along the track ('track-end', 'fly-distance') takes the track's point; any other
+        // goal without a target (a shape question, a height, a turn) stays silent as before the lane, so lessons whose
+        // version did not change sound and replay as they did (shapes-cube's question after its cube)
+        const goal = this.phaseValue === 'flying' ? this.tracker?.goal : this.lesson.goals[0];
+        if (goal === undefined || (goal.kind !== 'track-end' && goal.kind !== 'fly-distance')) return null;
         const track = this.track();
         if (track === null) return null;
         const passed = this.phaseValue === 'flying' ? this.passedPoint : null;
@@ -2109,7 +2114,7 @@ export function demoFrame(scene: DemoScene, age: number, t: number, cache: Map<s
     }
     // a hum (target.hum and anything else): a goal zone in an empty space
     const gap = (x: number): number => sceneDistance(scene.moving, 14, 3, 6, x);
-    const target: SonicObject = { id: 'demo', shape: { kind: 'zone', size: [1, 1, 1] }, pos: [scene.dir[0] * 14, 1.5 + scene.dir[1] * 14, scene.dir[2] * 14], quat: [1, 0, 0, 0], order: 0, solid: false, material: 'obstacle' };
+    const target: SonicObject = { id: DEMO_TARGET_ID, shape: { kind: 'zone', size: [1, 1, 1] }, pos: [scene.dir[0] * 14, 1.5 + scene.dir[1] * 14, scene.dir[2] * 14], quat: [1, 0, 0, 0], order: 0, solid: false, material: 'obstacle' };
     const at = (x: number): Vec3 => {
         const travelled = 14 - gap(x);
         return [scene.dir[0] * travelled, 1.5 + scene.dir[1] * travelled, scene.dir[2] * travelled];

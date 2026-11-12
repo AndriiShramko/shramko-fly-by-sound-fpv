@@ -38,6 +38,12 @@ export interface BeaconBearing {
     readonly onCourse: boolean;
 }
 
+/**
+ * The id of the runner's module-0 scene target (a hum from a named side, ears-game, the glossary): the planner keeps its
+ * true direction, as for a preview (review R2), since the scene names where it comes from, behind included.
+ */
+export const DEMO_TARGET_ID = 'demo';
+
 /** Where a direction of the listener frame lies from the nose. */
 export function beaconBearing(dirL: Vec3): BeaconBearing {
     const [x, y, z] = dirL;

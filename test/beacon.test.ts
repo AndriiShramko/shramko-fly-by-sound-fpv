@@ -119,8 +119,14 @@ describe('the setting off gives back b102ce6 exactly', () => {
         expect(h.hash).toBe(want.hash);
     });
 
-    it.each(['beacon-bearings', 'beacon-turn', 'beacon-pass', 'beacon-previews', 'rings-heights'])('control: %s with the beacon on (absent) differs from b102ce6', (id) => {
+    it.each(['beacon-bearings', 'beacon-turn', 'beacon-pass', 'rings-heights'])('control: %s with the beacon on (absent) differs from b102ce6', (id) => {
         expect(placementHashes(flown(id, undefined)).hash).not.toBe((B102.flights[id] as Fixture['flights'][string]).hash);
+    });
+
+    // review R2: a preview names its direction ("behind" on the start screen's headphone check), so it keeps the true
+    // direction with the beacon on too: the previews flight is b102ce6's with the setting on or off (D4 revised)
+    it('beacon-previews with the beacon on (absent) is the one of b102ce6 too (previews keep their true direction)', () => {
+        expect(placementHashes(flown('beacon-previews', undefined)).hash).toBe((B102.flights['beacon-previews'] as Fixture['flights'][string]).hash);
     });
 });
 

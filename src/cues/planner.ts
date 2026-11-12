@@ -27,7 +27,7 @@ import { headingBasis, listenerBasis, worldToListener, type Basis } from '../sen
 import type { Hazard, SceneSample } from '../sense/types';
 import { applyCalm } from '../theme/calm';
 import { gateMelody, noteHz, noteHzAt } from '../theme/pitch';
-import { beaconBearing, beaconSideIldDb, foldToFront } from './beacon';
+import { beaconBearing, beaconSideIldDb, DEMO_TARGET_ID, foldToFront } from './beacon';
 import { alignOffset, heightTones, isGate, referenceHeightM, targetHeightM, type HeightToneRule, type TargetTone } from './height';
 import { add, dot, length, normalize, quatConjugate, quatRotate, scale, sub, yawQuat } from '../util/vec';
 import {
@@ -477,7 +477,8 @@ export class CuePlanner {
         // lane sonic-beacon: with the beacon on the hum points where the host's runner says (input.beacon: a track point where
         // the goal has no gate); a host or a recording without the field, or the beacon off, leaves it at the target
         const hum = this.beacon && input.beacon !== undefined ? input.beacon : input.target;
-        if (this.on.has('target') && hum !== null) requests.push(this.targetVoice(hum, s, basis));
+        // review R2: a module-0 scene's hum (the runner's demo zone) names its true direction, as a preview does
+        if (this.on.has('target') && hum !== null) requests.push(this.targetVoice(hum, s, basis, hum.id === DEMO_TARGET_ID));
         if (this.on.has('shape')) {
             const obj = this.shapeObject(input, s);
             if (obj !== null) {
@@ -649,7 +650,8 @@ export class CuePlanner {
         };
     }
 
-    private targetVoice(target: SonicObject, s: FlightSample, basis: Basis): Omit<VoicePlan, 'slot'> {
+    /** `trueDir`: a preview or a module-0 scene, which names a direction ("behind"): no fold, no octave, no side boost (review R2) */
+    private targetVoice(target: SonicObject, s: FlightSample, basis: Basis, trueDir = false): Omit<VoicePlan, 'slot'> {
         const theme = this.effectiveTheme;
         const p = theme.layers.target.params as Record<string, number>;
         const rule = { rateNearHz: p['rateNearHz'] as number, rateFarHz: p['rateFarHz'] as number, nearM: p['nearM'] as number, farM: p['farM'] as number, roughMax: p['roughMax'] as number, missFullM: p['missFullM'] as number };
@@ -662,7 +664,7 @@ export class CuePlanner {
         const rough = targetRoughness(aimMissM(toWorld, travel), distance, rule);
         const beat = targetBeat(rough);
         const rate = targetRateHz(distance, rule);
-        const bearing = this.beacon ? beaconBearing(dirL) : null;
+        const bearing = this.beacon && !trueDir ? beaconBearing(dirL) : null;
         // on course: one octave up, as many scale steps as the scale has degrees (note() keeps it on the scale)
         const octave = bearing !== null && bearing.onCourse ? [theme.scale.steps.length] : [];
         const n = note(theme.scale, p['humStep'] as number, this.pitch('target'), elevationSteps(dirL[1], this.prefsValue.heightPolarity), ...octave);
@@ -889,7 +891,7 @@ export class CuePlanner {
             const distance = expLerp(20, 2.5, u);
             const sample = previewSample(p.dir, 0);
             const target: SonicObject = { id: 'preview', shape: { kind: 'zone', size: [1, 1, 1] }, pos: scale(p.dir, distance), quat: [1, 0, 0, 0], order: 0, solid: false, material: 'obstacle' };
-            const v = this.targetVoice(target, sample, headingBasis(0));
+            const v = this.targetVoice(target, sample, headingBasis(0), true);
             if (p.cue === 'target.off') {
                 const beat = targetBeat(0.9 * (this.effectiveTheme.layers.target.params['roughMax'] as number));
                 return { ...v, key, priority, cue: p.cue, beatHz: beat.hz, beatDepth: beat.depth };
