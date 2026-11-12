@@ -21,7 +21,7 @@ import pyloudnorm as pyln
 import soundfile as sf
 from scipy.signal import hilbert, resample_poly
 
-MEASURE_VERSION = 6
+MEASURE_VERSION = 7
 RATE = 48000
 
 # thresholds (kind: standard, calibrated on controls, proposal)
@@ -724,11 +724,14 @@ def ring(d, job):
 
 def check_beacon_side(d):
     """VL-B1: the hum alone, the target every 20 degrees from 10 to 170 on both sides at 10 m: the louder ear is the
-    target's side at every azimuth, by at least 2 dB. Control: the HRTF panner bypassed."""
-    def measure(job):
+    target's side at every azimuth, by at least 2 dB. The planner adds BEACON_SIDE_DB (2 dB) between the ears off course,
+    so the bound is met by added gain on top of the HRTF. Control (review R5 of the lane): the beacon off at 10 and 30
+    degrees, the HRTF alone (0.55 to 1.62 dB measured before the gain), must miss the bound; the HRTF panner bypassed is
+    kept as an extra row (it leaves the added 2 dB alone, so it sits on the bound and decides nothing)."""
+    def measure(job, azs=(10, 30, 50, 70, 90, 110, 130, 150, 170)):
         x, _, w = ring(d, job)
         rows = []
-        for az in [10, 30, 50, 70, 90, 110, 130, 150, 170]:
+        for az in azs:
             for s in (1, -1):
                 t0, t1 = w[(s * az, 10)]
                 ild = ild_db(x, t0, t1)  # left over right: + means the left ear is louder
@@ -736,15 +739,19 @@ def check_beacon_side(d):
                 rows.append({'azDeg': s * az, 'ildLeftOverRightDb': round(ild, 2), 'ok': ok})
         return rows
     shipped = measure('beacon-ring-soft-solo-target')
-    control = measure('beacon-ring-soft-dry-solo-target')
+    control = measure('beacon-ring-soft-beacon-off-solo-target', (10, 30))
+    bypassed = measure('beacon-ring-soft-dry-solo-target')
     ok = all(r['ok'] for r in shipped)
     ctrl_fails = not all(r['ok'] for r in control)
     return {
         'id': 'VL-B1-side',
-        'claim': 'the target hum alone through Chrome\'s HRTF, the target at 10 m every 20 degrees from 10 to 170 on both sides of the nose: at every azimuth the ear on the target\'s side is louder, by at least 2 dB (control: the HRTF panner bypassed)',
+        'claim': 'the target hum alone through Chrome\'s HRTF, the target at 10 m every 20 degrees from 10 to 170 on both sides of the nose: at every azimuth the ear on the target\'s side is louder, by at least 2 dB, which the planner meets by an added level difference of 2 dB off course (BEACON_SIDE_DB) on top of the HRTF; whether 2 dB at 165 Hz is heard as a side by people is not measured here (control: the beacon off at 10 and 30 degrees, the HRTF alone)',
         'thresholds': {'sideMinDb': {'value': BEACON_SIDE_MIN_DB, 'kind': 'task bound (lane sonic-beacon S4)'}},
         'measured': {'worstSideDb': round(min(abs(r['ildLeftOverRightDb']) for r in shipped), 2), 'rows': shipped},
-        'controls': [{'name': 'the HRTF panner bypassed (EngineTestHooks.bypassPanner)', 'measured': {'worstSideDb': round(min(abs(r['ildLeftOverRightDb']) for r in control), 2), 'rows': control}, 'ok': ctrl_fails}],
+        'controls': [
+            {'name': 'the beacon off at 10 and 30 degrees (the HRTF alone, no added level difference)', 'measured': {'worstSideDb': round(min(abs(r['ildLeftOverRightDb']) for r in control), 2), 'rows': control}, 'ok': ctrl_fails},
+            {'name': 'extra row, decides nothing: the HRTF panner bypassed (EngineTestHooks.bypassPanner), the added 2 dB alone', 'measured': {'worstSideDb': round(min(abs(r['ildLeftOverRightDb']) for r in bypassed), 2), 'rows': bypassed}, 'ok': None},
+        ],
         'valid': ctrl_fails,
         'pass': ok and ctrl_fails,
     }
