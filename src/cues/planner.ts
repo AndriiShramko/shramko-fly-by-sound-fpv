@@ -27,7 +27,7 @@ import { headingBasis, listenerBasis, worldToListener, type Basis } from '../sen
 import type { Hazard, SceneSample } from '../sense/types';
 import { applyCalm } from '../theme/calm';
 import { gateMelody, noteHz, noteHzAt } from '../theme/pitch';
-import { beaconBearing, foldToFront } from './beacon';
+import { beaconBearing, beaconSideIldDb, foldToFront } from './beacon';
 import { alignOffset, heightTones, isGate, referenceHeightM, targetHeightM, type HeightToneRule, type TargetTone } from './height';
 import { add, dot, length, normalize, quatConjugate, quatRotate, scale, sub, yawQuat } from '../util/vec';
 import {
@@ -669,12 +669,16 @@ export class CuePlanner {
         const safety = theme.layers.safety.params as Record<string, number>;
         const dc = distanceCode(distance, { nearHz: 9000, farHz: 1400, farM: rule.farM, sendNear: 0.05, sendFar: 0.4, ildBoostDb: safety['ildBoostDb'] as number });
         const period = 1 / rate;
+        const dir = bearing === null ? dirL : foldToFront(dirL);
+        // off course the beacon adds a level difference between the ears (BEACON_SIDE_DB, check VL-B1): the HRTF alone
+        // gives this low hum under 2 dB within 30 degrees of the nose. Beacon off: as before
+        const ildDb = bearing !== null && !bearing.onCourse ? dc.ildDb + beaconSideIldDb(dir) : dc.ildDb;
         return {
             key: 'target',
             cue: 'target.hum',
             layer: 'target',
             priority: PRIORITY.target,
-            dir: bearing === null ? dirL : foldToFront(dirL),
+            dir,
             distance,
             timbre: theme.layers.target.timbre,
             noteIndex: n.index,
@@ -684,7 +688,7 @@ export class CuePlanner {
             gainDb: dc.gainDb,
             lowpassHz: dc.lowpassHz,
             reverbSend: dc.reverbSend,
-            ildDb: dc.ildDb,
+            ildDb,
             dopplerCents: distance > 1e-6 ? dopplerCents(dot(s.vel, scale(toWorld, 1 / distance))) : 0,
             rough: 0,
             roughHz: 0,

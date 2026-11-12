@@ -7,7 +7,7 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import type { SonicPrefs, Vec3 } from '../src/contract';
-import { beaconBearing, beaconPointIndex, BEACON_AHEAD_M, CORNER_DEG, foldToFront, ON_COURSE_DEG, trackCorners, turnDeg, type VoicePlan } from '../src/cues';
+import { beaconBearing, beaconPointIndex, BEACON_AHEAD_M, BEACON_SIDE_DB, CORNER_DEG, pannerDirection, foldToFront, ON_COURSE_DEG, trackCorners, turnDeg, type VoicePlan } from '../src/cues';
 import { defaultPrefs, validatePrefs } from '../src/prefs';
 import { BEACON_BEARINGS, BEACON_FIXTURE_IDS, BEACON_HOLD_FRAMES, b102ce6Prefs, flyBeaconFixture } from './helpers/beacon-flights';
 import { placementHashes, type FrameRecord } from './helpers/placement';
@@ -168,6 +168,22 @@ describe('the beacon on', () => {
             const a = humAt(on, b);
             const o = humAt(off, b);
             expect([a.periodS, a.gainDb, a.lowpassHz, a.distance, a.beatHz]).toEqual([o.periodS, o.gainDb, o.lowpassHz, o.distance, o.beatHz]);
+        }
+    });
+
+    it('off course the ears differ by BEACON_SIDE_DB more than the HRTF gives (VL-B1), on course and beacon off by nothing more', () => {
+        expect(BEACON_SIDE_DB).toBe(2);
+        const on = flown('beacon-bearings', true);
+        const off = flown('beacon-bearings', false);
+        for (const b of BEACON_BEARINGS) {
+            const a = humAt(on, b);
+            const o = humAt(off, b);
+            // what the engine applies between the ears: ildDb times |x| of the panner direction (src/audio/engine.ts)
+            const applied = (v: VoicePlan): number => v.ildDb * Math.abs(pannerDirection(v.dir as Vec3)[0]);
+            const extra = applied(a) - o.ildDb * Math.abs(pannerDirection(a.dir as Vec3)[0]);
+            if (Math.abs(b) <= ON_COURSE_DEG) expect(a.ildDb).toBe(o.ildDb);
+            else expect(extra).toBeCloseTo(BEACON_SIDE_DB, 9);
+            expect(applied(o)).toBeCloseTo(o.ildDb * Math.abs(pannerDirection(o.dir as Vec3)[0]), 12);
         }
     });
 

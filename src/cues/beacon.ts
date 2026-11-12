@@ -7,6 +7,7 @@
 // Pure and DOM-free: the planner and the runner use it, the Node tests check it. Directions are in the listener frame
 // (x right, y up, z back: the nose along -Z), unit vectors.
 import type { Vec3 } from '../contract';
+import { pannerDirection } from './rules';
 
 /**
  * Within this many degrees of the nose, left or right, the target is "on course" and the hum sounds an octave higher.
@@ -59,6 +60,25 @@ export function foldToFront(dirL: Vec3): Vec3 {
     // arbitrary choice; a target exactly behind is held there for no more than a frame in flight)
     const side = x < 0 ? -1 : 1;
     return [side * h, y, 0];
+}
+
+/**
+ * Off course the beacon adds this much level difference between the ears, dB, on top of the HRTF's own (lane S4,
+ * check VL-B1): Chrome's HRTF gives the low hum (165 Hz in the soft theme) only 0.55 to 0.68 dB at 10 degrees and
+ * 1.5 to 1.6 dB at 30 (measured, evidence/listen/VL-B1-side.json key a5d3716a9fe5), under the 2 dB side bound.
+ * The value 2 is an estimate chosen so the sum clears 2 dB at 10 degrees; VL-B1 measures the result.
+ */
+export const BEACON_SIDE_DB = 2;
+
+/**
+ * The VoicePlan ildDb that gives a voice at `dir` BEACON_SIDE_DB between the ears: the engine applies ildDb times
+ * |x| of the panner direction (src/audio/engine.ts), so the boost is divided by that |x|, never by less than the
+ * sine of ON_COURSE_DEG (a target high above with little side gets no more than at the course edge). 0 straight ahead.
+ */
+export function beaconSideIldDb(dir: Vec3): number {
+    const side = Math.abs(pannerDirection(dir)[0]);
+    if (!(side > 1e-6)) return 0;
+    return BEACON_SIDE_DB / Math.max(side, Math.sin(ON_COURSE_DEG / DEG));
 }
 
 /** The angle the way turns at the middle of three points, degrees (0: straight on); 0 when two points coincide. */
