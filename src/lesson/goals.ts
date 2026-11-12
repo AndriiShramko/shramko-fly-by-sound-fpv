@@ -51,6 +51,8 @@ export interface GoalTracker {
     step(s: FlightSample, prev: FlightSample): Outcome;
     /** the next gate or zone or object for the target layer */
     target(): SonicObject | null;
+    /** lane sonic-beacon: the target after target() (a course's gate after the next), for the preview after a gate; null for none */
+    targetAfter?(): SonicObject | null;
     /** why the goal is not met (so far), one short spoken line; null when there is nothing to say */
     reason(): SpeechLine | null;
     /** how good it was once met; null for a goal with no measure of its own (the runner uses the attempt's time) */
@@ -376,6 +378,11 @@ export function createTracker(goal: Goal, ctx: TrackContext): GoalTracker {
                     const gates = courseGates(ctx.objects(), ids);
                     if (gates.length === 0) return null;
                     return inOrder ? (gates[Math.min(next, gates.length - 1)] ?? null) : (gates.find((g) => !passed.has(g.id)) ?? null);
+                },
+                targetAfter() {
+                    const gates = courseGates(ctx.objects(), ids);
+                    // within the lap only: at its end the lap chime speaks, and the next lap starts again at the first gate
+                    return inOrder ? (gates[next + 1] ?? null) : (gates.filter((g) => !passed.has(g.id))[1] ?? null);
                 },
                 reason(): SpeechLine | null {
                     if (missedGate !== null) return { key: 'reason.gate-missed', params: { n: missedGate + 1 } };

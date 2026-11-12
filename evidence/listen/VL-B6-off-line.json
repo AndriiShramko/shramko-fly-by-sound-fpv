@@ -1,0 +1,661 @@
+{
+ "format": "shramko-listen-evidence/1",
+ "key": "6a519f49a1c9e959be764ba1f7f153052ecc39162474f3a970a2e1d129ce34d9",
+ "inputs": {
+  "hash": "6a519f49a1c9e959be764ba1f7f153052ecc39162474f3a970a2e1d129ce34d9",
+  "files": 128,
+  "driver": 4,
+  "measure": 8,
+  "chrome": "156.0.8078.80",
+  "tools": {
+   "python": "3.11.9",
+   "numpy": "2.4.6",
+   "scipy": "1.17.1",
+   "soundfile": "0.14.0",
+   "pyloudnorm": "0.2.0"
+  }
+ },
+ "date": "2026-11-12T21:46:19.161Z",
+ "id": "VL-B6-off-line",
+ "claim": "the corridor and tunnel-wide flown off the line (nose 40 degrees off the track to the right and to the left in turn, 3 s each, the craft 0.8 m right of the line), the target stem alone: in at least 90 % of the half-second windows where the true beacon is at least 15 degrees off the nose (and at least 8 such windows per flight), the ear on the beacon's side is louder by at least 2 dB and leads in time (controls: the beacon mirrored left-right, the beacon fixed straight ahead). The plan's side is reported as a plan fact beside the measure",
+ "thresholds": {
+  "wayMin": {
+   "value": 0.9,
+   "kind": "estimate"
+  },
+  "minWindows": {
+   "value": 8,
+   "kind": "estimate"
+  },
+  "minAzDeg": {
+   "value": 15,
+   "kind": "estimate"
+  },
+  "windowS": {
+   "value": 0.5,
+   "kind": "estimate"
+  },
+  "sideMinDb": {
+   "value": 2,
+   "kind": "task bound"
+  }
+ },
+ "lessons": {
+  "beacon-corridor": "corridor v3",
+  "beacon-tunnel": "tunnel-wide v2"
+ },
+ "measured": {
+  "beacon-corridor": {
+   "windows": 42,
+   "wayShare": 1,
+   "levelShare": 1,
+   "timeShare": 1,
+   "planSideSharePlanFact": 1,
+   "truthAzDegRange": [
+    -98.6,
+    39.8
+   ]
+  },
+  "beacon-tunnel": {
+   "windows": 16,
+   "wayShare": 1,
+   "levelShare": 1,
+   "timeShare": 1,
+   "planSideSharePlanFact": 1,
+   "truthAzDegRange": [
+    -98.9,
+    34.3
+   ]
+  }
+ },
+ "controls": [
+  {
+   "name": "the frame's beacon mirrored left-right about the nose",
+   "measured": {
+    "beacon-corridor": {
+     "windows": 42,
+     "wayShare": 0,
+     "levelShare": 0,
+     "timeShare": 0,
+     "planSideSharePlanFact": 0,
+     "truthAzDegRange": [
+      -98.6,
+      39.8
+     ]
+    },
+    "beacon-tunnel": {
+     "windows": 16,
+     "wayShare": 0,
+     "levelShare": 0,
+     "timeShare": 0,
+     "planSideSharePlanFact": 0,
+     "truthAzDegRange": [
+      -98.9,
+      34.3
+     ]
+    }
+   },
+   "ok": true
+  },
+  {
+   "name": "the frame's beacon fixed straight ahead of the nose at the true distance",
+   "measured": {
+    "beacon-corridor": {
+     "windows": 42,
+     "wayShare": 0,
+     "levelShare": 0,
+     "timeShare": 0.238,
+     "planSideSharePlanFact": 0.286,
+     "truthAzDegRange": [
+      -98.6,
+      39.8
+     ]
+    },
+    "beacon-tunnel": {
+     "windows": 16,
+     "wayShare": 0,
+     "levelShare": 0,
+     "timeShare": 0.125,
+     "planSideSharePlanFact": 0.312,
+     "truthAzDegRange": [
+      -98.9,
+      34.3
+     ]
+    }
+   },
+   "ok": true
+  }
+ ],
+ "detail": {
+  "shipped": {
+   "beacon-corridor": [
+    {
+     "t": 2,
+     "truthAzDeg": -46.1,
+     "ildLeftOverRightDb": 4.01,
+     "itdUs": 535.4,
+     "levelAgrees": true,
+     "timeAgrees": true,
+     "planSideAgrees": true
+    },
+    {
+     "t": 2.5,
+     "truthAzDeg": -47,
+     "ildLeftOverRightDb": 4.12,
+     "itdUs": 585.1,
+     "levelAgrees": true,
+     "timeAgrees": true,
+     "planSideAgrees": true
+    },
+    {
+     "t": 3,
+     "truthAzDeg": -44.4,
+     "ildLeftOverRightDb": 3.99,
+     "itdUs": 557,
+     "levelAgrees": true,
+     "timeAgrees": true,
+     "planSideAgrees": true
+    },
+    {
+     "t": 3.5,
+     "truthAzDeg": -44.8,
+     "ildLeftOverRightDb": 4.02,
+     "itdUs": 562.5,
+     "levelAgrees": true,
+     "timeAgrees": true,
+     "planSideAgrees": true
+    },
+    {
+     "t": 4,
+     "truthAzDeg": -45.4,
+     "ildLeftOverRightDb": 4.04,
+     "itdUs": 568.1,
+     "levelAgrees": true,
+     "timeAgrees": true,
+     "planSideAgrees": true
+    },
+    {
+     "t": 5,
+     "truthAzDeg": 33,
+     "ildLeftOverRightDb": -3.63,
+     "itdUs": -410.8,
+     "levelAgrees": true,
+     "timeAgrees": true,
+     "planSideAgrees": true
+    },
+    {
+     "t": 5.5,
+     "truthAzDeg": 33.8,
+     "ildLeftOverRightDb": -3.7,
+     "itdUs": -431.2,
+     "levelAgrees": true,
+     "timeAgrees": true,
+     "planSideAgrees": true
+    },
+    {
+     "t": 6,
+     "truthAzDeg": 32.9,
+     "ildLeftOverRightDb": -3.66,
+     "itdUs": -422.2,
+     "levelAgrees": true,
+     "timeAgrees": true,
+     "planSideAgrees": true
+    },
+    {
+     "t": 6.5,
+     "truthAzDeg": 39.8,
+     "ildLeftOverRightDb": -3.93,
+     "itdUs": -508.9,
+     "levelAgrees": true,
+     "timeAgrees": true,
+     "planSideAgrees": true
+    },
+    {
+     "t": 7,
+     "truthAzDeg": 39.8,
+     "ildLeftOverRightDb": -3.92,
+     "itdUs": -504.1,
+     "levelAgrees": true,
+     "timeAgrees": true,
+     "planSideAgrees": true
+    },
+    {
+     "t": 8,
+     "truthAzDeg": -40.2,
+     "ildLeftOverRightDb": 3.9,
+     "itdUs": 495,
+     "levelAgrees": true,
+     "timeAgrees": true,
+     "planSideAgrees": true
+    },
+    {
+     "t": 8.5,
+     "truthAzDeg": -40.2,
+     "ildLeftOverRightDb": 3.84,
+     "itdUs": 506.8,
+     "levelAgrees": true,
+     "timeAgrees": true,
+     "planSideAgrees": true
+    },
+    {
+     "t": 9,
+     "truthAzDeg": -45.6,
+     "ildLeftOverRightDb": 3.97,
+     "itdUs": 527.7,
+     "levelAgrees": true,
+     "timeAgrees": true,
+     "planSideAgrees": true
+    },
+    {
+     "t": 9.5,
+     "truthAzDeg": -65.7,
+     "ildLeftOverRightDb": 4.38,
+     "itdUs": 703.3,
+     "levelAgrees": true,
+     "timeAgrees": true,
+     "planSideAgrees": true
+    },
+    {
+     "t": 10,
+     "truthAzDeg": -76.8,
+     "ildLeftOverRightDb": 7.31,
+     "itdUs": 848.6,
+     "levelAgrees": true,
+     "timeAgrees": true,
+     "planSideAgrees": true
+    },
+    {
+     "t": 14,
+     "truthAzDeg": -56.1,
+     "ildLeftOverRightDb": 6.64,
+     "itdUs": 644.8,
+     "levelAgrees": true,
+     "timeAgrees": true,
+     "planSideAgrees": true
+    },
+    {
+     "t": 15,
+     "truthAzDeg": -43.9,
+     "ildLeftOverRightDb": 3.58,
+     "itdUs": 386.6,
+     "levelAgrees": true,
+     "timeAgrees": true,
+     "planSideAgrees": true
+    },
+    {
+     "t": 15.5,
+     "truthAzDeg": -64.1,
+     "ildLeftOverRightDb": 4.93,
+     "itdUs": 723.2,
+     "levelAgrees": true,
+     "timeAgrees": true,
+     "planSideAgrees": true
+    },
+    {
+     "t": 16,
+     "truthAzDeg": -85.5,
+     "ildLeftOverRightDb": 7.3,
+     "itdUs": 824.7,
+     "levelAgrees": true,
+     "timeAgrees": true,
+     "planSideAgrees": true
+    },
+    {
+     "t": 20.5,
+     "truthAzDeg": -59,
+     "ildLeftOverRightDb": 4.35,
+     "itdUs": 649.6,
+     "levelAgrees": true,
+     "timeAgrees": true,
+     "planSideAgrees": true
+    },
+    {
+     "t": 21,
+     "truthAzDeg": -71.2,
+     "ildLeftOverRightDb": 5.76,
+     "itdUs": 769.2,
+     "levelAgrees": true,
+     "timeAgrees": true,
+     "planSideAgrees": true
+    },
+    {
+     "t": 21.5,
+     "truthAzDeg": -98.6,
+     "ildLeftOverRightDb": 7.81,
+     "itdUs": 852,
+     "levelAgrees": true,
+     "timeAgrees": true,
+     "planSideAgrees": true
+    },
+    {
+     "t": 22,
+     "truthAzDeg": -87.2,
+     "ildLeftOverRightDb": 5.61,
+     "itdUs": 854.8,
+     "levelAgrees": true,
+     "timeAgrees": true,
+     "planSideAgrees": true
+    },
+    {
+     "t": 26,
+     "truthAzDeg": -63.3,
+     "ildLeftOverRightDb": 4.65,
+     "itdUs": 709.2,
+     "levelAgrees": true,
+     "timeAgrees": true,
+     "planSideAgrees": true
+    },
+    {
+     "t": 26.5,
+     "truthAzDeg": -83,
+     "ildLeftOverRightDb": 7.03,
+     "itdUs": 824.2,
+     "levelAgrees": true,
+     "timeAgrees": true,
+     "planSideAgrees": true
+    },
+    {
+     "t": 27,
+     "truthAzDeg": -94.8,
+     "ildLeftOverRightDb": 6.69,
+     "itdUs": 858.3,
+     "levelAgrees": true,
+     "timeAgrees": true,
+     "planSideAgrees": true
+    },
+    {
+     "t": 27.5,
+     "truthAzDeg": -92,
+     "ildLeftOverRightDb": 7.33,
+     "itdUs": 855.8,
+     "levelAgrees": true,
+     "timeAgrees": true,
+     "planSideAgrees": true
+    },
+    {
+     "t": 28,
+     "truthAzDeg": -72,
+     "ildLeftOverRightDb": 7.2,
+     "itdUs": 856,
+     "levelAgrees": true,
+     "timeAgrees": true,
+     "planSideAgrees": true
+    },
+    {
+     "t": 29,
+     "truthAzDeg": 33.6,
+     "ildLeftOverRightDb": -3.67,
+     "itdUs": -428.3,
+     "levelAgrees": true,
+     "timeAgrees": true,
+     "planSideAgrees": true
+    },
+    {
+     "t": 29.5,
+     "truthAzDeg": 32.6,
+     "ildLeftOverRightDb": -3.68,
+     "itdUs": -422.6,
+     "levelAgrees": true,
+     "timeAgrees": true,
+     "planSideAgrees": true
+    },
+    {
+     "t": 30,
+     "truthAzDeg": 31.1,
+     "ildLeftOverRightDb": -3.62,
+     "itdUs": -400.4,
+     "levelAgrees": true,
+     "timeAgrees": true,
+     "planSideAgrees": true
+    },
+    {
+     "t": 30.5,
+     "truthAzDeg": 29,
+     "ildLeftOverRightDb": -3.58,
+     "itdUs": -379.5,
+     "levelAgrees": true,
+     "timeAgrees": true,
+     "planSideAgrees": true
+    },
+    {
+     "t": 31,
+     "truthAzDeg": 25.6,
+     "ildLeftOverRightDb": -3.46,
+     "itdUs": -339.2,
+     "levelAgrees": true,
+     "timeAgrees": true,
+     "planSideAgrees": true
+    },
+    {
+     "t": 32,
+     "truthAzDeg": -75.4,
+     "ildLeftOverRightDb": 6.49,
+     "itdUs": 793.4,
+     "levelAgrees": true,
+     "timeAgrees": true,
+     "planSideAgrees": true
+    },
+    {
+     "t": 32.5,
+     "truthAzDeg": -98.4,
+     "ildLeftOverRightDb": 7.53,
+     "itdUs": 842.6,
+     "levelAgrees": true,
+     "timeAgrees": true,
+     "planSideAgrees": true
+    },
+    {
+     "t": 33,
+     "truthAzDeg": -65,
+     "ildLeftOverRightDb": 3.57,
+     "itdUs": 653.4,
+     "levelAgrees": true,
+     "timeAgrees": true,
+     "planSideAgrees": true
+    },
+    {
+     "t": 33.5,
+     "truthAzDeg": -84.2,
+     "ildLeftOverRightDb": 6.6,
+     "itdUs": 497,
+     "levelAgrees": true,
+     "timeAgrees": true,
+     "planSideAgrees": true
+    },
+    {
+     "t": 34,
+     "truthAzDeg": -55,
+     "ildLeftOverRightDb": 7.67,
+     "itdUs": 470.1,
+     "levelAgrees": true,
+     "timeAgrees": true,
+     "planSideAgrees": true
+    },
+    {
+     "t": 38,
+     "truthAzDeg": -65,
+     "ildLeftOverRightDb": 4.93,
+     "itdUs": 729.6,
+     "levelAgrees": true,
+     "timeAgrees": true,
+     "planSideAgrees": true
+    },
+    {
+     "t": 38.5,
+     "truthAzDeg": -88.2,
+     "ildLeftOverRightDb": 7.4,
+     "itdUs": 838,
+     "levelAgrees": true,
+     "timeAgrees": true,
+     "planSideAgrees": true
+    },
+    {
+     "t": 39,
+     "truthAzDeg": -61.2,
+     "ildLeftOverRightDb": 6.02,
+     "itdUs": 756.7,
+     "levelAgrees": true,
+     "timeAgrees": true,
+     "planSideAgrees": true
+    },
+    {
+     "t": 39.5,
+     "truthAzDeg": -70.4,
+     "ildLeftOverRightDb": 4.36,
+     "itdUs": 691.2,
+     "levelAgrees": true,
+     "timeAgrees": true,
+     "planSideAgrees": true
+    }
+   ],
+   "beacon-tunnel": [
+    {
+     "t": 2,
+     "truthAzDeg": -61.6,
+     "ildLeftOverRightDb": 4.5,
+     "itdUs": 691,
+     "levelAgrees": true,
+     "timeAgrees": true,
+     "planSideAgrees": true
+    },
+    {
+     "t": 2.5,
+     "truthAzDeg": -78.2,
+     "ildLeftOverRightDb": 6.72,
+     "itdUs": 807.7,
+     "levelAgrees": true,
+     "timeAgrees": true,
+     "planSideAgrees": true
+    },
+    {
+     "t": 3,
+     "truthAzDeg": -98.9,
+     "ildLeftOverRightDb": 7.87,
+     "itdUs": 845.4,
+     "levelAgrees": true,
+     "timeAgrees": true,
+     "planSideAgrees": true
+    },
+    {
+     "t": 3.5,
+     "truthAzDeg": -74.6,
+     "ildLeftOverRightDb": 6.42,
+     "itdUs": 721.8,
+     "levelAgrees": true,
+     "timeAgrees": true,
+     "planSideAgrees": true
+    },
+    {
+     "t": 8,
+     "truthAzDeg": -98.4,
+     "ildLeftOverRightDb": 7.87,
+     "itdUs": 844.7,
+     "levelAgrees": true,
+     "timeAgrees": true,
+     "planSideAgrees": true
+    },
+    {
+     "t": 8.5,
+     "truthAzDeg": -61.4,
+     "ildLeftOverRightDb": 5.84,
+     "itdUs": 636.3,
+     "levelAgrees": true,
+     "timeAgrees": true,
+     "planSideAgrees": true
+    },
+    {
+     "t": 9.5,
+     "truthAzDeg": -43.8,
+     "ildLeftOverRightDb": 3.81,
+     "itdUs": 479.4,
+     "levelAgrees": true,
+     "timeAgrees": true,
+     "planSideAgrees": true
+    },
+    {
+     "t": 10,
+     "truthAzDeg": -70.1,
+     "ildLeftOverRightDb": 5.61,
+     "itdUs": 758.4,
+     "levelAgrees": true,
+     "timeAgrees": true,
+     "planSideAgrees": true
+    },
+    {
+     "t": 12.5,
+     "truthAzDeg": 34.3,
+     "ildLeftOverRightDb": -3.69,
+     "itdUs": -431.6,
+     "levelAgrees": true,
+     "timeAgrees": true,
+     "planSideAgrees": true
+    },
+    {
+     "t": 13,
+     "truthAzDeg": 33.5,
+     "ildLeftOverRightDb": -3.69,
+     "itdUs": -430.6,
+     "levelAgrees": true,
+     "timeAgrees": true,
+     "planSideAgrees": true
+    },
+    {
+     "t": 14,
+     "truthAzDeg": -49.1,
+     "ildLeftOverRightDb": 4.16,
+     "itdUs": 591.6,
+     "levelAgrees": true,
+     "timeAgrees": true,
+     "planSideAgrees": true
+    },
+    {
+     "t": 14.5,
+     "truthAzDeg": -51.3,
+     "ildLeftOverRightDb": 4.2,
+     "itdUs": 619.2,
+     "levelAgrees": true,
+     "timeAgrees": true,
+     "planSideAgrees": true
+    },
+    {
+     "t": 15,
+     "truthAzDeg": -54.9,
+     "ildLeftOverRightDb": 4.29,
+     "itdUs": 656.1,
+     "levelAgrees": true,
+     "timeAgrees": true,
+     "planSideAgrees": true
+    },
+    {
+     "t": 15.5,
+     "truthAzDeg": -61.8,
+     "ildLeftOverRightDb": 4.64,
+     "itdUs": 710.6,
+     "levelAgrees": true,
+     "timeAgrees": true,
+     "planSideAgrees": true
+    },
+    {
+     "t": 16,
+     "truthAzDeg": -78.6,
+     "ildLeftOverRightDb": 6.71,
+     "itdUs": 806.5,
+     "levelAgrees": true,
+     "timeAgrees": true,
+     "planSideAgrees": true
+    },
+    {
+     "t": 16.5,
+     "truthAzDeg": -91.3,
+     "ildLeftOverRightDb": 8.22,
+     "itdUs": 790.6,
+     "levelAgrees": true,
+     "timeAgrees": true,
+     "planSideAgrees": true
+    }
+   ]
+  }
+ },
+ "valid": true,
+ "pass": true
+}

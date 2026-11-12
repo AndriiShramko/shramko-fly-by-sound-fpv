@@ -13,6 +13,11 @@
 // middle TARGET_AHEAD_M ahead), the floor and the ceiling from where the sampler saw them (as in v0.13). Each carries a
 // breath of air up to about 16 kHz (`airDb`), because the HRTF tells height only in that band. Notes, intervals,
 // rhythm and levels stay v0.13's; with the setting off every plan is v0.13's exactly.
+//
+// The beacon (lane sonic-beacon, owner's complaint of 2026-11-10): with SonicPrefs.beacon on (absent or true) the target
+// hum's direction is folded into the front half circle (beyond 90 degrees from the nose it stays at the ear of its side,
+// src/cues/beacon.ts) and on course (within ON_COURSE_DEG) the hum is an octave higher, on the scale. Tempo, level and
+// elevation stay as they were; with the setting off every plan is that of b102ce6 exactly.
 import type { ActiveCue, CueEvent, CueId, FlightSample, LayerId, LessonLayers, MaterialClass, ObjectShape, Quat, SonicFrameInput, SonicObject, SonicPrefs, SonicWorld, ThemeDef, Timbre, Vec3 } from '../contract';
 import { LAYER_IDS } from '../contract';
 import { defaultPrefs } from '../prefs/prefs';
@@ -22,6 +27,7 @@ import { headingBasis, listenerBasis, worldToListener, type Basis } from '../sen
 import type { Hazard, SceneSample } from '../sense/types';
 import { applyCalm } from '../theme/calm';
 import { gateMelody, noteHz, noteHzAt } from '../theme/pitch';
+import { beaconBearing, beaconSideIldDb, DEMO_TARGET_ID, foldToFront } from './beacon';
 import { alignOffset, heightTones, isGate, referenceHeightM, targetHeightM, type HeightToneRule, type TargetTone } from './height';
 import { add, dot, length, normalize, quatConjugate, quatRotate, scale, sub, yawQuat } from '../util/vec';
 import {
@@ -34,6 +40,7 @@ import {
     expLerp,
     isUrgent,
     note,
+    topNote,
     openness,
     pulsePeriodMs,
     roomCode,
@@ -191,6 +198,12 @@ export const AIM_BY_VELOCITY_MPS = 1;
 export const GATE_MELODY_BASE = 5;
 /** How long a preview plays, s. */
 export const PREVIEW_S = 3;
+/**
+ * Lane sonic-beacon (decision 7): the preview of the target after the next one, after a gate's note: this long, s, and
+ * this many dB under the gate note. Estimates (the lead's design decision of stage 1), not measured.
+ */
+export const PREVIEW_NEXT_S = 0.4;
+export const PREVIEW_NEXT_DB = -10;
 /**
  * How long one play of a 'repeat-cue' lasts when the event gives no `durS`, s (M41-5). The runner gives every
  * play its length (lane s13-lessons, src/lesson/sounds.ts: 2.5 s for a continuous cue, 1.2 s for a one-off one)
@@ -360,6 +373,8 @@ export class CuePlanner {
     private baseTheme: ThemeDef;
     private effectiveTheme: ThemeDef;
     private prefsValue: SonicPrefs;
+    /** the id of the hum's target when it was on course in the frame before (review R9: two thresholds), else null */
+    private onCourseId: string | null = null;
     private layersValue: LessonLayers;
     private on: Set<LayerId>;
     private readonly sampler: SceneSampler;
@@ -462,7 +477,11 @@ export class CuePlanner {
             freeWay = this.freeWayNow(input, frame);
             if (freeWay !== null) requests.push(this.freeVoice(freeWay.side, `free:${freeWay.side}`, PRIORITY.free, freeWay.dir));
         }
-        if (this.on.has('target') && input.target !== null) requests.push(this.targetVoice(input.target, s, basis));
+        // lane sonic-beacon: with the beacon on the hum points where the host's runner says (input.beacon: a track point where
+        // the goal has no gate); a host or a recording without the field, or the beacon off, leaves it at the target
+        const hum = this.beacon && input.beacon !== undefined ? input.beacon : input.target;
+        // review R2: a module-0 scene's hum (the runner's demo zone) names its true direction, as a preview does
+        if (this.on.has('target') && hum !== null) requests.push(this.targetVoice(hum, s, basis, hum.id === DEMO_TARGET_ID));
         if (this.on.has('shape')) {
             const obj = this.shapeObject(input, s);
             if (obj !== null) {
@@ -520,6 +539,11 @@ export class CuePlanner {
         this.freeSide = null;
         this.freeLast = null;
         return null;
+    }
+
+    /** Lane sonic-beacon: the target hum folded to the front half circle, an octave up on course (SonicPrefs.beacon: absent or true). */
+    private get beacon(): boolean {
+        return this.prefsValue.beacon !== false;
     }
 
     /** Lane s13-elev: the cues of up and down also come from above or below (SonicPrefs.heightDirection: absent or true). */
@@ -629,7 +653,8 @@ export class CuePlanner {
         };
     }
 
-    private targetVoice(target: SonicObject, s: FlightSample, basis: Basis): Omit<VoicePlan, 'slot'> {
+    /** `trueDir`: a preview or a module-0 scene, which names a direction ("behind"): no fold, no octave, no side boost (review R2) */
+    private targetVoice(target: SonicObject, s: FlightSample, basis: Basis, trueDir = false): Omit<VoicePlan, 'slot'> {
         const theme = this.effectiveTheme;
         const p = theme.layers.target.params as Record<string, number>;
         const rule = { rateNearHz: p['rateNearHz'] as number, rateFarHz: p['rateFarHz'] as number, nearM: p['nearM'] as number, farM: p['farM'] as number, roughMax: p['roughMax'] as number, missFullM: p['missFullM'] as number };
@@ -642,16 +667,27 @@ export class CuePlanner {
         const rough = targetRoughness(aimMissM(toWorld, travel), distance, rule);
         const beat = targetBeat(rough);
         const rate = targetRateHz(distance, rule);
-        const n = note(theme.scale, p['humStep'] as number, this.pitch('target'), elevationSteps(dirL[1], this.prefsValue.heightPolarity));
+        const bearing = this.beacon && !trueDir ? beaconBearing(dirL, this.onCourseId === target.id) : null;
+        if (!trueDir) this.onCourseId = bearing !== null && bearing.onCourse ? target.id : null;
+        // on course: one octave up, as many scale steps as the scale has degrees; where that would pass the top of the
+        // scale (the pilot's pitch at its limit and the target above) one octave down instead, so the change is always
+        // exactly an octave (review R11, decision D17)
+        const off = note(theme.scale, p['humStep'] as number, this.pitch('target'), elevationSteps(dirL[1], this.prefsValue.heightPolarity));
+        const steps = theme.scale.steps.length;
+        const n = bearing === null || !bearing.onCourse ? off : off.index + steps <= topNote(theme.scale) ? note(theme.scale, off.index, steps) : note(theme.scale, off.index, -steps);
         const safety = theme.layers.safety.params as Record<string, number>;
         const dc = distanceCode(distance, { nearHz: 9000, farHz: 1400, farM: rule.farM, sendNear: 0.05, sendFar: 0.4, ildBoostDb: safety['ildBoostDb'] as number });
         const period = 1 / rate;
+        const dir = bearing === null ? dirL : foldToFront(dirL);
+        // off course the beacon adds a level difference between the ears (BEACON_SIDE_DB, check VL-B1): the HRTF alone
+        // gives this low hum under 2 dB within 30 degrees of the nose. Beacon off: as before
+        const ildDb = bearing !== null && !bearing.onCourse ? dc.ildDb + beaconSideIldDb(dir) : dc.ildDb;
         return {
             key: 'target',
             cue: 'target.hum',
             layer: 'target',
             priority: PRIORITY.target,
-            dir: dirL,
+            dir,
             distance,
             timbre: theme.layers.target.timbre,
             noteIndex: n.index,
@@ -661,7 +697,7 @@ export class CuePlanner {
             gainDb: dc.gainDb,
             lowpassHz: dc.lowpassHz,
             reverbSend: dc.reverbSend,
-            ildDb: dc.ildDb,
+            ildDb,
             dopplerCents: distance > 1e-6 ? dopplerCents(dot(s.vel, scale(toWorld, 1 / distance))) : 0,
             rough: 0,
             roughHz: 0,
@@ -862,7 +898,7 @@ export class CuePlanner {
             const distance = expLerp(20, 2.5, u);
             const sample = previewSample(p.dir, 0);
             const target: SonicObject = { id: 'preview', shape: { kind: 'zone', size: [1, 1, 1] }, pos: scale(p.dir, distance), quat: [1, 0, 0, 0], order: 0, solid: false, material: 'obstacle' };
-            const v = this.targetVoice(target, sample, headingBasis(0));
+            const v = this.targetVoice(target, sample, headingBasis(0), true);
             if (p.cue === 'target.off') {
                 const beat = targetBeat(0.9 * (this.effectiveTheme.layers.target.params['roughMax'] as number));
                 return { ...v, key, priority, cue: p.cue, beatHz: beat.hz, beatDepth: beat.depth };
@@ -922,6 +958,13 @@ export class CuePlanner {
                 push('target.note', 'target', PRIORITY.gateNote, 0, bright, melody[i] as number, (target['noteMs'] as number) / 1000, -3, null);
                 // a soft octave below gives the note body, never a new pitch class
                 push('target.note', 'target', PRIORITY.gateNote, 0, bright, (melody[i] as number) - 5, (target['noteMs'] as number) / 1000, -15, null);
+                // lane sonic-beacon (decision 7): after the gate note, one note of the hum from where the target after the next one
+                // is, folded to the front: "and then there". It is the hum's own sound (its id, timbre and note), so no new sound to
+                // name, and a frame that hears it already hears the hum (the replay's cue ids do not change)
+                if (this.beacon && e.nextDir !== undefined && e.nextDir !== null) {
+                    const dir = foldToFront(normalize(e.nextDir));
+                    push('target.hum', 'target', PRIORITY.gateNote, (target['noteMs'] as number) / 1000, theme.layers.target.timbre, target['humStep'] as number, PREVIEW_NEXT_S, -3 + PREVIEW_NEXT_DB, dir);
+                }
                 break;
             }
             case 'lap': {

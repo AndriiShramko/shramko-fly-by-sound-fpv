@@ -39,6 +39,8 @@ interface Job {
 const STEMS = ['safety', 'height', 'target', 'shape', 'room', 'motor'] as const;
 /** The gaps flight's stems (review E5): the layers tunnel-gaps sounds (no target, no shapes) and the motor. */
 const GAPS_STEMS = ['safety', 'height', 'room', 'motor'] as const;
+/** Lane sonic-beacon (S4): the stems of the beacon paths that can carry a side (the motor is the craft's own, centred). */
+const BEACON_STEMS = ['safety', 'height', 'target', 'shape', 'room'] as const;
 
 /**
  * Every render the checks need: the flights, their stems and the controls. The flights fly the simulator's default
@@ -70,6 +72,21 @@ export function jobs(): Job[] {
     for (const s of GAPS_STEMS) add(`gaps-soft-solo-${s}`, { scenario: 'gaps-flight', theme: 'soft', variant: null, solo: [s] });
     add('gaps-soft-motor-raw-60-solo-motor', { scenario: 'gaps-flight', theme: 'soft', variant: 'motor-raw-60', solo: ['motor'] });
     for (const craft of CRAFT_IDS) if (craft !== DEFAULT_CRAFT) add(`gaps-soft-solo-motor-${craft}`, { scenario: 'gaps-flight', theme: 'soft', variant: null, solo: ['motor'], craft });
+    // lane sonic-beacon (S4): the beacon ring (side, fold, on course, from afar) with its controls (no panner, the beacon
+    // off), the motor and the room tone it must sound over; the corridor and a tunnel flown along the track, each stem
+    // that can carry a side, and the previous lesson version without the layer target (VL-B1 to VL-B5)
+    add('beacon-ring-soft-solo-target', { scenario: 'beacon-ring', theme: 'soft', variant: null, solo: ['target'] });
+    add('beacon-ring-soft-dry-solo-target', { scenario: 'beacon-ring', theme: 'soft', variant: 'dry', solo: ['target'] });
+    add('beacon-ring-soft-beacon-off-solo-target', { scenario: 'beacon-ring', theme: 'soft', variant: 'beacon-off', solo: ['target'] });
+    add('beacon-ring-soft-solo-room-motor', { scenario: 'beacon-ring', theme: 'soft', variant: null, solo: ['room', 'motor'] });
+    for (const sc of ['beacon-corridor', 'beacon-tunnel'] as const) {
+        for (const variant of [null, 'no-target-layer'] as const) {
+            for (const s of BEACON_STEMS) add(`${sc}-soft${variant === null ? '' : `-${variant}`}-solo-${s}`, { scenario: sc, theme: 'soft', variant, solo: [s] });
+        }
+        // lane sonic-beacon (S5, review R4): flown off the line (nose 40 degrees off, 0.8 m aside), the target stem alone,
+        // with the true beacon and with the two wrong ones (mirrored, straight ahead) that VL-B6 must reject
+        for (const variant of ['off-line', 'off-line-mirror', 'off-line-ahead'] as const) add(`${sc}-soft-${variant}-solo-target`, { scenario: sc, theme: 'soft', variant, solo: ['target'] });
+    }
     return out;
 }
 

@@ -54,6 +54,7 @@
     "on": [
       "safety",
       "height",
+      "target",
       "room",
       "voice"
     ]
@@ -86,7 +87,7 @@
   "title": {
     "key": "lesson.tunnel-narrow.title"
   },
-  "version": 1,
+  "version": 2,
   "world": {
     "kind": "analytic",
     "spec": {

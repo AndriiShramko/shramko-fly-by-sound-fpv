@@ -1,11 +1,11 @@
 {
  "format": "shramko-listen-evidence/1",
- "key": "12ef49effe442391d82bd336e6c01ec681a9c8a31ee118ea48985bcede57a622",
+ "key": "6a519f49a1c9e959be764ba1f7f153052ecc39162474f3a970a2e1d129ce34d9",
  "inputs": {
-  "hash": "12ef49effe442391d82bd336e6c01ec681a9c8a31ee118ea48985bcede57a622",
-  "files": 127,
+  "hash": "6a519f49a1c9e959be764ba1f7f153052ecc39162474f3a970a2e1d129ce34d9",
+  "files": 128,
   "driver": 4,
-  "measure": 4,
+  "measure": 8,
   "chrome": "156.0.8078.80",
   "tools": {
    "python": "3.11.9",
@@ -15,7 +15,7 @@
    "pyloudnorm": "0.2.0"
   }
  },
- "date": "2026-11-12T12:34:50.155Z",
+ "date": "2026-11-12T21:46:19.161Z",
  "id": "VL-3-height",
  "claim": "in a hover lesson's band the height layer neither wobbles nor buzzes at any distance from the target (envelope modulation at most 10 % between 2 and 70 Hz, in the plain height tone between target notes and in each note), so it cannot pass for the out-of-band buzz (\"too high or too low\") or the target hum's off-aim beat (2 to 7 Hz); out of the band it buzzes (at least 30 % at the theme's 38 Hz) (control: the first v0.13 design, a steady target tone 6 dB under the height tone, beats in the band)",
  "thresholds": {

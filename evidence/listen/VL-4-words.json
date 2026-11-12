@@ -1,8 +1,8 @@
 {
  "format": "shramko-listen-evidence/1",
- "key": "58bf2ecfda35be38883e6db937858c86ca36d12f13fe0c7c030080826c5f592d",
+ "key": "7733fcb63394609bf61d3be9fcf9ead9c89bd23c6c92bde24de68cdf34e94ac7",
  "inputs": {
-  "hash": "58bf2ecfda35be38883e6db937858c86ca36d12f13fe0c7c030080826c5f592d",
+  "hash": "7733fcb63394609bf61d3be9fcf9ead9c89bd23c6c92bde24de68cdf34e94ac7",
   "files": 15,
   "version": 2,
   "voices": {
@@ -32,7 +32,7 @@
    "numpy": "2.4.6"
   }
  },
- "date": "2026-11-12T12:27:27.215Z",
+ "date": "2026-11-12T21:24:37.036Z",
  "id": "VL-4-words",
  "claim": "every line of the four locales, said by the local Windows voice of its language and transcribed by Whisper large-v3, has a word error rate (case and punctuation normalised) at most its language's bound, and every line that names a key is heard with the key's name as a word of its own; the Russian lines said by the English voice fail the bound, and v0.13's lines that name a key, said by their voices, lose a key in each of Spanish, Polish and Russian",
  "run": "pnpm listen:words",
@@ -42,11 +42,11 @@
  "languages": {
   "en": {
    "voice": "Microsoft David Desktop",
-   "lines": 535,
-   "words": 4118,
+   "lines": 538,
+   "words": 4211,
    "bound": 0.2,
-   "exact": 528,
-   "meanRate": 0.0011,
+   "exact": 530,
+   "meanRate": 0.0013,
    "maxRate": 0.1667,
    "over": [],
    "keys": {
@@ -170,11 +170,11 @@
   },
   "es": {
    "voice": "Microsoft Helena Desktop",
-   "lines": 535,
-   "words": 4168,
+   "lines": 538,
+   "words": 4254,
    "bound": 0.2,
-   "exact": 520,
-   "meanRate": 0.0029,
+   "exact": 523,
+   "meanRate": 0.0028,
    "maxRate": 0.2,
    "over": [],
    "keys": {
@@ -228,10 +228,10 @@
   },
   "pl": {
    "voice": "Microsoft Paulina Desktop",
-   "lines": 535,
-   "words": 3538,
+   "lines": 538,
+   "words": 3616,
    "bound": 0.2,
-   "exact": 525,
+   "exact": 528,
    "meanRate": 0.0024,
    "maxRate": 0.2,
    "over": [],
@@ -321,11 +321,11 @@
   },
   "ru": {
    "voice": "Microsoft Irina Desktop",
-   "lines": 535,
-   "words": 3362,
+   "lines": 538,
+   "words": 3436,
    "bound": 0.2,
-   "exact": 520,
-   "meanRate": 0.0031,
+   "exact": 521,
+   "meanRate": 0.0032,
    "maxRate": 0.2,
    "over": [],
    "keys": {
@@ -500,8 +500,8 @@
  "control": {
   "locale": "ru",
   "voice": "Microsoft David Desktop",
-  "lines": 535,
-  "overBound": 535,
+  "lines": 538,
+  "overBound": 538,
   "share": 1,
   "medianRate": 1,
   "fails": true
@@ -719,6 +719,14 @@
    "heard": "When something blocks the way ahead, a pair of quick notes repeats. Equal notes come from the free side, left or right. Notes moving like your high tone in a climb, the way is above. The other way, below.",
    "rawRate": 0.0256,
    "rate": 0
+  },
+  {
+   "locale": "en",
+   "key": "lesson.corridor.intro.5",
+   "text": "A low hum leads you along the way. It comes from the side to turn to, left or right. When you fly straight at it, it is an octave higher.",
+   "heard": "Alohum leads you along the way. It comes from the side to turn to, left or right. When you fly straight at it, it is an octave higher.",
+   "rawRate": 0.1,
+   "rate": 0.1
   },
   {
    "locale": "en",
@@ -1873,10 +1881,10 @@
   {
    "locale": "ru",
    "key": "cue.target.hum.glossary",
-   "text": "Низкий тёплый гул из центра следующих ворот. Лети на него. Чем ближе ворота, тем чаще он повторяется.",
-   "heard": "Низкий тёплый гол из центра следующих ворот Лети на него Чем ближе ворота, тем чаще он повторяется",
-   "rawRate": 0.0588,
-   "rate": 0
+   "text": "Низкий тёплый гул из центра следующих ворот, а в коридоре и тоннеле с пути впереди. Лети на него. Чем ближе цель, тем чаще он повторяется.",
+   "heard": "Низкий тёплый гол из центра следующих ворот, а в коридоре и тоннели с пути впереди Лети на него Чем ближе цель, тем чаще он повторяется",
+   "rawRate": 0.08,
+   "rate": 0.04
   },
   {
    "locale": "ru",
@@ -2052,6 +2060,14 @@
    "text": "В коридоре несколько этапов. Звук подскажет, когда ты закончишь каждый из них. Если коснёшься стены, вернёшься совсем немного назад.",
    "heard": "В коридоре несколько этапов Звук подскажет, когда ты закончишь каждый из них Если кознёшь со стены, вернёшься совсем немного назад",
    "rawRate": 0.1053,
+   "rate": 0
+  },
+  {
+   "locale": "ru",
+   "key": "lesson.corridor.intro.5",
+   "text": "Низкий гул ведёт тебя по пути. Он звучит с той стороны, куда нужно повернуть, слева или справа. Когда летишь прямо на него, он на октаву выше.",
+   "heard": "Низкий гол ведёт тебя по пути Он звучит с той стороны, куда нужно повернуть, слева или справа Когда летишь прямо на него, он на октаву выше",
+   "rawRate": 0.0385,
    "rate": 0
   },
   {
@@ -2279,6 +2295,22 @@
    "rate": 0,
    "keyName": "Z",
    "keyHeard": true
+  },
+  {
+   "locale": "ru",
+   "key": "menu.setting.beacon",
+   "text": "Гул цели показывает путь",
+   "heard": "Гол цели показывает путь",
+   "rawRate": 0.25,
+   "rate": 0
+  },
+  {
+   "locale": "ru",
+   "key": "menu.setting.beacon-what",
+   "text": "Включено: гул следующей цели звучит с её стороны, слева или справа, даже если она позади, и на октаву выше, когда летишь прямо на неё. Выключено: звучит оттуда, где цель, а в коридоре и тоннелях гула нет.",
+   "heard": "Включено, гул следующей цели звучит с её стороны, слева или справа, даже если она позади, и на октаву выше, когда летишь прямо на неё Выключено, звучит оттуда, где цель, а в коридоре и тонелях гула нет",
+   "rawRate": 0.0278,
+   "rate": 0.0278
   },
   {
    "locale": "ru",

@@ -1,11 +1,11 @@
 {
  "format": "shramko-listen-evidence/1",
- "key": "12ef49effe442391d82bd336e6c01ec681a9c8a31ee118ea48985bcede57a622",
+ "key": "6a519f49a1c9e959be764ba1f7f153052ecc39162474f3a970a2e1d129ce34d9",
  "inputs": {
-  "hash": "12ef49effe442391d82bd336e6c01ec681a9c8a31ee118ea48985bcede57a622",
-  "files": 127,
+  "hash": "6a519f49a1c9e959be764ba1f7f153052ecc39162474f3a970a2e1d129ce34d9",
+  "files": 128,
   "driver": 4,
-  "measure": 4,
+  "measure": 8,
   "chrome": "156.0.8078.80",
   "tools": {
    "python": "3.11.9",
@@ -15,7 +15,7 @@
    "pyloudnorm": "0.2.0"
   }
  },
- "date": "2026-11-12T12:34:50.155Z",
+ "date": "2026-11-12T21:46:19.161Z",
  "id": "VL-6-peak",
  "claim": "the true peak of what reaches the ears (the engine and the voice) is at most -1 dBTP in every theme, in the ring flight and in tunnel-gaps flown with the chime above and below, the ceiling and the floor and their breath of air (control: the v0.12 utterance volume 1)",
  "thresholds": {
@@ -30,17 +30,17 @@
     "soft": {
      "mixWithSpeechDbtp": -6.96,
      "engineOnlyDbtp": -10.33,
-     "engineLufs": -28.66
+     "engineLufs": -28.78
     },
     "clear": {
      "mixWithSpeechDbtp": -3.72,
      "engineOnlyDbtp": -11.28,
-     "engineLufs": -25.52
+     "engineLufs": -25.64
     },
     "race": {
      "mixWithSpeechDbtp": -6.19,
-     "engineOnlyDbtp": -13.55,
-     "engineLufs": -28.11
+     "engineOnlyDbtp": -13.49,
+     "engineLufs": -28.17
     }
    },
    "gaps": {

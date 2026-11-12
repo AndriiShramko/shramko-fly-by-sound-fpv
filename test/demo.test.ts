@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import { CuePlanner } from '../src/cues';
+import { defaultPrefs } from '../src/prefs';
 import type { CueEvent, LayerId, LessonLayers, SonicFrameInput, SpeechLine, ThemeDef } from '../src/contract';
 import { LAYER_IDS } from '../src/contract';
 import { attitudeFromQuat } from '../src/replay';
@@ -205,6 +207,26 @@ async function run(host: DemoHost, t: number, seconds: number, sticks: Sticks = 
 }
 
 describe('the demo host', () => {
+    it('lane sonic-beacon (review R7): in the corridor the frame carries the beacon of the runner, and the planner hums at it', async () => {
+        const f = fakeEngine(true);
+        const host = new DemoHost({ engine: f.engine, locale: 'en' });
+        host.open('corridor', 0);
+        let t = 0;
+        for (let i = 0; i < 120 && host.state().phase !== 'flying'; i++) {
+            f.finishLines();
+            t = await run(host, t, 1);
+        }
+        expect(host.state().phase).toBe('flying');
+        const from = f.updates.length;
+        t = await run(host, t, 2, stick({ pitch: 0.5 }));
+        const flying = f.updates.slice(from) as SonicFrameInput[];
+        expect(flying.length).toBeGreaterThan(60);
+        const withBeacon = flying.filter((u) => u.beacon !== undefined && u.beacon !== null && u.beacon.id.startsWith('beacon:'));
+        expect(withBeacon.length / flying.length).toBeGreaterThan(0.9);
+        const planner = new CuePlanner({ theme: getBuiltinTheme('soft'), prefs: defaultPrefs(), layers: getLesson('corridor').layers });
+        expect(planner.plan(withBeacon.at(-1) as SonicFrameInput).voices.some((v) => v.cue === 'target.hum')).toBe(true);
+    });
+
     it('opens a lesson: layers set, the task said line by line with each named sound three times after its line, the attempt starts when the speech queue runs empty', async () => {
         const f = fakeEngine(true);
         const host = new DemoHost({ engine: f.engine, locale: 'en' });

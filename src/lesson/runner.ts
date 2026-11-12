@@ -103,6 +103,7 @@ import { getLesson, isShippedLesson, lessonAfter, lessonPaths } from './library'
 import { APPROACHES, GAME_SCENE_S, isGlossary, NARRATED_SCENE_S, playS, REPEAT_GAP_S, REPEAT_PLAYS, SHAPE_ORDER } from './sounds';
 import { lessonTrack, yawOf, type LessonTrack, type TrackPoint } from './track';
 import { headingBasis, worldToListener } from '../sense/frame';
+import { beaconPointIndex, DEMO_TARGET_ID, lineClear, trackCorners } from '../cues/beacon';
 
 // ------------------------------------------------------------------ host interface
 
@@ -471,6 +472,8 @@ class Runner implements LessonSession {
     private lastPraise = -1;
     // direction: the track (built once the world is known), since when the craft flies against it, the last warnings
     private trackValue: LessonTrack | null | undefined = undefined;
+    /** the track's positions and corner indices for beaconTarget(), built once (the track never changes; review R12) */
+    private beaconTrackValue: { readonly positions: readonly Vec3[]; readonly corners: ReadonlySet<number> } | null = null;
     private backSince: number | null = null;
     private lastWrongWay = -Infinity;
     private lastWrongSide = -Infinity;
@@ -921,7 +924,10 @@ class Runner implements LessonSession {
                 this.lastGate = gate;
                 this.legFlown = false;
                 this.emit({ t: at, kind: 'gate', gateId: gate.id, index, missM: Math.round(missM * 1000) / 1000 });
-                this.actions.push({ kind: 'cue', event: { kind: 'gate', index, of } });
+                // lane sonic-beacon: where the target after the next one is (the planner previews the hum from there)
+                const after = this.tracker?.targetAfter?.() ?? null;
+                const nextDir = after === null ? null : this.toListener(sub(after.pos, this.prev?.pos ?? gate.pos));
+                this.actions.push({ kind: 'cue', event: nextDir === null ? { kind: 'gate', index, of } : { kind: 'gate', index, of, nextDir } });
                 if (lapDone) this.actions.push({ kind: 'cue', event: { kind: 'lap' } });
             },
             // a 'track-end' goal: the furthest point passed is the track's last (the world's list, else the lesson's checkpoints)
@@ -1968,6 +1974,43 @@ class Runner implements LessonSession {
         return this.phaseValue === 'between' ? this.firstTarget() : null;
     }
 
+    /**
+     * Lane sonic-beacon (decision 5): where the target hum points. The goal's gate or zone (target()) when it has one;
+     * else the next point of the lesson's track (the world's checkpoints, else the lesson's, else the course's gates)
+     * after the last one passed: the next corner, or the first point at least BEACON_AHEAD_M ahead (beaconPointIndex),
+     * so it never calls through a wall. A 'track-end' goal, the corridor and the tunnels get their beacon this way.
+     * Between attempts the track's first point, as target() keeps the first target sounding (M41-10).
+     */
+    beaconTarget(): SonicObject | null {
+        const target = this.target();
+        if (target !== null || this.ears || this.left) return target;
+        if (this.phaseValue !== 'flying' && this.phaseValue !== 'between') return null;
+        // review R1: only a goal flown along the track ('track-end', 'fly-distance') takes the track's point; any other
+        // goal without a target (a shape question, a height, a turn) stays silent as before the lane, so lessons whose
+        // version did not change sound and replay as they did (shapes-cube's question after its cube)
+        const goal = this.phaseValue === 'flying' ? this.tracker?.goal : this.lesson.goals[0];
+        if (goal === undefined || (goal.kind !== 'track-end' && goal.kind !== 'fly-distance')) return null;
+        const track = this.track();
+        if (track === null) return null;
+        const passed = this.phaseValue === 'flying' ? this.passedPoint : null;
+        const pos = this.prev?.pos ?? this.startPose(Math.max(this.attemptNo, 1)).pos;
+        const sdf = (this.worldRef as { sdf?: (x: number, y: number, z: number) => number } | null)?.sdf;
+        if (this.beaconTrackValue === null) {
+            const positions = track.points.map((p) => p.pos);
+            this.beaconTrackValue = { positions, corners: new Set(trackCorners(positions)) };
+        }
+        const i = beaconPointIndex(
+            this.beaconTrackValue.positions,
+            passed === null ? 0 : passed.index + 1,
+            pos,
+            typeof sdf === 'function' ? (a, b) => lineClear(sdf, a, b) : undefined,
+            this.beaconTrackValue.corners
+        );
+        const point = i === null ? undefined : track.points[i];
+        if (point === undefined) return null;
+        return { id: `beacon:${point.id}`, shape: { kind: 'zone', size: [1, 1, 1] }, pos: point.pos, quat: yawQuat(yawOf(point.dir)), order: null, solid: false, material: 'obstacle' };
+    }
+
     /** What the first goal of an attempt sounds as its target (null for a goal without one: a height, a distance). */
     private firstTarget(): SonicObject | null {
         const goal = this.lesson.goals[0];
@@ -2078,7 +2121,7 @@ export function demoFrame(scene: DemoScene, age: number, t: number, cache: Map<s
     }
     // a hum (target.hum and anything else): a goal zone in an empty space
     const gap = (x: number): number => sceneDistance(scene.moving, 14, 3, 6, x);
-    const target: SonicObject = { id: 'demo', shape: { kind: 'zone', size: [1, 1, 1] }, pos: [scene.dir[0] * 14, 1.5 + scene.dir[1] * 14, scene.dir[2] * 14], quat: [1, 0, 0, 0], order: 0, solid: false, material: 'obstacle' };
+    const target: SonicObject = { id: DEMO_TARGET_ID, shape: { kind: 'zone', size: [1, 1, 1] }, pos: [scene.dir[0] * 14, 1.5 + scene.dir[1] * 14, scene.dir[2] * 14], quat: [1, 0, 0, 0], order: 0, solid: false, material: 'obstacle' };
     const at = (x: number): Vec3 => {
         const travelled = 14 - gap(x);
         return [scene.dir[0] * travelled, 1.5 + scene.dir[1] * travelled, scene.dir[2] * travelled];

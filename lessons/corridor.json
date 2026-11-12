@@ -108,6 +108,15 @@
       "key": "lesson.corridor.intro.4"
     },
     {
+      "cues": [
+        {
+          "cue": "target.hum",
+          "from": "left"
+        }
+      ],
+      "key": "lesson.corridor.intro.5"
+    },
+    {
       "key": "lesson.corridor.goal.1"
     },
     {
@@ -120,6 +129,7 @@
     "on": [
       "safety",
       "height",
+      "target",
       "room",
       "voice"
     ]
@@ -152,7 +162,7 @@
   "title": {
     "key": "lesson.corridor.title"
   },
-  "version": 2,
+  "version": 3,
   "world": {
     "kind": "analytic",
     "spec": {

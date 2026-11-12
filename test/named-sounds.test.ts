@@ -19,8 +19,10 @@ import { getBuiltinTheme } from '../src/theme';
 import { ScriptedPilot } from './helpers/pilot';
 import { playLesson } from './helpers/truth';
 
-/** The sounds whose naming is held here: the two that sound with no line of speech to tell what they are. */
-const WATCHED: readonly CueId[] = ['height.target', 'safety.free'];
+/** The sounds whose naming is held here: the three that sound with no line of speech to tell what they are. The target
+ * hum joined them with the beacon (lane sonic-beacon, review R3): it now leads the way in the corridor and the tunnels,
+ * lessons 4 and 5 of the fast path, before rings-first. */
+const WATCHED: readonly CueId[] = ['height.target', 'safety.free', 'target.hum'];
 
 /** The cue ids a lesson names: the cues of its intro lines (each played three times after its line) and of its name-cues goals. */
 function namedBy(l: LessonDef): Set<string> {
@@ -42,7 +44,7 @@ function heard(id: string): Set<string> {
         tick();
         for (const a of p.actions.slice(seen)) if (a.kind === 'cue') planner.cue(a.event);
         seen = p.actions.length;
-        const plan = planner.plan({ sample: p.sample(false), world: p.world, target: p.run.target(), floorY: 0 });
+        const plan = planner.plan({ sample: p.sample(false), world: p.world, target: p.run.target(), beacon: p.run.beaconTarget?.() ?? null, floorY: 0 });
         if (p.run.phase !== 'flying') return;
         for (const c of plan.cues) {
             const cue = c.id.split(':')[0] as string;
@@ -71,9 +73,20 @@ describe('a sound heard while flying is named where the pilot first hears it (re
             }
         }
         // the test sees each sound where it first sounds: the target note in hover-height, the fast path's first flight,
-        // and the open-way chime in the corridor
-        expect(where).toEqual({ 'height.target': 'hover-height', 'safety.free': 'corridor' });
+        // and the open-way chime and the target hum (the beacon along the track) in the corridor
+        expect(where).toEqual({ 'height.target': 'hover-height', 'safety.free': 'corridor', 'target.hum': 'corridor' });
     }, 120000);
+
+    it('the corridor names the beacon hum in its own line, played from the left, before the goal (lane sonic-beacon, review R3)', () => {
+        const keys = getLesson('corridor').intro.map((x) => x.key);
+        expect(cuesOf(getLesson('corridor'), 'lesson.corridor.intro.5')).toEqual([{ cue: 'target.hum', from: 'left' }]);
+        expect(keys.indexOf('lesson.corridor.intro.5')).toBeLessThan(keys.indexOf('lesson.corridor.goal.1'));
+        // the corridor comes before every tunnel in both paths, so its line names the hum for them too
+        for (const path of [lessonPaths().fast, lessonPaths().full]) {
+            const c = path.indexOf('corridor');
+            for (const [i, id] of path.entries()) if (id.startsWith('tunnel-')) expect(i, id).toBeGreaterThan(c);
+        }
+    });
 
     it('the full path names them all in its second lesson, the glossary', () => {
         const full = lessonPaths().full;

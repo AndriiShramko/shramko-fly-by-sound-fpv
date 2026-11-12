@@ -208,7 +208,8 @@ describe('lesson format 2 and the files of format 1 (v0.12)', () => {
         // lane s13-elev changed two lessons after v0.13's main (16c01a1), which the simulator pins: tunnel-gaps' intro.3
         // plays the chime above and below, walls-pillar names its chime in a line of its own; a recording of that build
         // is told apart as older, as v0.12's are
-        const CHANGED_AFTER_V013: Readonly<Record<string, number>> = { 'tunnel-gaps': 2, 'walls-pillar': 3, 'ears-headphones': 3, 'ears-glossary': 3, 'ears-game': 3, 'shapes-cube': 3 };
+        // lane sonic-beacon: the corridor and the six tunnels have the target layer on (the beacon), each a new version
+        const CHANGED_AFTER_V013: Readonly<Record<string, number>> = { corridor: 3, 'tunnel-wide': 2, 'tunnel-narrow': 2, 'tunnel-narrower': 2, 'tunnel-bends': 2, 'tunnel-long': 2, 'tunnel-gaps': 3, 'walls-pillar': 3, 'ears-headphones': 3, 'ears-glossary': 3, 'ears-game': 3, 'shapes-cube': 3 };
         for (const id of SHIPPED_LESSON_IDS) {
             const l = getLesson(id);
             expect(current(id)['format'], id).toBe('shramko-sonic-lesson/2');

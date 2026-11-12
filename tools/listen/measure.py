@@ -21,7 +21,7 @@ import pyloudnorm as pyln
 import soundfile as sf
 from scipy.signal import hilbert, resample_poly
 
-MEASURE_VERSION = 4
+MEASURE_VERSION = 8
 RATE = 48000
 
 # thresholds (kind: standard, calibrated on controls, proposal)
@@ -657,6 +657,412 @@ def check_elevation(d):
     }
 
 
+# ------------------------------------------------------------------ lane sonic-beacon (S4): the target beacon
+
+BEACON_SIDE_MIN_DB = 2.0  # the task's bound: the level difference between the ears says the side by at least 2 dB
+BEACON_FOLD_MAX_DB = 1.0  # the task's bound: beyond 90 degrees the ears hear what they hear at 90, within 1 dB
+BEACON_FOLD_MAX_US = 20.0  # and within 20 microseconds
+BEACON_OCTAVE_CENTS = 1200.0
+BEACON_OCTAVE_TOL_CENTS = 5.0
+BEACON_COVER_MIN = 0.95  # the task's bound: 95 % of the one-second windows carry a direction
+BEACON_FAR_MIN_DB = 6.0  # the task's bound, as MOTOR_MARGIN_MIN_DB: the hum's band 6 dB over motor and room at 40 m
+BEACON_WIN_S = 1.0  # the measured last part of a near pose's hold (test-audio/page/listen.ts BEACON_POSES)
+BEACON_FAR_WIN_S = 2.0  # of a far pose's hold
+BEACON_SOUNDING_DB = -70.0  # estimate: a stem below this rms in a window is silent there (the rig's renders have no noise floor)
+BEACON_PATHS = ['beacon-corridor', 'beacon-tunnel']
+BEACON_STEMS = ['safety', 'height', 'target', 'shape', 'room']
+
+
+def pose_windows(meta, win_s, far):
+    """{pose index: (azDeg, distM, t0, t1)}: the last win_s of each pose's hold, from the truth rows."""
+    spans = {}
+    for row in meta['truth']:
+        p = row.get('beaconPose')
+        if not p:
+            continue
+        k = p['k']
+        a = spans.setdefault(k, [p['azDeg'], p['distM'], row['t'], row['t']])
+        a[3] = row['t']
+    out = {}
+    for k, (az, dist, t0, t1) in spans.items():
+        is_far = dist != 10
+        if is_far != far:
+            continue
+        end = t1 + 1.0 / 60
+        out[k] = (az, dist, max(t0, end - win_s), end)
+    return out
+
+
+def ild_db(x, t0, t1):
+    i, j = int(t0 * RATE), int(t1 * RATE)
+    return db(rms(x[i:j, 0])) - db(rms(x[i:j, 1]))
+
+
+def itd_us(x, t0, t1, max_us=1200.0):
+    """Lag of the right ear behind the left, microseconds (+: the left ear leads, a source on the left), by the peak
+    of the cross-correlation within +-max_us, parabolic interpolation."""
+    i, j = int(t0 * RATE), int(t1 * RATE)
+    l = x[i:j, 0].astype(np.float64)
+    r = x[i:j, 1].astype(np.float64)
+    m = int(max_us * 1e-6 * RATE) + 1
+    n = len(l)
+    cc = np.array([np.dot(l[max(0, -k) : n - max(0, k)], r[max(0, k) : n - max(0, -k)]) for k in range(-m, m + 1)])
+    p = int(np.argmax(cc))
+    delta = 0.0
+    if 0 < p < len(cc) - 1:
+        a, b, c = cc[p - 1], cc[p], cc[p + 1]
+        den = a - 2 * b + c
+        delta = 0.5 * (a - c) / den if den != 0 else 0.0
+    return float((p - m + delta) / RATE * 1e6)
+
+
+def ring(d, job):
+    x, meta = load(d, job)
+    near = pose_windows(meta, BEACON_WIN_S, far=False)
+    return x, meta, {(az, dist): (t0, t1) for (az, dist, t0, t1) in near.values()}
+
+
+def check_beacon_side(d):
+    """VL-B1: the hum alone, the target every 20 degrees from 10 to 170 on both sides at 10 m: the louder ear is the
+    target's side at every azimuth, by at least 2 dB. The planner adds BEACON_SIDE_DB (2 dB) between the ears off course,
+    so the bound is met by added gain on top of the HRTF. Control (review R5 of the lane): the beacon off at 10 and 30
+    degrees, the HRTF alone (0.55 to 1.62 dB measured before the gain), must miss the bound; the HRTF panner bypassed is
+    kept as an extra row (it leaves the added 2 dB alone, so it sits on the bound and decides nothing)."""
+    def measure(job, azs=(10, 30, 50, 70, 90, 110, 130, 150, 170)):
+        x, _, w = ring(d, job)
+        rows = []
+        for az in azs:
+            for s in (1, -1):
+                t0, t1 = w[(s * az, 10)]
+                ild = ild_db(x, t0, t1)  # left over right: + means the left ear is louder
+                ok = (ild <= -BEACON_SIDE_MIN_DB) if s > 0 else (ild >= BEACON_SIDE_MIN_DB)
+                rows.append({'azDeg': s * az, 'ildLeftOverRightDb': round(ild, 2), 'ok': ok})
+        return rows
+    shipped = measure('beacon-ring-soft-solo-target')
+    control = measure('beacon-ring-soft-beacon-off-solo-target', (10, 30))
+    bypassed = measure('beacon-ring-soft-dry-solo-target')
+    ok = all(r['ok'] for r in shipped)
+    ctrl_fails = not all(r['ok'] for r in control)
+    return {
+        'id': 'VL-B1-side',
+        'claim': 'the target hum alone through Chrome\'s HRTF, the target at 10 m every 20 degrees from 10 to 170 on both sides of the nose: at every azimuth the ear on the target\'s side is louder, by at least 2 dB, which the planner meets by an added level difference of 2 dB off course (BEACON_SIDE_DB) on top of the HRTF; whether 2 dB at 165 Hz is heard as a side by people is not measured here (control: the beacon off at 10 and 30 degrees, the HRTF alone)',
+        'thresholds': {'sideMinDb': {'value': BEACON_SIDE_MIN_DB, 'kind': 'task bound (lane sonic-beacon S4)'}},
+        'measured': {'worstSideDb': round(min(abs(r['ildLeftOverRightDb']) for r in shipped), 2), 'rows': shipped},
+        'controls': [
+            {'name': 'the beacon off at 10 and 30 degrees (the HRTF alone, no added level difference)', 'measured': {'worstSideDb': round(min(abs(r['ildLeftOverRightDb']) for r in control), 2), 'rows': control}, 'ok': ctrl_fails},
+            {'name': 'extra row, decides nothing: the HRTF panner bypassed (EngineTestHooks.bypassPanner), the added 2 dB alone', 'measured': {'worstSideDb': round(min(abs(r['ildLeftOverRightDb']) for r in bypassed), 2), 'rows': bypassed}, 'ok': None},
+        ],
+        'valid': ctrl_fails,
+        'pass': ok and ctrl_fails,
+    }
+
+
+def check_beacon_fold(d):
+    """VL-B2: targets at 120, 150 and 170 degrees give the ears what a target at 90 on that side gives: level
+    difference within 1 dB, time difference within 20 microseconds. Control: the beacon off (the true HRTF behind)."""
+    def measure(job):
+        x, _, w = ring(d, job)
+        rows = []
+        for s in (1, -1):
+            r0, r1 = w[(s * 90, 10)]
+            ild90, itd90 = ild_db(x, r0, r1), itd_us(x, r0, r1)
+            for az in (120, 150, 170):
+                t0, t1 = w[(s * az, 10)]
+                dl = ild_db(x, t0, t1) - ild90
+                dt = itd_us(x, t0, t1) - itd90
+                rows.append({'azDeg': s * az, 'ildDiffDb': round(dl, 3), 'itdDiffUs': round(dt, 2), 'ok': abs(dl) <= BEACON_FOLD_MAX_DB and abs(dt) <= BEACON_FOLD_MAX_US})
+            rows.append({'azDeg': s * 90, 'ildDb': round(ild90, 2), 'itdUs': round(itd90, 1)})
+        return rows
+    shipped = measure('beacon-ring-soft-solo-target')
+    control = measure('beacon-ring-soft-beacon-off-solo-target')
+    ok = all(r.get('ok', True) for r in shipped)
+    ctrl_fails = not all(r.get('ok', True) for r in control)
+    return {
+        'id': 'VL-B2-fold',
+        'claim': 'the target hum alone through Chrome\'s HRTF: a target at 120, 150 or 170 degrees from the nose sounds at the ears as one at 90 degrees on its side (level difference within 1 dB, time difference within 20 us): nothing depends on hearing behind (control: SonicPrefs.beacon false, the true direction behind)',
+        'thresholds': {'foldMaxDb': {'value': BEACON_FOLD_MAX_DB, 'kind': 'task bound'}, 'foldMaxUs': {'value': BEACON_FOLD_MAX_US, 'kind': 'task bound'}},
+        'measured': {'rows': shipped},
+        'controls': [{'name': 'the beacon off (SonicPrefs.beacon false): the hum from its true direction behind', 'measured': {'rows': control}, 'ok': ctrl_fails}],
+        'valid': ctrl_fails,
+        'pass': ok and ctrl_fails,
+    }
+
+
+def hum_pitch(x, meta, t0, t1):
+    """Median measured pitch of the target stem over the hops where a note sounds, between 0.8 and 1.25 times the
+    lowest and highest note the plan gives the hum in the window (so the track takes the note, not a partial)."""
+    hz = [row['hum']['hz'] for row in meta['truth'] if row.get('hum') and t0 <= row['t'] < t1]
+    if not hz:
+        return None, None
+    mono = x[:, 0] + x[:, 1]
+    return note_pitch(mono, t0, t1, 0.8 * min(hz), 1.25 * max(hz)), float(np.median(hz))
+
+
+def note_pitch(mono, t0, t1, fmin, fmax, pad=1 << 19):
+    """Median pitch of the notes sounding between t0 and t1, one estimate per note: the note's own samples (found on
+    the 5 ms envelope, 20 dB under the window's loudest), their middle 60 % under a Hann window of that length,
+    zero-padded to `pad` (0.09 Hz bins), the strongest peak between fmin and fmax with parabolic interpolation.
+    A fixed long window (pitch_track, n 16384) straddles the gaps between the hum's short notes, its peak is not the
+    Hann shape the interpolation assumes, and it read the 165 Hz hum 4 to 7 cents sharp (VL-B3, 2026-11-12)."""
+    i0, i1 = int(t0 * RATE), int(t1 * RATE)
+    seg = mono[i0:i1]
+    hop = RATE // 200
+    env = np.array([rms(seg[k : k + hop]) for k in range(0, len(seg) - hop + 1, hop)])
+    if env.size == 0 or env.max() <= 0:
+        return None
+    on = env > env.max() * 10 ** (-20 / 20)
+    freqs = np.fft.rfftfreq(pad, 1.0 / RATE)
+    lo, hi = int(np.searchsorted(freqs, fmin)), int(np.searchsorted(freqs, fmax))
+    out = []
+    k = 0
+    while k < len(on):
+        if not on[k]:
+            k += 1
+            continue
+        j = k
+        while j < len(on) and on[j]:
+            j += 1
+        a, b = k * hop, j * hop
+        k = j
+        if b - a < int(0.06 * RATE):
+            continue  # a note cut by the window's edge or a click: too short to read
+        cut = int(0.2 * (b - a))
+        part = seg[a + cut : b - cut]
+        spec = np.abs(np.fft.rfft(part * np.hanning(len(part)), pad))
+        m = lo + int(np.argmax(spec[lo:hi]))
+        p, q, r = (math.log(max(spec[m + d], 1e-20)) for d in (-1, 0, 1))
+        delta = 0.5 * (p - r) / (p - 2 * q + r) if (p - 2 * q + r) != 0 else 0.0
+        out.append((m + delta) * RATE / pad)
+    return float(np.median(out)) if out else None
+
+
+def check_beacon_octave(d):
+    """VL-B3: the hum at 0 and 5 degrees (on course) is an octave (1200 cents, within 5) above the hum's own note off
+    course, on both sides. Control: the octave off (SonicPrefs.beacon false).
+    The reference is the hum straight ahead with the beacon off, not the hum at 12 degrees as the task first put it:
+    at 12 degrees b102ce6's off-course roughness adds a second tone 4.8 Hz above at 0.55 of the level (rules.ts
+    targetBeat), and a 0.24 s note cannot part the two, so its read pitch wandered 163.4 to 165.4 Hz. Straight ahead
+    there is no beating, and the planner gives the hum the same note there with the beacon off as at 12 degrees with it
+    on (test/beacon.test.ts: humAt(off, 0).hz equals humAt(on, 12).hz)."""
+    rx, rmeta, rw = ring(d, 'beacon-ring-soft-beacon-off-solo-target')
+    ref, ref_plan = hum_pitch(rx, rmeta, *rw[(0, 10)])
+    def measure(job):
+        x, meta, w = ring(d, job)
+        rows = []
+        for s in (1, -1):
+            for az in (0, 5):
+                f, plan = hum_pitch(x, meta, *w[(s * az, 10)])
+                cents = 1200 * math.log2(f / ref) if f and ref else None
+                rows.append({'azDeg': s * az, 'vs': 'beacon off, 0 degrees', 'measuredHz': round(f, 3) if f else None, 'refHz': round(ref, 3) if ref else None, 'planHz': plan, 'refPlanHz': ref_plan, 'cents': round(cents, 2) if cents is not None else None, 'ok': cents is not None and abs(cents - BEACON_OCTAVE_CENTS) <= BEACON_OCTAVE_TOL_CENTS})
+        return rows
+    shipped = measure('beacon-ring-soft-solo-target')
+    control = measure('beacon-ring-soft-beacon-off-solo-target')
+    ok = all(r['ok'] for r in shipped)
+    ctrl_fails = not all(r['ok'] for r in control)
+    return {
+        'id': 'VL-B3-octave',
+        'claim': 'the target stem\'s measured pitch with the target at 0 and 5 degrees from the nose (on course) is 1200 cents (within 5) above the hum\'s off-course note (measured straight ahead with the beacon off, where no off-course beating blurs it), on both sides (control: the octave off, SonicPrefs.beacon false)',
+        'thresholds': {'octaveCents': {'value': BEACON_OCTAVE_CENTS, 'kind': 'design decision 3'}, 'toleranceCents': {'value': BEACON_OCTAVE_TOL_CENTS, 'kind': 'task bound'}},
+        'measured': {'rows': shipped},
+        'controls': [{'name': 'the octave off (SonicPrefs.beacon false)', 'measured': {'rows': control}, 'ok': ctrl_fails}],
+        'valid': ctrl_fails,
+        'pass': ok and ctrl_fails,
+    }
+
+
+def on_course(row):
+    h = row.get('hum')
+    if not h:
+        return False
+    x, _, z = h['dir']
+    return math.degrees(math.atan2(abs(x), -z)) <= 8.0  # src/cues/beacon.ts ON_COURSE_DEG
+
+
+def path_cover(d, path, variant):
+    """Share of the one-second windows after the still second in which some stem carries a side (|ILD| >= 2 dB while
+    it sounds), and the share in which a side or the on-course hum (the target stem sounds and the plan's hum is within
+    ON_COURSE_DEG of the nose for at least half the window) tells the way."""
+    stems = {}
+    meta = None
+    for s in BEACON_STEMS:
+        x, m = load(d, f'{path}-soft{variant}-solo-{s}')
+        stems[s] = x
+        meta = meta or m
+    n = min(len(x) for x in stems.values())
+    t_end = n / RATE
+    rows = []
+    t = 1.0
+    while t + BEACON_WIN_S <= t_end + 1e-9:
+        i, j = int(t * RATE), int((t + BEACON_WIN_S) * RATE)
+        sides = {}
+        sounding = {}
+        for s, x in stems.items():
+            lv = db(rms(x[i:j, :].reshape(-1)))
+            sounding[s] = lv > BEACON_SOUNDING_DB
+            if sounding[s]:
+                sides[s] = round(ild_db(x, t, t + BEACON_WIN_S), 2)
+        side = any(abs(v) >= BEACON_SIDE_MIN_DB for v in sides.values())
+        frames = [row for row in meta['truth'] if t <= row['t'] < t + BEACON_WIN_S]
+        course = sounding['target'] and frames and sum(on_course(r) for r in frames) >= 0.5 * len(frames)
+        rows.append({'t': round(t, 2), 'side': side, 'onCourse': bool(course), 'ildDb': sides})
+        t += BEACON_WIN_S
+    k = len(rows) or 1
+    return {
+        'windows': len(rows),
+        'sideShare': round(sum(r['side'] for r in rows) / k, 3),
+        'wayShare': round(sum(r['side'] or r['onCourse'] for r in rows) / k, 3),
+        'silentWindowsAt': [r['t'] for r in rows if not (r['side'] or r['onCourse'])],
+        'onCourseSharePlanFact': round(sum(r['onCourse'] and not r['side'] for r in rows) / k, 3),
+        'rows': rows,
+    }
+
+
+def check_beacon_cover(d):
+    """VL-B4: no silence about the way in a tunnel and the corridor: flown along the track with the nose along it, at
+    least 95 % of the one-second windows carry a side (some stem's level difference >= 2 dB) or the on-course hum.
+    Control: the lessons' previous versions, without the layer target (the owner's complaint of 2026-11-10 in numbers)."""
+    shipped = {p: path_cover(d, p, '') for p in BEACON_PATHS}
+    control = {p: path_cover(d, p, '-no-target-layer') for p in BEACON_PATHS}
+    ok = all(v['wayShare'] >= BEACON_COVER_MIN for v in shipped.values())
+    ctrl_fails = not all(v['wayShare'] >= BEACON_COVER_MIN for v in control.values())
+    brief = lambda m: {p: {k: v[k] for k in ('windows', 'sideShare', 'wayShare', 'onCourseSharePlanFact', 'silentWindowsAt')} for p, v in m.items()}
+    return {
+        'id': 'VL-B4-cover',
+        'claim': 'the corridor and tunnel-wide flown along their track at 2 m/s, nose along the track, every stem but the motor rendered alone: at least 95 % of the one-second windows tell the way, by a side (some stem\'s level difference between the ears at least 2 dB) or by the on-course hum (control: the lessons\' previous versions without the layer target). The on-course windows are a plan fact (the plan\'s hum within 8 degrees of the nose while the target stem sounds), not a measurement of the way: on this flight the beacon is on course by construction. That the hum tells the way off the line is VL-B6',
+        'thresholds': {'coverMin': {'value': BEACON_COVER_MIN, 'kind': 'task bound'}, 'sideMinDb': {'value': BEACON_SIDE_MIN_DB, 'kind': 'task bound'}, 'soundingDb': {'value': BEACON_SOUNDING_DB, 'kind': 'estimate'}},
+        'lessons': {'beacon-corridor': 'corridor v3', 'beacon-tunnel': 'tunnel-wide v2'},
+        'measured': brief(shipped),
+        'controls': [{'name': 'the previous lesson versions (corridor v2, tunnel-wide v1): the layer target off', 'measured': brief(control), 'ok': ctrl_fails}],
+        'detail': {'shipped': {p: v['rows'] for p, v in shipped.items()}},
+        'valid': ctrl_fails,
+        'pass': ok and ctrl_fails,
+    }
+
+
+BEACON_OFFLINE_WIN_S = 0.5  # estimate: two to four hum notes at the beacon's 3 to 10 m (tempo 1.2 to 8 Hz by distance)
+BEACON_OFFLINE_MIN_AZ_DEG = 15.0  # estimate: clearly off course (the planner leaves on course past 11 degrees)
+BEACON_OFFLINE_WAY_MIN = 0.9  # estimate: the share of the off-course windows whose measured side agrees with the truth
+BEACON_OFFLINE_MIN_WINDOWS = 8  # estimate: enough windows to read a share from
+
+
+def offline_way(d, path, variant):
+    """The off-line flight's half-second windows in which the true beacon is at least BEACON_OFFLINE_MIN_AZ_DEG off the
+    nose on one side in every frame and the target stem sounds; in each, whether the target stem's measured side agrees
+    with the truth: the ear on the beacon's side louder by at least BEACON_SIDE_MIN_DB and leading in time."""
+    x, meta = load(d, f'{path}-soft-{variant}-solo-target')
+    t_end = len(x) / RATE
+    rows = []
+    t = 1.5
+    while t + BEACON_OFFLINE_WIN_S <= t_end + 1e-9:
+        t1 = t + BEACON_OFFLINE_WIN_S
+        frames = [r for r in meta['truth'] if t <= r['t'] < t1]
+        az = [r.get('beaconAzDeg') for r in frames]
+        i, j = int(t * RATE), int(t1 * RATE)
+        if frames and all(a is not None and abs(a) >= BEACON_OFFLINE_MIN_AZ_DEG for a in az) and (all(a > 0 for a in az) or all(a < 0 for a in az)) and db(rms(x[i:j, :].reshape(-1))) > BEACON_SOUNDING_DB:
+            side = 1 if az[0] > 0 else -1  # + right
+            ild = ild_db(x, t, t1)  # left over right: + is a source on the left
+            itd = itd_us(x, t, t1)  # + the left ear leads: a source on the left
+            plan = [r['hum']['dir'][0] for r in frames if r.get('hum')]
+            rows.append({
+                't': round(t, 2), 'truthAzDeg': round(float(np.median(az)), 1), 'ildLeftOverRightDb': round(ild, 2), 'itdUs': round(itd, 1),
+                'levelAgrees': -side * ild >= BEACON_SIDE_MIN_DB, 'timeAgrees': -side * itd > 0,
+                'planSideAgrees': bool(plan) and sum(1 for v in plan if v * side > 0) >= 0.5 * len(plan),
+            })
+        t = t1
+    k = len(rows) or 1
+    agree = [r for r in rows if r['levelAgrees'] and r['timeAgrees']]
+    return {
+        'windows': len(rows),
+        'wayShare': round(len(agree) / k, 3),
+        'levelShare': round(sum(r['levelAgrees'] for r in rows) / k, 3),
+        'timeShare': round(sum(r['timeAgrees'] for r in rows) / k, 3),
+        'planSideSharePlanFact': round(sum(r['planSideAgrees'] for r in rows) / k, 3),
+        'truthAzDegRange': [min((r['truthAzDeg'] for r in rows), default=None), max((r['truthAzDeg'] for r in rows), default=None)],
+        'rows': rows,
+    }
+
+
+def check_beacon_off_line(d):
+    """VL-B6 (review R4): off the line the hum tells the way. The corridor and tunnel-wide flown along the track with the
+    nose held 40 degrees off it to the right and to the left in turn (3 s each) and the craft 0.8 m right of the line,
+    the target stem alone: in the half-second windows where the true beacon (the runner's rule) is at least 15 degrees
+    off the nose, the ear on its side is louder by at least 2 dB and leads in time, in at least 90 % of them. Controls
+    that must fail: the frame's beacon mirrored left-right about the nose, and fixed straight ahead."""
+    run = lambda v: {p: offline_way(d, p, v) for p in BEACON_PATHS}
+    passes = lambda m: all(v['windows'] >= BEACON_OFFLINE_MIN_WINDOWS and v['wayShare'] >= BEACON_OFFLINE_WAY_MIN for v in m.values())
+    shipped = run('off-line')
+    mirror = run('off-line-mirror')
+    ahead = run('off-line-ahead')
+    m_fails = not passes(mirror)
+    a_fails = not passes(ahead)
+    brief = lambda m: {p: {k: v[k] for k in ('windows', 'wayShare', 'levelShare', 'timeShare', 'planSideSharePlanFact', 'truthAzDegRange')} for p, v in m.items()}
+    return {
+        'id': 'VL-B6-off-line',
+        'claim': 'the corridor and tunnel-wide flown off the line (nose 40 degrees off the track to the right and to the left in turn, 3 s each, the craft 0.8 m right of the line), the target stem alone: in at least 90 % of the half-second windows where the true beacon is at least 15 degrees off the nose (and at least 8 such windows per flight), the ear on the beacon\'s side is louder by at least 2 dB and leads in time (controls: the beacon mirrored left-right, the beacon fixed straight ahead). The plan\'s side is reported as a plan fact beside the measure',
+        'thresholds': {
+            'wayMin': {'value': BEACON_OFFLINE_WAY_MIN, 'kind': 'estimate'},
+            'minWindows': {'value': BEACON_OFFLINE_MIN_WINDOWS, 'kind': 'estimate'},
+            'minAzDeg': {'value': BEACON_OFFLINE_MIN_AZ_DEG, 'kind': 'estimate'},
+            'windowS': {'value': BEACON_OFFLINE_WIN_S, 'kind': 'estimate'},
+            'sideMinDb': {'value': BEACON_SIDE_MIN_DB, 'kind': 'task bound'},
+        },
+        'lessons': {'beacon-corridor': 'corridor v3', 'beacon-tunnel': 'tunnel-wide v2'},
+        'measured': brief(shipped),
+        'controls': [
+            {'name': 'the frame\'s beacon mirrored left-right about the nose', 'measured': brief(mirror), 'ok': m_fails},
+            {'name': 'the frame\'s beacon fixed straight ahead of the nose at the true distance', 'measured': brief(ahead), 'ok': a_fails},
+        ],
+        'detail': {'shipped': {p: v['rows'] for p, v in shipped.items()}},
+        'valid': m_fails and a_fails,
+        'pass': passes(shipped) and m_fails and a_fails,
+    }
+
+
+def check_beacon_far(d):
+    """VL-B5: the target stem in its note's third octave over the motor and the room tone, at 5, 20 and 40 m (target
+    30 degrees right), over the hops where the hum's note sounds: at least 6 dB at 40 m. Control: the hum 20 dB down."""
+    xt, meta = load(d, 'beacon-ring-soft-solo-target')
+    xb, _ = load(d, 'beacon-ring-soft-solo-room-motor')
+    far = pose_windows(meta, BEACON_FAR_WIN_S, far=True)
+
+    def margin(gain_db):
+        rows = []
+        for az, dist, t0, t1 in sorted(far.values(), key=lambda v: v[1]):
+            hz = [row['hum']['hz'] for row in meta['truth'] if row.get('hum') and t0 <= row['t'] < t1]
+            f = float(np.median(hz))
+            mono_t = (xt[:, 0] + xt[:, 1]) * 10 ** (gain_db / 20)
+            mono_b = xb[:, 0] + xb[:, 1]
+            # the hops (10 ms) where the hum sounds: within 20 dB of its loudest hop in the window
+            hops = []
+            t = t0
+            while t + 0.01 <= t1:
+                hops.append((int(t * RATE), int((t + 0.01) * RATE)))
+                t += 0.01
+            lv = [rms(mono_t[a:b]) for a, b in hops]
+            top = max(lv)
+            keep = [h for h, v in zip(hops, lv) if v > top * 10 ** (-20 / 20)]
+            seg_t = np.concatenate([mono_t[a:b] for a, b in keep])
+            seg_b = np.concatenate([xb[a:b, 0] + xb[a:b, 1] for a, b in keep])
+            pt = band_power(seg_t, f * 2 ** (-1 / 6.0), f * 2 ** (1 / 6.0))
+            pb = band_power(seg_b, f * 2 ** (-1 / 6.0), f * 2 ** (1 / 6.0))
+            rows.append({'distM': dist, 'azDeg': az, 'humHz': round(f, 2), 'marginDb': round(10 * math.log10(max(pt, 1e-30) / max(pb, 1e-30)), 2), 'soundingS': round(len(keep) * 0.01, 2)})
+        return rows
+    shipped = margin(0.0)
+    control = margin(-20.0)
+    at40 = lambda rows: next(r['marginDb'] for r in rows if r['distM'] == 40)
+    ok = at40(shipped) >= BEACON_FAR_MIN_DB
+    ctrl_fails = at40(control) < BEACON_FAR_MIN_DB
+    return {
+        'id': 'VL-B5-far',
+        'claim': 'the target hum heard from afar: in the third octave of its note, over the hops where it sounds, the target stem is at least 6 dB over the motor (the default craft at output 0.5) and the room tone at 40 m (also measured at 5 and 20 m) (control: the hum 20 dB down)',
+        'thresholds': {'farMinDb': {'value': BEACON_FAR_MIN_DB, 'kind': 'task bound (as the v13 motor margin)'}},
+        'measured': {'rows': shipped},
+        'controls': [{'name': 'the hum 20 dB down (the target stem scaled before the measure)', 'measured': {'rows': control}, 'ok': ctrl_fails}],
+        'valid': ctrl_fails,
+        'pass': ok and ctrl_fails,
+    }
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--renders', required=True)
@@ -670,6 +1076,7 @@ def main():
     checks.append(check_motor(a.renders))
     checks.append(check_height_meanings(a.renders))
     checks.append(check_elevation(a.renders))
+    checks += [check_beacon_side(a.renders), check_beacon_fold(a.renders), check_beacon_octave(a.renders), check_beacon_cover(a.renders), check_beacon_far(a.renders), check_beacon_off_line(a.renders)]
     versions = {'python': sys.version.split()[0], 'numpy': np.__version__, 'scipy': __import__('scipy').__version__, 'soundfile': sf.__version__, 'pyloudnorm': getattr(pyln, '__version__', '0.2.0')}
     with open(a.out, 'w', encoding='utf8') as f:
         json.dump({'measure': MEASURE_VERSION, 'tools': versions, 'checks': checks}, f, indent=1)
