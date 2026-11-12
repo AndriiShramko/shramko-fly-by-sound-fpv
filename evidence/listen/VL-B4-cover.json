@@ -1,11 +1,11 @@
 {
  "format": "shramko-listen-evidence/1",
- "key": "fc981000197b4ae7ccfcd14884d2e93eccb582d0f13a7f14ca3c3a02578c6147",
+ "key": "7ce445985290bec30dbdef66e73aae37ec314ae0e9456689558319a25c332887",
  "inputs": {
-  "hash": "fc981000197b4ae7ccfcd14884d2e93eccb582d0f13a7f14ca3c3a02578c6147",
+  "hash": "7ce445985290bec30dbdef66e73aae37ec314ae0e9456689558319a25c332887",
   "files": 128,
   "driver": 4,
-  "measure": 6,
+  "measure": 7,
   "chrome": "156.0.8078.80",
   "tools": {
    "python": "3.11.9",
@@ -15,7 +15,7 @@
    "pyloudnorm": "0.2.0"
   }
  },
- "date": "2026-11-12T20:44:02.617Z",
+ "date": "2026-11-12T21:32:02.483Z",
  "id": "VL-B4-cover",
  "claim": "the corridor and tunnel-wide flown along their track at 2 m/s, nose along the track, every stem but the motor rendered alone: at least 95 % of the one-second windows tell the way, by a side (some stem's level difference between the ears at least 2 dB) or by the on-course hum (control: the lessons' previous versions without the layer target)",
  "thresholds": {
@@ -208,7 +208,7 @@
      "ildDb": {
       "safety": -3.29,
       "height": 0.02,
-      "target": 0.01,
+      "target": 0.11,
       "room": 0.18
      }
     },
@@ -230,7 +230,7 @@
      "ildDb": {
       "safety": -4.17,
       "height": 0.01,
-      "target": 2.19,
+      "target": 0.43,
       "room": 0.01
      }
     },
@@ -241,7 +241,7 @@
      "ildDb": {
       "safety": -5.84,
       "height": 0,
-      "target": -1.25,
+      "target": -0.28,
       "room": 0.03
      }
     },
@@ -252,7 +252,7 @@
      "ildDb": {
       "safety": 1.75,
       "height": 0.01,
-      "target": -2.63,
+      "target": -2.48,
       "room": 0.19
      }
     },

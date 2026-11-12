@@ -1,11 +1,11 @@
 {
  "format": "shramko-listen-evidence/1",
- "key": "fc981000197b4ae7ccfcd14884d2e93eccb582d0f13a7f14ca3c3a02578c6147",
+ "key": "7ce445985290bec30dbdef66e73aae37ec314ae0e9456689558319a25c332887",
  "inputs": {
-  "hash": "fc981000197b4ae7ccfcd14884d2e93eccb582d0f13a7f14ca3c3a02578c6147",
+  "hash": "7ce445985290bec30dbdef66e73aae37ec314ae0e9456689558319a25c332887",
   "files": 128,
   "driver": 4,
-  "measure": 6,
+  "measure": 7,
   "chrome": "156.0.8078.80",
   "tools": {
    "python": "3.11.9",
@@ -15,7 +15,7 @@
    "pyloudnorm": "0.2.0"
   }
  },
- "date": "2026-11-12T20:44:02.617Z",
+ "date": "2026-11-12T21:32:02.483Z",
  "id": "VL-0b",
  "claim": "the solo stems (safety, height, target, shape, room, motor) sum to the pre-chain mix",
  "thresholds": {
@@ -29,11 +29,11 @@
   }
  },
  "measured": {
-  "residualDb": -134.5,
+  "residualDb": -132.8,
   "stemRmsDb": {
    "safety": -41.7,
    "height": -36.9,
-   "target": -42.2,
+   "target": -42.5,
    "shape": -44.3,
    "room": -54.3,
    "motor": -45.9
@@ -43,7 +43,7 @@
   {
    "name": "the height stem left out of the sum",
    "measured": {
-    "residualDb": -3
+    "residualDb": -2.9
    },
    "ok": true
   }

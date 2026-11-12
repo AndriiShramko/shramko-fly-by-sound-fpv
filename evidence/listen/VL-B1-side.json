@@ -1,11 +1,11 @@
 {
  "format": "shramko-listen-evidence/1",
- "key": "fc981000197b4ae7ccfcd14884d2e93eccb582d0f13a7f14ca3c3a02578c6147",
+ "key": "7ce445985290bec30dbdef66e73aae37ec314ae0e9456689558319a25c332887",
  "inputs": {
-  "hash": "fc981000197b4ae7ccfcd14884d2e93eccb582d0f13a7f14ca3c3a02578c6147",
+  "hash": "7ce445985290bec30dbdef66e73aae37ec314ae0e9456689558319a25c332887",
   "files": 128,
   "driver": 4,
-  "measure": 6,
+  "measure": 7,
   "chrome": "156.0.8078.80",
   "tools": {
    "python": "3.11.9",
@@ -15,9 +15,9 @@
    "pyloudnorm": "0.2.0"
   }
  },
- "date": "2026-11-12T20:44:02.617Z",
+ "date": "2026-11-12T21:32:02.483Z",
  "id": "VL-B1-side",
- "claim": "the target hum alone through Chrome's HRTF, the target at 10 m every 20 degrees from 10 to 170 on both sides of the nose: at every azimuth the ear on the target's side is louder, by at least 2 dB (control: the HRTF panner bypassed)",
+ "claim": "the target hum alone through Chrome's HRTF, the target at 10 m every 20 degrees from 10 to 170 on both sides of the nose: at every azimuth the ear on the target's side is louder, by at least 2 dB, which the planner meets by an added level difference of 2 dB off course (BEACON_SIDE_DB) on top of the HRTF; whether 2 dB at 165 Hz is heard as a side by people is not measured here (control: the beacon off at 10 and 30 degrees, the HRTF alone)",
  "thresholds": {
   "sideMinDb": {
    "value": 2,
@@ -121,7 +121,36 @@
  },
  "controls": [
   {
-   "name": "the HRTF panner bypassed (EngineTestHooks.bypassPanner)",
+   "name": "the beacon off at 10 and 30 degrees (the HRTF alone, no added level difference)",
+   "measured": {
+    "worstSideDb": 0.55,
+    "rows": [
+     {
+      "azDeg": 10,
+      "ildLeftOverRightDb": -0.68,
+      "ok": false
+     },
+     {
+      "azDeg": -10,
+      "ildLeftOverRightDb": 0.55,
+      "ok": false
+     },
+     {
+      "azDeg": 30,
+      "ildLeftOverRightDb": -1.62,
+      "ok": false
+     },
+     {
+      "azDeg": -30,
+      "ildLeftOverRightDb": 1.53,
+      "ok": false
+     }
+    ]
+   },
+   "ok": true
+  },
+  {
+   "name": "extra row, decides nothing: the HRTF panner bypassed (EngineTestHooks.bypassPanner), the added 2 dB alone",
    "measured": {
     "worstSideDb": 1.93,
     "rows": [
@@ -217,7 +246,7 @@
      }
     ]
    },
-   "ok": true
+   "ok": null
   }
  ],
  "valid": true,

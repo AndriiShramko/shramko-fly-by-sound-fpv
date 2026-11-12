@@ -1,11 +1,11 @@
 {
  "format": "shramko-listen-evidence/1",
- "key": "fc981000197b4ae7ccfcd14884d2e93eccb582d0f13a7f14ca3c3a02578c6147",
+ "key": "7ce445985290bec30dbdef66e73aae37ec314ae0e9456689558319a25c332887",
  "inputs": {
-  "hash": "fc981000197b4ae7ccfcd14884d2e93eccb582d0f13a7f14ca3c3a02578c6147",
+  "hash": "7ce445985290bec30dbdef66e73aae37ec314ae0e9456689558319a25c332887",
   "files": 128,
   "driver": 4,
-  "measure": 6,
+  "measure": 7,
   "chrome": "156.0.8078.80",
   "tools": {
    "python": "3.11.9",
@@ -15,7 +15,7 @@
    "pyloudnorm": "0.2.0"
   }
  },
- "date": "2026-11-12T20:44:02.617Z",
+ "date": "2026-11-12T21:32:02.483Z",
  "id": "VL-2-motor",
  "claim": "every cue (safety, height, target, shape) is at least 6 dB over the motor in its own third-octave bands, where it sounds, for the simulator's default craft and the micro presets and a 5-inch quad, the slider at its default 15 %, in the ring flight and in tunnel-gaps flown (safety and height there: the chime above and below, the ceiling and the floor), and there the breath of air of those cues is 12 dB over the motor in every third octave from 4 to 16 kHz, as the motor bus is made to keep off the cues' highs (control: the v0.12 path, the raw motor at the slider at 60 %)",
  "thresholds": {
@@ -76,12 +76,12 @@
       "315",
       "500"
      ],
-     "minMarginDb": 35.2,
+     "minMarginDb": 35.1,
      "marginsDb": {
-      "157": 105.8,
-      "198": 93,
-      "315": 71.6,
-      "500": 35.2
+      "157": 105.3,
+      "198": 92.2,
+      "315": 72.2,
+      "500": 35.1
      }
     },
     "shape": {
@@ -142,9 +142,9 @@
      ],
      "minMarginDb": 46.4,
      "marginsDb": {
-      "157": 108.3,
-      "198": 95,
-      "315": 74.7,
+      "157": 107.8,
+      "198": 94.1,
+      "315": 75.3,
       "500": 46.4
      }
     },
@@ -206,9 +206,9 @@
      ],
      "minMarginDb": 45.6,
      "marginsDb": {
-      "157": 105.8,
-      "198": 96.1,
-      "315": 80,
+      "157": 105.4,
+      "198": 95.2,
+      "315": 80.6,
       "500": 45.6
      }
     },
@@ -270,9 +270,9 @@
      ],
      "minMarginDb": 49.4,
      "marginsDb": {
-      "157": 106.7,
-      "198": 94.9,
-      "315": 84.5,
+      "157": 106.2,
+      "198": 94,
+      "315": 85.2,
       "500": 49.4
      }
     },
@@ -334,9 +334,9 @@
      ],
      "minMarginDb": 42.7,
      "marginsDb": {
-      "157": 99.5,
-      "198": 77,
-      "315": 60.4,
+      "157": 99,
+      "198": 76.1,
+      "315": 61,
       "500": 42.7
      }
     },
@@ -365,26 +365,26 @@
    }
   },
   "level": {
-   "cuesLufs": -30.39,
+   "cuesLufs": -30.44,
    "pavo20pro-3s": {
     "motorLufs": -41.28,
-    "motorUnderCuesLu": 10.88
+    "motorUnderCuesLu": 10.84
    },
    "meteor65pro-1s": {
     "motorLufs": -40.89,
-    "motorUnderCuesLu": 10.49
+    "motorUnderCuesLu": 10.45
    },
    "air65-1s": {
     "motorLufs": -41.49,
-    "motorUnderCuesLu": 11.1
+    "motorUnderCuesLu": 11.06
    },
    "pavopico-2s": {
     "motorLufs": -42.85,
-    "motorUnderCuesLu": 12.46
+    "motorUnderCuesLu": 12.42
    },
    "five-inch": {
     "motorLufs": -43.99,
-    "motorUnderCuesLu": 13.6
+    "motorUnderCuesLu": 13.56
    },
    "rawMotor60Lufs": -35.7
   },
@@ -409,7 +409,7 @@
       "minMarginDb": 41.7,
       "marginsDb": {
        "125": 101.1,
-       "157": 108.7,
+       "157": 108.8,
        "198": 105.9,
        "315": 99.1,
        "397": 84.9,
@@ -687,9 +687,9 @@
      ],
      "minMarginDb": 1.9,
      "marginsDb": {
-      "157": 50.1,
-      "198": 37.9,
-      "315": 26.5,
+      "157": 49.7,
+      "198": 37,
+      "315": 27.1,
       "500": 1.9
      }
     },
