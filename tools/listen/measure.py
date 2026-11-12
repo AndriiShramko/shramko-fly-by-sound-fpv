@@ -21,7 +21,7 @@ import pyloudnorm as pyln
 import soundfile as sf
 from scipy.signal import hilbert, resample_poly
 
-MEASURE_VERSION = 7
+MEASURE_VERSION = 8
 RATE = 48000
 
 # thresholds (kind: standard, calibrated on controls, proposal)
@@ -912,6 +912,7 @@ def path_cover(d, path, variant):
         'sideShare': round(sum(r['side'] for r in rows) / k, 3),
         'wayShare': round(sum(r['side'] or r['onCourse'] for r in rows) / k, 3),
         'silentWindowsAt': [r['t'] for r in rows if not (r['side'] or r['onCourse'])],
+        'onCourseSharePlanFact': round(sum(r['onCourse'] and not r['side'] for r in rows) / k, 3),
         'rows': rows,
     }
 
@@ -924,10 +925,10 @@ def check_beacon_cover(d):
     control = {p: path_cover(d, p, '-no-target-layer') for p in BEACON_PATHS}
     ok = all(v['wayShare'] >= BEACON_COVER_MIN for v in shipped.values())
     ctrl_fails = not all(v['wayShare'] >= BEACON_COVER_MIN for v in control.values())
-    brief = lambda m: {p: {k: v[k] for k in ('windows', 'sideShare', 'wayShare', 'silentWindowsAt')} for p, v in m.items()}
+    brief = lambda m: {p: {k: v[k] for k in ('windows', 'sideShare', 'wayShare', 'onCourseSharePlanFact', 'silentWindowsAt')} for p, v in m.items()}
     return {
         'id': 'VL-B4-cover',
-        'claim': 'the corridor and tunnel-wide flown along their track at 2 m/s, nose along the track, every stem but the motor rendered alone: at least 95 % of the one-second windows tell the way, by a side (some stem\'s level difference between the ears at least 2 dB) or by the on-course hum (control: the lessons\' previous versions without the layer target)',
+        'claim': 'the corridor and tunnel-wide flown along their track at 2 m/s, nose along the track, every stem but the motor rendered alone: at least 95 % of the one-second windows tell the way, by a side (some stem\'s level difference between the ears at least 2 dB) or by the on-course hum (control: the lessons\' previous versions without the layer target). The on-course windows are a plan fact (the plan\'s hum within 8 degrees of the nose while the target stem sounds), not a measurement of the way: on this flight the beacon is on course by construction. That the hum tells the way off the line is VL-B6',
         'thresholds': {'coverMin': {'value': BEACON_COVER_MIN, 'kind': 'task bound'}, 'sideMinDb': {'value': BEACON_SIDE_MIN_DB, 'kind': 'task bound'}, 'soundingDb': {'value': BEACON_SOUNDING_DB, 'kind': 'estimate'}},
         'lessons': {'beacon-corridor': 'corridor v3', 'beacon-tunnel': 'tunnel-wide v2'},
         'measured': brief(shipped),
@@ -935,6 +936,85 @@ def check_beacon_cover(d):
         'detail': {'shipped': {p: v['rows'] for p, v in shipped.items()}},
         'valid': ctrl_fails,
         'pass': ok and ctrl_fails,
+    }
+
+
+BEACON_OFFLINE_WIN_S = 0.5  # estimate: two to four hum notes at the beacon's 3 to 10 m (tempo 1.2 to 8 Hz by distance)
+BEACON_OFFLINE_MIN_AZ_DEG = 15.0  # estimate: clearly off course (the planner leaves on course past 11 degrees)
+BEACON_OFFLINE_WAY_MIN = 0.9  # estimate: the share of the off-course windows whose measured side agrees with the truth
+BEACON_OFFLINE_MIN_WINDOWS = 8  # estimate: enough windows to read a share from
+
+
+def offline_way(d, path, variant):
+    """The off-line flight's half-second windows in which the true beacon is at least BEACON_OFFLINE_MIN_AZ_DEG off the
+    nose on one side in every frame and the target stem sounds; in each, whether the target stem's measured side agrees
+    with the truth: the ear on the beacon's side louder by at least BEACON_SIDE_MIN_DB and leading in time."""
+    x, meta = load(d, f'{path}-soft-{variant}-solo-target')
+    t_end = len(x) / RATE
+    rows = []
+    t = 1.5
+    while t + BEACON_OFFLINE_WIN_S <= t_end + 1e-9:
+        t1 = t + BEACON_OFFLINE_WIN_S
+        frames = [r for r in meta['truth'] if t <= r['t'] < t1]
+        az = [r.get('beaconAzDeg') for r in frames]
+        i, j = int(t * RATE), int(t1 * RATE)
+        if frames and all(a is not None and abs(a) >= BEACON_OFFLINE_MIN_AZ_DEG for a in az) and (all(a > 0 for a in az) or all(a < 0 for a in az)) and db(rms(x[i:j, :].reshape(-1))) > BEACON_SOUNDING_DB:
+            side = 1 if az[0] > 0 else -1  # + right
+            ild = ild_db(x, t, t1)  # left over right: + is a source on the left
+            itd = itd_us(x, t, t1)  # + the left ear leads: a source on the left
+            plan = [r['hum']['dir'][0] for r in frames if r.get('hum')]
+            rows.append({
+                't': round(t, 2), 'truthAzDeg': round(float(np.median(az)), 1), 'ildLeftOverRightDb': round(ild, 2), 'itdUs': round(itd, 1),
+                'levelAgrees': -side * ild >= BEACON_SIDE_MIN_DB, 'timeAgrees': -side * itd > 0,
+                'planSideAgrees': bool(plan) and sum(1 for v in plan if v * side > 0) >= 0.5 * len(plan),
+            })
+        t = t1
+    k = len(rows) or 1
+    agree = [r for r in rows if r['levelAgrees'] and r['timeAgrees']]
+    return {
+        'windows': len(rows),
+        'wayShare': round(len(agree) / k, 3),
+        'levelShare': round(sum(r['levelAgrees'] for r in rows) / k, 3),
+        'timeShare': round(sum(r['timeAgrees'] for r in rows) / k, 3),
+        'planSideSharePlanFact': round(sum(r['planSideAgrees'] for r in rows) / k, 3),
+        'truthAzDegRange': [min((r['truthAzDeg'] for r in rows), default=None), max((r['truthAzDeg'] for r in rows), default=None)],
+        'rows': rows,
+    }
+
+
+def check_beacon_off_line(d):
+    """VL-B6 (review R4): off the line the hum tells the way. The corridor and tunnel-wide flown along the track with the
+    nose held 40 degrees off it to the right and to the left in turn (3 s each) and the craft 0.8 m right of the line,
+    the target stem alone: in the half-second windows where the true beacon (the runner's rule) is at least 15 degrees
+    off the nose, the ear on its side is louder by at least 2 dB and leads in time, in at least 90 % of them. Controls
+    that must fail: the frame's beacon mirrored left-right about the nose, and fixed straight ahead."""
+    run = lambda v: {p: offline_way(d, p, v) for p in BEACON_PATHS}
+    passes = lambda m: all(v['windows'] >= BEACON_OFFLINE_MIN_WINDOWS and v['wayShare'] >= BEACON_OFFLINE_WAY_MIN for v in m.values())
+    shipped = run('off-line')
+    mirror = run('off-line-mirror')
+    ahead = run('off-line-ahead')
+    m_fails = not passes(mirror)
+    a_fails = not passes(ahead)
+    brief = lambda m: {p: {k: v[k] for k in ('windows', 'wayShare', 'levelShare', 'timeShare', 'planSideSharePlanFact', 'truthAzDegRange')} for p, v in m.items()}
+    return {
+        'id': 'VL-B6-off-line',
+        'claim': 'the corridor and tunnel-wide flown off the line (nose 40 degrees off the track to the right and to the left in turn, 3 s each, the craft 0.8 m right of the line), the target stem alone: in at least 90 % of the half-second windows where the true beacon is at least 15 degrees off the nose (and at least 8 such windows per flight), the ear on the beacon\'s side is louder by at least 2 dB and leads in time (controls: the beacon mirrored left-right, the beacon fixed straight ahead). The plan\'s side is reported as a plan fact beside the measure',
+        'thresholds': {
+            'wayMin': {'value': BEACON_OFFLINE_WAY_MIN, 'kind': 'estimate'},
+            'minWindows': {'value': BEACON_OFFLINE_MIN_WINDOWS, 'kind': 'estimate'},
+            'minAzDeg': {'value': BEACON_OFFLINE_MIN_AZ_DEG, 'kind': 'estimate'},
+            'windowS': {'value': BEACON_OFFLINE_WIN_S, 'kind': 'estimate'},
+            'sideMinDb': {'value': BEACON_SIDE_MIN_DB, 'kind': 'task bound'},
+        },
+        'lessons': {'beacon-corridor': 'corridor v3', 'beacon-tunnel': 'tunnel-wide v2'},
+        'measured': brief(shipped),
+        'controls': [
+            {'name': 'the frame\'s beacon mirrored left-right about the nose', 'measured': brief(mirror), 'ok': m_fails},
+            {'name': 'the frame\'s beacon fixed straight ahead of the nose at the true distance', 'measured': brief(ahead), 'ok': a_fails},
+        ],
+        'detail': {'shipped': {p: v['rows'] for p, v in shipped.items()}},
+        'valid': m_fails and a_fails,
+        'pass': passes(shipped) and m_fails and a_fails,
     }
 
 
@@ -996,7 +1076,7 @@ def main():
     checks.append(check_motor(a.renders))
     checks.append(check_height_meanings(a.renders))
     checks.append(check_elevation(a.renders))
-    checks += [check_beacon_side(a.renders), check_beacon_fold(a.renders), check_beacon_octave(a.renders), check_beacon_cover(a.renders), check_beacon_far(a.renders)]
+    checks += [check_beacon_side(a.renders), check_beacon_fold(a.renders), check_beacon_octave(a.renders), check_beacon_cover(a.renders), check_beacon_far(a.renders), check_beacon_off_line(a.renders)]
     versions = {'python': sys.version.split()[0], 'numpy': np.__version__, 'scipy': __import__('scipy').__version__, 'soundfile': sf.__version__, 'pyloudnorm': getattr(pyln, '__version__', '0.2.0')}
     with open(a.out, 'w', encoding='utf8') as f:
         json.dump({'measure': MEASURE_VERSION, 'tools': versions, 'checks': checks}, f, indent=1)

@@ -44,7 +44,7 @@ function heard(id: string): Set<string> {
         tick();
         for (const a of p.actions.slice(seen)) if (a.kind === 'cue') planner.cue(a.event);
         seen = p.actions.length;
-        const plan = planner.plan({ sample: p.sample(false), world: p.world, target: p.run.target(), beacon: p.run.beaconTarget(), floorY: 0 });
+        const plan = planner.plan({ sample: p.sample(false), world: p.world, target: p.run.target(), beacon: p.run.beaconTarget?.() ?? null, floorY: 0 });
         if (p.run.phase !== 'flying') return;
         for (const c of plan.cues) {
             const cue = c.id.split(':')[0] as string;

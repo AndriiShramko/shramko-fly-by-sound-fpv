@@ -83,6 +83,9 @@ export function jobs(): Job[] {
         for (const variant of [null, 'no-target-layer'] as const) {
             for (const s of BEACON_STEMS) add(`${sc}-soft${variant === null ? '' : `-${variant}`}-solo-${s}`, { scenario: sc, theme: 'soft', variant, solo: [s] });
         }
+        // lane sonic-beacon (S5, review R4): flown off the line (nose 40 degrees off, 0.8 m aside), the target stem alone,
+        // with the true beacon and with the two wrong ones (mirrored, straight ahead) that VL-B6 must reject
+        for (const variant of ['off-line', 'off-line-mirror', 'off-line-ahead'] as const) add(`${sc}-soft-${variant}-solo-target`, { scenario: sc, theme: 'soft', variant, solo: ['target'] });
     }
     return out;
 }

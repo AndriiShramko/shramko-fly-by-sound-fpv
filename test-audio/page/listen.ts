@@ -157,6 +157,8 @@ interface Scenario {
     readonly beacon?: (t: number, f: Frame) => SonicObject | null;
     /** lane sonic-beacon (S4): the beacon ring's pose at t */
     readonly pose?: (t: number) => { readonly k: number; readonly azDeg: number; readonly distM: number } | null;
+    /** lane sonic-beacon (S5, review R4): the true beacon point (the runner's rule), recorded as an azimuth from the nose */
+    readonly truthBeacon?: (t: number, f: Frame) => Vec3 | null;
 }
 
 const hall = createAnalyticWorld(makeSpec('hall', {}, 1));
@@ -258,6 +260,39 @@ const BEACON_PATH_SPEED = 2;
 const BEACON_PATH_HOLD_S = 1;
 const BEACON_PATH_YAW_RATE = 90;
 const BEACON_PATH_MAX_S = 40;
+/**
+ * Lane sonic-beacon (S5, review R4), the off-line flights: the nose held BEACON_OFFLINE_YAW_DEG off the track, to the
+ * right and to the left in turn, each for BEACON_OFFLINE_PERIOD_S (the first BEACON_OFFLINE_RAMP_S of it turning
+ * over), from BEACON_OFFLINE_T0_S on, and the craft BEACON_OFFLINE_LATERAL_M right of the track's line. Estimates: the
+ * review asks for 30 to 45 degrees off for a few seconds and a lateral offset; the time pattern does not follow the
+ * bends, so holds fall before, across and after them alike.
+ */
+const BEACON_OFFLINE_YAW_DEG = 40;
+const BEACON_OFFLINE_PERIOD_S = 3;
+const BEACON_OFFLINE_RAMP_S = 0.5;
+const BEACON_OFFLINE_T0_S = 1.5;
+const BEACON_OFFLINE_LATERAL_M = 0.8;
+
+function offlineYawDeg(t: number): number {
+    if (t < BEACON_OFFLINE_T0_S) return 0;
+    const ph = (t - BEACON_OFFLINE_T0_S) / BEACON_OFFLINE_PERIOD_S;
+    const k = Math.floor(ph);
+    const sign = k % 2 === 0 ? 1 : -1;
+    const from = k === 0 ? 0 : -sign;
+    const u = ((ph - k) * BEACON_OFFLINE_PERIOD_S) / BEACON_OFFLINE_RAMP_S;
+    return BEACON_OFFLINE_YAW_DEG * (from + (sign - from) * smooth(u));
+}
+
+const fwdOf = (yawDeg: number): Vec3 => [Math.sin((yawDeg * Math.PI) / 180), 0, -Math.cos((yawDeg * Math.PI) / 180)];
+const rightOf = (yawDeg: number): Vec3 => [Math.cos((yawDeg * Math.PI) / 180), 0, Math.sin((yawDeg * Math.PI) / 180)];
+
+/** Azimuth of p from a craft at pos with the nose at yawDeg, + right, degrees. */
+function azimuthDeg(pos: Vec3, yawDeg: number, p: Vec3): number {
+    const r: Vec3 = [p[0] - pos[0], p[1] - pos[1], p[2] - pos[2]];
+    const f = fwdOf(yawDeg);
+    const q = rightOf(yawDeg);
+    return (Math.atan2(r[0] * q[0] + r[2] * q[2], r[0] * f[0] + r[2] * f[2]) * 180) / Math.PI;
+}
 
 interface TrackFlight {
     readonly world: SonicWorld;
@@ -435,8 +470,13 @@ function scenarioOf(req: RenderRequest): Scenario {
             // nose along the track; the frame's beacon is the runner's rule (beaconPointIndex over the world's checkpoints
             // after the last one passed, stepped back where a solid is in the way). 'no-target-layer': the lesson's
             // previous version, without the layer target (the owner's complaint of 2026-11-10)
+            // 'off-line' (S5, review R4): the nose off the track and the craft off its line (offlineYawDeg,
+            // BEACON_OFFLINE_LATERAL_M); its controls carry a wrong point in the frame's beacon field: 'off-line-mirror'
+            // the true point mirrored left-right about the nose, 'off-line-ahead' a point straight ahead of the nose at the
+            // true point's distance
             const fl = trackFlight(BEACON_PATH_LESSON[req.scenario]);
             const total = fl.at[fl.at.length - 1] as number;
+            const offline = req.variant === 'off-line' || req.variant === 'off-line-mirror' || req.variant === 'off-line-ahead';
             const along = (t: number): { readonly pos: Vec3; readonly vel: Vec3; readonly seg: number } => {
                 const s = Math.max(0, Math.min(total, (t - BEACON_PATH_HOLD_S) * BEACON_PATH_SPEED));
                 let i = 1;
@@ -457,16 +497,39 @@ function scenarioOf(req: RenderRequest): Scenario {
                 frame: (t) => {
                     const { pos, vel } = along(t);
                     const k = Math.min(fl.yawAt.length - 1, Math.round(t / FRAME_S));
-                    return { pos, vel, yawDeg: fl.yawAt[k] as number, motor: vel[0] !== 0 || vel[2] !== 0 ? 0.5 : 0.42 };
+                    const yaw = fl.yawAt[k] as number;
+                    const motor = vel[0] !== 0 || vel[2] !== 0 ? 0.5 : 0.42;
+                    if (!offline) return { pos, vel, yawDeg: yaw, motor };
+                    const r = rightOf(yaw);
+                    const off: Vec3 = [pos[0] + r[0] * BEACON_OFFLINE_LATERAL_M, pos[1], pos[2] + r[2] * BEACON_OFFLINE_LATERAL_M];
+                    return { pos: off, vel, yawDeg: yaw + offlineYawDeg(t), motor };
                 },
                 target: () => null,
-                beacon: (t, f) => {
+                truthBeacon: (t, f) => {
                     // path[i] is checkpoint i - 1: on the way to path[seg] the checkpoints before seg - 1 are passed
                     const next = Math.max(0, along(t).seg - 1);
                     const sdf = fl.sdf;
                     const i = beaconPointIndex(fl.points, next, f.pos, sdf === null ? undefined : (a, b) => lineClear(sdf, a, b));
+                    return i === null ? null : (fl.points[i] ?? null);
+                },
+                beacon: (t, f) => {
+                    const next = Math.max(0, along(t).seg - 1);
+                    const sdf = fl.sdf;
+                    const i = beaconPointIndex(fl.points, next, f.pos, sdf === null ? undefined : (a, b) => lineClear(sdf, a, b));
                     const p = i === null ? undefined : fl.points[i];
-                    return p === undefined ? null : zoneAt(`beacon:${i}`, p);
+                    if (p === undefined) return null;
+                    if (req.variant === 'off-line-mirror' || req.variant === 'off-line-ahead') {
+                        const q = rightOf(f.yawDeg);
+                        const rel: Vec3 = [p[0] - f.pos[0], p[1] - f.pos[1], p[2] - f.pos[2]];
+                        if (req.variant === 'off-line-mirror') {
+                            const lat = rel[0] * q[0] + rel[2] * q[2];
+                            return zoneAt(`beacon:${i}`, [p[0] - 2 * lat * q[0], p[1], p[2] - 2 * lat * q[2]]);
+                        }
+                        const h = Math.hypot(rel[0], rel[2]);
+                        const fw = fwdOf(f.yawDeg);
+                        return zoneAt(`beacon:${i}`, [f.pos[0] + fw[0] * h, p[1], f.pos[2] + fw[2] * h]);
+                    }
+                    return zoneAt(`beacon:${i}`, p);
                 },
                 say: [],
                 events: [],
@@ -653,7 +716,8 @@ export async function render(req: RenderRequest): Promise<RenderResult> {
             chime: ((v) => (v === undefined ? null : { key: v.key, dir: v.dir, hz: v.hz, harmonyHz: v.harmonyHz ?? null }))(plan?.voices.find((v) => v.cue === 'safety.free')),
             voices: (plan?.voices ?? []).map((v) => ({ cue: v.cue, breath: v.airDb !== undefined })),
             hum: ((v) => (v === undefined ? null : { hz: v.hz, dir: v.dir }))(plan?.voices.find((v) => v.cue === 'target.hum' && v.key === 'target')),
-            beaconPose: sc.pose?.(t) ?? null
+            beaconPose: sc.pose?.(t) ?? null,
+            beaconAzDeg: ((p) => (p === undefined || p === null ? null : azimuthDeg(f.pos, f.yawDeg, p)))(sc.truthBeacon?.(t, f))
         });
     };
     tick(0);

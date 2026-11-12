@@ -5,9 +5,10 @@
 //   - R2: the headphone check's "behind" and the ears-game scene from behind are planned from behind (no fold, no side
 //     boost, no octave): a preview or a module-0 scene tells the true direction it names.
 import { describe, expect, it } from 'vitest';
-import type { LessonDef, Question, RunnerAction, SonicObject, SonicPrefs, Vec3 } from '../src/contract';
+import type { LessonDef, SonicObject, SonicPrefs, Vec3 } from '../src/contract';
 import { CuePlanner } from '../src/cues';
 import { demoFrame } from '../src/lesson/runner';
+import type { Question, RunnerAction } from '../src/lesson/runner';
 import { getLesson, SHIPPED_LESSON_IDS } from '../src/lesson';
 import { defaultPrefs } from '../src/prefs';
 import { checkSession } from '../src/replay';
