@@ -392,6 +392,8 @@
     "theme.race.name": 1.3,
     "theme.race.what": 3.49,
     "theme.soft.name": 1.37,
-    "theme.soft.what": 4.61
+    "theme.soft.what": 4.61,
+    "menu.setting.beacon": 2.21,
+    "menu.setting.beacon-what": 14.995
   }
 }

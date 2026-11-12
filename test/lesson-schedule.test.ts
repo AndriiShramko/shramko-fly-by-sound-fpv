@@ -168,11 +168,11 @@ describe('control: the v0.12 timing fails the same check (a line ends at the ear
         }
     }, 120000);
 
-    it('the fact as measured: 275 of the 391 English lines take the Windows voice longer than the estimate', () => {
+    it('the fact as measured: 276 of the 393 English lines take the Windows voice longer than the estimate', () => {
         const en = JSON.parse(readFileSync(new URL('../locales/en.json', import.meta.url), 'utf8')) as Record<string, string>;
         const keys = Object.keys(david);
         const longer = keys.filter((k) => (david[k] as number) > 0.7 + 0.065 * (MEASURED_TEXT[k] ?? (en[k] as string)).length);
-        expect(keys.length).toBe(391);
+        expect(keys.length).toBe(393);
         // 262 until merge s13-merge reworded walls-hall's intro.2 and hint.1 and the corridor's intro.2 (review m4 of
         // lane s13-sound); those three were measured again with the same voice and method (walls-hall's intro.1, not
         // changed then, measured 8.64 s again, as in the fixture). walls-hall's goal.1, reworded at the s13-worlds merge
@@ -195,14 +195,16 @@ describe('control: the v0.12 timing fails the same check (a line ends at the ear
         // corridor's intro.3 15.375 s (14.09 s), tunnel-gaps' intro.3 11.705 s (11.23 s) and the setting's description
         // 16.215 s (15.845 s), the last two not longer than their estimates before: 385, 269 longer.
         // The fix of sonic-keys' review I3 added "Press 1, 2 or 3." (answer.need-123), 2.635 s (its estimate 1.74 s): 391, 275.
-        expect(longer.length).toBe(275);
+        // Lane sonic-beacon added the setting 'Target hum shows the way', measured the same way (2026-11-12): its name 2.21 s and
+        // its description 14.995 s, one of them longer than its estimate: 393, 276.
+        expect(longer.length).toBe(276);
         // and under v0.12 the first sound of the check plays partly under the line before it
         const s = schedule('ears-headphones', { speech: measuredSpeech(david), runner: v012 });
         const first = s.plays.find((p) => p.kind !== 'one-off');
         expect(speechOverlapMs(s, first?.start ?? 0, first?.end ?? 0)).toBeGreaterThan(500);
     });
 
-    it('the fact as measured in the other languages: 261 of the 477 Spanish lines, 349 of the 477 Polish and all 477 Russian take their voice longer than the estimate (lane s13-elev E2-1)', () => {
+    it('the fact as measured in the other languages: 261 of the 479 Spanish lines, 351 of the 479 Polish and all 479 Russian take their voice longer than the estimate (lane s13-elev E2-1)', () => {
         // Each fixture holds every line of its language that has no parameters, measured on 2026-11-08 with the
         // voice's text as it is in locales/ (no line reworded since, so no MEASURED_TEXT here). None is longer than
         // the runner's fallback (twice the estimate and a second): the longest against its estimate is 1.59 times it
@@ -213,13 +215,15 @@ describe('control: the v0.12 timing fails the same check (a line ends at the ear
         // sonic-keys added five lines without parameters (answer.skipped, answer.not-now, answer.timeout, the answer sound's name
         // and glossary) and reworded the headphone check's intro.2, all measured with the same voices and method. The fix of its
         // review I3 added answer.need-123 ("1, 2 or 3"), longer than its estimate in all three: es 3.205 s, pl 3.42 s, ru 3.51 s.
-        const longerThanEstimate: Readonly<Record<Exclude<Locale, 'en'>, number>> = { es: 261, pl: 349, ru: 477 };
+        // Lane sonic-beacon added the setting's name and description (2026-11-12, same voices and method): es 2.51 s and 15.62 s
+        // (neither longer than its estimate), pl 2.58 s and 15.6 s (both longer), ru 2.79 s and 17.945 s (both longer).
+        const longerThanEstimate: Readonly<Record<Exclude<Locale, 'en'>, number>> = { es: 261, pl: 351, ru: 479 };
         for (const locale of OTHER_LOCALES) {
             const dict = JSON.parse(readFileSync(new URL(`../locales/${locale}.json`, import.meta.url), 'utf8')) as Record<string, string>;
             const seconds = OTHER_VOICES[locale].seconds;
             const plain = Object.keys(dict).filter((k) => !(dict[k] as string).includes('{'));
             expect(Object.keys(seconds).sort(), `${locale}: every line without parameters is measured, and nothing else`).toEqual(plain.sort());
-            expect(plain.length, locale).toBe(477);
+            expect(plain.length, locale).toBe(479);
             const estimate = (k: string): number => 0.7 + 0.065 * (dict[k] as string).length;
             const longer = plain.filter((k) => (seconds[k] as number) > estimate(k));
             expect(longer.length, `${locale}: lines longer than the estimate`).toBe(longerThanEstimate[locale]);
