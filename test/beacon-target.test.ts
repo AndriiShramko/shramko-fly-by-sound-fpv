@@ -198,7 +198,7 @@ const humShare = (frames: readonly (readonly string[])[]): number => frames.filt
 describe('the setting in the recording, and the replay of recordings made before and after this lane', () => {
     it('a tunnel recorded before this lane (old host, no beacon key, lesson version 1) replays as older-build, never fail', async () => {
         const pkg = await flyTunnel(oldTunnel(), { prefs: prefsWith(undefined), oldHost: true });
-        expect(pkg.manifest.lesson.version).toBe(getLesson('tunnel-wide').version - 1);
+        expect(pkg.manifest.lesson?.version).toBe(getLesson('tunnel-wide').version - 1);
         expect('beacon' in pkg.manifest.settings).toBe(false);
         expect(humShare(pkg.frames.map((f) => f.c))).toBe(0);
         const { check, result } = checkSession(pkg);
