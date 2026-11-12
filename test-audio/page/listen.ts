@@ -29,7 +29,9 @@
 // and VL-2 measure them too (the flight above has none of them).
 import type { FlightSample, LessonLayers, SonicObject, SonicPrefs, SonicWorld, SpeechOut, Vec3 } from '../../src/contract';
 import { createSonicEngine, type EngineTestHooks, type FlyBySoundEngine, type SoloPart } from '../../src/audio';
+import { beaconPointIndex, lineClear } from '../../src/cues/beacon';
 import { getLesson } from '../../src/lesson/library';
+import { yawOf } from '../../src/lesson/track';
 import { defaultPrefs } from '../../src/prefs/prefs';
 import { getBuiltinTheme } from '../../src/theme/builtin';
 import { createRng } from '../../src/util/rng';
@@ -151,6 +153,10 @@ interface Scenario {
     readonly motorVolume: number | null;
     /** for the approaches: the wall's plane z, to give the hull distance */
     readonly wallZ: number | null;
+    /** lane sonic-beacon (S4): the frame's beacon field (SonicFrameInput.beacon), when the flight has one */
+    readonly beacon?: (t: number, f: Frame) => SonicObject | null;
+    /** lane sonic-beacon (S4): the beacon ring's pose at t */
+    readonly pose?: (t: number) => { readonly k: number; readonly azDeg: number; readonly distM: number } | null;
 }
 
 const hall = createAnalyticWorld(makeSpec('hall', {}, 1));
@@ -204,6 +210,95 @@ export const FREE_PLAY_S = 2.5;
  */
 export const HOVER_HEIGHTS: readonly number[] = [2.5, 2.45, 2.4, 2.3, 2.2, 2.05, 2.7, 2.95, 1.6, 3.4];
 export const HOVER_HOLD_S = 2.5;
+
+
+// ------------------------------------------------------------------ lane sonic-beacon (S4): the beacon's flights
+
+/**
+ * The beacon ring: the craft hovers still at BEACON_RING_POS facing -z; the target (a zone, as the runner's beacon is)
+ * holds each pose for its hold time: every 20 degrees from 10 to 170 on both sides at 10 m (side), 120 on both sides
+ * (fold), 0, 5 and 12 degrees on both sides (on course), then 30 degrees right at 5, 20 and 40 m (heard from afar).
+ * [azimuth from the nose, + right, degrees; distance, m; hold, s]. The holds are estimates: long enough for the hum's
+ * slowest tempo (1.2 Hz at 40 m) to play notes in the measured last part of the hold.
+ */
+export const BEACON_POSES: readonly (readonly [number, number, number])[] = [
+    ...[10, 30, 50, 70, 90, 110, 130, 150, 170].flatMap((a) => [[a, 10, 1.6] as const, [-a, 10, 1.6] as const]),
+    [120, 10, 1.6],
+    [-120, 10, 1.6],
+    [0, 10, 1.6],
+    [5, 10, 1.6],
+    [-5, 10, 1.6],
+    [12, 10, 1.6],
+    [-12, 10, 1.6],
+    [30, 5, 3],
+    [30, 20, 3],
+    [30, 40, 3]
+];
+const BEACON_RING_POS: Vec3 = [0, 2, 0];
+const BEACON_POSE_T0: readonly number[] = BEACON_POSES.reduce<number[]>((acc, p, i) => [...acc, (acc[i] as number) + p[2]], [0.5]);
+
+function beaconPoseAt(t: number): { readonly k: number; readonly azDeg: number; readonly distM: number } | null {
+    for (let k = 0; k < BEACON_POSES.length; k++) {
+        if (t >= (BEACON_POSE_T0[k] as number) && t < (BEACON_POSE_T0[k + 1] as number)) {
+            const p = BEACON_POSES[k] as readonly [number, number, number];
+            return { k, azDeg: p[0], distM: p[1] };
+        }
+    }
+    return null;
+}
+
+function zoneAt(id: string, pos: Vec3): SonicObject {
+    return { id, shape: { kind: 'zone', size: [1, 1, 1] }, pos, quat: [1, 0, 0, 0], order: null, solid: false, material: 'obstacle' };
+}
+
+/** The lesson the beacon path flies: the corridor and the widest tunnel (the owner's "wide corridor, high ceiling"). */
+const BEACON_PATH_LESSON = { 'beacon-corridor': 'corridor', 'beacon-tunnel': 'tunnel-wide' } as const;
+/** Speed along the track, m/s, the still second first, the yaw rate limit, degrees/s, and the longest flight, s (estimates). */
+const BEACON_PATH_SPEED = 2;
+const BEACON_PATH_HOLD_S = 1;
+const BEACON_PATH_YAW_RATE = 90;
+const BEACON_PATH_MAX_S = 40;
+
+interface TrackFlight {
+    readonly world: SonicWorld;
+    readonly layers: LessonLayers;
+    readonly points: readonly Vec3[];
+    readonly path: readonly Vec3[];
+    readonly at: readonly number[];
+    readonly sdf: ((x: number, y: number, z: number) => number) | null;
+    readonly yawAt: readonly number[];
+}
+
+function trackFlight(lessonId: string): TrackFlight {
+    const lesson = getLesson(lessonId);
+    if (lesson.world.kind !== 'analytic') throw new Error(`${lessonId} has an analytic world`);
+    const world = createAnalyticWorld(lesson.world.spec);
+    const points = (world.checkpoints ?? []).map((c) => c.pos);
+    const path: Vec3[] = [lesson.start.pos, ...points];
+    const at: number[] = [0];
+    for (let i = 1; i < path.length; i++) {
+        const a = path[i - 1] as Vec3;
+        const b = path[i] as Vec3;
+        at.push((at[i - 1] as number) + Math.hypot(b[0] - a[0], b[1] - a[1], b[2] - a[2]));
+    }
+    // the craft flies with its nose along the track (the heading the pilot would hold), turning at most
+    // BEACON_PATH_YAW_RATE degrees a second: a yaw per frame, made once
+    const sdf = (world as unknown as { sdf?: (x: number, y: number, z: number) => number }).sdf ?? null;
+    const yawAt: number[] = [];
+    let yaw = lesson.start.yawDeg;
+    for (let k = 0; k * FRAME_S < BEACON_PATH_MAX_S + 1; k++) {
+        const s = Math.max(0, (k * FRAME_S - BEACON_PATH_HOLD_S) * BEACON_PATH_SPEED);
+        let i = 1;
+        while (i < at.length - 1 && (at[i] as number) < s) i++;
+        const a = path[i - 1] as Vec3;
+        const b = path[i] as Vec3;
+        const want = yawOf([b[0] - a[0], 0, b[2] - a[2]]);
+        const d = ((((want - yaw) % 360) + 540) % 360) - 180;
+        yaw += Math.max(-BEACON_PATH_YAW_RATE * FRAME_S, Math.min(BEACON_PATH_YAW_RATE * FRAME_S, d));
+        yawAt.push(yaw);
+    }
+    return { world, layers: lesson.layers, points, path, at, sdf, yawAt };
+}
 
 function scenarioOf(req: RenderRequest): Scenario {
     const base = defaultPrefs();
@@ -308,6 +403,74 @@ function scenarioOf(req: RenderRequest): Scenario {
                 ],
                 events: [],
                 motorVolume: req.variant === 'motor-raw-60' ? 60 : 15,
+                wallZ: null
+            };
+        }
+        case 'beacon-ring': {
+            // lane sonic-beacon (S4): the hum from the target at each of BEACON_POSES, the craft still; the room layer and the
+            // motor at a moving output (0.5, the gaps flight's) for the far poses; 'beacon-off': SonicPrefs.beacon false
+            const seconds = (BEACON_POSE_T0[BEACON_POSE_T0.length - 1] as number) + 0.3;
+            return {
+                seconds,
+                layers: { on: ['target', 'room'], heightBandM: null, hazardVoices: 2 },
+                prefs: { ...base, beacon: req.variant !== 'beacon-off' },
+                world: null,
+                frame: () => ({ pos: BEACON_RING_POS, vel: [0, 0, 0], yawDeg: 0, motor: 0.5 }),
+                target: (t) => {
+                    const p = beaconPoseAt(t);
+                    if (p === null) return null;
+                    const a = (p.azDeg * Math.PI) / 180;
+                    return zoneAt(`beacon:${p.k}`, [BEACON_RING_POS[0] + Math.sin(a) * p.distM, BEACON_RING_POS[1], BEACON_RING_POS[2] - Math.cos(a) * p.distM]);
+                },
+                say: [],
+                events: [],
+                motorVolume: 15,
+                wallZ: null,
+                pose: beaconPoseAt
+            };
+        }
+        case 'beacon-corridor':
+        case 'beacon-tunnel': {
+            // lane sonic-beacon (S4): the lesson's world flown along its track at BEACON_PATH_SPEED after a still second, the
+            // nose along the track; the frame's beacon is the runner's rule (beaconPointIndex over the world's checkpoints
+            // after the last one passed, stepped back where a solid is in the way). 'no-target-layer': the lesson's
+            // previous version, without the layer target (the owner's complaint of 2026-11-10)
+            const fl = trackFlight(BEACON_PATH_LESSON[req.scenario]);
+            const total = fl.at[fl.at.length - 1] as number;
+            const along = (t: number): { readonly pos: Vec3; readonly vel: Vec3; readonly seg: number } => {
+                const s = Math.max(0, Math.min(total, (t - BEACON_PATH_HOLD_S) * BEACON_PATH_SPEED));
+                let i = 1;
+                while (i < fl.at.length - 1 && (fl.at[i] as number) < s) i++;
+                const a = fl.path[i - 1] as Vec3;
+                const b = fl.path[i] as Vec3;
+                const len = Math.max(1e-9, (fl.at[i] as number) - (fl.at[i - 1] as number));
+                const u = (s - (fl.at[i - 1] as number)) / len;
+                const moving = t > BEACON_PATH_HOLD_S && s < total;
+                const v = moving ? BEACON_PATH_SPEED / len : 0;
+                return { pos: [a[0] + (b[0] - a[0]) * u, a[1] + (b[1] - a[1]) * u, a[2] + (b[2] - a[2]) * u], vel: [(b[0] - a[0]) * v, (b[1] - a[1]) * v, (b[2] - a[2]) * v], seg: i };
+            };
+            return {
+                seconds: Math.min(BEACON_PATH_MAX_S, BEACON_PATH_HOLD_S + total / BEACON_PATH_SPEED + 0.5),
+                layers: req.variant === 'no-target-layer' ? { ...fl.layers, on: fl.layers.on.filter((l) => l !== 'target') } : fl.layers,
+                prefs: base,
+                world: fl.world,
+                frame: (t) => {
+                    const { pos, vel } = along(t);
+                    const k = Math.min(fl.yawAt.length - 1, Math.round(t / FRAME_S));
+                    return { pos, vel, yawDeg: fl.yawAt[k] as number, motor: vel[0] !== 0 || vel[2] !== 0 ? 0.5 : 0.42 };
+                },
+                target: () => null,
+                beacon: (t, f) => {
+                    // path[i] is checkpoint i - 1: on the way to path[seg] the checkpoints before seg - 1 are passed
+                    const next = Math.max(0, along(t).seg - 1);
+                    const sdf = fl.sdf;
+                    const i = beaconPointIndex(fl.points, next, f.pos, sdf === null ? undefined : (a, b) => lineClear(sdf, a, b));
+                    const p = i === null ? undefined : fl.points[i];
+                    return p === undefined ? null : zoneAt(`beacon:${i}`, p);
+                },
+                say: [],
+                events: [],
+                motorVolume: null,
                 wallZ: null
             };
         }
@@ -468,7 +631,8 @@ export async function render(req: RenderRequest): Promise<RenderResult> {
         const f = sc.frame(t);
         const sample = sampleOf(f, t);
         const target = sc.target(t);
-        engine.update({ sample, world: sc.world, target, floorY: 0 });
+        const beacon = sc.beacon?.(t, f);
+        engine.update({ sample, world: sc.world, target, floorY: 0, ...(beacon === undefined ? {} : { beacon }) });
         const plan = engine.plan;
         const speed = Math.hypot(f.vel[0], f.vel[1], f.vel[2]);
         if (motor !== null) motor.apply(ctx.currentTime, f.motor, speed, sc.motorVolume as number);
@@ -487,7 +651,9 @@ export async function render(req: RenderRequest): Promise<RenderResult> {
             speaking: engine.speaking,
             motor: f.motor,
             chime: ((v) => (v === undefined ? null : { key: v.key, dir: v.dir, hz: v.hz, harmonyHz: v.harmonyHz ?? null }))(plan?.voices.find((v) => v.cue === 'safety.free')),
-            voices: (plan?.voices ?? []).map((v) => ({ cue: v.cue, breath: v.airDb !== undefined }))
+            voices: (plan?.voices ?? []).map((v) => ({ cue: v.cue, breath: v.airDb !== undefined })),
+            hum: ((v) => (v === undefined ? null : { hz: v.hz, dir: v.dir }))(plan?.voices.find((v) => v.cue === 'target.hum' && v.key === 'target')),
+            beaconPose: sc.pose?.(t) ?? null
         });
     };
     tick(0);

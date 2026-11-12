@@ -2,17 +2,17 @@
 // (test-audio/page/listen.ts, the browser). DOM-free, so both sides compile against it.
 import type { Vec3 } from '../../src/contract';
 
-export const RIG_VERSION = 4;
+export const RIG_VERSION = 5;
 export const RATE = 48000;
 
-export const SCENARIOS = ['height-climb', 'approach-1', 'approach-3', 'approach-5', 'flight', 'hover-band', 'free-chime', 'gaps-flight'] as const;
+export const SCENARIOS = ['height-climb', 'approach-1', 'approach-3', 'approach-5', 'flight', 'hover-band', 'free-chime', 'gaps-flight', 'beacon-ring', 'beacon-corridor', 'beacon-tunnel'] as const;
 export type ScenarioId = (typeof SCENARIOS)[number];
 /**
  * Controls (the engine or the host broken on purpose), each failing one check; and, for the free chime (lane s13-elev),
  * 'direction-off' (SonicPrefs.heightDirection false: v0.13's placement, the check's control) and 'dry' (no HRTF panner:
  * what goes into it, so a render over its dry twin is the HRTF's own response).
  */
-export const VARIANTS = ['stepped', 'distance-only', 'motor-raw-60', 'seed-2', 'target-steady', 'direction-off', 'dry', 'direction-off-dry'] as const;
+export const VARIANTS = ['stepped', 'distance-only', 'motor-raw-60', 'seed-2', 'target-steady', 'direction-off', 'dry', 'direction-off-dry', 'beacon-off', 'no-target-layer'] as const;
 export type Variant = (typeof VARIANTS)[number];
 
 /**
@@ -75,6 +75,13 @@ export interface TruthRow {
     readonly chime?: { readonly key: string; readonly dir: Vec3; readonly hz: number; readonly harmonyHz: number | null } | null;
     /** lane s13-elev, review E5: every voice of the plan this frame, its cue and whether it carries the breath of air */
     readonly voices?: readonly { readonly cue: string; readonly breath: boolean }[];
+    /**
+     * lane sonic-beacon (S4): the target hum's voice this frame (the plan's 'target.hum' voice keyed 'target': its note and
+     * listener-frame direction), null when it does not sound
+     */
+    readonly hum?: { readonly hz: number; readonly dir: Vec3 } | null;
+    /** lane sonic-beacon (S4), the beacon ring: which pose the target holds (index, azimuth from the nose, + right, degrees; distance, m) */
+    readonly beaconPose?: { readonly k: number; readonly azDeg: number; readonly distM: number } | null;
 }
 
 export interface SpeechSpan {
