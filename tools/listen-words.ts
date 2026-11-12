@@ -187,6 +187,15 @@ export const HEARD: readonly Heard[] = [
     { locale: 'ru', key: 'lesson.corridor.intro.2', said: 'Отодвинься', heard: 'Отодвинь', why: 'the reflexive ending is not heard' }
 ];
 
+/**
+ * The same records for the simulator's lines only (--sim): words the package's own lines do not have, so HEARD (whose every
+ * record names a line of the package: test/words.test.ts) cannot keep them.
+ */
+export const SIM_HEARD: readonly Heard[] = [
+    // lane sonic-hints: the Russian name of Escape in the keys line of every step and in the lesson menu
+    { locale: 'ru', key: '*', said: 'Эскейп', heard: 'Escape', why: 'Whisper writes the name of the key in the Latin letters printed on it' }
+];
+
 const contains = (list: readonly string[], part: readonly string[]): number => {
     for (let i = 0; i + part.length <= list.length && part.length > 0; i++) if (part.every((w, k) => list[i + k] === w)) return i;
     return -1;
@@ -350,7 +359,7 @@ export function simulatorLines(root: string): Line[] {
             if (t === undefined) throw new Error(`the simulator's ${locale} files have no ${k}`);
             return t;
         };
-        const keyOf: Readonly<Record<string, string>> = { 'sonic.say.helpShare': 'L', 'sonic.say.helpPrevious': 'B', 'sonic.say.helpRepeat': 'Z', 'sonicrec.survey.listening': own('sonicrec.key.Enter') };
+        const keyOf: Readonly<Record<string, string>> = { 'sonic.say.helpShare': 'L', 'sonic.say.helpPrevious': 'B', 'sonic.say.helpRepeat': 'Z', 'sonic.say.helpHome': 'X', 'sonic.say.soundBack': 'Z', 'sonic.say.menuItemKey': 'N', 'sonicrec.survey.listening': own('sonicrec.key.Enter') };
         const values = (key: string): Record<string, string> => ({
             time: pkg.duration(65_000),
             copy: own('sonic.copyKeys'),
@@ -359,6 +368,10 @@ export function simulatorLines(root: string): Line[] {
             menu: own('sonicrec.key.Escape'),
             repeat: 'Z',
             next: 'N',
+            // the simulator's lane sonic-hints: the step's keys (back, the main menu) and a lesson menu item with its key
+            previous: 'B',
+            home: 'X',
+            label: own('sonic.say.menuNextStep'),
             lesson: pkg.say('lesson.rings-first.title'),
             title: pkg.say('lesson.rings-first.title'),
             cm: '12',
@@ -597,7 +610,7 @@ async function transcribe(cache: string, py: string, lockPath: string, jobs: rea
 }
 
 /** Says and transcribes `lines` (each with its language's voice, and `extra` jobs), and scores them. */
-async function roundTrip(lines: readonly Line[], extra: readonly { readonly line: Line; readonly voice: string }[], log: (s: string) => void): Promise<{ readonly rows: Scored[]; readonly extraRows: Scored[]; readonly decode: Record<string, unknown>; readonly tools: Record<string, string> }> {
+async function roundTrip(lines: readonly Line[], extra: readonly { readonly line: Line; readonly voice: string }[], log: (s: string) => void, records: readonly Heard[] = HEARD): Promise<{ readonly rows: Scored[]; readonly extraRows: Scored[]; readonly decode: Record<string, unknown>; readonly tools: Record<string, string> }> {
     const cache = process.env['SHRAMKO_LISTEN_CACHE'] ?? join(ROOT, '.cache', 'listen');
     const py = process.env['SHRAMKO_LISTEN_PY'] ?? 'python';
     const lockPath = process.env['GPU_LOCK'] ?? 'C:/dev/.gpu-lock';
@@ -610,7 +623,7 @@ async function roundTrip(lines: readonly Line[], extra: readonly { readonly line
     for (const [voice, texts] of byVoice) clips.set(voice, makeClips(cache, voice, texts, log));
     const jobs: Job[] = wanted.map((w) => ({ line: w.line, voice: w.voice, wav: clips.get(w.voice)?.get(w.line.text) as string }));
     const { heard, decode, tools } = await transcribe(cache, py, lockPath, jobs, log);
-    const scored = jobs.map((j) => score(j.line, j.voice, heard.get(j) as string));
+    const scored = jobs.map((j) => score(j.line, j.voice, heard.get(j) as string, records));
     return { rows: scored.slice(0, lines.length), extraRows: scored.slice(lines.length), decode, tools };
 }
 
@@ -639,7 +652,7 @@ export async function main(argv: readonly string[]): Promise<number> {
         const reportPath = outAt >= 0 && argv[outAt + 1] !== undefined ? (argv[outAt + 1] as string) : join(cache, 'words', 'simulator.json');
         const lines = simulatorLines(root);
         out(`listen-words: ${lines.length} lines of the simulator's Fly by Sound files (${SIM_FILES.join(', ')})`);
-        const { rows } = await roundTrip(lines, [], out);
+        const { rows } = await roundTrip(lines, [], out, [...HEARD, ...SIM_HEARD]);
         const languages = Object.fromEntries(LOCALES.map((l) => [l, summarise(rows, l, BOUNDS[l], [])]));
         writeFileSync(reportPath, `${JSON.stringify({ format: 'shramko-listen-words-sim/1', date: new Date().toISOString(), root, files: SIM_FILES, bounds: BOUNDS, languages, rows: rows.filter((r) => r.rate > 0).map(rowOut) }, null, 1)}\n`);
         for (const l of LOCALES) {
