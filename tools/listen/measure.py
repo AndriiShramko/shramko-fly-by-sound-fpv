@@ -713,7 +713,7 @@ def itd_us(x, t0, t1, max_us=1200.0):
         a, b, c = cc[p - 1], cc[p], cc[p + 1]
         den = a - 2 * b + c
         delta = 0.5 * (a - c) / den if den != 0 else 0.0
-    return (p - m + delta) / RATE * 1e6
+    return float((p - m + delta) / RATE * 1e6)
 
 
 def ring(d, job):
@@ -788,7 +788,8 @@ def hum_pitch(x, meta, t0, t1):
     if not hz:
         return None, None
     mono = x[:, 0] + x[:, 1]
-    track = pitch_track(mono, t0, t1, hop=0.01, n=4096, fmin=0.8 * min(hz), fmax=1.25 * max(hz))
+    # n = 16384 (2.9 Hz bins): with 4096 the track of a 165 Hz note read 7 cents sharp of the plan (measured 2026-11-12)
+    track = pitch_track(mono, t0, t1, hop=0.01, n=16384, fmin=0.8 * min(hz), fmax=1.25 * max(hz))
     level = [rms(mono[int(t * RATE) - 240 : int(t * RATE) + 240]) for t, _ in track]
     top = max(level) if level else 0.0
     fs = [f for (t, f), lv in zip(track, level) if lv > top * 10 ** (-20 / 20)]

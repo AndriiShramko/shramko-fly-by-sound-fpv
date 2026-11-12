@@ -1,11 +1,11 @@
 {
  "format": "shramko-listen-evidence/1",
- "key": "12ef49effe442391d82bd336e6c01ec681a9c8a31ee118ea48985bcede57a622",
+ "key": "a5d3716a9fe52e691118bfb392c7da23c4f8c4decb43d52bd160237988b229d5",
  "inputs": {
-  "hash": "12ef49effe442391d82bd336e6c01ec681a9c8a31ee118ea48985bcede57a622",
-  "files": 127,
+  "hash": "a5d3716a9fe52e691118bfb392c7da23c4f8c4decb43d52bd160237988b229d5",
+  "files": 128,
   "driver": 4,
-  "measure": 4,
+  "measure": 5,
   "chrome": "156.0.8078.80",
   "tools": {
    "python": "3.11.9",
@@ -15,7 +15,7 @@
    "pyloudnorm": "0.2.0"
   }
  },
- "date": "2026-11-12T12:34:50.155Z",
+ "date": "2026-11-12T20:30:14.194Z",
  "id": "VL-6-speech",
  "claim": "the voice (all its lines, at the engine's utterance volume, the Windows desktop voice) is 3 to 6 LU over the ring flight's mix, in every theme (control: the v0.12 utterance volume 1); in tunnel-gaps flown with the chime above and below, the ceiling and the floor, the breath of air lowers the voice's margin over the mix by at most 0.5 LU in every theme (against the same flight with Sound from above and below off); the tunnel's own margin is reported",
  "thresholds": {
@@ -40,8 +40,8 @@
    "flight": {
     "soft": {
      "voiceLufs": -23.82,
-     "mixLufs": -28.42,
-     "overLu": 4.61,
+     "mixLufs": -28.5,
+     "overLu": 4.68,
      "volume": 0.74,
      "lines": [
       {
@@ -56,7 +56,7 @@
        "t0": 6.5,
        "volume": 0.74,
        "speechLufs": -22.96,
-       "over3sBeforeLu": 3.67
+       "over3sBeforeLu": 3.79
       },
       {
        "key": "fly.attempt",
@@ -69,8 +69,8 @@
     },
     "clear": {
      "voiceLufs": -20.57,
-     "mixLufs": -25.13,
-     "overLu": 4.56,
+     "mixLufs": -25.3,
+     "overLu": 4.74,
      "volume": 0.87,
      "lines": [
       {
@@ -85,7 +85,7 @@
        "t0": 6.5,
        "volume": 0.87,
        "speechLufs": -19.71,
-       "over3sBeforeLu": 4.59
+       "over3sBeforeLu": 4.75
       },
       {
        "key": "fly.attempt",
@@ -98,8 +98,8 @@
     },
     "race": {
      "voiceLufs": -23.07,
-     "mixLufs": -27.81,
-     "overLu": 4.74,
+     "mixLufs": -27.83,
+     "overLu": 4.76,
      "volume": 0.77,
      "lines": [
       {
@@ -114,7 +114,7 @@
        "t0": 6.5,
        "volume": 0.77,
        "speechLufs": -22.21,
-       "over3sBeforeLu": 4.22
+       "over3sBeforeLu": 4.25
       },
       {
        "key": "fly.attempt",
@@ -258,8 +258,8 @@
     "flight": {
      "soft": {
       "voiceLufs": -17.32,
-      "mixLufs": -28.42,
-      "overLu": 11.11,
+      "mixLufs": -28.5,
+      "overLu": 11.18,
       "volume": 1,
       "lines": [
        {
@@ -274,7 +274,7 @@
         "t0": 6.5,
         "volume": 1,
         "speechLufs": -16.46,
-        "over3sBeforeLu": 10.17
+        "over3sBeforeLu": 10.29
        },
        {
         "key": "fly.attempt",
@@ -287,8 +287,8 @@
      },
      "clear": {
       "voiceLufs": -17.32,
-      "mixLufs": -25.13,
-      "overLu": 7.81,
+      "mixLufs": -25.3,
+      "overLu": 7.99,
       "volume": 1,
       "lines": [
        {
@@ -303,7 +303,7 @@
         "t0": 6.5,
         "volume": 1,
         "speechLufs": -16.46,
-        "over3sBeforeLu": 7.84
+        "over3sBeforeLu": 8
        },
        {
         "key": "fly.attempt",
@@ -316,8 +316,8 @@
      },
      "race": {
       "voiceLufs": -17.32,
-      "mixLufs": -27.81,
-      "overLu": 10.49,
+      "mixLufs": -27.83,
+      "overLu": 10.51,
       "volume": 1,
       "lines": [
        {
@@ -332,7 +332,7 @@
         "t0": 6.5,
         "volume": 1,
         "speechLufs": -16.46,
-        "over3sBeforeLu": 9.97
+        "over3sBeforeLu": 10
        },
        {
         "key": "fly.attempt",

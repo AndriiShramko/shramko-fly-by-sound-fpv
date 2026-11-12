@@ -1,0 +1,139 @@
+{
+ "format": "shramko-listen-evidence/1",
+ "key": "a5d3716a9fe52e691118bfb392c7da23c4f8c4decb43d52bd160237988b229d5",
+ "inputs": {
+  "hash": "a5d3716a9fe52e691118bfb392c7da23c4f8c4decb43d52bd160237988b229d5",
+  "files": 128,
+  "driver": 4,
+  "measure": 5,
+  "chrome": "156.0.8078.80",
+  "tools": {
+   "python": "3.11.9",
+   "numpy": "2.4.6",
+   "scipy": "1.17.1",
+   "soundfile": "0.14.0",
+   "pyloudnorm": "0.2.0"
+  }
+ },
+ "date": "2026-11-12T20:30:14.194Z",
+ "id": "VL-B2-fold",
+ "claim": "the target hum alone through Chrome's HRTF: a target at 120, 150 or 170 degrees from the nose sounds at the ears as one at 90 degrees on its side (level difference within 1 dB, time difference within 20 us): nothing depends on hearing behind (control: SonicPrefs.beacon false, the true direction behind)",
+ "thresholds": {
+  "foldMaxDb": {
+   "value": 1,
+   "kind": "task bound"
+  },
+  "foldMaxUs": {
+   "value": 20,
+   "kind": "task bound"
+  }
+ },
+ "measured": {
+  "rows": [
+   {
+    "azDeg": 120,
+    "ildDiffDb": 0.02,
+    "itdDiffUs": -3.54,
+    "ok": true
+   },
+   {
+    "azDeg": 150,
+    "ildDiffDb": 0.004,
+    "itdDiffUs": -5.46,
+    "ok": true
+   },
+   {
+    "azDeg": 170,
+    "ildDiffDb": -0.003,
+    "itdDiffUs": 0.96,
+    "ok": true
+   },
+   {
+    "azDeg": 90,
+    "ildDb": -2.18,
+    "itdUs": -871.2
+   },
+   {
+    "azDeg": -120,
+    "ildDiffDb": -0.021,
+    "itdDiffUs": -5.21,
+    "ok": true
+   },
+   {
+    "azDeg": -150,
+    "ildDiffDb": -0.001,
+    "itdDiffUs": -0.12,
+    "ok": true
+   },
+   {
+    "azDeg": -170,
+    "ildDiffDb": 0.013,
+    "itdDiffUs": 0.77,
+    "ok": true
+   },
+   {
+    "azDeg": -90,
+    "ildDb": 2.14,
+    "itdUs": 851.7
+   }
+  ]
+ },
+ "controls": [
+  {
+   "name": "the beacon off (SonicPrefs.beacon false): the hum from its true direction behind",
+   "measured": {
+    "rows": [
+     {
+      "azDeg": 120,
+      "ildDiffDb": 0.207,
+      "itdDiffUs": 80.67,
+      "ok": false
+     },
+     {
+      "azDeg": 150,
+      "ildDiffDb": 1.127,
+      "itdDiffUs": 398.66,
+      "ok": false
+     },
+     {
+      "azDeg": 170,
+      "ildDiffDb": 1.771,
+      "itdDiffUs": 710.13,
+      "ok": false
+     },
+     {
+      "azDeg": 90,
+      "ildDb": -2.18,
+      "itdUs": -871.2
+     },
+     {
+      "azDeg": -120,
+      "ildDiffDb": -0.232,
+      "itdDiffUs": -90.6,
+      "ok": false
+     },
+     {
+      "azDeg": -150,
+      "ildDiffDb": -1.192,
+      "itdDiffUs": -405.45,
+      "ok": false
+     },
+     {
+      "azDeg": -170,
+      "ildDiffDb": -1.757,
+      "itdDiffUs": -690.22,
+      "ok": false
+     },
+     {
+      "azDeg": -90,
+      "ildDb": 2.14,
+      "itdUs": 851.7
+     }
+    ]
+   },
+   "ok": true
+  }
+ ],
+ "valid": true,
+ "pass": true
+}

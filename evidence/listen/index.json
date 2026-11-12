@@ -1,12 +1,12 @@
 {
  "format": "shramko-listen-index/1",
- "key": "12ef49effe442391d82bd336e6c01ec681a9c8a31ee118ea48985bcede57a622",
- "pass": true,
+ "key": "a5d3716a9fe52e691118bfb392c7da23c4f8c4decb43d52bd160237988b229d5",
+ "pass": false,
  "inputs": {
-  "hash": "12ef49effe442391d82bd336e6c01ec681a9c8a31ee118ea48985bcede57a622",
-  "files": 127,
+  "hash": "a5d3716a9fe52e691118bfb392c7da23c4f8c4decb43d52bd160237988b229d5",
+  "files": 128,
   "driver": 4,
-  "measure": 4,
+  "measure": 5,
   "chrome": "156.0.8078.80",
   "tools": {
    "python": "3.11.9",
@@ -16,7 +16,7 @@
    "pyloudnorm": "0.2.0"
   }
  },
- "date": "2026-11-12T12:34:50.155Z",
+ "date": "2026-11-12T20:30:14.194Z",
  "run": "pnpm listen",
  "checks": [
   {
@@ -72,6 +72,36 @@
    "valid": true,
    "pass": true,
    "file": "VL-1-elevation.json"
+  },
+  {
+   "id": "VL-B1-side",
+   "valid": true,
+   "pass": false,
+   "file": "VL-B1-side.json"
+  },
+  {
+   "id": "VL-B2-fold",
+   "valid": true,
+   "pass": true,
+   "file": "VL-B2-fold.json"
+  },
+  {
+   "id": "VL-B3-octave",
+   "valid": true,
+   "pass": false,
+   "file": "VL-B3-octave.json"
+  },
+  {
+   "id": "VL-B4-cover",
+   "valid": true,
+   "pass": false,
+   "file": "VL-B4-cover.json"
+  },
+  {
+   "id": "VL-B5-far",
+   "valid": true,
+   "pass": true,
+   "file": "VL-B5-far.json"
   }
  ]
 }
