@@ -350,7 +350,7 @@ export function simulatorLines(root: string): Line[] {
             if (t === undefined) throw new Error(`the simulator's ${locale} files have no ${k}`);
             return t;
         };
-        const keyOf: Readonly<Record<string, string>> = { 'sonic.say.helpShare': 'L', 'sonic.say.helpPrevious': 'B', 'sonic.say.helpRepeat': 'Z', 'sonicrec.survey.listening': own('sonicrec.key.Enter') };
+        const keyOf: Readonly<Record<string, string>> = { 'sonic.say.helpShare': 'L', 'sonic.say.helpPrevious': 'B', 'sonic.say.helpRepeat': 'Z', 'sonic.say.helpHome': 'X', 'sonic.say.soundBack': 'Z', 'sonic.say.menuItemKey': 'N', 'sonicrec.survey.listening': own('sonicrec.key.Enter') };
         const values = (key: string): Record<string, string> => ({
             time: pkg.duration(65_000),
             copy: own('sonic.copyKeys'),
@@ -359,6 +359,10 @@ export function simulatorLines(root: string): Line[] {
             menu: own('sonicrec.key.Escape'),
             repeat: 'Z',
             next: 'N',
+            // the simulator's lane sonic-hints: the step's keys (back, the main menu) and a lesson menu item with its key
+            previous: 'B',
+            home: 'X',
+            label: own('sonic.say.menuNextStep'),
             lesson: pkg.say('lesson.rings-first.title'),
             title: pkg.say('lesson.rings-first.title'),
             cm: '12',
