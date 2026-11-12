@@ -13,6 +13,11 @@
 // middle TARGET_AHEAD_M ahead), the floor and the ceiling from where the sampler saw them (as in v0.13). Each carries a
 // breath of air up to about 16 kHz (`airDb`), because the HRTF tells height only in that band. Notes, intervals,
 // rhythm and levels stay v0.13's; with the setting off every plan is v0.13's exactly.
+//
+// The beacon (lane sonic-beacon, owner's complaint of 2026-11-10): with SonicPrefs.beacon on (absent or true) the target
+// hum's direction is folded into the front half circle (beyond 90 degrees from the nose it stays at the ear of its side,
+// src/cues/beacon.ts) and on course (within ON_COURSE_DEG) the hum is an octave higher, on the scale. Tempo, level and
+// elevation stay as they were; with the setting off every plan is that of b102ce6 exactly.
 import type { ActiveCue, CueEvent, CueId, FlightSample, LayerId, LessonLayers, MaterialClass, ObjectShape, Quat, SonicFrameInput, SonicObject, SonicPrefs, SonicWorld, ThemeDef, Timbre, Vec3 } from '../contract';
 import { LAYER_IDS } from '../contract';
 import { defaultPrefs } from '../prefs/prefs';
@@ -22,6 +27,7 @@ import { headingBasis, listenerBasis, worldToListener, type Basis } from '../sen
 import type { Hazard, SceneSample } from '../sense/types';
 import { applyCalm } from '../theme/calm';
 import { gateMelody, noteHz, noteHzAt } from '../theme/pitch';
+import { beaconBearing, foldToFront } from './beacon';
 import { alignOffset, heightTones, isGate, referenceHeightM, targetHeightM, type HeightToneRule, type TargetTone } from './height';
 import { add, dot, length, normalize, quatConjugate, quatRotate, scale, sub, yawQuat } from '../util/vec';
 import {
@@ -522,6 +528,11 @@ export class CuePlanner {
         return null;
     }
 
+    /** Lane sonic-beacon: the target hum folded to the front half circle, an octave up on course (SonicPrefs.beacon: absent or true). */
+    private get beacon(): boolean {
+        return this.prefsValue.beacon !== false;
+    }
+
     /** Lane s13-elev: the cues of up and down also come from above or below (SonicPrefs.heightDirection: absent or true). */
     private get elevation(): boolean {
         return this.prefsValue.heightDirection !== false;
@@ -642,7 +653,10 @@ export class CuePlanner {
         const rough = targetRoughness(aimMissM(toWorld, travel), distance, rule);
         const beat = targetBeat(rough);
         const rate = targetRateHz(distance, rule);
-        const n = note(theme.scale, p['humStep'] as number, this.pitch('target'), elevationSteps(dirL[1], this.prefsValue.heightPolarity));
+        const bearing = this.beacon ? beaconBearing(dirL) : null;
+        // on course: one octave up, as many scale steps as the scale has degrees (note() keeps it on the scale)
+        const octave = bearing !== null && bearing.onCourse ? [theme.scale.steps.length] : [];
+        const n = note(theme.scale, p['humStep'] as number, this.pitch('target'), elevationSteps(dirL[1], this.prefsValue.heightPolarity), ...octave);
         const safety = theme.layers.safety.params as Record<string, number>;
         const dc = distanceCode(distance, { nearHz: 9000, farHz: 1400, farM: rule.farM, sendNear: 0.05, sendFar: 0.4, ildBoostDb: safety['ildBoostDb'] as number });
         const period = 1 / rate;
@@ -651,7 +665,7 @@ export class CuePlanner {
             cue: 'target.hum',
             layer: 'target',
             priority: PRIORITY.target,
-            dir: dirL,
+            dir: bearing === null ? dirL : foldToFront(dirL),
             distance,
             timbre: theme.layers.target.timbre,
             noteIndex: n.index,

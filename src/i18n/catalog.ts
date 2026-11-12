@@ -185,6 +185,8 @@ export const FREE_KEYS = [
     'menu.setting.motor-level',
     'menu.setting.height-direction',
     'menu.setting.height-direction-what',
+    'menu.setting.beacon',
+    'menu.setting.beacon-what',
     'menu.value.on',
     'menu.value.off',
     'menu.value.up-higher',

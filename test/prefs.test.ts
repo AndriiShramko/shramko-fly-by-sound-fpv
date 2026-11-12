@@ -27,7 +27,7 @@ function set(obj: unknown, key: string, value: unknown): unknown {
 describe('the defaults', () => {
     const d = defaultPrefs();
 
-    it('are what the spec says: soft theme, not calm, up is higher, the app speaks, captions on, the motor on (v0.13, M41-16) at its calibrated level, the full path, the heading frame, the target tone on, up and down by direction too (lane s13-elev)', () => {
+    it('are what the spec says: soft theme, not calm, up is higher, the app speaks, captions on, the motor on (v0.13, M41-16) at its calibrated level, the full path, the heading frame, the target tone on, up and down by direction too (lane s13-elev), the target hum as a beacon (lane sonic-beacon)', () => {
         expect(d).toEqual({
             format: FORMATS.prefs,
             theme: 'soft',
@@ -43,7 +43,8 @@ describe('the defaults', () => {
             listenerFrame: 'heading',
             heightTarget: true,
             motorGainDb: 0,
-            heightDirection: true
+            heightDirection: true,
+            beacon: true
         });
     });
 

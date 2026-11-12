@@ -364,6 +364,8 @@
     "menu.setting.motor-level": "Motor volume",
     "menu.setting.height-direction": "Sound from above and below",
     "menu.setting.height-direction-what": "On: a way above or below an obstacle and the target height note also come from there, with a soft hiss good headphones can place. Off: from ahead, told by their pitch alone. The ceiling and floor come from above and below either way.",
+    "menu.setting.beacon": "Target hum shows the way",
+    "menu.setting.beacon-what": "On: the hum of the next target comes from its side, left or right, even when the target is behind you, and an octave higher when you fly straight at it. Off: it comes from where the target is, ahead or behind.",
     "menu.value.on": "on",
     "menu.value.off": "off",
     "menu.value.up-higher": "up is a higher tone",

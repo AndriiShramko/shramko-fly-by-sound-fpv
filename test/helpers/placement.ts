@@ -27,7 +27,7 @@ export interface FrameRecord {
 }
 
 /** One frame of a scripted flight: where the craft is, how it moves, what the target is, which events come now. */
-interface Step {
+export interface Step {
     readonly pos: Vec3;
     readonly vel: Vec3;
     readonly yawDeg: number;
@@ -35,7 +35,7 @@ interface Step {
     readonly events?: readonly CueEvent[];
 }
 
-interface Flight {
+export interface Flight {
     readonly theme: BuiltinThemeId;
     readonly layers?: LessonLayers;
     readonly world: SonicWorld | null;
@@ -46,7 +46,7 @@ interface Flight {
 const sample = (t: number, s: Step): FlightSample => ({ t, tick: Math.round(t), pos: s.pos, vel: s.vel, quat: yawQuat(s.yawDeg), rate: [0, 0, 0], yawDeg: s.yawDeg, pitchDeg: 0, rollDeg: 0, sticks: [0, 0, 0, 0], armed: true, touched: false, paused: false });
 
 /** Flies `flight` through one planner with `prefs`: one record a frame. */
-function fly(flight: Flight, prefs: SonicPrefs, sampler?: SamplerOptions): FrameRecord[] {
+export function fly(flight: Flight, prefs: SonicPrefs, sampler?: SamplerOptions): FrameRecord[] {
     const planner = new CuePlanner({ theme: getBuiltinTheme(flight.theme), prefs, ...(flight.layers === undefined ? {} : { layers: flight.layers }), ...(sampler === undefined ? {} : { sampler }) });
     const out: FrameRecord[] = [];
     flight.steps.forEach((s, i) => {
@@ -60,7 +60,7 @@ function fly(flight: Flight, prefs: SonicPrefs, sampler?: SamplerOptions): Frame
 }
 
 /** Straight legs between points at `speed` m/s, nose along each horizontal leg (held when the leg is vertical). */
-function legs(points: readonly Vec3[], speed: number, startYaw: number, target: (pos: Vec3) => SonicObject | null = () => null): Step[] {
+export function legs(points: readonly Vec3[], speed: number, startYaw: number, target: (pos: Vec3) => SonicObject | null = () => null): Step[] {
     const out: Step[] = [];
     let yaw = startYaw;
     for (let k = 0; k + 1 < points.length; k++) {
@@ -81,7 +81,7 @@ function legs(points: readonly Vec3[], speed: number, startYaw: number, target: 
     return out;
 }
 
-const held = (pos: Vec3, yawDeg: number, seconds: number, target: SonicObject | null = null): Step[] => Array.from({ length: Math.round(seconds * 60) }, () => ({ pos, vel: [0, 0, 0] as Vec3, yawDeg, target }));
+export const held = (pos: Vec3, yawDeg: number, seconds: number, target: SonicObject | null = null): Step[] => Array.from({ length: Math.round(seconds * 60) }, () => ({ pos, vel: [0, 0, 0] as Vec3, yawDeg, target }));
 
 function lessonWorld(id: string): AnalyticWorldInfo {
     const w = getLesson(id).world;
@@ -167,7 +167,8 @@ export const PLACEMENT_FLIGHT_IDS = Object.keys(PLACEMENT_FLIGHTS) as PlacementF
 /** The prefs of each flight's v0.13 record: the defaults, or a variant that walks other branches (calm, the polarity turned over). */
 export function v013Prefs(id: PlacementFlightId): Omit<SonicPrefs, 'heightDirection'> {
     const base = defaultPrefs() as SonicPrefs & { heightDirection?: boolean };
-    const { heightDirection: _drop, ...rest } = base;
+    // the beacon (lane sonic-beacon) came after v0.13: off, as v0.13 had none (absent would read as on)
+    const { heightDirection: _drop, ...rest } = { ...base, beacon: false };
     return id === 'tunnel-gaps-race' ? { ...rest, calm: true, heightPolarity: 'up-lower' } : rest;
 }
 

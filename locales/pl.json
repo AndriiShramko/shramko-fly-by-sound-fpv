@@ -364,6 +364,8 @@
     "menu.setting.motor-level": "Głośność silnika",
     "menu.setting.height-direction": "Dźwięk z góry i z dołu",
     "menu.setting.height-direction-what": "Włączone: przejście nad albo pod przeszkodą i dźwięk docelowej wysokości dochodzą też stamtąd, z cichym szumem dla dobrych słuchawek. Wyłączone: z przodu, mówi o tym tylko wysokość dźwięku. Sufit i podłoga i tak dochodzą z góry i z dołu.",
+    "menu.setting.beacon": "Buczenie celu wskazuje drogę",
+    "menu.setting.beacon-what": "Włączone: buczenie następnego celu dochodzi z jego strony, z lewej albo z prawej, nawet gdy cel jest za tobą, i oktawę wyżej, gdy lecisz prosto na niego. Wyłączone: dochodzi stamtąd, gdzie jest cel, z przodu albo z tyłu.",
     "menu.value.on": "włączone",
     "menu.value.off": "wyłączone",
     "menu.value.up-higher": "w górę to wyższy dźwięk",

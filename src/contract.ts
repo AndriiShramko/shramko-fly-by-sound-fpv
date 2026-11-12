@@ -341,6 +341,13 @@ export interface SonicPrefs {
      * to about 16 kHz for the HRTF to shape. Absent or true: on; false: v0.13's placement exactly.
      */
     readonly heightDirection?: boolean;
+    /**
+     * Lane sonic-beacon (owner's complaint of 2026-11-10: no direction in the tunnels): the target hum is a beacon. Its
+     * direction is folded into the front half circle (beyond 90 degrees from the nose it comes from the ear of its
+     * side, since front and behind are not told apart in headphones) and on course (within 8 degrees) it is an octave
+     * higher. Absent or true: on; false: the hum of package b102ce6 exactly.
+     */
+    readonly beacon?: boolean;
 }
 
 // ------------------------------------------------------------------ lessons
