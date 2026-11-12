@@ -2,6 +2,7 @@
   "about": "Spoken length in seconds of each line without parameters, measured with test/fixtures/measure-tts.ps1.",
   "voice": "Microsoft Irina Desktop",
   "seconds": {
+    "answer.need-123": 3.51,
     "answer.not-now": 4.47,
     "answer.skipped": 1.86,
     "answer.timeout": 3.615,

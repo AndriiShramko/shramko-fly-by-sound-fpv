@@ -2,6 +2,7 @@
   "about": "Spoken length in seconds of each line without parameters, measured with test/fixtures/measure-tts.ps1.",
   "voice": "Microsoft Helena Desktop",
   "seconds": {
+    "answer.need-123": 3.205,
     "answer.not-now": 3.84,
     "answer.skipped": 1.4,
     "answer.timeout": 3.64,

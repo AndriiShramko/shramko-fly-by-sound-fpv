@@ -36,6 +36,10 @@ export interface HostOptions {
      * wave 2's W11); false: only the due ones, as its sampler at v0.12, so a touch's own sample may be lost (review M1)
      */
     readonly keepTouched?: boolean;
+    /** how long after a question's lines the pilot answers, ms (default 1200) */
+    readonly answerAfterMs?: number;
+    /** default false: a line that interrupts queues behind the others; true: it cuts them and starts at once, as the browser's speech */
+    readonly cutOnInterrupt?: boolean;
 }
 
 const DEG = 180 / Math.PI;
@@ -94,7 +98,7 @@ export class RecordingHost {
             if (a.kind === 'say') {
                 const text = this.translator.text(a.line);
                 this.events.push({ t: this.t, kind: 'speech', key: a.line.key, text });
-                const start = Math.max(this.t, this.ttsEnd);
+                const start = a.interrupt && this.o.cutOnInterrupt === true ? this.t : Math.max(this.t, this.ttsEnd);
                 this.ttsEnd = start + this.o.ttsBaseMs + this.o.ttsMsPerChar * text.length;
                 this.speaking = true;
             } else if (a.kind === 'cue') this.planner.cue(a.event);
@@ -103,7 +107,7 @@ export class RecordingHost {
                 this.yaw = a.pose.yawDeg;
                 this.vel = [0, 0, 0];
                 this.placed++;
-            } else if (a.kind === 'ask') this.pending = { at: Math.max(this.t, this.ttsEnd) + 1200, question: a.question };
+            } else if (a.kind === 'ask') this.pending = { at: Math.max(this.t, this.ttsEnd) + (this.o.answerAfterMs ?? 1200), question: a.question };
             else if (a.kind === 'scene') this.lastScene = a.scene !== null;
         }
     }
@@ -200,6 +204,17 @@ export class RecordingHost {
             this.record(r.events);
         }
         this.drain();
+    }
+
+    /** A digit the pilot presses now, whatever goes on (a taken one is the runner's answer event; a refused one leaves none). */
+    digit(value: number): void {
+        this.record(this.runner.answer(value, 'key', this.t));
+        this.drain();
+    }
+
+    /** When the pilot will answer the question waiting now, ms; null when none waits. */
+    get answerDue(): number | null {
+        return this.pending?.at ?? null;
     }
 
     hold(seconds: number): void {

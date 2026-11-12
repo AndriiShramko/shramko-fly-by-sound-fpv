@@ -324,6 +324,7 @@
     "answer.skipped": "Pominięte.",
     "answer.not-now": "Nie przyjęte. Teraz nie ma na co odpowiadać.",
     "answer.range": "Nie przyjęte. Naciśnij klawisz od 1 do {max}.",
+    "answer.need-123": "Potrzebny klawisz 1, 2 albo 3.",
     "answer.waiting": "Czekam na odpowiedź. Naciśnij klawisz od 1 do {max} albo 0, aby pominąć. Naciśnij klawisz {repeat}, aby posłuchać jeszcze raz.",
     "answer.timeout": "Brak odpowiedzi. Pomijam.",
     "quiz.skip": "Naciśnij 0, aby pominąć.",

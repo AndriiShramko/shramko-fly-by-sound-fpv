@@ -143,6 +143,7 @@ export const FREE_KEYS = [
     'answer.skipped',
     'answer.not-now',
     'answer.range',
+    'answer.need-123',
     'answer.waiting',
     'answer.timeout',
     'quiz.skip',

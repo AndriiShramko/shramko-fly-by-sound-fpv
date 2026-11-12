@@ -324,6 +324,7 @@
     "answer.skipped": "Omitido.",
     "answer.not-now": "No aceptado. Ahora no hay nada que responder.",
     "answer.range": "No aceptado. Pulsa una tecla del 1 al {max}.",
+    "answer.need-123": "Hace falta la tecla 1, 2 o 3.",
     "answer.waiting": "Espero tu respuesta. Pulsa una tecla del 1 al {max}, o 0 para omitir. Pulsa la tecla {repeat} para escuchar otra vez.",
     "answer.timeout": "Sin respuesta. Paso a lo siguiente.",
     "quiz.skip": "Pulsa 0 para saltarla.",

@@ -292,6 +292,11 @@ export const ASK_TIMEOUT_S = 20;
  * (sonic-keys, the owner's complaint of 2026-11-10: 20 s of silence, then the check moved on without a word). Not in v0.12 timing.
  */
 export const ASK_REMIND_S = 7;
+/**
+ * The action of the `key` event the runner writes for a digit it refuses (review I2 of sonic-keys): the replay refuses the
+ * same digit at the same time (code `Digit<n>` or `Voice<n>`), so the "no" sound and its word are derived, not the host's.
+ */
+export const REFUSED_DIGIT_ACTION = 'answer.refused';
 /** Pause between attempts, s. */
 export const BETWEEN_S = 1.5;
 /** v0.12 (testHooks.speechWait only): a preview was given this long, s. */
@@ -429,6 +434,19 @@ class Runner implements LessonSession {
     private handed = 0;
     private spokenUpTo = 0;
     private speechDeadline = 0;
+    /** the last batch of the lesson's own lines (a reminder is not one: a refusal's word may cut it) */
+    private ownHanded = 0;
+    /**
+     * A refused digit's word (review I1, I2 of sonic-keys). It is no line of the lesson's own: the runner's clocks never wait
+     * for it (the replay derives no refusal: its timing would differ), and the host's report that the queue ran empty, recorded,
+     * is all the replay sees of it. Held while the lesson says something of its own and said right after that (a newer refusal
+     * replaces the held one); said at once otherwise, cutting a reminder or an earlier refusal still being said.
+     */
+    private heldRefusal: SpeechLine | null = null;
+    /** a refusal's word was handed and the host has not reported its queue empty since */
+    private refusalOut = false;
+    /** a held word was said in this run of the lesson's own speech: the rest of the run holds no other (only the "no" sound) */
+    private refusalInRun = false;
     // steps: the task or the intro first, then (module 0) one per sound, scene, trial or round
     private blocks: Block[] = [];
     private blockIndex = 0;
@@ -647,12 +665,28 @@ class Runner implements LessonSession {
     }
 
     /** Hands lines to the host's speech queue; the first one interrupts what is being said when the pilot's key asked for it. */
-    private sayLines(lines: readonly SpeechLine[], interrupt: boolean, t: number): number {
+    private sayLines(lines: readonly SpeechLine[], interrupt: boolean, t: number, own = true): number {
         lines.forEach((line, i) => this.actions.push({ kind: 'say', line, interrupt: i === 0 && interrupt }));
         let ms = 0;
         for (const l of lines) ms += this.fallbackMs(l);
         this.speechDeadline = (interrupt ? t : Math.max(t, this.speechDeadline)) + ms;
-        return ++this.handed;
+        this.handed++;
+        if (own) this.ownHanded = this.handed;
+        return this.handed;
+    }
+
+    /** The lesson's own lines (not a reminder) were handed and are still being said. */
+    private lessonTalking(t: number): boolean {
+        return this.spokenUpTo < this.ownHanded && t < this.speechDeadline;
+    }
+
+    /** The held refusal's word, once the lesson's own lines are over. */
+    private refusalWord(t: number): void {
+        if (this.lessonTalking(t) || this.heldRefusal === null) return;
+        this.actions.push({ kind: 'say', line: this.heldRefusal, interrupt: false });
+        this.heldRefusal = null;
+        this.refusalOut = true;
+        this.refusalInRun = true;
     }
 
     /** Lines were handed that the host has not reported said (and the longest wait for them has not run out). */
@@ -749,7 +783,7 @@ class Runner implements LessonSession {
                 if (t - c.askSpokenAt >= (c.reminded + 1) * ASK_REMIND_S * 1000 && !this.speaking(t)) {
                     c.reminded++;
                     this.actions.push({ kind: 'cue', event: { kind: 'answer', what: 'wait' } });
-                    this.sayLines([{ key: 'answer.waiting', params: { max: c.step.question.options, repeat: this.key('repeat') } }], false, t);
+                    this.sayLines([{ key: 'answer.waiting', params: { max: c.step.question.options, repeat: this.key('repeat') } }], false, t, false);
                 }
                 return false;
             case 'wait':
@@ -766,9 +800,13 @@ class Runner implements LessonSession {
         // every line handed so far has been said (the host's queue ran empty)
         this.spokenUpTo = this.handed;
         this.speechDeadline = t;
+        this.refusalOut = false;
+        // a refusal held while the lesson spoke is said now, before the lesson goes on
+        this.refusalWord(t);
         if (this.current !== null) this.current.spokenSeen = true;
         this.advance(t);
         this.afterScript(t);
+        if (!this.lessonTalking(t)) this.refusalInRun = false;
         return this.drain();
     }
 
@@ -933,6 +971,8 @@ class Runner implements LessonSession {
         if (!this.began || this.left || this.phaseValue === 'passed') return this.drain();
         const jump = prev !== null && dist3(prev.pos, sample.pos) >= JUMP_M;
         if (prev !== null && !this.listening && !jump) this.pathM += dist3(prev.pos, sample.pos); // a longer jump is a reset, not flight
+        // the lesson's lines were not reported said and the longest wait for them ran out: a held refusal goes before what follows
+        this.refusalWord(t);
         this.advance(t);
         if (this.phaseValue === 'flying' && !this.ears && !this.listening) {
             // a place (an attempt begun at the start, or where the last one got to) is no flight: in advance() it set prev
@@ -944,6 +984,7 @@ class Runner implements LessonSession {
             this.advance(t);
         }
         this.afterScript(t);
+        if (!this.lessonTalking(t)) this.refusalInRun = false;
         return this.drain();
     }
 
@@ -1567,23 +1608,32 @@ class Runner implements LessonSession {
         // a digit while the sound of a step plays answers the question right after it, when that one takes early answers:
         // the rest of the plays and the question's lines are left out (sonic-keys: the digit was dropped without a word)
         const next = this.script[0];
-        if (!this.v012 && c !== null && c.step.kind === 'sound' && c.playT0 !== null && next?.kind === 'ask' && next.early === true && this.inRange(value, next.question)) {
+        const early = !this.v012 && c !== null && c.step.kind === 'sound' && c.playT0 !== null && next?.kind === 'ask' && next.early === true ? next : null;
+        if (early !== null && !this.inRange(value, early.question)) {
+            // 1 to 3 are taken now: the word says which (review I3), not that there is nothing to answer
+            const max = early.question.options;
+            this.refuse(max === 3 ? { key: 'answer.need-123' } : { key: 'answer.range', params: { max } }, value, via, t);
+            return this.drain();
+        }
+        if (early !== null) {
             this.script.shift();
             this.stopCurrent();
-            c = { step: next, t0: t, answered: false, batch: 0, spokenSeen: false, askSpokenAt: t, reminded: 0, playT0: null, played: 0, playEnd: 0 };
+            c = { step: early, t0: t, answered: false, batch: 0, spokenSeen: false, askSpokenAt: t, reminded: 0, playT0: null, played: 0, playEnd: 0 };
             this.current = c;
         }
         if (c === null || c.step.kind !== 'ask' || c.answered) {
-            this.refuse(null, t);
+            this.refuse({ key: 'answer.not-now' }, value, via, t);
             return this.drain();
         }
         const q = c.step.question;
         const skip = value === 0 && q.skippable;
         if (!this.inRange(value, q)) {
-            this.refuse(q.options, t);
+            this.refuse({ key: 'answer.range', params: { max: q.options } }, value, via, t);
             return this.drain();
         }
         c.answered = true;
+        // the answer's own words come now: a refusal not yet said is over
+        this.heldRefusal = null;
         this.emit({ t, kind: 'answer', item: q.id, value: skip ? null : value, via: skip ? 'skip' : via });
         this.current = null;
         this.interruptNext = true;
@@ -1609,13 +1659,26 @@ class Runner implements LessonSession {
     }
 
     /**
-     * A digit that answers nothing: the "no" sound at once and a word after what is being said ("Not taken. Nothing to
-     * answer now." or "Not taken. Press 1 to {max}."). No event: the replay gets no input, and the line is the host's to it.
+     * A digit that answers nothing: the "no" sound at once and a word ("Not taken. Nothing to answer now.", "Not taken. Press
+     * 1 to {max}.", "Press 1, 2 or 3."). Its event is a `key` with the action REFUSED_DIGIT_ACTION (the replay's input, compared with nothing).
+     * The word comes right after the sound when the lesson says nothing of its own, cutting a reminder or an earlier refusal;
+     * while the lesson speaks it waits for the end of those lines (a newer refusal replaces it), and one such word at most
+     * holds back a run of the lesson's speech (review I1). Cutting the lesson's own lines to say it first is not done: the
+     * browser's speech has one queue, so the cut line would be said again from its start, and a digit every second would
+     * hold it for ever.
      */
-    private refuse(max: number | null, t: number): void {
+    private refuse(line: SpeechLine, value: number, via: 'key' | 'voice', t: number): void {
         if (this.v012 || !this.began || this.pausedAt !== null) return;
+        // the replay's input: it refuses the digit again at the same time, so the "no" sound and the word are derived too
+        this.emit({ t, kind: 'key', code: via === 'voice' ? `Voice${value}` : `Digit${value}`, action: REFUSED_DIGIT_ACTION });
         this.actions.push({ kind: 'cue', event: { kind: 'answer', what: 'no' } });
-        this.sayLines([max === null ? { key: 'answer.not-now' } : { key: 'answer.range', params: { max } }], false, t);
+        if (this.lessonTalking(t)) {
+            if (!this.refusalInRun) this.heldRefusal = line;
+            return;
+        }
+        this.heldRefusal = null;
+        this.actions.push({ kind: 'say', line, interrupt: this.refusalOut || this.speaking(t) });
+        this.refusalOut = true;
     }
 
     // -------------------------------------------------------------- N, B, Z and the lesson menu
@@ -1638,6 +1701,8 @@ class Runner implements LessonSession {
         this.t = Math.max(this.t, t);
         if (!this.began || this.left) return this.drain();
         this.catchUp(t);
+        // the lesson moves on by the key: a refusal not yet said is over
+        this.heldRefusal = null;
         this.interruptNext = true;
         try {
             run();

@@ -324,6 +324,7 @@
     "answer.skipped": "Skipped.",
     "answer.not-now": "Not taken. There is nothing to answer now.",
     "answer.range": "Not taken. Press a key from 1 to {max}.",
+    "answer.need-123": "Press 1, 2 or 3.",
     "answer.waiting": "Waiting for your answer. Press a key from 1 to {max}, or 0 to skip. Press {repeat} to hear it again.",
     "answer.timeout": "No answer. Skipping this one.",
     "quiz.skip": "Press 0 to skip.",

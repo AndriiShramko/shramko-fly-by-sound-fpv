@@ -112,7 +112,12 @@ describe('sonic-keys (b): every digit is acknowledged by a short sound and a wor
         const h = new Host(undefined, false);
         h.press(1);
         expect(h.cues()).toContainEqual({ kind: 'answer', what: 'no' });
-        expect(h.said()).toContain('answer.not-now');
+        // pressed during the intro: the word waits for the intro's lines (review I1), then comes before what follows
+        expect(h.said()).not.toContain('answer.not-now');
+        h.until((x) => x.said().includes('answer.not-now'), 60);
+        const said = h.said();
+        expect(said.indexOf('answer.not-now')).toBeGreaterThan(said.indexOf('lesson.ears-headphones.goal.1'));
+        expect(said.filter((k) => k === 'answer.not-now')).toHaveLength(1);
         // the question of trial 1 asked (lines said at once), then a 7
         const q = new Host();
         q.until((x) => x.asks().length > 0, 60);
