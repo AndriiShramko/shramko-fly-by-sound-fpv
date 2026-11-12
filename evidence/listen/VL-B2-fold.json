@@ -1,11 +1,11 @@
 {
  "format": "shramko-listen-evidence/1",
- "key": "a5d3716a9fe52e691118bfb392c7da23c4f8c4decb43d52bd160237988b229d5",
+ "key": "fc981000197b4ae7ccfcd14884d2e93eccb582d0f13a7f14ca3c3a02578c6147",
  "inputs": {
-  "hash": "a5d3716a9fe52e691118bfb392c7da23c4f8c4decb43d52bd160237988b229d5",
+  "hash": "fc981000197b4ae7ccfcd14884d2e93eccb582d0f13a7f14ca3c3a02578c6147",
   "files": 128,
   "driver": 4,
-  "measure": 5,
+  "measure": 6,
   "chrome": "156.0.8078.80",
   "tools": {
    "python": "3.11.9",
@@ -15,7 +15,7 @@
    "pyloudnorm": "0.2.0"
   }
  },
- "date": "2026-11-12T20:30:14.194Z",
+ "date": "2026-11-12T20:44:02.617Z",
  "id": "VL-B2-fold",
  "claim": "the target hum alone through Chrome's HRTF: a target at 120, 150 or 170 degrees from the nose sounds at the ears as one at 90 degrees on its side (level difference within 1 dB, time difference within 20 us): nothing depends on hearing behind (control: SonicPrefs.beacon false, the true direction behind)",
  "thresholds": {
@@ -33,48 +33,48 @@
    {
     "azDeg": 120,
     "ildDiffDb": 0.02,
-    "itdDiffUs": -3.54,
+    "itdDiffUs": -3.71,
     "ok": true
    },
    {
     "azDeg": 150,
-    "ildDiffDb": 0.004,
-    "itdDiffUs": -5.46,
+    "ildDiffDb": 0.003,
+    "itdDiffUs": -5.73,
     "ok": true
    },
    {
     "azDeg": 170,
     "ildDiffDb": -0.003,
-    "itdDiffUs": 0.96,
+    "itdDiffUs": 0.97,
     "ok": true
    },
    {
     "azDeg": 90,
-    "ildDb": -2.18,
-    "itdUs": -871.2
+    "ildDb": -4.17,
+    "itdUs": -871.8
    },
    {
     "azDeg": -120,
     "ildDiffDb": -0.021,
-    "itdDiffUs": -5.21,
+    "itdDiffUs": -5.4,
     "ok": true
    },
    {
     "azDeg": -150,
     "ildDiffDb": -0.001,
-    "itdDiffUs": -0.12,
+    "itdDiffUs": -0.26,
     "ok": true
    },
    {
     "azDeg": -170,
     "ildDiffDb": 0.013,
-    "itdDiffUs": 0.77,
+    "itdDiffUs": 0.76,
     "ok": true
    },
    {
     "azDeg": -90,
-    "ildDb": 2.14,
-    "itdUs": 851.7
+    "ildDb": 4.14,
+    "itdUs": 851.6
    }
   ]
  },

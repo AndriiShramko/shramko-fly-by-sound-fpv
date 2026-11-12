@@ -1,11 +1,11 @@
 {
  "format": "shramko-listen-evidence/1",
- "key": "a5d3716a9fe52e691118bfb392c7da23c4f8c4decb43d52bd160237988b229d5",
+ "key": "fc981000197b4ae7ccfcd14884d2e93eccb582d0f13a7f14ca3c3a02578c6147",
  "inputs": {
-  "hash": "a5d3716a9fe52e691118bfb392c7da23c4f8c4decb43d52bd160237988b229d5",
+  "hash": "fc981000197b4ae7ccfcd14884d2e93eccb582d0f13a7f14ca3c3a02578c6147",
   "files": 128,
   "driver": 4,
-  "measure": 5,
+  "measure": 6,
   "chrome": "156.0.8078.80",
   "tools": {
    "python": "3.11.9",
@@ -15,9 +15,9 @@
    "pyloudnorm": "0.2.0"
   }
  },
- "date": "2026-11-12T20:30:14.194Z",
+ "date": "2026-11-12T20:44:02.617Z",
  "id": "VL-B3-octave",
- "claim": "the target stem's measured pitch with the target at 0 and 5 degrees from the nose (on course) is 1200 cents (within 5) above its pitch at 12 degrees, on both sides (control: the octave off, SonicPrefs.beacon false)",
+ "claim": "the target stem's measured pitch with the target at 0 and 5 degrees from the nose (on course) is 1200 cents (within 5) above the hum's off-course note (measured straight ahead with the beacon off, where no off-course beating blurs it), on both sides (control: the octave off, SonicPrefs.beacon false)",
  "thresholds": {
   "octaveCents": {
    "value": 1200,
@@ -32,42 +32,42 @@
   "rows": [
    {
     "azDeg": 0,
-    "vsAzDeg": 12,
-    "measuredHz": 329.55,
-    "refHz": 164.29,
+    "vs": "beacon off, 0 degrees",
+    "measuredHz": 329.578,
+    "refHz": 164.784,
     "planHz": 329.62760063137614,
     "refPlanHz": 164.81380031568807,
-    "cents": 1205.07,
-    "ok": false
+    "cents": 1200.05,
+    "ok": true
    },
    {
     "azDeg": 5,
-    "vsAzDeg": 12,
-    "measuredHz": 329.34,
-    "refHz": 164.29,
+    "vs": "beacon off, 0 degrees",
+    "measuredHz": 329.282,
+    "refHz": 164.784,
     "planHz": 329.62760063137614,
     "refPlanHz": 164.81380031568807,
-    "cents": 1203.98,
+    "cents": 1198.5,
     "ok": true
    },
    {
     "azDeg": 0,
-    "vsAzDeg": -12,
-    "measuredHz": 329.55,
-    "refHz": 164.27,
+    "vs": "beacon off, 0 degrees",
+    "measuredHz": 329.578,
+    "refHz": 164.784,
     "planHz": 329.62760063137614,
     "refPlanHz": 164.81380031568807,
-    "cents": 1205.26,
-    "ok": false
+    "cents": 1200.05,
+    "ok": true
    },
    {
     "azDeg": -5,
-    "vsAzDeg": -12,
-    "measuredHz": 329.37,
-    "refHz": 164.27,
+    "vs": "beacon off, 0 degrees",
+    "measuredHz": 329.297,
+    "refHz": 164.784,
     "planHz": 329.62760063137614,
     "refPlanHz": 164.81380031568807,
-    "cents": 1204.3,
+    "cents": 1198.57,
     "ok": true
    }
   ]
@@ -79,42 +79,42 @@
     "rows": [
      {
       "azDeg": 0,
-      "vsAzDeg": 12,
-      "measuredHz": 164.8,
-      "refHz": 164.29,
+      "vs": "beacon off, 0 degrees",
+      "measuredHz": 164.784,
+      "refHz": 164.784,
       "planHz": 164.81380031568807,
       "refPlanHz": 164.81380031568807,
-      "cents": 5.33,
+      "cents": 0,
       "ok": false
      },
      {
       "azDeg": 5,
-      "vsAzDeg": 12,
-      "measuredHz": 164.59,
-      "refHz": 164.29,
+      "vs": "beacon off, 0 degrees",
+      "measuredHz": 164.496,
+      "refHz": 164.784,
       "planHz": 164.81380031568807,
       "refPlanHz": 164.81380031568807,
-      "cents": 3.08,
+      "cents": -3.03,
       "ok": false
      },
      {
       "azDeg": 0,
-      "vsAzDeg": -12,
-      "measuredHz": 164.8,
-      "refHz": 164.27,
+      "vs": "beacon off, 0 degrees",
+      "measuredHz": 164.784,
+      "refHz": 164.784,
       "planHz": 164.81380031568807,
       "refPlanHz": 164.81380031568807,
-      "cents": 5.53,
+      "cents": 0,
       "ok": false
      },
      {
       "azDeg": -5,
-      "vsAzDeg": -12,
-      "measuredHz": 164.62,
-      "refHz": 164.27,
+      "vs": "beacon off, 0 degrees",
+      "measuredHz": 164.496,
+      "refHz": 164.784,
       "planHz": 164.81380031568807,
       "refPlanHz": 164.81380031568807,
-      "cents": 3.59,
+      "cents": -3.03,
       "ok": false
      }
     ]
@@ -123,5 +123,5 @@
   }
  ],
  "valid": true,
- "pass": false
+ "pass": true
 }

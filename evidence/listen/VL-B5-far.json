@@ -1,11 +1,11 @@
 {
  "format": "shramko-listen-evidence/1",
- "key": "a5d3716a9fe52e691118bfb392c7da23c4f8c4decb43d52bd160237988b229d5",
+ "key": "fc981000197b4ae7ccfcd14884d2e93eccb582d0f13a7f14ca3c3a02578c6147",
  "inputs": {
-  "hash": "a5d3716a9fe52e691118bfb392c7da23c4f8c4decb43d52bd160237988b229d5",
+  "hash": "fc981000197b4ae7ccfcd14884d2e93eccb582d0f13a7f14ca3c3a02578c6147",
   "files": 128,
   "driver": 4,
-  "measure": 5,
+  "measure": 6,
   "chrome": "156.0.8078.80",
   "tools": {
    "python": "3.11.9",
@@ -15,7 +15,7 @@
    "pyloudnorm": "0.2.0"
   }
  },
- "date": "2026-11-12T20:30:14.194Z",
+ "date": "2026-11-12T20:44:02.617Z",
  "id": "VL-B5-far",
  "claim": "the target hum heard from afar: in the third octave of its note, over the hops where it sounds, the target stem is at least 6 dB over the motor (the default craft at output 0.5) and the room tone at 40 m (also measured at 5 and 20 m) (control: the hum 20 dB down)",
  "thresholds": {
@@ -30,21 +30,21 @@
     "distM": 5,
     "azDeg": 30,
     "humHz": 164.81,
-    "marginDb": 31.69,
+    "marginDb": 31.84,
     "soundingS": 1.46
    },
    {
     "distM": 20,
     "azDeg": 30,
     "humHz": 164.81,
-    "marginDb": 26.73,
+    "marginDb": 26.88,
     "soundingS": 1.41
    },
    {
     "distM": 40,
     "azDeg": 30,
     "humHz": 164.81,
-    "marginDb": 24.48,
+    "marginDb": 24.64,
     "soundingS": 1.1
    }
   ]
@@ -58,21 +58,21 @@
       "distM": 5,
       "azDeg": 30,
       "humHz": 164.81,
-      "marginDb": 11.69,
+      "marginDb": 11.84,
       "soundingS": 1.46
      },
      {
       "distM": 20,
       "azDeg": 30,
       "humHz": 164.81,
-      "marginDb": 6.73,
+      "marginDb": 6.88,
       "soundingS": 1.41
      },
      {
       "distM": 40,
       "azDeg": 30,
       "humHz": 164.81,
-      "marginDb": 4.48,
+      "marginDb": 4.64,
       "soundingS": 1.1
      }
     ]

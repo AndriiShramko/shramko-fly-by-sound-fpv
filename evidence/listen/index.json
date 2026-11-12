@@ -1,12 +1,12 @@
 {
  "format": "shramko-listen-index/1",
- "key": "a5d3716a9fe52e691118bfb392c7da23c4f8c4decb43d52bd160237988b229d5",
- "pass": false,
+ "key": "fc981000197b4ae7ccfcd14884d2e93eccb582d0f13a7f14ca3c3a02578c6147",
+ "pass": true,
  "inputs": {
-  "hash": "a5d3716a9fe52e691118bfb392c7da23c4f8c4decb43d52bd160237988b229d5",
+  "hash": "fc981000197b4ae7ccfcd14884d2e93eccb582d0f13a7f14ca3c3a02578c6147",
   "files": 128,
   "driver": 4,
-  "measure": 5,
+  "measure": 6,
   "chrome": "156.0.8078.80",
   "tools": {
    "python": "3.11.9",
@@ -16,7 +16,7 @@
    "pyloudnorm": "0.2.0"
   }
  },
- "date": "2026-11-12T20:30:14.194Z",
+ "date": "2026-11-12T20:44:02.617Z",
  "run": "pnpm listen",
  "checks": [
   {
@@ -76,7 +76,7 @@
   {
    "id": "VL-B1-side",
    "valid": true,
-   "pass": false,
+   "pass": true,
    "file": "VL-B1-side.json"
   },
   {
@@ -88,13 +88,13 @@
   {
    "id": "VL-B3-octave",
    "valid": true,
-   "pass": false,
+   "pass": true,
    "file": "VL-B3-octave.json"
   },
   {
    "id": "VL-B4-cover",
    "valid": true,
-   "pass": false,
+   "pass": true,
    "file": "VL-B4-cover.json"
   },
   {

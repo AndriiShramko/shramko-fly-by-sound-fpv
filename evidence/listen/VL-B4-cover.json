@@ -1,11 +1,11 @@
 {
  "format": "shramko-listen-evidence/1",
- "key": "a5d3716a9fe52e691118bfb392c7da23c4f8c4decb43d52bd160237988b229d5",
+ "key": "fc981000197b4ae7ccfcd14884d2e93eccb582d0f13a7f14ca3c3a02578c6147",
  "inputs": {
-  "hash": "a5d3716a9fe52e691118bfb392c7da23c4f8c4decb43d52bd160237988b229d5",
+  "hash": "fc981000197b4ae7ccfcd14884d2e93eccb582d0f13a7f14ca3c3a02578c6147",
   "files": 128,
   "driver": 4,
-  "measure": 5,
+  "measure": 6,
   "chrome": "156.0.8078.80",
   "tools": {
    "python": "3.11.9",
@@ -15,7 +15,7 @@
    "pyloudnorm": "0.2.0"
   }
  },
- "date": "2026-11-12T20:30:14.194Z",
+ "date": "2026-11-12T20:44:02.617Z",
  "id": "VL-B4-cover",
  "claim": "the corridor and tunnel-wide flown along their track at 2 m/s, nose along the track, every stem but the motor rendered alone: at least 95 % of the one-second windows tell the way, by a side (some stem's level difference between the ears at least 2 dB) or by the on-course hum (control: the lessons' previous versions without the layer target)",
  "thresholds": {
@@ -39,10 +39,9 @@
  "measured": {
   "beacon-corridor": {
    "windows": 39,
-   "sideShare": 0.231,
-   "wayShare": 0.949,
+   "sideShare": 0.256,
+   "wayShare": 0.974,
    "silentWindowsAt": [
-    13,
     22
    ]
   },
@@ -126,7 +125,7 @@
      "ildDb": {
       "safety": -5.51,
       "height": 0.01,
-      "target": -2.02,
+      "target": -4.02,
       "room": 0.13
      }
     },
@@ -137,7 +136,7 @@
      "ildDb": {
       "safety": -5.5,
       "height": 0.01,
-      "target": -0.14,
+      "target": -0.17,
       "room": -0.11
      }
     },
@@ -209,7 +208,7 @@
      "ildDb": {
       "safety": -3.29,
       "height": 0.02,
-      "target": -0.3,
+      "target": 0.01,
       "room": 0.18
      }
     },
@@ -220,7 +219,7 @@
      "ildDb": {
       "safety": -4.51,
       "height": 0.02,
-      "target": 0.89,
+      "target": 2.71,
       "room": 0.04
      }
     },
@@ -231,7 +230,7 @@
      "ildDb": {
       "safety": -4.17,
       "height": 0.01,
-      "target": 0.5,
+      "target": 2.19,
       "room": 0.01
      }
     },
@@ -242,18 +241,18 @@
      "ildDb": {
       "safety": -5.84,
       "height": 0,
-      "target": -0.41,
+      "target": -1.25,
       "room": 0.03
      }
     },
     {
      "t": 13,
-     "side": false,
+     "side": true,
      "onCourse": false,
      "ildDb": {
       "safety": 1.75,
       "height": 0.01,
-      "target": -1.16,
+      "target": -2.63,
       "room": 0.19
      }
     },
@@ -264,7 +263,7 @@
      "ildDb": {
       "safety": -0.09,
       "height": 0.02,
-      "target": -1.03,
+      "target": -1.93,
       "room": 0.01
      }
     },
@@ -275,7 +274,7 @@
      "ildDb": {
       "safety": -1.37,
       "height": 0,
-      "target": -0.38,
+      "target": -0.84,
       "room": -0.04
      }
     },
@@ -286,7 +285,7 @@
      "ildDb": {
       "safety": 1.71,
       "height": 0.02,
-      "target": 0.2,
+      "target": 0.38,
       "room": 0.07
      }
     },
@@ -297,7 +296,7 @@
      "ildDb": {
       "safety": 0.77,
       "height": -0.01,
-      "target": 0.79,
+      "target": 1.95,
       "room": 0.05
      }
     },
@@ -308,7 +307,7 @@
      "ildDb": {
       "safety": -1.9,
       "height": 0.01,
-      "target": -0.02,
+      "target": -0.01,
       "room": -0.12
      }
     },
@@ -319,7 +318,7 @@
      "ildDb": {
       "safety": -1.83,
       "height": 0.04,
-      "target": -0.89,
+      "target": -1.62,
       "room": 0.2
      }
     },
@@ -330,7 +329,7 @@
      "ildDb": {
       "safety": 0.44,
       "height": 0,
-      "target": -0.54,
+      "target": -1.25,
       "room": -0.1
      }
     },
@@ -341,7 +340,7 @@
      "ildDb": {
       "safety": 2.6,
       "height": 0.02,
-      "target": -0.01,
+      "target": 0.01,
       "room": 0.01
      }
     },
@@ -352,7 +351,7 @@
      "ildDb": {
       "safety": -0.5,
       "height": 0,
-      "target": 0.9,
+      "target": 1.79,
       "room": -0.01
      }
     },
@@ -363,7 +362,7 @@
      "ildDb": {
       "safety": 1.55,
       "height": 0,
-      "target": 0.21,
+      "target": 0.6,
       "room": 0.23
      }
     },
@@ -374,7 +373,7 @@
      "ildDb": {
       "safety": -3.07,
       "height": 0.02,
-      "target": -0.3,
+      "target": -0.57,
       "room": -0.03
      }
     },
@@ -385,7 +384,7 @@
      "ildDb": {
       "safety": 0.17,
       "height": -0.01,
-      "target": -0.7,
+      "target": -1.68,
       "room": 0
      }
     },
@@ -407,7 +406,7 @@
      "ildDb": {
       "safety": 1.53,
       "height": 0.04,
-      "target": 0.83,
+      "target": 1.58,
       "room": 0
      }
     },
@@ -418,7 +417,7 @@
      "ildDb": {
       "safety": -0.21,
       "height": 0,
-      "target": 0.26,
+      "target": 0.9,
       "room": -0.06
      }
     },
@@ -550,7 +549,7 @@
      "ildDb": {
       "safety": -5.5,
       "height": 0.07,
-      "target": -1.89,
+      "target": -3.79,
       "room": 0.14
      }
     },
@@ -561,7 +560,7 @@
      "ildDb": {
       "safety": -2.24,
       "height": 0.07,
-      "target": -0.07,
+      "target": -0.1,
       "room": -0.11
      }
     },
@@ -572,7 +571,7 @@
      "ildDb": {
       "safety": -2.62,
       "height": 0.07,
-      "target": -0.2,
+      "target": -0.42,
       "room": 0.05
      }
     },
@@ -583,7 +582,7 @@
      "ildDb": {
       "safety": 0.88,
       "height": 0.07,
-      "target": -0.61,
+      "target": -1.43,
       "room": -0.16
      }
     },
@@ -594,7 +593,7 @@
      "ildDb": {
       "safety": 0.7,
       "height": 0.08,
-      "target": -0.01,
+      "target": 0.03,
       "room": 0.05
      }
     },
@@ -605,7 +604,7 @@
      "ildDb": {
       "safety": 0.12,
       "height": 0.05,
-      "target": 0.48,
+      "target": 1.11,
       "room": -0.07
      }
     },
@@ -616,7 +615,7 @@
      "ildDb": {
       "safety": -0.31,
       "height": 0.07,
-      "target": 0.24,
+      "target": 0.67,
       "room": 0.27
      }
     },
@@ -627,7 +626,7 @@
      "ildDb": {
       "safety": -2.04,
       "height": 0.07,
-      "target": -0.14,
+      "target": -0.31,
       "room": -0.14
      }
     },
@@ -638,7 +637,7 @@
      "ildDb": {
       "safety": 1,
       "height": 0.06,
-      "target": -0.69,
+      "target": -1.62,
       "room": 0.01
      }
     },
@@ -649,7 +648,7 @@
      "ildDb": {
       "safety": 2.08,
       "height": 0.08,
-      "target": -0.04,
+      "target": -0.03,
       "room": 0.06
      }
     },
@@ -660,7 +659,7 @@
      "ildDb": {
       "safety": -0.26,
       "height": 0.05,
-      "target": 0.47,
+      "target": 1.03,
       "room": 0.02
      }
     },
@@ -671,7 +670,7 @@
      "ildDb": {
       "safety": 1.04,
       "height": 0.07,
-      "target": 0.32,
+      "target": 0.88,
       "room": -0.09
      }
     },
@@ -721,5 +720,5 @@
   }
  },
  "valid": true,
- "pass": false
+ "pass": true
 }
