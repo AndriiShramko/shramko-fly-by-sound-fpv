@@ -300,7 +300,8 @@ describe('every goal kind: a scripted pass and a near miss', () => {
         expect(goalEvents(p)).toEqual(['0:met']);
         const notes = p.actions.filter((a) => a.kind === 'cue' && a.event.kind === 'gate').map((a) => (a as { event: { index: number; of: number } }).event);
         expect(notes).toEqual([
-            { kind: 'gate', index: 0, of: 3 },
+            // lane sonic-beacon: the first gate tells where the third is (straight on); the second has no gate after the next
+            { kind: 'gate', index: 0, of: 3, nextDir: [0, 0, -1] },
             { kind: 'gate', index: 1, of: 3 },
             { kind: 'gate', index: 2, of: 3 }
         ]);

@@ -83,14 +83,36 @@ export function trackCorners(points: readonly Vec3[]): number[] {
  * The track point the beacon points at, from the next point not yet passed (`next`) and the craft's place: the first
  * point from `next` on that is a corner or at least BEACON_AHEAD_M from the craft, else the last point; null when every
  * point is passed. The track's points are joined by free straight lines (WorldCheckpoint), so up to the next corner the
- * way is straight and the beacon does not call through a wall.
+ * way is straight and the beacon does not call through a wall; `clear` (the world's line of sight, lineClear) steps back
+ * to a nearer point where the craft, off the track, would hear it through a solid.
  */
-export function beaconPointIndex(points: readonly Vec3[], next: number, pos: Vec3): number | null {
+export function beaconPointIndex(points: readonly Vec3[], next: number, pos: Vec3, clear?: (from: Vec3, to: Vec3) => boolean): number | null {
     if (next < 0 || next >= points.length) return null;
     const corners = new Set(trackCorners(points));
+    let found = points.length - 1;
     for (let i = next; i < points.length; i++) {
         const p = points[i] as Vec3;
-        if (corners.has(i) || Math.hypot(p[0] - pos[0], p[1] - pos[1], p[2] - pos[2]) >= BEACON_AHEAD_M) return i;
+        if (corners.has(i) || Math.hypot(p[0] - pos[0], p[1] - pos[1], p[2] - pos[2]) >= BEACON_AHEAD_M) {
+            found = i;
+            break;
+        }
     }
-    return points.length - 1;
+    // the craft is seldom on the track itself: where the line from it to that point is blocked (a pillar of the corridor
+    // beside the way), the nearer points of the track before it, down to the next one
+    if (clear !== undefined) for (let i = found; i > next; i--) if (clear(pos, points[i] as Vec3)) return i;
+    return clear === undefined ? found : next;
+}
+
+/** How finely lineClear samples a line, m. An estimate (thinner than any solid of the lesson worlds), not measured. */
+export const LINE_STEP_M = 0.1;
+
+/** Whether the straight line between two points stays out of every solid of a world given by its signed distance. */
+export function lineClear(sdf: (x: number, y: number, z: number) => number, a: Vec3, b: Vec3): boolean {
+    const d = Math.hypot(b[0] - a[0], b[1] - a[1], b[2] - a[2]);
+    const n = Math.max(1, Math.ceil(d / LINE_STEP_M));
+    for (let i = 1; i < n; i++) {
+        const u = i / n;
+        if (sdf(a[0] + u * (b[0] - a[0]), a[1] + u * (b[1] - a[1]), a[2] + u * (b[2] - a[2])) <= 0) return false;
+    }
+    return true;
 }

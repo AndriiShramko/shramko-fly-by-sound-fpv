@@ -103,7 +103,7 @@ import { getLesson, isShippedLesson, lessonAfter, lessonPaths } from './library'
 import { APPROACHES, GAME_SCENE_S, isGlossary, NARRATED_SCENE_S, playS, REPEAT_GAP_S, REPEAT_PLAYS, SHAPE_ORDER } from './sounds';
 import { lessonTrack, yawOf, type LessonTrack, type TrackPoint } from './track';
 import { headingBasis, worldToListener } from '../sense/frame';
-import { beaconPointIndex } from '../cues/beacon';
+import { beaconPointIndex, lineClear } from '../cues/beacon';
 
 // ------------------------------------------------------------------ host interface
 
@@ -1987,10 +1987,12 @@ class Runner implements LessonSession {
         if (track === null) return null;
         const passed = this.phaseValue === 'flying' ? this.passedPoint : null;
         const pos = this.prev?.pos ?? this.startPose(Math.max(this.attemptNo, 1)).pos;
+        const sdf = (this.worldRef as { sdf?: (x: number, y: number, z: number) => number } | null)?.sdf;
         const i = beaconPointIndex(
             track.points.map((p) => p.pos),
             passed === null ? 0 : passed.index + 1,
-            pos
+            pos,
+            typeof sdf === 'function' ? (a, b) => lineClear(sdf, a, b) : undefined
         );
         const point = i === null ? undefined : track.points[i];
         if (point === undefined) return null;
