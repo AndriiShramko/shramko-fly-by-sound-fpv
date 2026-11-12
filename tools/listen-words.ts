@@ -171,6 +171,7 @@ export const HEARD: readonly Heard[] = [
     { locale: 'ru', key: '*', said: 'гулом', heard: 'голым', why: 'the same habit as with гул' },
     { locale: 'ru', key: '*', said: 'препятствие', heard: 'препятствия', why: 'unstressed, the endings -ие and -ия sound the same' },
     { locale: 'ru', key: '*', said: '20 процентов', heard: '20%', why: 'Whisper writes the percent sign' },
+    { locale: 'ru', key: '*', said: 'Эскейп', heard: 'Escape', why: 'Whisper writes the name of the key in the Latin letters printed on it (in the simulator lines that name Escape)' },
     { locale: 'ru', key: '*', said: 'держись середины', heard: 'держись с середины', why: 'the сь of держись runs into середины and Whisper writes a с between them' },
     { locale: 'ru', key: '*', said: 'коснёшься стены', heard: 'кознёшь со стены', why: 'коснёшься (you touch) before стены is heard as кознёшь со' },
     { locale: 'ru', key: 'cue.target.note.name', said: 'Нота ворот', heard: 'Нотоворот', why: 'two words alone, heard as one with the unstressed a as o' },
