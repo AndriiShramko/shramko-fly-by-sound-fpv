@@ -108,6 +108,15 @@
       "key": "lesson.corridor.intro.4"
     },
     {
+      "cues": [
+        {
+          "cue": "target.hum",
+          "from": "left"
+        }
+      ],
+      "key": "lesson.corridor.intro.5"
+    },
+    {
       "key": "lesson.corridor.goal.1"
     },
     {

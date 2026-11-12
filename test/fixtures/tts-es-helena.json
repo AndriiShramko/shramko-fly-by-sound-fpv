@@ -49,7 +49,7 @@
     "cue.target.checkpoint.name": 1.875,
     "cue.target.fanfare.glossary": 3.57,
     "cue.target.fanfare.name": 1.49,
-    "cue.target.hum.glossary": 8.55,
+    "cue.target.hum.glossary": 10.965,
     "cue.target.hum.name": 2.04,
     "cue.target.lap.glossary": 5.685,
     "cue.target.lap.name": 2.065,
@@ -113,6 +113,7 @@
     "lesson.corridor.intro.2": 7.975,
     "lesson.corridor.intro.3": 15.695,
     "lesson.corridor.intro.4": 9.35,
+    "lesson.corridor.intro.5": 10.955,
     "lesson.corridor.pass": 2.355,
     "lesson.corridor.retry": 3.33,
     "lesson.corridor.title": 1.765,
@@ -480,6 +481,6 @@
     "theme.soft.name": 1.285,
     "theme.soft.what": 5.02,
     "menu.setting.beacon": 2.51,
-    "menu.setting.beacon-what": 15.62
+    "menu.setting.beacon-what": 16.36
   }
 }
