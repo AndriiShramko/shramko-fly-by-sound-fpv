@@ -103,6 +103,7 @@ import { getLesson, isShippedLesson, lessonAfter, lessonPaths } from './library'
 import { APPROACHES, GAME_SCENE_S, isGlossary, NARRATED_SCENE_S, playS, REPEAT_GAP_S, REPEAT_PLAYS, SHAPE_ORDER } from './sounds';
 import { lessonTrack, yawOf, type LessonTrack, type TrackPoint } from './track';
 import { headingBasis, worldToListener } from '../sense/frame';
+import { beaconPointIndex } from '../cues/beacon';
 
 // ------------------------------------------------------------------ host interface
 
@@ -921,7 +922,10 @@ class Runner implements LessonSession {
                 this.lastGate = gate;
                 this.legFlown = false;
                 this.emit({ t: at, kind: 'gate', gateId: gate.id, index, missM: Math.round(missM * 1000) / 1000 });
-                this.actions.push({ kind: 'cue', event: { kind: 'gate', index, of } });
+                // lane sonic-beacon: where the target after the next one is (the planner previews the hum from there)
+                const after = this.tracker?.targetAfter?.() ?? null;
+                const nextDir = after === null ? null : this.toListener(sub(after.pos, this.prev?.pos ?? gate.pos));
+                this.actions.push({ kind: 'cue', event: nextDir === null ? { kind: 'gate', index, of } : { kind: 'gate', index, of, nextDir } });
                 if (lapDone) this.actions.push({ kind: 'cue', event: { kind: 'lap' } });
             },
             // a 'track-end' goal: the furthest point passed is the track's last (the world's list, else the lesson's checkpoints)
@@ -1966,6 +1970,31 @@ class Runner implements LessonSession {
         if (this.phaseValue === 'flying') return this.tracker === null ? null : this.tracker.target();
         // between attempts the next attempt's first target keeps sounding (M41-10: silence means something is wrong)
         return this.phaseValue === 'between' ? this.firstTarget() : null;
+    }
+
+    /**
+     * Lane sonic-beacon (decision 5): where the target hum points. The goal's gate or zone (target()) when it has one;
+     * else the next point of the lesson's track (the world's checkpoints, else the lesson's, else the course's gates)
+     * after the last one passed: the next corner, or the first point at least BEACON_AHEAD_M ahead (beaconPointIndex),
+     * so it never calls through a wall. A 'track-end' goal, the corridor and the tunnels get their beacon this way.
+     * Between attempts the track's first point, as target() keeps the first target sounding (M41-10).
+     */
+    beaconTarget(): SonicObject | null {
+        const target = this.target();
+        if (target !== null || this.ears || this.left) return target;
+        if (this.phaseValue !== 'flying' && this.phaseValue !== 'between') return null;
+        const track = this.track();
+        if (track === null) return null;
+        const passed = this.phaseValue === 'flying' ? this.passedPoint : null;
+        const pos = this.prev?.pos ?? this.startPose(Math.max(this.attemptNo, 1)).pos;
+        const i = beaconPointIndex(
+            track.points.map((p) => p.pos),
+            passed === null ? 0 : passed.index + 1,
+            pos
+        );
+        const point = i === null ? undefined : track.points[i];
+        if (point === undefined) return null;
+        return { id: `beacon:${point.id}`, shape: { kind: 'zone', size: [1, 1, 1] }, pos: point.pos, quat: yawQuat(yawOf(point.dir)), order: null, solid: false, material: 'obstacle' };
     }
 
     /** What the first goal of an attempt sounds as its target (null for a goal without one: a height, a distance). */

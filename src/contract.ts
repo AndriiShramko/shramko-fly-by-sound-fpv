@@ -617,7 +617,9 @@ export interface AudioContextLike {
 /** A one-off sound, beside the continuous layers. */
 export type CueEvent =
     | { readonly kind: 'touch'; readonly material: MaterialClass; readonly dir: Vec3 | null; readonly speed: number }
-    | { readonly kind: 'gate'; readonly index: number; readonly of: number }
+    // nextDir (lane sonic-beacon, optional): the direction of the target after the next one, listener frame (the
+    // planner sounds a short preview of the hum from there, folded to the front, with SonicPrefs.beacon on)
+    | { readonly kind: 'gate'; readonly index: number; readonly of: number; readonly nextDir?: Vec3 | null }
     | { readonly kind: 'lap' }
     | { readonly kind: 'checkpoint' }
     | { readonly kind: 'reset' }
@@ -662,6 +664,13 @@ export interface SonicFrameInput {
     readonly world: SonicWorld | null;
     /** the next gate or zone (LessonRunner.target()), or null */
     readonly target: SonicObject | null;
+    /**
+     * Lane sonic-beacon (optional, new): where the target hum points (LessonRunner.beaconTarget()): the gate or zone of
+     * `target` when the goal has one, else the next point of the lesson's track. Only the hum reads it, and only with
+     * SonicPrefs.beacon on; absent (an older host, an older recording), the hum points at `target` as before. The height
+     * note and the shape layer keep reading `target`.
+     */
+    readonly beacon?: SonicObject | null;
     /** world y of the lesson floor: the height layer's zero */
     readonly floorY: number;
 }
@@ -728,6 +737,11 @@ export interface LessonRunner {
     reset(to: 'checkpoint' | 'start', t: number): { readonly pose: Pose; readonly events: readonly SessionEvent[] };
     /** the next gate or zone, for the target layer */
     target(): SonicObject | null;
+    /**
+     * Lane sonic-beacon (optional, new): where the target hum points, for SonicFrameInput.beacon: target() when the goal
+     * has a gate or zone, else the next point of the lesson's track (the next corner, or a point at least 6 m ahead)
+     */
+    beaconTarget?(): SonicObject | null;
     progress(): LessonProgress;
 }
 

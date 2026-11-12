@@ -40,6 +40,8 @@ export interface HostOptions {
     readonly answerAfterMs?: number;
     /** default false: a line that interrupts queues behind the others; true: it cuts them and starts at once, as the browser's speech */
     readonly cutOnInterrupt?: boolean;
+    /** lane sonic-beacon: true: a host from before the beacon, whose frames carry no `beacon` field */
+    readonly oldHost?: boolean;
 }
 
 const DEG = 180 / Math.PI;
@@ -55,6 +57,7 @@ export class RecordingHost {
     readonly theme: ThemeDef;
     readonly prefs: SonicPrefs;
     readonly locale: Locale;
+    private readonly oldHost: boolean;
     t = 0;
     pos: Vec3;
     vel: Vec3 = [0, 0, 0];
@@ -76,6 +79,7 @@ export class RecordingHost {
         this.locale = options.locale ?? 'en';
         this.theme = options.theme ?? getBuiltinTheme('soft');
         this.prefs = options.prefs ?? defaultPrefs();
+        this.oldHost = options.oldHost === true;
         this.translator = createTranslator(this.locale, DICTS);
         this.world = lesson.world.kind === 'analytic' ? createAnalyticWorld(lesson.world.spec) : null;
         this.runner = createLessonRunner(lesson, { locale: this.locale, sessionStartMs: Date.parse('2026-11-07T10:00:00Z') });
@@ -151,7 +155,7 @@ export class RecordingHost {
         this.touchFlag = false;
         this.record(this.runner.step(sample, this.world));
         this.drain();
-        const input = this.runner.demoFrame(this.t) ?? { sample, world: this.world, target: this.runner.target(), floorY: 0 };
+        const input = this.runner.demoFrame(this.t) ?? { sample, world: this.world, target: this.runner.target(), ...(this.oldHost ? {} : { beacon: this.runner.beaconTarget?.() ?? null }), floorY: 0 };
         const plan = this.planner.plan(input);
         // as the simulator's recorder writes a frame: the sample the runner was given (a place the runner asked for shows in
         // the next one), one in recordHz; and every sample with a touch, whose position the replay derives the touch from

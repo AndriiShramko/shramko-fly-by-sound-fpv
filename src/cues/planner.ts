@@ -198,6 +198,12 @@ export const GATE_MELODY_BASE = 5;
 /** How long a preview plays, s. */
 export const PREVIEW_S = 3;
 /**
+ * Lane sonic-beacon (decision 7): the preview of the target after the next one, after a gate's note: this long, s, and
+ * this many dB under the gate note. Estimates (the lead's design decision of stage 1), not measured.
+ */
+export const PREVIEW_NEXT_S = 0.4;
+export const PREVIEW_NEXT_DB = -10;
+/**
  * How long one play of a 'repeat-cue' lasts when the event gives no `durS`, s (M41-5). The runner gives every
  * play its length (lane s13-lessons, src/lesson/sounds.ts: 2.5 s for a continuous cue, 1.2 s for a one-off one)
  * and sends the next play about 1 s after it; the planner sounds a continuous cue for exactly that long and a
@@ -468,7 +474,10 @@ export class CuePlanner {
             freeWay = this.freeWayNow(input, frame);
             if (freeWay !== null) requests.push(this.freeVoice(freeWay.side, `free:${freeWay.side}`, PRIORITY.free, freeWay.dir));
         }
-        if (this.on.has('target') && input.target !== null) requests.push(this.targetVoice(input.target, s, basis));
+        // lane sonic-beacon: with the beacon on the hum points where the host's runner says (input.beacon: a track point where
+        // the goal has no gate); a host or a recording without the field, or the beacon off, leaves it at the target
+        const hum = this.beacon && input.beacon !== undefined ? input.beacon : input.target;
+        if (this.on.has('target') && hum !== null) requests.push(this.targetVoice(hum, s, basis));
         if (this.on.has('shape')) {
             const obj = this.shapeObject(input, s);
             if (obj !== null) {
@@ -936,6 +945,13 @@ export class CuePlanner {
                 push('target.note', 'target', PRIORITY.gateNote, 0, bright, melody[i] as number, (target['noteMs'] as number) / 1000, -3, null);
                 // a soft octave below gives the note body, never a new pitch class
                 push('target.note', 'target', PRIORITY.gateNote, 0, bright, (melody[i] as number) - 5, (target['noteMs'] as number) / 1000, -15, null);
+                // lane sonic-beacon (decision 7): after the gate note, one note of the hum from where the target after the next one
+                // is, folded to the front: "and then there". It is the hum's own sound (its id, timbre and note), so no new sound to
+                // name, and a frame that hears it already hears the hum (the replay's cue ids do not change)
+                if (this.beacon && e.nextDir !== undefined && e.nextDir !== null) {
+                    const dir = foldToFront(normalize(e.nextDir));
+                    push('target.hum', 'target', PRIORITY.gateNote, (target['noteMs'] as number) / 1000, theme.layers.target.timbre, target['humStep'] as number, PREVIEW_NEXT_S, -3 + PREVIEW_NEXT_DB, dir);
+                }
                 break;
             }
             case 'lap': {
