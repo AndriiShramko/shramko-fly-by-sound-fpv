@@ -1,8 +1,8 @@
 {
  "format": "shramko-listen-evidence/1",
- "key": "7733fcb63394609bf61d3be9fcf9ead9c89bd23c6c92bde24de68cdf34e94ac7",
+ "key": "189c54ee0ba6e5818f5ad4343dba7cc00b2c784bdae60f82b07a7382d0a18688",
  "inputs": {
-  "hash": "7733fcb63394609bf61d3be9fcf9ead9c89bd23c6c92bde24de68cdf34e94ac7",
+  "hash": "189c54ee0ba6e5818f5ad4343dba7cc00b2c784bdae60f82b07a7382d0a18688",
   "files": 15,
   "version": 2,
   "voices": {
@@ -32,7 +32,7 @@
    "numpy": "2.4.6"
   }
  },
- "date": "2026-11-12T21:24:37.036Z",
+ "date": "2026-11-13T19:03:17.490Z",
  "id": "VL-4-words",
  "claim": "every line of the four locales, said by the local Windows voice of its language and transcribed by Whisper large-v3, has a word error rate (case and punctuation normalised) at most its language's bound, and every line that names a key is heard with the key's name as a word of its own; the Russian lines said by the English voice fail the bound, and v0.13's lines that name a key, said by their voices, lose a key in each of Spanish, Polish and Russian",
  "run": "pnpm listen:words",
@@ -42,10 +42,10 @@
  "languages": {
   "en": {
    "voice": "Microsoft David Desktop",
-   "lines": 538,
-   "words": 4211,
+   "lines": 545,
+   "words": 4291,
    "bound": 0.2,
-   "exact": 530,
+   "exact": 537,
    "meanRate": 0.0013,
    "maxRate": 0.1667,
    "over": [],
@@ -170,10 +170,10 @@
   },
   "es": {
    "voice": "Microsoft Helena Desktop",
-   "lines": 538,
-   "words": 4254,
+   "lines": 545,
+   "words": 4327,
    "bound": 0.2,
-   "exact": 523,
+   "exact": 530,
    "meanRate": 0.0028,
    "maxRate": 0.2,
    "over": [],
@@ -228,10 +228,10 @@
   },
   "pl": {
    "voice": "Microsoft Paulina Desktop",
-   "lines": 538,
-   "words": 3616,
+   "lines": 545,
+   "words": 3679,
    "bound": 0.2,
-   "exact": 528,
+   "exact": 535,
    "meanRate": 0.0024,
    "maxRate": 0.2,
    "over": [],
@@ -321,10 +321,10 @@
   },
   "ru": {
    "voice": "Microsoft Irina Desktop",
-   "lines": 538,
-   "words": 3436,
+   "lines": 545,
+   "words": 3498,
    "bound": 0.2,
-   "exact": 521,
+   "exact": 528,
    "meanRate": 0.0032,
    "maxRate": 0.2,
    "over": [],
@@ -500,8 +500,8 @@
  "control": {
   "locale": "ru",
   "voice": "Microsoft David Desktop",
-  "lines": 538,
-  "overBound": 538,
+  "lines": 545,
+  "overBound": 545,
   "share": 1,
   "medianRate": 1,
   "fails": true
