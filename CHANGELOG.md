@@ -49,6 +49,10 @@
     so the momentum carried out of a course that turns back after a gate (the Winter Garden) and backing away at the start
     are not told. The leg begins at the gate passed last (a later lap's first gate: the course's last); a course in any
     order keeps v0.13's rule.
+  - The wrong way only while flying nose-first (the owner, train 2: "backing up is not flying the wrong way"): the
+    craft's horizontal speed along its nose (`yawDeg`) must be above 0.5 m/s over the same second as the flight against
+    the way forward. Backing up with the nose forward and sliding sideways are never told; turning round and flying back
+    still is.
   - Event sounds of their own for the wrong way, a gate passed from its back, praise (three figures in turn) and a
     stage (each a step higher); a named sound plays for as long as the runner gives it (`repeat-cue`, `durS`).
   - The motor is on by default and sits under the cues: `engine.motorInput` (a 1.1 to 2 kHz band, levelled, ducked),

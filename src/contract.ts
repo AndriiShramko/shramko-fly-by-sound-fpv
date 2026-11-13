@@ -314,9 +314,9 @@ export interface SonicPrefs {
     readonly speechRate: number;
     readonly captions: boolean;
     /**
-     * the simulator's motor sound in this mode: on by default since v0.13 (M41-16; v0.12 had it off because it
-     * masked the cues), played through the engine's motor bus (motorInput): low-passed, under the cues, ducked
-     * under speech
+     * the simulator's motor sound in this mode, played through the engine's motor bus (motorInput): low-passed,
+     * under the cues, ducked under speech. Off by default (train 2, the owner; v0.13 had it on, v0.12 off); it is on
+     * only when the pilot himself switched it on (motorChoice)
      */
     readonly motorSound: boolean;
     readonly path: 'full' | 'fast';
@@ -348,6 +348,12 @@ export interface SonicPrefs {
      * higher. Absent or true: on; false: the hum of package b102ce6 exactly.
      */
     readonly beacon?: boolean;
+    /**
+     * Train 2: true once the pilot himself switched the motor sound on or off (the host sets it with motorSound).
+     * The simulator saves the whole document at any change, so a motorSound without it is a default, not a choice:
+     * absent or false, the motor reads as off.
+     */
+    readonly motorChoice?: boolean;
 }
 
 // ------------------------------------------------------------------ lessons
