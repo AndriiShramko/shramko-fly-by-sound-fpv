@@ -41,7 +41,15 @@ FORMAT = 'shramko-voice-transcript/1'
 MODEL_ID = 'Systran/faster-whisper-large-v3'
 REVISION = 'edaa852ec7e145841d8ffdb056a99866b5f0a478'  # the revision of tools/listen/words.py
 RATE = 16000
-OPTIONS = {'beam_size': 5, 'temperature': 0.0, 'condition_on_previous_text': False, 'vad_filter': True, 'word_timestamps': True}
+OPTIONS = {'beam_size': 5, 'temperature': 0.0, 'condition_on_previous_text': False, 'vad_filter': False, 'word_timestamps': True}
+# The voice-activity filter is run here, not inside transcribe(): faster-whisper's own filter glues the speech together
+# and maps times back, and Whisper then puts a first word seconds early (into the previous speech) or merges two
+# remarks; and it puts the first word of a window at the window's start, which is the onset minus the padding.
+# Measured 2026-11-13 on the synthetic voices of test/fixtures/make-voice-e2e.py (en, pl, ru): with the filter inside,
+# starts up to 4.6 s off and the lesson line merged in pl; one window per stretch of speech, the first word set to the
+# onset: see evidence/listen/VF-1-transcribe.json. Silero VAD with faster-whisper's defaults, no padding, gives the
+# onsets; each window is the stretch with PAD_S on both sides (the filter's default padding, 0.4 s).
+PAD_S = 0.4
 # Whisper's own no-speech rule (openai-whisper transcribe(): no_speech_threshold 0.6, logprob_threshold -1.0); not
 # measured on this project's recordings (estimate)
 NO_SPEECH = 0.6
@@ -56,8 +64,8 @@ DECODE = {
     'revision': REVISION,
     'device': 'cuda',
     'computeType': 'float16',
-    'call': 'WhisperModel.transcribe, the whole recording, in the package language',
-    'options': {'beamSize': 5, 'temperature': 0.0, 'conditionOnPreviousText': False, 'vad': True, 'wordTimestamps': True},
+    'call': 'WhisperModel.transcribe, one window per stretch of speech (Silero VAD, padding 0.4 s), in the package language',
+    'options': {'beamSize': 5, 'temperature': 0.0, 'conditionOnPreviousText': False, 'vad': 'per window', 'wordTimestamps': True},
     'drop': {'noSpeechProb': NO_SPEECH, 'avgLogprob': LOGPROB, 'langSwitch': LANG_SWITCH},
     'splitGapS': SPLIT_GAP
 }
@@ -82,6 +90,22 @@ def hallucination(text, phrases):
         if (p.endswith('*') and t.startswith(p[:-1])) or t == p:
             return True
     return False
+
+
+def windows(audio):
+    """(first sample, end sample, onset sample) of each stretch of speech, padded by PAD_S and merged where they touch."""
+    from faster_whisper.vad import VadOptions, get_speech_timestamps
+    if len(audio) == 0:
+        return []
+    pad = int(PAD_S * RATE)
+    out = []
+    for c in get_speech_timestamps(audio, VadOptions(speech_pad_ms=0)):
+        w0, w1 = max(0, c['start'] - pad), min(len(audio), c['end'] + pad)
+        if out and w0 <= out[-1][1]:
+            out[-1] = (out[-1][0], w1, out[-1][2])
+        else:
+            out.append((w0, w1, c['start']))
+    return out
 
 
 def split_sentences(seg):
@@ -192,15 +216,20 @@ def main():
     if use is None or (detected is not None and detected != use and prob is not None and prob >= LANG_SWITCH):
         use = detected
     segments = []
-    if len(audio) > 0:
-        segs, info = model.transcribe(audio, language=use, **OPTIONS)
+    for w0, w1, onset in windows(audio):
+        segs, info = model.transcribe(audio[w0:w1], language=use, **OPTIONS)
+        first = True
         for s in segs:
+            words = [{'start': round(w0 / RATE + w.start, 3), 'end': round(w0 / RATE + w.end, 3), 'word': w.word.strip(), 'probability': round(w.probability, 4)} for w in (s.words or [])]
+            if first and words:
+                # Whisper puts the window's first word at the window's start, inside the padding: it starts at the onset
+                words[0]['start'] = round(min(max(words[0]['start'], onset / RATE), words[0]['end']), 3)
+            first = False
             segments.append({
-                'start': round(s.start, 3), 'end': round(s.end, 3), 'text': s.text.strip(),
-                'noSpeechProb': round(s.no_speech_prob, 4), 'avgLogprob': round(s.avg_logprob, 4),
-                'words': [{'start': round(w.start, 3), 'end': round(w.end, 3), 'word': w.word.strip(), 'probability': round(w.probability, 4)} for w in (s.words or [])]
+                'start': words[0]['start'] if words else round(w0 / RATE + s.start, 3), 'end': words[-1]['end'] if words else round(w0 / RATE + s.end, 3),
+                'text': s.text.strip(), 'noSpeechProb': round(s.no_speech_prob, 4), 'avgLogprob': round(s.avg_logprob, 4), 'words': words
             })
-        use = info.language
+        use = use or info.language
     kept, dropped = keep_or_drop(segments, use or 'en', table)
     write(a.out, {'format': FORMAT, 'model': MODEL_ID, 'revision': REVISION, 'language': use,
                   'languageProbability': None if prob is None else round(prob, 4), 'requestedLanguage': lang or 'auto',

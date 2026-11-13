@@ -72,21 +72,24 @@ describe.skipIf(!ON)('transcription end to end on synthetic voices (GPU)', () =>
             if (code !== 0) throw new Error(`analyze failed on e2e-${name}.zip (exit ${code})`);
         }
         for (const lang of LANGS) {
-            const id = `e2eVoice${lang.toUpperCase()}01`;
+            const id = `e2eVoice${lang.toUpperCase()}000001`;
             analyses[lang] = JSON.parse(readFileSync(join(out, id, 'analysis.json'), 'utf8')) as Analysis;
             // the control: the same voice with the manifest offset moved by 2 s, read with the transcript made above
             const code = await main([join(work, `e2e-${lang}-shift.zip`), '--out', out, '--no-replay', '--transcript', join(out, id, 'transcript.json')], io);
             if (code !== 0) throw new Error(`analyze failed on e2e-${lang}-shift.zip`);
-            shifted[lang] = JSON.parse(readFileSync(join(out, `e2eVoice${lang.toUpperCase()}Shift`, 'analysis.json'), 'utf8')) as Analysis;
+            shifted[lang] = JSON.parse(readFileSync(join(out, `e2eVoice${lang.toUpperCase()}Shift1`, 'analysis.json'), 'utf8')) as Analysis;
         }
         analyses['long'] = JSON.parse(readFileSync(join(out, 'e2eVoiceLongEN01', 'analysis.json'), 'utf8')) as Analysis;
     }, 40 * 60 * 1000);
 
     afterAll(() => {
-        if (work === '') return;
+        if (work === '' || evidence['languages'] === undefined) {
+            if (work !== '') for (const d of [work, out]) rmSync(d, { recursive: true, force: true });
+            return;
+        }
         const hash = createHash('sha256');
         for (const f of INPUTS) hash.update(`${f}\n`).update(readFileSync(join(ROOT, f)));
-        const t = JSON.parse(readFileSync(join(out, 'e2eVoiceEN01', 'transcript.json'), 'utf8')) as { decode: unknown; tools: unknown };
+        const t = JSON.parse(readFileSync(join(out, 'e2eVoiceEN000001', 'transcript.json'), 'utf8')) as { decode: unknown; tools: unknown };
         const doc = { format: 'shramko-voice-e2e/1', key: hash.digest('hex'), date: new Date().toISOString(), inputs: INPUTS, decode: t.decode, tools: t.tools, boundMs: BOUND_MS, werBounds: BOUNDS, ...evidence };
         writeFileSync(join(ROOT, 'evidence', 'listen', 'VF-1-transcribe.json'), `${JSON.stringify(doc, null, 1)}\n`);
         rmSync(work, { recursive: true, force: true });
@@ -130,7 +133,7 @@ describe.skipIf(!ON)('transcription end to end on synthetic voices (GPU)', () =>
     it('control: with the echo filter off the lesson line stays among the remarks', () => {
         const rows: Record<string, boolean> = {};
         for (const lang of LANGS) {
-            const id = `e2eVoice${lang.toUpperCase()}01`;
+            const id = `e2eVoice${lang.toUpperCase()}000001`;
             const pkg = readPackage(new Uint8Array(readFileSync(join(work, `e2e-${lang}.zip`))));
             const a = analyzePackage(pkg, { transcript: parseTranscript(readFileSync(join(out, id, 'transcript.json'), 'utf8')), replay: false, echo: false });
             const line = nearest(a.remarks, truth.languages[lang]!.line.tMs);

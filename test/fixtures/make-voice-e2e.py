@@ -161,8 +161,8 @@ def main():
         voice = open(webm, 'rb').read()
         line_t = round(ECHO_AT_S * 1000) + OFFSET_MS  # the app starts the line when it is said
         extra = [{'t': line_t, 'kind': 'speech', 'key': spec['echoKey'], 'text': v['line']}]
-        package(fx, os.path.join(work, f'e2e-{lang}.zip'), f'e2eVoice{lang.upper()}01', lang, OFFSET_MS, voice, extra, round(SHORT_S * 1000) + OFFSET_MS + 200000)
-        package(fx, os.path.join(work, f'e2e-{lang}-shift.zip'), f'e2eVoice{lang.upper()}Shift', lang, OFFSET_MS + SHIFT_MS, voice, extra, round(SHORT_S * 1000) + OFFSET_MS + 200000)
+        package(fx, os.path.join(work, f'e2e-{lang}.zip'), f'e2eVoice{lang.upper()}000001', lang, OFFSET_MS, voice, extra, round(SHORT_S * 1000) + OFFSET_MS + 200000)
+        package(fx, os.path.join(work, f'e2e-{lang}-shift.zip'), f'e2eVoice{lang.upper()}Shift1', lang, OFFSET_MS + SHIFT_MS, voice, extra, round(SHORT_S * 1000) + OFFSET_MS + 200000)
         truth['languages'][lang] = {'sentences': [{'text': s, 'tMs': t} for s, t in zip(v['sentences'], onsets[:5])], 'line': {'text': v['line'], 'tMs': onsets[5], 'eventMs': line_t}}
 
     en = [read_wav16(os.path.join(work, 'clips', f'en-{i}.wav')) for i in range(5)]
