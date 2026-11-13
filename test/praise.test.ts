@@ -5,7 +5,7 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import type { CueEvent, Goal, SonicWorld, Vec3 } from '../src/contract';
 import { createTranslator, DICTS } from '../src/i18n';
-import { getLesson, lessonAfter, PRAISE_LINES, validateLesson, type RunnerAction } from '../src/lesson';
+import { getLesson, lessonAfter, PRAISE_LINES, SCAN_FREE_ID, validateLesson, type RunnerAction } from '../src/lesson';
 import { LOCALES } from '../src/contract';
 import { createAnalyticWorld } from '../src/world';
 import { ScriptedPilot } from './helpers/pilot';
@@ -113,6 +113,21 @@ describe('the pass and the stages', () => {
         g.flyTo([0, 3, -45]);
         g.until(() => g.run.phase === 'passed', 10);
         expect(said(g).at(-1)).toEqual({ key: 'fly.last-lesson' });
+    }, 120000);
+
+    it('the free flight over a scan (and a course laid over it, train 2 review SN-3) names no next lesson: no "That was the last lesson"', () => {
+        // the same garden flight under the free flight's id: the pass line is the last thing said; control: the garden above says last-lesson
+        const garden = { ...getLesson('free-garden'), id: SCAN_FREE_ID };
+        const gates = [-10, -25, -40].map((z, i) => ({ id: `g${i + 1}`, shape: { kind: 'ring' as const, diameter: 3, tube: 0.1 }, pos: [0, 3, z] as const, quat: [1, 0, 0, 0] as const, order: i, solid: false, material: 'obstacle' as const }));
+        const g = new ScriptedPilot(garden, { objects: gates, start: { pos: [0, 3, 0], yawDeg: 0 } }, null);
+        g.begin();
+        g.until(() => g.run.phase === 'flying', 60);
+        g.flyTo([0, 3, -45]);
+        g.until(() => g.run.phase === 'passed', 10);
+        expect(g.run.phase).toBe('passed');
+        expect(said(g).map((l) => l.key)).not.toContain('fly.last-lesson');
+        expect(said(g).map((l) => l.key)).not.toContain('fly.lesson-passed');
+        expect(said(g).at(-1)).toEqual(getLesson('free-garden').speech.pass);
     }, 120000);
 
     it('the corridor says each stage it passes, with the stage cue; a checkpoint that ends no stage only chimes (control)', () => {

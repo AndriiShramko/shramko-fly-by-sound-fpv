@@ -30,20 +30,21 @@ export function defaultPrefs(): SonicPrefs {
         selfVoice: true,
         speechRate: 1,
         captions: true,
-        motorSound: true,
+        motorSound: false,
         path: 'full',
         listenerFrame: 'heading',
         heightTarget: true,
         motorGainDb: 0,
         heightDirection: true,
-        beacon: true
+        beacon: true,
+        motorChoice: false
     };
 }
 
-const KEYS = ['format', 'theme', 'calm', 'heightPolarity', 'layerGainDb', 'layerPitchSteps', 'selfVoice', 'speechRate', 'captions', 'motorSound', 'path', 'listenerFrame', 'heightTarget', 'motorGainDb', 'heightDirection', 'beacon'] as const;
+const KEYS = ['format', 'theme', 'calm', 'heightPolarity', 'layerGainDb', 'layerPitchSteps', 'selfVoice', 'speechRate', 'captions', 'motorSound', 'path', 'listenerFrame', 'heightTarget', 'motorGainDb', 'heightDirection', 'beacon', 'motorChoice'] as const;
 type Key = (typeof KEYS)[number];
 /** Keys added after the first documents were written (v0.13): a document without them is still valid (absent: the default). */
-const ADDED_KEYS: readonly Key[] = ['heightTarget', 'motorGainDb', 'heightDirection', 'beacon'];
+const ADDED_KEYS: readonly Key[] = ['heightTarget', 'motorGainDb', 'heightDirection', 'beacon', 'motorChoice'];
 /** The keys every document must have. */
 const REQUIRED_KEYS: readonly Key[] = KEYS.filter((k) => !ADDED_KEYS.includes(k));
 
@@ -82,7 +83,8 @@ const FIELDS: Readonly<Record<Key, FieldCheck>> = {
     heightTarget: (c, v, path) => c.boolean(v, path),
     motorGainDb: (c, v, path) => c.number(v, path, PREFS_LIMITS.motorGainDb),
     heightDirection: (c, v, path) => c.boolean(v, path),
-    beacon: (c, v, path) => c.boolean(v, path)
+    beacon: (c, v, path) => c.boolean(v, path),
+    motorChoice: (c, v, path) => c.boolean(v, path)
 };
 
 /** Strict: every field present and valid (a field added in v0.13 may be absent), nothing else. */
@@ -104,10 +106,10 @@ export function validatePrefs(input: unknown): Validation<SonicPrefs> {
  * Lenient, for a value read back from storage: a missing field takes its default (an older version
  * did not have it), a field with a bad value takes its default and is reported, an unknown key is
  * dropped and reported. A value that is not preferences at all, or of another format version,
- * gives the defaults. Never throws. One migration (v0.13): a document saved before v0.13 (it has no
- * `heightTarget`) with `motorSound` false gets true, because false was v0.12's default and the
- * simulator saved the whole document at any change; `motorSound` true stays, and every value saved
- * from v0.13 on is kept as it is.
+ * gives the defaults. Never throws. One rule (train 2, the owner: the motor sound off by default): the
+ * simulator saves the whole document at any change, so a stored `motorSound` is the pilot's choice only
+ * when `motorChoice` is true (the host sets it when he switches the motor); without it the motor is off.
+ * (v0.13's migration of a pre-v0.13 false to true is gone.)
  */
 export function readPrefs(stored: unknown): { prefs: SonicPrefs; issues: Issue[] } {
     const defaults = defaultPrefs();
@@ -116,20 +118,16 @@ export function readPrefs(stored: unknown): { prefs: SonicPrefs; issues: Issue[]
         if (stored !== undefined && stored !== null) issues.push({ path: '', message: 'is not a preferences object; defaults are used' });
         return { prefs: defaults, issues };
     }
-    let input: Record<string, unknown> = stored;
+    const input: Record<string, unknown> = stored;
     if (input.format !== undefined && input.format !== FORMATS.prefs) {
         issues.push({ path: 'format', message: `is ${JSON.stringify(input.format)}, this engine reads '${FORMATS.prefs}'; defaults are used` });
         return { prefs: defaults, issues };
     }
     const out: Record<string, unknown> = { ...defaults };
     for (const key of Object.keys(input)) if (!(KEYS as readonly string[]).includes(key)) issues.push({ path: key, message: 'is not a known key; dropped' });
-    // a document written before v0.13 has no heightTarget, and its motorSound false is v0.12's default (the simulator
-    // saves the whole document at any change), not a choice: the motor is on in v0.13 (M41-16). true stays true.
-    const beforeV013 = !('heightTarget' in input);
-    if (beforeV013 && input['motorSound'] === false) {
-        issues.push({ path: 'motorSound', message: 'false was the default before v0.13; the motor sound is on now (a choice saved from v0.13 on is kept)' });
-        input = { ...input, motorSound: true };
-    }
+    // motorSound without the pilot's own choice is a default the simulator saved with the rest: off (train 2)
+    const chosen = input['motorChoice'] === true;
+    if (!chosen && input['motorSound'] === true) issues.push({ path: 'motorSound', message: 'true was the default before train 2, not a choice (no motorChoice); the motor sound is off' });
     for (const key of KEYS) {
         if (key === 'format' || input[key] === undefined) continue;
         const c = new Collector();
@@ -140,6 +138,7 @@ export function readPrefs(stored: unknown): { prefs: SonicPrefs; issues: Issue[]
         if (usable) out[key] = v;
         issues.push(...c.issues.map((i) => ({ path: i.path, message: `${i.message}; ${partial ? 'dropped' : 'the default is used'}` })));
     }
+    if (!chosen) out['motorSound'] = false;
     return { prefs: out as unknown as SonicPrefs, issues };
 }
 

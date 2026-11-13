@@ -27,7 +27,7 @@ function set(obj: unknown, key: string, value: unknown): unknown {
 describe('the defaults', () => {
     const d = defaultPrefs();
 
-    it('are what the spec says: soft theme, not calm, up is higher, the app speaks, captions on, the motor on (v0.13, M41-16) at its calibrated level, the full path, the heading frame, the target tone on, up and down by direction too (lane s13-elev), the target hum as a beacon (lane sonic-beacon)', () => {
+    it('are what the spec says: soft theme, not calm, up is higher, the app speaks, captions on, the motor off (train 2, the owner) at its calibrated level and not chosen, the full path, the heading frame, the target tone on, up and down by direction too (lane s13-elev), the target hum as a beacon (lane sonic-beacon)', () => {
         expect(d).toEqual({
             format: FORMATS.prefs,
             theme: 'soft',
@@ -38,13 +38,14 @@ describe('the defaults', () => {
             selfVoice: true,
             speechRate: 1,
             captions: true,
-            motorSound: true,
+            motorSound: false,
             path: 'full',
             listenerFrame: 'heading',
             heightTarget: true,
             motorGainDb: 0,
             heightDirection: true,
-            beacon: true
+            beacon: true,
+            motorChoice: false
         });
     });
 
@@ -175,25 +176,35 @@ describe('the lenient reader never fails and never returns an invalid value', ()
         expect(issues.map((i) => i.path).sort()).toEqual(['captions', 'layerGainDb.bass', 'layerGainDb.height', 'speechRate', 'volume']);
     });
 
-    it('a document saved before v0.13 gets the motor on: its false was the v0.12 default; true stays, and from v0.13 on every choice is kept', () => {
-        // what the simulator saved in v0.12 after any change: the whole document, motorSound false, no heightTarget
-        const v012 = { ...defaultPrefs(), theme: 'clear', motorSound: false } as Record<string, unknown>;
-        delete v012['heightTarget'];
-        const old = readPrefs(v012);
-        expect(old.prefs.motorSound).toBe(true);
+    it("the motor sound is the pilot's only when he chose it (train 2, the owner): a stored true without motorChoice reads as off, with it it stays; the old false-to-true migration is gone", () => {
+        // what the simulator saved from v0.13 on after any change: the whole document, motorSound true (the default then)
+        const v013 = { ...defaultPrefs(), theme: 'clear', motorSound: true } as Record<string, unknown>;
+        delete v013['motorChoice'];
+        const old = readPrefs(v013);
+        expect(old.prefs.motorSound).toBe(false);
         expect(old.prefs.theme).toBe('clear');
-        expect(old.prefs.heightTarget).toBe(true);
         expect(old.issues.map((i) => i.path)).toEqual(['motorSound']);
         expect(validatePrefs(old.prefs).ok).toBe(true);
-        expect(readPrefs({ ...v012, motorSound: true }).prefs.motorSound).toBe(true);
-        // control: a document saved by v0.13 (it carries heightTarget) keeps the pilot's off
-        const chosen = readPrefs({ ...defaultPrefs(), motorSound: false });
-        expect(chosen.prefs.motorSound).toBe(false);
-        expect(chosen.issues).toEqual([]);
+        expect(readPrefs({ ...v013, motorChoice: false }).prefs.motorSound).toBe(false);
+        // the pilot switched it on himself: kept
+        const on = readPrefs({ ...v013, motorChoice: true });
+        expect(on.prefs.motorSound).toBe(true);
+        expect(on.prefs.motorChoice).toBe(true);
+        expect(on.issues).toEqual([]);
+        // a document saved before v0.13 (no heightTarget) with false stays off: v0.13's migration to true is gone
+        const v012 = { ...v013, motorSound: false } as Record<string, unknown>;
+        delete v012['heightTarget'];
+        const older = readPrefs(v012);
+        expect(older.prefs.motorSound).toBe(false);
+        expect(older.issues).toEqual([]);
+        // a chosen off stays off
+        expect(readPrefs({ ...defaultPrefs(), motorSound: false, motorChoice: true }).prefs.motorSound).toBe(false);
+        // the marker is optional and boolean
+        expect(validatePrefs(v013).ok).toBe(true);
+        expect(validatePrefs({ ...defaultPrefs(), motorChoice: 'yes' }).ok).toBe(false);
         // the strict validator (a session's manifest) never changes a recorded value
-        const strict = validatePrefs(v012);
-        expect(strict.ok).toBe(true);
-        if (strict.ok) expect(strict.value.motorSound).toBe(false);
+        const strict = validatePrefs(v013);
+        if (strict.ok) expect(strict.value.motorSound).toBe(true);
     });
 
     it('another format version gives the defaults, and says so', () => {

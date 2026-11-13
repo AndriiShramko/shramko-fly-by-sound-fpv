@@ -71,6 +71,9 @@
 // 135 degrees) and a pilot backing away at the start are told only where v0.13 told them (review E1 and E3 of the
 // lane). A course in any order has no legs: v0.13's rule, toward the gate whose hum sounds. A gate crossed from its
 // back side gives 'wrong-side' and its line, and is not counted.
+// Train 2 (owner, 13.11: "backing up is not flying the wrong way"): flying back is told only while the craft also
+// flies nose-first, its horizontal speed along the nose (yawDeg) above WRONG_WAY_MPS, over the same second. A pilot
+// who faces forward and backs up, or slides sideways, is never told; one who turns round and flies back still is.
 //
 // Respawn (M41-20). A touch in a lesson that re-centres, or a short R, puts the craft RESPAWN_BEFORE_M
 // before the furthest point of the track passed in this attempt (a lesson checkpoint, or a point of the
@@ -99,7 +102,7 @@ import { createRng } from '../util/rng';
 import { distance as dist3, dot, normalize, sub, yawQuat } from '../util/vec';
 import { createAnalyticWorld, makeSpec, type AnalyticWorldInfo } from '../world/analytic-world';
 import { BODY_RADIUS_M, createTracker, toLocal, type GoalScore, type GoalTracker, type Outcome } from './goals';
-import { getLesson, isShippedLesson, lessonAfter, lessonPaths } from './library';
+import { getLesson, isShippedLesson, lessonAfter, lessonPaths, SCAN_FREE_ID } from './library';
 import { APPROACHES, GAME_SCENE_S, isGlossary, NARRATED_SCENE_S, playS, REPEAT_GAP_S, REPEAT_PLAYS, SHAPE_ORDER } from './sounds';
 import { lessonTrack, yawOf, type LessonTrack, type TrackPoint } from './track';
 import { headingBasis, worldToListener } from '../sense/frame';
@@ -1112,7 +1115,10 @@ class Runner implements LessonSession {
     /** M41-15: flying against the way forward for more than a second, told at most once every few seconds. */
     private checkDirection(s: FlightSample): void {
         const way = this.wayForward(s);
-        if (way === null || dot(s.vel, way.against) >= -WRONG_WAY_MPS) {
+        // the nose, horizontal (headingBasis: back is +Z at yaw 0): backing up or sliding aside is never the wrong way
+        const nose = headingBasis(s.yawDeg).back;
+        const noseFirst = -(s.vel[0] * nose[0] + s.vel[2] * nose[2]) > WRONG_WAY_MPS;
+        if (way === null || dot(s.vel, way.against) >= -WRONG_WAY_MPS || !noseFirst) {
             this.backSince = null;
             return;
         }
@@ -1313,9 +1319,12 @@ class Runner implements LessonSession {
     }
 
     /** What the pass says comes next: the lesson G left (a detour), the next lesson on the pilot's path, or that this was the last. */
-    private nextLine(): SpeechLine {
+    private nextLine(): SpeechLine | null {
         const back = this.o.returnTo ?? null;
         if (back !== null && isShippedLesson(back)) return { key: 'fly.back-to', params: { title: this.text(getLesson(back).title) } };
+        // the free flight over a scan (and a course the host lays over it) is on no path and is no last lesson: the host says
+        // what comes next (train 2 review SN-3: "That was the last lesson" after a course by sound was wrong)
+        if (this.lesson.id === SCAN_FREE_ID) return null;
         const next = lessonAfter(this.lesson.id, this.o.path ?? 'full');
         return next === null ? { key: 'fly.last-lesson' } : { key: 'fly.lesson-passed', params: { title: this.text(next.title) } };
     }
@@ -1342,7 +1351,8 @@ class Runner implements LessonSession {
         this.current = null;
         this.actions.push({ kind: 'cue', event: { kind: 'fanfare' } });
         this.actions.push({ kind: 'say', line: this.lesson.speech.pass, interrupt: false });
-        this.actions.push({ kind: 'say', line: this.nextLine(), interrupt: false });
+        const next = this.nextLine();
+        if (next !== null) this.actions.push({ kind: 'say', line: next, interrupt: false });
     }
 
     /**
