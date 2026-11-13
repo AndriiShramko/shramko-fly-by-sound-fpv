@@ -102,7 +102,7 @@ import { createRng } from '../util/rng';
 import { distance as dist3, dot, normalize, sub, yawQuat } from '../util/vec';
 import { createAnalyticWorld, makeSpec, type AnalyticWorldInfo } from '../world/analytic-world';
 import { BODY_RADIUS_M, createTracker, toLocal, type GoalScore, type GoalTracker, type Outcome } from './goals';
-import { getLesson, isShippedLesson, lessonAfter, lessonPaths } from './library';
+import { getLesson, isShippedLesson, lessonAfter, lessonPaths, SCAN_FREE_ID } from './library';
 import { APPROACHES, GAME_SCENE_S, isGlossary, NARRATED_SCENE_S, playS, REPEAT_GAP_S, REPEAT_PLAYS, SHAPE_ORDER } from './sounds';
 import { lessonTrack, yawOf, type LessonTrack, type TrackPoint } from './track';
 import { headingBasis, worldToListener } from '../sense/frame';
@@ -1319,9 +1319,12 @@ class Runner implements LessonSession {
     }
 
     /** What the pass says comes next: the lesson G left (a detour), the next lesson on the pilot's path, or that this was the last. */
-    private nextLine(): SpeechLine {
+    private nextLine(): SpeechLine | null {
         const back = this.o.returnTo ?? null;
         if (back !== null && isShippedLesson(back)) return { key: 'fly.back-to', params: { title: this.text(getLesson(back).title) } };
+        // the free flight over a scan (and a course the host lays over it) is on no path and is no last lesson: the host says
+        // what comes next (train 2 review SN-3: "That was the last lesson" after a course by sound was wrong)
+        if (this.lesson.id === SCAN_FREE_ID) return null;
         const next = lessonAfter(this.lesson.id, this.o.path ?? 'full');
         return next === null ? { key: 'fly.last-lesson' } : { key: 'fly.lesson-passed', params: { title: this.text(next.title) } };
     }
@@ -1348,7 +1351,8 @@ class Runner implements LessonSession {
         this.current = null;
         this.actions.push({ kind: 'cue', event: { kind: 'fanfare' } });
         this.actions.push({ kind: 'say', line: this.lesson.speech.pass, interrupt: false });
-        this.actions.push({ kind: 'say', line: this.nextLine(), interrupt: false });
+        const next = this.nextLine();
+        if (next !== null) this.actions.push({ kind: 'say', line: next, interrupt: false });
     }
 
     /**

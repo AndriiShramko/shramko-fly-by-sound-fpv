@@ -5,6 +5,9 @@
 - Free flight over any scan (train 2): `scanFreeLesson(sceneId, transform)` makes the template `lessons/scan-free.json`
   (not shipped, on no path) into a lesson on the pilot's scan at the pilot's size: no track, no target, no time limit, one
   goal no flight reaches (fly-distance 5000 m). Its texts are in every locale (`LESSON_TEMPLATES` in the catalogue).
+  Its pass names no next lesson (no "That was the last lesson"): the host says what comes next.
+- Motor sound off by default (the owner, train 2): `SonicPrefs.motorChoice` marks the pilot's own choice; `readPrefs`
+  keeps `motorSound` only when `motorChoice` is true, so a stored `true` without the marker reads as off.
 - Lessons a pilot understands the first time (v0.13, the owner's flight of v0.12):
   - Lesson format 2 (`shramko-sonic-lesson/2`, breaking): `pass` is r counted attempts in total (1 to 3, failures in
     between do not reset) and, after `attempts` failures in a row (1 to 3), the reason and the offer of the next lesson
@@ -58,7 +61,7 @@
     still is.
   - Event sounds of their own for the wrong way, a gate passed from its back, praise (three figures in turn) and a
     stage (each a step higher); a named sound plays for as long as the runner gives it (`repeat-cue`, `durS`).
-  - The motor is on by default and sits under the cues: `engine.motorInput` (a 1.1 to 2 kHz band, levelled, ducked),
+  - The motor sits under the cues (on by default in v0.13, off by default since train 2: see the line above): `engine.motorInput` (a 1.1 to 2 kHz band, levelled, ducked),
     `SonicPrefs.motorGainDb`. Never silence: the height tone and a quiet room bed in every flying lesson, between
     attempts too. The voice sits 3 to 6 LU over the mix, and a local voice of the language comes first.
   - Six new cue ids with names and glossary lines in the four languages: `safety.free`, `safety.wrong-way`,
