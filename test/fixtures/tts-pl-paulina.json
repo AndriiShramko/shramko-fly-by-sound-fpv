@@ -481,6 +481,13 @@
     "theme.soft.name": 1.47,
     "theme.soft.what": 5.015,
     "menu.setting.beacon": 2.58,
-    "menu.setting.beacon-what": 16.23
+    "menu.setting.beacon-what": 16.23,
+    "lesson.scan-free.goal.1": 3.16,
+    "lesson.scan-free.hint.1": 4.175,
+    "lesson.scan-free.intro.1": 7.695,
+    "lesson.scan-free.intro.2": 6.715,
+    "lesson.scan-free.pass": 3.69,
+    "lesson.scan-free.retry": 1.96,
+    "lesson.scan-free.title": 2.36
   }
 }
