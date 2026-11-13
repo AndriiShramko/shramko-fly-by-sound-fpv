@@ -1,0 +1,7 @@
+{
+  "about": "Phrases Whisper is known to write over silence, music or noise (it learned them from subtitle credits). tools/listen/transcribe.py drops a segment whose whole text, lower case with every non-letter a space, equals an entry; an entry ending in * matches the start. The dropped segments stay in transcript.json under dropped. A short list from public reports of Whisper large-v3 hallucinations, not measured on this project's recordings.",
+  "en": ["thank you", "thank you for watching", "thanks for watching", "thank you very much", "you", "bye", "please subscribe", "subtitles by*"],
+  "es": ["gracias", "gracias por ver", "gracias por ver el video", "subtítulos realizados por*", "subtítulos por*", "suscríbete*"],
+  "pl": ["dziękuję", "dziękuję za uwagę", "dzięki za obejrzenie", "napisy wykonane przez*", "napisy stworzone przez*", "zapraszam do subskrypcji*"],
+  "ru": ["продолжение следует", "спасибо за просмотр", "субтитры*", "редактор субтитров*", "подписывайтесь*"]
+}

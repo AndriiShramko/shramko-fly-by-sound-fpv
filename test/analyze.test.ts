@@ -147,7 +147,7 @@ describe('the command line', () => {
         copyFileSync(join(FIX, 'session-voice-two-lessons.zip'), join(inDir, 'a.zip'));
         copyFileSync(TRANSCRIPT_FILE, join(inDir, 'a.transcript.json'));
         copyFileSync(join(FIX, 'session-voice-clean.zip'), join(inDir, 'b.zip'));
-        const code = await main([inDir, '--out', out, '--no-replay'], { stdout: () => undefined, stderr: () => undefined });
+        const code = await main([inDir, '--out', out, '--no-replay', '--no-transcribe'], { stdout: () => undefined, stderr: () => undefined });
         expect(code).toBe(0);
         const a = JSON.parse(readFileSync(join(out, 'pyVoiceTwoLessons01', 'analysis.json'), 'utf8')) as Analysis;
         const b = JSON.parse(readFileSync(join(out, 'pyVoiceCleanFlight01', 'analysis.json'), 'utf8')) as Analysis;

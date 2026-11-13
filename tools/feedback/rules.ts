@@ -49,6 +49,13 @@ export interface FeedbackRules {
     readonly topSpots: number;
     /** how many remarks the page shows (the rest are in analysis.json) */
     readonly pageRemarks: number;
+    /**
+     * The echo filter: a transcript segment within echoWindowMs of a `speech` event whose text it matches with a word
+     * error rate (tools/listen-words.ts) under echoWer is the app's own voice heard by the microphone (estimates; the
+     * end-to-end check of test/transcribe-e2e.test.ts measured the synthetic case, see evidence/listen/VF-1-transcribe.json)
+     */
+    readonly echoWindowMs: number;
+    readonly echoWer: number;
 }
 
 export const RULES: FeedbackRules = {
@@ -83,5 +90,7 @@ export const RULES: FeedbackRules = {
     remarkWindowMs: 5000,
     remarkFactor: 2,
     topSpots: 5,
-    pageRemarks: 15
+    pageRemarks: 15,
+    echoWindowMs: 3000,
+    echoWer: 0.4
 };

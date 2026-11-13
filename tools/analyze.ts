@@ -4,29 +4,35 @@
 // places of each lesson.
 //
 //   analyze <package.zip | folder of packages> --out <dir> [--transcript <file>] [--share-safe] [--window-s 5]
-//           [--no-replay]
+//           [--no-replay] [--no-transcribe]
 //
 // Writes <out>/<session id>/summary.md (one page, quotes verbatim), analysis.json (format shramko-voice-feedback/1, no
 // nickname) and with --share-safe summary.share-safe.md (no quote, no nickname, no free text: tags, times, keys,
 // counts). --out is required and refused inside a git working tree: a summary of a real recording holds a person's
 // words and, for a Fly by Sound pilot, health data; it must never be committed. A folder is processed package by
-// package; a package's transcript is then <name>.transcript.json next to it. No network: transcription is a separate
-// step (tools/listen/transcribe.py, stage 2); this tool reads the transcript it is given.
+// package; a package's transcript is then <name>.transcript.json next to it. Without a transcript and with voice.webm
+// in the package the voice is transcribed on this machine (tools/listen/transcribe.py: Whisper large-v3 offline, model
+// from SHRAMKO_LISTEN_CACHE, Python from SHRAMKO_LISTEN_PY, while this process holds the GPU lock GPU_LOCK; nothing is
+// downloaded, no network); its transcript.json goes next to summary.md. --no-transcribe skips it.
 //
 // Steps: read the package strict, then lenient; put the transcript's segments on the session clock
-// (start + manifest.clock.voiceOffsetMs); cut the package by lesson (lessonSegments); buildReport per lesson; anchor every
+// (start + manifest.clock.voiceOffsetMs); tag as echo a segment that says a `speech` line of the app near its time
+// (the microphone heard the speakers; RULES.echoWindowMs, RULES.echoWer) and leave it out of the remarks; cut the package by lesson (lessonSegments); buildReport per lesson; anchor every
 // moment to a step (the last lesson line heard before it plus the goal count; key lessonId@version#speechKey); detect the
 // difficult spots by the rules of tools/feedback/rules.ts; merge spots closer than RULES.mergeMs; score; top five.
 // Run it with `pnpm analyze -- <package.zip> --out <dir>` (tools/run-tool.mjs).
-import { existsSync } from 'node:fs';
-import { mkdir, readdir, readFile, stat, writeFile } from 'node:fs/promises';
+import { spawnSync } from 'node:child_process';
+import { existsSync, mkdirSync, rmdirSync } from 'node:fs';
+import { mkdir, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import { basename, dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import type { SessionEvent } from '../src/contract';
 import { lessonSegments, SPEECH_END_KEY, type LessonSegment } from '../src/replay';
 import { PackageError, readPackage, ZipError, type SessionPackage } from '../src/session';
 import { utf8Decode } from '../src/util';
 import PHRASES from './feedback/phrases.json';
 import { RULES, type FeedbackRules, type SignalKind } from './feedback/rules';
+import { wordErrors, words } from './listen-words';
 import { buildReport, formatClock, parseTranscript, ReportInputError, type TranscriptSegment } from './report';
 
 export const FEEDBACK_FORMAT = 'shramko-voice-feedback/1';
@@ -73,8 +79,8 @@ export interface Remark {
     /** the open survey item it answers (survey tail only) */
     readonly item: string | null;
     readonly text: string;
-    /** the app's own voice heard by the microphone (stage 2: the echo filter); always false here */
-    readonly echo: false;
+    /** the app's own voice heard by the microphone (the echo filter): kept here, left out of the pages and the spots */
+    readonly echo: boolean;
     readonly nearby: readonly string[];
 }
 
@@ -125,6 +131,10 @@ export interface AnalyzeOptions {
     readonly windowMs?: number;
     readonly replay?: boolean;
     readonly rules?: FeedbackRules;
+    /** the echo filter (default on); off only for its control */
+    readonly echo?: boolean;
+    /** what the transcriber said about its own run (tools/listen/transcribe.py) */
+    readonly transcribed?: { readonly language: string | null; readonly modelRevision: string | null; readonly dropped: number };
 }
 
 // ------------------------------------------------------------------ steps and anchors
@@ -345,18 +355,36 @@ export function analyzePackage(pkg: SessionPackage, options: AnalyzeOptions = {}
     // remarks on the session clock; the survey tail starts with the first survey line
     const surveyStart = pkg.events.find((e) => e.kind === 'speech' && e.key.startsWith('survey.'))?.t ?? Infinity;
     const said = (options.transcript ?? []).map((s) => ({ t: Math.round(s.startMs + offsetMs), text: s.text }));
+    // the echo filter: the line of the app this segment repeats near its time, if any
+    const lang = m.device.locale.slice(0, 2).toLowerCase();
+    const speech = pkg.events.filter((e): e is Extract<SessionEvent, { kind: 'speech' }> => e.kind === 'speech');
+    const echoOf = (t: number, text: string): Extract<SessionEvent, { kind: 'speech' }> | null => {
+        if (options.echo === false) return null;
+        const heard = words(text, lang);
+        for (const e of speech) if (Math.abs(e.t - t) <= rules.echoWindowMs && wordErrors(words(e.text, lang), heard).rate < rules.echoWer) return e;
+        return null;
+    };
+    const echoes: { t: number; lineT: number }[] = [];
     const remarks: Remark[] = said.map(({ t, text }) => {
         const nearby = pkg.events.filter((e) => Math.abs(e.t - t) <= windowMs).map(describe).filter((x): x is string => x !== null);
+        const line = echoOf(t, text);
+        if (line !== null) echoes.push({ t, lineT: line.t });
+        const echo = line !== null;
         if (t >= surveyStart) {
             let item: string | null = null;
             for (const e of pkg.events) if (e.t <= t && e.kind === 'speech' && e.key.startsWith('survey.item.')) item = e.key.slice('survey.item.'.length);
-            return { t, key: null, anchor: null, tag: 'survey', item, text, echo: false, nearby };
+            return { t, key: null, anchor: null, tag: 'survey', item, text, echo, nearby };
         }
         const anchor = anchorAt(segments, t);
-        return { t, key: anchor.key, anchor, tag: tagOf(text, m.device.locale), item: null, text, echo: false, nearby };
+        return { t, key: anchor.key, anchor, tag: tagOf(text, m.device.locale), item: null, text, echo, nearby };
     });
+    // drift of the voice against the session clock, read off the echoes: how much later (or earlier) the last echo
+    // lands after its line than the first one does; null with fewer than two echoes
+    const first = echoes[0];
+    const last = echoes[echoes.length - 1];
+    const driftMs = first === undefined || last === undefined || echoes.length < 2 ? null : Math.round(last.t - last.lineT - (first.t - first.lineT));
 
-    const spots = spotsOf(segments, remarks.filter((r) => r.tag !== 'survey').map((r) => r.t), rules, windowMs);
+    const spots = spotsOf(segments, remarks.filter((r) => r.tag !== 'survey' && !r.echo).map((r) => r.t), rules, windowMs);
     return {
         format: FEEDBACK_FORMAT,
         session: {
@@ -375,8 +403,15 @@ export function analyzePackage(pkg: SessionPackage, options: AnalyzeOptions = {}
         spots,
         remarks,
         survey: pkg.survey === null ? null : { skipped: pkg.survey.skipped, answers: pkg.survey.answers.map((a) => ({ item: a.item, value: a.value, via: a.via, tMs: a.t })) },
-        transcript: { source: options.transcriptName ?? null, segments: said.length, dropped: 0, echo: 0, language: null, modelRevision: null },
-        alignment: { voiceOffsetMs: m.clock.voiceOffsetMs ?? null, driftMs: null },
+        transcript: {
+            source: options.transcriptName ?? null,
+            segments: said.length,
+            dropped: options.transcribed?.dropped ?? 0,
+            echo: echoes.length,
+            language: options.transcribed?.language ?? null,
+            modelRevision: options.transcribed?.modelRevision ?? null
+        },
+        alignment: { voiceOffsetMs: m.clock.voiceOffsetMs ?? null, driftMs },
         warnings
     };
 }
@@ -428,13 +463,13 @@ export function renderSummary(a: Analysis): string {
             ...table(
                 ['Time', 'Lesson and step', 'What happened', 'Score', 'The pilot said'],
                 top.map((s) => {
-                    const said = a.remarks.filter((r) => r.tag !== 'survey' && r.t >= s.t - RULES.remarkWindowMs && r.t <= s.toT + RULES.remarkWindowMs).map((r) => `"${r.text}"`);
+                    const said = a.remarks.filter((r) => r.tag !== 'survey' && !r.echo && r.t >= s.t - RULES.remarkWindowMs && r.t <= s.toT + RULES.remarkWindowMs).map((r) => `"${r.text}"`);
                     return [formatClock(s.t), `${s.key}${s.anchor.line === null ? '' : `: ${short(s.anchor.line, 50)}`}`, signalsText(s), String(s.score), said.join(' ') || '-'];
                 })
             )
         );
     out.push('', '## Pilot remarks', '');
-    const remarks = a.remarks.filter((r) => r.tag !== 'survey');
+    const remarks = a.remarks.filter((r) => r.tag !== 'survey' && !r.echo);
     if (remarks.length === 0) out.push('No remark (no transcript, or nothing said during the lessons).');
     else
         out.push(...table(['Time', 'Lesson and step', 'Tag', 'Quote', 'Events within the window'], remarks.slice(0, RULES.pageRemarks).map((r) => [formatClock(r.t), r.key ?? '-', r.tag, `"${r.text}"`, r.nearby.join(', ') || '-'])));
@@ -442,7 +477,7 @@ export function renderSummary(a: Analysis): string {
     out.push('', '## Survey', '');
     if (a.survey === null) out.push('No survey in the package.');
     else {
-        const open = a.remarks.filter((r) => r.tag === 'survey');
+        const open = a.remarks.filter((r) => r.tag === 'survey' && !r.echo);
         out.push(...table(['Item', 'Answer', 'Via'], a.survey.answers.map((x) => [x.item, x.value === null ? '-' : String(x.value), x.via])));
         if (open.length > 0) out.push('', ...open.map((r) => `- ${r.item ?? 'survey'} (${formatClock(r.t)}): "${r.text}"`));
     }
@@ -456,7 +491,7 @@ export function renderShareSafe(a: Analysis): string {
     if (top.length === 0) out.push('No difficult spot found.');
     else out.push(...table(['Time', 'Step key', 'What happened', 'Score', 'Remark nearby'], top.map((s) => [formatClock(s.t), s.key, signalsText(s), String(s.score), yes(s.remark)])));
     out.push('', '## Pilot remarks (tags only)', '');
-    out.push(...table(['Time', 'Step key', 'Tag'], a.remarks.slice(0, RULES.pageRemarks).map((r) => [formatClock(r.t), r.key ?? `survey ${r.item ?? ''}`, r.tag])));
+    out.push(...table(['Time', 'Step key', 'Tag'], a.remarks.filter((r) => !r.echo).slice(0, RULES.pageRemarks).map((r) => [formatClock(r.t), r.key ?? `survey ${r.item ?? ''}`, r.tag])));
     out.push('', '## Survey', '');
     if (a.survey === null) out.push('No survey in the package.');
     else out.push(...table(['Item', 'Answer', 'Via'], a.survey.answers.map((x) => [x.item, x.value === null ? '-' : String(x.value), x.via])));
@@ -465,10 +500,84 @@ export function renderShareSafe(a: Analysis): string {
 
 // ------------------------------------------------------------------ the command line
 
+/** What a transcription gives back: the segments in seconds of the audio, as parseTranscript reads them. */
+export interface Transcribed {
+    readonly segments: readonly TranscriptSegment[];
+    readonly language: string | null;
+    readonly modelRevision: string | null;
+    readonly dropped: number;
+}
+
+/**
+ * Transcribes voice.webm (the bytes) in the given language ('auto' to detect it); writes transcript.json into dir.
+ * Throws a TranscribeError when it cannot (no Python environment, no model in the cache, a decoder error).
+ */
+export type Transcriber = (voice: Uint8Array, lang: string, dir: string) => Promise<Transcribed>;
+
+export class TranscribeError extends Error {}
+
 export interface AnalyzeIo {
     stdout(text: string): void;
     stderr(text: string): void;
+    /** the transcriber (default: localTranscriber) */
+    transcribe?: Transcriber;
 }
+
+const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
+/** the model directory of the words check (tools/listen-words.ts): the same model at the same revision */
+const MODEL_DIR = join('whisper', 'faster-whisper-large-v3-edaa852');
+const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms));
+
+/** The machine's rule, as tools/listen-words.ts: the GPU is used while this process holds the lock (mkdir, 20 s between tries, 9 minutes at most). */
+async function takeGpuLock(path: string): Promise<() => void> {
+    const deadline = Date.now() + 9 * 60 * 1000;
+    for (;;) {
+        try {
+            mkdirSync(path);
+            return () => {
+                try {
+                    rmdirSync(path);
+                } catch {
+                    // already gone
+                }
+            };
+        } catch (e) {
+            if ((e as NodeJS.ErrnoException).code !== 'EEXIST') throw e;
+            if (Date.now() > deadline) throw new TranscribeError(`could not take the GPU lock ${path} within 9 minutes`);
+            await sleep(20_000);
+        }
+    }
+}
+
+/**
+ * tools/listen/transcribe.py on this machine: Python from SHRAMKO_LISTEN_PY, the model from SHRAMKO_LISTEN_CACHE (never
+ * downloaded: HF_HUB_OFFLINE=1, and the script fails when the model is absent), the GPU lock GPU_LOCK held for the run.
+ * The voice is written next to the summary for the run and removed after it.
+ */
+export const localTranscriber: Transcriber = async (voice, lang, dir) => {
+    const py = process.env['SHRAMKO_LISTEN_PY'] ?? 'python';
+    const cache = process.env['SHRAMKO_LISTEN_CACHE'] ?? join(ROOT, '.cache', 'listen');
+    const audio = join(dir, '.voice.webm');
+    const out = join(dir, 'transcript.json');
+    await writeFile(audio, voice);
+    const release = await takeGpuLock(process.env['GPU_LOCK'] ?? 'C:/dev/.gpu-lock');
+    let r: ReturnType<typeof spawnSync>;
+    try {
+        r = spawnSync(
+            py,
+            ['-X', 'utf8', join(ROOT, 'tools', 'listen', 'transcribe.py'), '--audio', audio, '--model', join(cache, MODEL_DIR), '--lang', lang, '--hallucinations', join(ROOT, 'tools', 'feedback', 'hallucinations.json'), '--out', out],
+            { encoding: 'utf8', env: { ...process.env, HF_HUB_OFFLINE: '1', TRANSFORMERS_OFFLINE: '1' }, maxBuffer: 16 * 1024 * 1024 }
+        );
+    } finally {
+        release();
+        await rm(audio, { force: true });
+    }
+    if (r.error !== undefined) throw new TranscribeError(`cannot run ${py} (set SHRAMKO_LISTEN_PY to the python of tools/listen/requirements.txt): ${r.error.message}`);
+    if (r.status !== 0) throw new TranscribeError(`transcribe.py failed (exit ${String(r.status)}): ${String(r.stderr).trim().split('\n').slice(-3).join(' ')}`);
+    const text = utf8Decode(new Uint8Array(await readFile(out)));
+    const doc = JSON.parse(text) as { language?: string; revision?: string; dropped?: unknown[] };
+    return { segments: parseTranscript(text), language: doc.language ?? null, modelRevision: doc.revision ?? null, dropped: doc.dropped?.length ?? 0 };
+};
 
 const nodeIo: AnalyzeIo = {
     stdout: (t) => {
@@ -476,7 +585,8 @@ const nodeIo: AnalyzeIo = {
     },
     stderr: (t) => {
         process.stderr.write(t);
-    }
+    },
+    transcribe: localTranscriber
 };
 
 const USAGE = `Usage: analyze <package.zip | folder of packages> --out <dir> [options]
@@ -487,6 +597,8 @@ const USAGE = `Usage: analyze <package.zip | folder of packages> --out <dir> [op
   --share-safe          also write summary.share-safe.md (no quote, no nickname, no free text)
   --window-s <seconds>  window around an event for a remark (default ${RULES.remarkWindowMs / 1000})
   --no-replay           skip the replay check of each lesson
+  --no-transcribe       do not transcribe voice.webm when no transcript is given (otherwise Whisper runs on this
+                        machine: SHRAMKO_LISTEN_PY, SHRAMKO_LISTEN_CACHE, GPU_LOCK; offline, never downloads)
   --help                this text
 `;
 
@@ -515,6 +627,7 @@ export async function main(argv: readonly string[], io: AnalyzeIo = nodeIo): Pro
     let transcriptPath: string | null = null;
     let shareSafe = false;
     let replay = true;
+    let transcribe = true;
     let windowMs = RULES.remarkWindowMs;
     for (let i = 0; i < argv.length; i++) {
         const a = argv[i] as string;
@@ -529,6 +642,7 @@ export async function main(argv: readonly string[], io: AnalyzeIo = nodeIo): Pro
             return 0;
         } else if (a === '--share-safe') shareSafe = true;
         else if (a === '--no-replay') replay = false;
+        else if (a === '--no-transcribe') transcribe = false;
         else if (a === '--out' || a === '--transcript' || a === '--window-s') {
             const v = value();
             if (v === null) {
@@ -588,16 +702,23 @@ export async function main(argv: readonly string[], io: AnalyzeIo = nodeIo): Pro
     for (const job of jobs) {
         try {
             const pkg = await readOne(job.pkg);
-            const transcript = job.transcript === null ? undefined : parseTranscript(utf8Decode(new Uint8Array(await readFile(job.transcript))));
-            const analysis = analyzePackage(pkg, { replay, windowMs, ...(transcript === undefined ? {} : { transcript, transcriptName: basename(job.transcript as string) }) });
-            const dir = join(out, analysis.session.id);
+            const dir = join(out, pkg.manifest.id);
             await mkdir(dir, { recursive: true });
+            let given: Pick<AnalyzeOptions, 'transcript' | 'transcriptName' | 'transcribed'> = {};
+            if (job.transcript !== null) given = { transcript: parseTranscript(utf8Decode(new Uint8Array(await readFile(job.transcript)))), transcriptName: basename(job.transcript) };
+            else if (pkg.voice !== null && transcribe) {
+                const run = io.transcribe ?? localTranscriber;
+                const lang = /^[a-z]{2}\b/i.test(pkg.manifest.device.locale) ? pkg.manifest.device.locale.slice(0, 2).toLowerCase() : 'auto';
+                const t = await run(pkg.voice, lang, dir);
+                given = { transcript: t.segments, transcriptName: 'transcript.json', transcribed: { language: t.language, modelRevision: t.modelRevision, dropped: t.dropped } };
+            }
+            const analysis = analyzePackage(pkg, { replay, windowMs, ...given });
             await writeFile(join(dir, 'analysis.json'), `${JSON.stringify(analysis, null, 2)}\n`, 'utf8');
             await writeFile(join(dir, 'summary.md'), renderSummary(analysis), 'utf8');
             if (shareSafe) await writeFile(join(dir, 'summary.share-safe.md'), renderShareSafe(analysis), 'utf8');
-            io.stdout(`${basename(job.pkg)}: ${dir} (${analysis.lessons.length} lessons, ${analysis.spots.length} spots, ${analysis.remarks.length} remarks)\n`);
+            io.stdout(`${basename(job.pkg)}: ${dir} (${analysis.lessons.length} lessons, ${analysis.spots.length} spots, ${analysis.remarks.filter((r) => !r.echo).length} remarks, ${analysis.transcript.echo} echo)\n`);
         } catch (e) {
-            if (e instanceof PackageError || e instanceof ZipError || e instanceof ReportInputError || (e instanceof Error && 'code' in e)) {
+            if (e instanceof PackageError || e instanceof ZipError || e instanceof ReportInputError || e instanceof TranscribeError || (e instanceof Error && 'code' in e)) {
                 io.stderr(`analyze: ${basename(job.pkg)}: ${e.message}\n`);
                 failed++;
             } else throw e;
