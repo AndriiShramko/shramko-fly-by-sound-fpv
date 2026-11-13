@@ -56,7 +56,7 @@ describe('the cut of a package at its `lesson open` events', () => {
         ]);
         expect(s[0]!.manifest).toBe(BASE);
         expect(s[1]!.manifest.lesson).toEqual({ id: 'shapes-series', version: 1, path: 'full' });
-        expect(s[1]!.manifest.scene).toMatchObject({ kind: 'analytic', id: createAnalyticWorld((getLesson('shapes-series').world as { spec: never }).spec).id });
+        expect(s[1]!.manifest.scene).toMatchObject({ kind: 'analytic', id: createAnalyticWorld((getLesson('shapes-series').world as unknown as { spec: never }).spec).id });
         expect(s[2]!.manifest.assists).toEqual(getLesson('rings-first').assists);
     });
 

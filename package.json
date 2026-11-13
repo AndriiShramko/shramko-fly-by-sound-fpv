@@ -30,6 +30,7 @@
     "test": "vitest run --passWithNoTests",
     "proof:audio": "vitest run --config vitest.proof.config.ts",
     "report": "node tools/run-tool.mjs report",
+    "analyze": "node tools/run-tool.mjs analyze",
     "listen": "node tools/run-tool.mjs listen",
     "listen:words": "node tools/run-tool.mjs listen-words",
     "demo": "node demo/build.mjs --serve",
