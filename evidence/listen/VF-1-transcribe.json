@@ -1,0 +1,249 @@
+{
+ "format": "shramko-voice-e2e/1",
+ "key": "41a42bf282998a27f4bef0131d5226d83b0bdef9cb9a82768b1854debf4d87e7",
+ "date": "2026-11-13T01:19:51.949Z",
+ "inputs": [
+  "tools/listen/transcribe.py",
+  "tools/analyze.ts",
+  "tools/feedback/rules.ts",
+  "tools/feedback/hallucinations.json",
+  "test/fixtures/make-voice-e2e.py",
+  "test/fixtures/voice-e2e-tts.ps1",
+  "test/fixtures/voice-e2e-sentences.json",
+  "test/transcribe-e2e.test.ts"
+ ],
+ "decode": {
+  "model": "Systran/faster-whisper-large-v3",
+  "revision": "edaa852ec7e145841d8ffdb056a99866b5f0a478",
+  "device": "cuda",
+  "computeType": "float16",
+  "call": "WhisperModel.transcribe, one window per stretch of speech (Silero VAD, padding 0.4 s), in the package language",
+  "options": {
+   "beamSize": 5,
+   "temperature": 0,
+   "conditionOnPreviousText": false,
+   "vad": "per window",
+   "wordTimestamps": true
+  },
+  "drop": {
+   "noSpeechProb": 0.6,
+   "avgLogprob": -1,
+   "langSwitch": 0.9
+  },
+  "splitGapS": 0.5
+ },
+ "tools": {
+  "python": "3.11.9",
+  "faster-whisper": "1.2.1",
+  "ctranslate2": "4.8.5",
+  "numpy": "2.4.6",
+  "av": "18.1.0"
+ },
+ "boundMs": 300,
+ "werBounds": {
+  "en": 0.2,
+  "es": 0.2,
+  "pl": 0.2,
+  "ru": 0.2
+ },
+ "languages": {
+  "en": {
+   "language": "en",
+   "dropped": 0,
+   "sentences": [
+    {
+     "text": "The ring sound is too quiet for me.",
+     "heard": "The ring sound is too quiet for me.",
+     "wer": 0,
+     "deltaMs": 6
+    },
+    {
+     "text": "I cannot tell left from right here.",
+     "heard": "I cannot tell left from right here.",
+     "wer": 0,
+     "deltaMs": 14
+    },
+    {
+     "text": "Now I hear the wall on my left side.",
+     "heard": "Now I hear the wall on my left side.",
+     "wer": 0,
+     "deltaMs": 42
+    },
+    {
+     "text": "This lesson is much easier than the last one.",
+     "heard": "This lesson is much easier than the last one.",
+     "wer": 0,
+     "deltaMs": -2
+    },
+    {
+     "text": "Please make the beeping a little slower.",
+     "heard": "Please make the beeping a little slower.",
+     "wer": 0,
+     "deltaMs": 14
+    }
+   ],
+   "maxWer": 0,
+   "maxAbsDeltaMs": 42,
+   "line": {
+    "heard": "In this lesson you meet every sound you will hear while flying.",
+    "wer": 0,
+    "deltaToEventMs": 112,
+    "echo": true
+   }
+  },
+  "es": {
+   "language": "es",
+   "dropped": 0,
+   "sentences": [
+    {
+     "text": "El sonido del anillo es muy bajo.",
+     "heard": "El sonido del anillo es muy bajo.",
+     "wer": 0,
+     "deltaMs": 6
+    },
+    {
+     "text": "No distingo la izquierda de la derecha.",
+     "heard": "No distingo la izquierda de la derecha.",
+     "wer": 0,
+     "deltaMs": 24
+    },
+    {
+     "text": "Ahora oigo la pared a mi izquierda.",
+     "heard": "Ahora oigo la pared a mi izquierda.",
+     "wer": 0,
+     "deltaMs": 64
+    },
+    {
+     "text": "Esta lección es más fácil que la anterior.",
+     "heard": "Esta lección es más fácil que la anterior.",
+     "wer": 0,
+     "deltaMs": 8
+    },
+    {
+     "text": "Por favor, haz el pitido más lento.",
+     "heard": "Por favor, haz el pitido más lento.",
+     "wer": 0,
+     "deltaMs": -4
+    }
+   ],
+   "maxWer": 0,
+   "maxAbsDeltaMs": 64,
+   "line": {
+    "heard": "En esta lección conoces todos los sonidos que oirás al volar.",
+    "wer": 0,
+    "deltaToEventMs": 112,
+    "echo": true
+   }
+  },
+  "pl": {
+   "language": "pl",
+   "dropped": 0,
+   "sentences": [
+    {
+     "text": "Dźwięk pierścienia jest za cichy.",
+     "heard": "Dźwięk pierścienia jest za cichy.",
+     "wer": 0,
+     "deltaMs": 4
+    },
+    {
+     "text": "Nie odróżniam lewej strony od prawej.",
+     "heard": "Nie odróżniam lewej strony od prawej.",
+     "wer": 0,
+     "deltaMs": 12
+    },
+    {
+     "text": "Teraz słyszę ścianę po lewej stronie.",
+     "heard": "Teraz słyszę ścianę po lewej stronie.",
+     "wer": 0,
+     "deltaMs": 42
+    },
+    {
+     "text": "Ta lekcja jest łatwiejsza niż poprzednia.",
+     "heard": "Ta lekcja jest łatwiejsza niż poprzednia.",
+     "wer": 0,
+     "deltaMs": -2
+    },
+    {
+     "text": "Proszę, zrób to pikanie wolniejsze.",
+     "heard": "Proszę, zrób to pikanie wolniejsze.",
+     "wer": 0,
+     "deltaMs": 16
+    }
+   ],
+   "maxWer": 0,
+   "maxAbsDeltaMs": 42,
+   "line": {
+    "heard": "W tej lekcji poznasz wszystkie dźwięki, które usłyszysz podczas lotu.",
+    "wer": 0,
+    "deltaToEventMs": 140,
+    "echo": true
+   }
+  },
+  "ru": {
+   "language": "ru",
+   "dropped": 0,
+   "sentences": [
+    {
+     "text": "Звук кольца слишком тихий для меня.",
+     "heard": "Звук кольца слишком тихий для меня.",
+     "wer": 0,
+     "deltaMs": -16
+    },
+    {
+     "text": "Я не различаю, где лево, а где право.",
+     "heard": "Я не различаю, где лево, а где право",
+     "wer": 0,
+     "deltaMs": 24
+    },
+    {
+     "text": "Теперь я слышу стену слева от себя.",
+     "heard": "Теперь я слышу стену слева от себя",
+     "wer": 0,
+     "deltaMs": 34
+    },
+    {
+     "text": "Этот урок намного легче прошлого.",
+     "heard": "Этот урок намного легче прошлого.",
+     "wer": 0,
+     "deltaMs": 18
+    },
+    {
+     "text": "Пожалуйста, сделайте писк помедленнее.",
+     "heard": "Пожалуйста, сделайте писк помедленнее",
+     "wer": 0,
+     "deltaMs": 36
+    }
+   ],
+   "maxWer": 0,
+   "maxAbsDeltaMs": 36,
+   "line": {
+    "heard": "На этом уроке ты познакомишься со всеми звуками, которые услышишь в полете",
+    "wer": 0,
+    "deltaToEventMs": 112,
+    "echo": true
+   }
+  }
+ },
+ "controlShift": {
+  "en": 2042,
+  "es": 2064,
+  "pl": 2042,
+  "ru": 2036
+ },
+ "controlEchoOff": {
+  "en": true,
+  "es": true,
+  "pl": true,
+  "ru": true
+ },
+ "long": {
+  "sentences": 20,
+  "found": 20,
+  "meanDeltaMs": 35,
+  "maxAbsDeltaMs": 90,
+  "slopeMsPerMin": -0.43,
+  "driftMsOver10Min": -4,
+  "firstDeltaMs": 34,
+  "lastDeltaMs": -2
+ }
+}

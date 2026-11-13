@@ -1,0 +1,9 @@
+{
+  "language": "en",
+  "segments": [
+    { "id": 0, "start": 24.5, "end": 26.0, "text": " Honestly confusing, which direction now?" },
+    { "id": 1, "start": 59.5, "end": 61.5, "text": " Terribly difficult, restarting everything." },
+    { "id": 2, "start": 133.5, "end": 135.0, "text": " Humming sounds muffled somehow." },
+    { "id": 3, "start": 151.5, "end": 154.0, "text": " Beeping pitch felt wonderful." }
+  ]
+}

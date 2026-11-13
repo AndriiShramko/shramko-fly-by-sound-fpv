@@ -1,0 +1,23 @@
+{
+  "about": "Word stems that tag a pilot remark in tools/analyze.ts, per locale, matched at the start of a word, case-insensitive. A first guess (estimate), not measured on real recordings; non-ASCII letters are written as they are (UTF-8).",
+  "en": {
+    "confusion": ["confus", "lost", "understand", "difficult", "hard", "where", "which way"],
+    "sound": ["sound", "loud", "quiet", "muffled", "hum", "beep", "noise", "hear"],
+    "praise": ["good", "great", "nice", "wonderful", "love", "easy"]
+  },
+  "es": {
+    "confusion": ["confus", "perdid", "entiend", "difícil", "dónde"],
+    "sound": ["sonido", "fuerte", "bajo", "ruido", "oigo"],
+    "praise": ["bien", "genial", "bonit", "fácil", "encant"]
+  },
+  "pl": {
+    "confusion": ["nie rozumiem", "zgubi", "trudn", "gdzie", "nie wiem"],
+    "sound": ["dźwięk", "głośn", "cich", "szum", "słysz"],
+    "praise": ["dobrze", "super", "fajn", "łatw", "podoba"]
+  },
+  "ru": {
+    "confusion": ["не понимаю", "потеря", "сложн", "трудн", "где"],
+    "sound": ["звук", "громк", "тих", "шум", "слыш"],
+    "praise": ["хорош", "отличн", "класс", "легк", "нрав"]
+  }
+}

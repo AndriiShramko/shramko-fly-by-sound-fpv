@@ -1,0 +1,46 @@
+{
+  "about": "The end-to-end check of tools/listen/transcribe.py and tools/analyze.ts (test/transcribe-e2e.test.ts, test/fixtures/make-voice-e2e.py): five sentences a pilot might say, per language, said by the local Windows voice of the language (the voices of the words check), and the lesson line said by the app that the microphone hears (the echo). Synthetic voices only.",
+  "echoKey": "lesson.ears-glossary.intro.1",
+  "languages": {
+    "en": {
+      "voice": "Microsoft David Desktop",
+      "sentences": [
+        "The ring sound is too quiet for me.",
+        "I cannot tell left from right here.",
+        "Now I hear the wall on my left side.",
+        "This lesson is much easier than the last one.",
+        "Please make the beeping a little slower."
+      ]
+    },
+    "es": {
+      "voice": "Microsoft Helena Desktop",
+      "sentences": [
+        "El sonido del anillo es muy bajo.",
+        "No distingo la izquierda de la derecha.",
+        "Ahora oigo la pared a mi izquierda.",
+        "Esta lecci\u00f3n es m\u00e1s f\u00e1cil que la anterior.",
+        "Por favor, haz el pitido m\u00e1s lento."
+      ]
+    },
+    "pl": {
+      "voice": "Microsoft Paulina Desktop",
+      "sentences": [
+        "D\u017awi\u0119k pier\u015bcienia jest za cichy.",
+        "Nie odr\u00f3\u017cniam lewej strony od prawej.",
+        "Teraz s\u0142ysz\u0119 \u015bcian\u0119 po lewej stronie.",
+        "Ta lekcja jest \u0142atwiejsza ni\u017c poprzednia.",
+        "Prosz\u0119, zr\u00f3b to pikanie wolniejsze."
+      ]
+    },
+    "ru": {
+      "voice": "Microsoft Irina Desktop",
+      "sentences": [
+        "\u0417\u0432\u0443\u043a \u043a\u043e\u043b\u044c\u0446\u0430 \u0441\u043b\u0438\u0448\u043a\u043e\u043c \u0442\u0438\u0445\u0438\u0439 \u0434\u043b\u044f \u043c\u0435\u043d\u044f.",
+        "\u042f \u043d\u0435 \u0440\u0430\u0437\u043b\u0438\u0447\u0430\u044e, \u0433\u0434\u0435 \u043b\u0435\u0432\u043e, \u0430 \u0433\u0434\u0435 \u043f\u0440\u0430\u0432\u043e.",
+        "\u0422\u0435\u043f\u0435\u0440\u044c \u044f \u0441\u043b\u044b\u0448\u0443 \u0441\u0442\u0435\u043d\u0443 \u0441\u043b\u0435\u0432\u0430 \u043e\u0442 \u0441\u0435\u0431\u044f.",
+        "\u042d\u0442\u043e\u0442 \u0443\u0440\u043e\u043a \u043d\u0430\u043c\u043d\u043e\u0433\u043e \u043b\u0435\u0433\u0447\u0435 \u043f\u0440\u043e\u0448\u043b\u043e\u0433\u043e.",
+        "\u041f\u043e\u0436\u0430\u043b\u0443\u0439\u0441\u0442\u0430, \u0441\u0434\u0435\u043b\u0430\u0439\u0442\u0435 \u043f\u0438\u0441\u043a \u043f\u043e\u043c\u0435\u0434\u043b\u0435\u043d\u043d\u0435\u0435."
+      ]
+    }
+  }
+}

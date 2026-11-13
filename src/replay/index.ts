@@ -6,3 +6,4 @@ export * from './compare';
 export * from './frames';
 export * from './rebuild';
 export * from './replay';
+export * from './segments';
