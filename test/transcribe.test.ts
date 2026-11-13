@@ -109,7 +109,8 @@ const PY = process.env['SHRAMKO_LISTEN_PY'] ?? 'python';
 const hasPython = spawnSync(PY, ['--version'], { encoding: 'utf8' }).status === 0;
 const SCRIPT = join(ROOT, 'tools', 'listen', 'transcribe.py');
 
-describe.skipIf(!hasPython)('tools/listen/transcribe.py without a model', () => {
+// skipped only when no python is found and none was named: a SHRAMKO_LISTEN_PY that does not run fails these tests
+describe.skipIf(!hasPython && process.env['SHRAMKO_LISTEN_PY'] === undefined)('tools/listen/transcribe.py without a model', () => {
     it('stops with exit 3 when the model is not in the cache, and downloads nothing', () => {
         const model = tempDir();
         const out = join(tempDir(), 'transcript.json');
@@ -125,7 +126,9 @@ describe.skipIf(!hasPython)('tools/listen/transcribe.py without a model', () => 
         const raw = {
             segments: [
                 seg(1, 'The ring is too quiet.'),
-                seg(3, 'Thank you for watching!'),
+                // a listed phrase from a weak segment is dropped; said clearly it is the pilot's (kept)
+                seg(3, 'Thank you for watching!', 0.4, -0.3),
+                seg(4, 'Thank you.', 0.02, -0.1),
                 seg(5, 'Hmm', 0.9, -1.5),
                 seg(7, 'Left, now left.', 0.9, -0.2),
                 seg(9, '\u0421\u0443\u0431\u0442\u0438\u0442\u0440\u044b \u0441\u0434\u0435\u043b\u0430\u043b DimaTorzok'),
@@ -150,13 +153,13 @@ describe.skipIf(!hasPython)('tools/listen/transcribe.py without a model', () => 
             return JSON.parse(readFileSync(out, 'utf8')) as { segments: { start: number }[]; dropped: { start: number; reason: string }[] };
         };
         const ru = run('ru');
-        expect(ru.segments.map((s) => s.start)).toEqual([1, 7, 11, 13, 15]);
+        expect(ru.segments.map((s) => s.start)).toEqual([1, 4, 7, 11, 13, 15]);
         expect(ru.dropped.map((d) => [d.start, d.reason])).toEqual([[3, 'hallucination'], [5, 'no speech'], [9, 'hallucination']]);
         // the Russian list is not applied to an English recording (English applies to every language)
-        expect(run('en').segments.map((s) => s.start)).toEqual([1, 7, 9, 11, 13, 15]);
+        expect(run('en').segments.map((s) => s.start)).toEqual([1, 4, 7, 9, 11, 13, 15]);
         // what parseTranscript reads
         const read = parseTranscript(readFileSync(join(dir, 'ru.json'), 'utf8'));
-        expect(read.map((s) => [s.startMs, s.text]).slice(3)).toEqual([[13000, 'Too loud.'], [15000, 'Now better.']]);
-        expect(read.map((s) => s.startMs)).toEqual([1000, 7000, 11000, 13000, 15000]);
+        expect(read.map((s) => [s.startMs, s.text]).slice(4)).toEqual([[13000, 'Too loud.'], [15000, 'Now better.']]);
+        expect(read.map((s) => s.startMs)).toEqual([1000, 4000, 7000, 11000, 13000, 15000]);
     });
 });

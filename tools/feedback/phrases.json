@@ -1,5 +1,5 @@
 {
-  "about": "Word stems that tag a pilot remark in tools/analyze.ts, per locale, matched at the start of a word, case-insensitive. A first guess (estimate), not measured on real recordings; non-ASCII letters are written as \\u escapes.",
+  "about": "Word stems that tag a pilot remark in tools/analyze.ts, per locale, matched at the start of a word, case-insensitive. A first guess (estimate), not measured on real recordings; non-ASCII letters are written as they are (UTF-8).",
   "en": {
     "confusion": ["confus", "lost", "understand", "difficult", "hard", "where", "which way"],
     "sound": ["sound", "loud", "quiet", "muffled", "hum", "beep", "noise", "hear"],

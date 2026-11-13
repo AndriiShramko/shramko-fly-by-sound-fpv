@@ -54,6 +54,10 @@ PAD_S = 0.4
 # measured on this project's recordings (estimate)
 NO_SPEECH = 0.6
 LOGPROB = -1.0
+# a listed silence phrase ('thank you') is dropped only from a segment this unsure: no-speech probability at or above
+# WEAK_NO_SPEECH or mean log probability at or below WEAK_LOGPROB (estimates, not measured on real recordings)
+WEAK_NO_SPEECH = 0.3
+WEAK_LOGPROB = -0.6
 # a segment is cut after a sentence end followed by a pause this long, s (estimate)
 SPLIT_GAP = 0.5
 # a given language gives way to the detected one at this probability (estimate)
@@ -66,7 +70,7 @@ DECODE = {
     'computeType': 'float16',
     'call': 'WhisperModel.transcribe, one window per stretch of speech (Silero VAD, padding 0.4 s), in the package language',
     'options': {'beamSize': 5, 'temperature': 0.0, 'conditionOnPreviousText': False, 'vad': 'per window', 'wordTimestamps': True},
-    'drop': {'noSpeechProb': NO_SPEECH, 'avgLogprob': LOGPROB, 'langSwitch': LANG_SWITCH},
+    'drop': {'noSpeechProb': NO_SPEECH, 'avgLogprob': LOGPROB, 'langSwitch': LANG_SWITCH, 'phraseWeakNoSpeechProb': WEAK_NO_SPEECH, 'phraseWeakAvgLogprob': WEAK_LOGPROB},
     'splitGapS': SPLIT_GAP
 }
 
@@ -84,10 +88,20 @@ def load_hallucinations(path):
     return {k: [norm(x[:-1]) + '*' if x.endswith('*') else norm(x) for x in v] for k, v in doc.items() if isinstance(v, list)}
 
 
-def hallucination(text, phrases):
-    t = norm(text)
+def weak(seg):
+    """Whisper was unsure of this segment (estimates WEAK_NO_SPEECH, WEAK_LOGPROB): a listed phrase is dropped only then."""
+    return seg.get('noSpeechProb', 0.0) >= WEAK_NO_SPEECH or seg.get('avgLogprob', 0.0) <= WEAK_LOGPROB
+
+
+def hallucination(seg, phrases):
+    """A credit line (entry ending in *) always; a whole-text phrase ('thank you', 'bye') only when the segment is weak:
+    a pilot may really say it, mostly at the end or in the survey."""
+    t = norm(seg['text'])
     for p in phrases:
-        if (p.endswith('*') and t.startswith(p[:-1])) or t == p:
+        if p.endswith('*'):
+            if t.startswith(p[:-1]):
+                return True
+        elif t == p and weak(seg):
             return True
     return False
 
@@ -139,7 +153,7 @@ def keep_or_drop(segments, lang, table):
             reason = 'empty'
         elif s.get('noSpeechProb', 0.0) > NO_SPEECH and s.get('avgLogprob', 0.0) < LOGPROB:
             reason = 'no speech'
-        elif hallucination(s['text'], phrases):
+        elif hallucination(s, phrases):
             reason = 'hallucination'
         if reason is None:
             kept.append(s)

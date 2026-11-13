@@ -34,7 +34,11 @@ export interface FeedbackRules {
     readonly touchClusterMs: number;
     /** a touch faster than this, m/s (estimate) */
     readonly touchFastMps: number;
-    /** idle in an attempt: speed under idleSpeedMps and every stick within idleStick of the centre for idleMs (estimates) */
+    /**
+     * idle in an attempt: speed under idleSpeedMps and no stick moved more than idleStick from where it was when the
+     * stretch began, for idleMs, while the app is not speaking a line (the time between a `speech` event and the next
+     * speech.end does not count); a change, not a position, so a throttle held low counts too (estimates)
+     */
     readonly idleSpeedMps: number;
     readonly idleStick: number;
     readonly idleMs: number;
@@ -50,12 +54,18 @@ export interface FeedbackRules {
     /** how many remarks the page shows (the rest are in analysis.json) */
     readonly pageRemarks: number;
     /**
-     * The echo filter: a transcript segment within echoWindowMs of a `speech` event whose text it matches with a word
-     * error rate (tools/listen-words.ts) under echoWer is the app's own voice heard by the microphone (estimates; the
-     * end-to-end check of test/transcribe-e2e.test.ts measured the synthetic case, see evidence/listen/VF-1-transcribe.json)
+     * The echo filter: a transcript segment that starts while a `speech` line of the app is said (from echoWindowMs
+     * before the event to echoWindowMs after the line's end: the next speech.end, or echoMsPerWord per word of the
+     * line when there is none) and matches a run of the line's sentences, or (with echoMinRun words or more) a run of
+     * its words, with a word error rate (tools/listen-words.ts) under echoWer is the app's own voice heard by the
+     * microphone (estimates; the end-to-end check of test/transcribe-e2e.test.ts measured the synthetic one-sentence
+     * case, see evidence/listen/VF-1-transcribe.json; the multi-sentence pieces of test/transcribe.test.ts are the
+     * reviewer's Whisper output of synthetic voices)
      */
     readonly echoWindowMs: number;
     readonly echoWer: number;
+    readonly echoMsPerWord: number;
+    readonly echoMinRun: number;
 }
 
 export const RULES: FeedbackRules = {
@@ -92,5 +102,7 @@ export const RULES: FeedbackRules = {
     topSpots: 5,
     pageRemarks: 15,
     echoWindowMs: 3000,
-    echoWer: 0.4
+    echoWer: 0.4,
+    echoMsPerWord: 450,
+    echoMinRun: 3
 };

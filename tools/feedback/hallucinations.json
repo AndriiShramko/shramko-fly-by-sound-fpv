@@ -1,5 +1,5 @@
 {
-  "about": "Phrases Whisper is known to write over silence, music or noise (it learned them from subtitle credits). tools/listen/transcribe.py drops a segment whose whole text, lower case with every non-letter a space, equals an entry; an entry ending in * matches the start. The dropped segments stay in transcript.json under dropped. A short list from public reports of Whisper large-v3 hallucinations, not measured on this project's recordings.",
+  "about": "Phrases Whisper is known to write over silence, music or noise (it learned them from subtitle credits). tools/listen/transcribe.py drops a segment whose whole text, lower case with every non-letter a space, equals an entry, only when Whisper was unsure of it (WEAK_NO_SPEECH, WEAK_LOGPROB: a pilot may really say 'thank you'); an entry ending in * (a credit line) matches the start and is always dropped. The dropped segments stay in transcript.json under dropped. A short list from public reports of Whisper large-v3 hallucinations, not measured on this project's recordings.",
   "en": [
     "thank you",
     "thank you for watching",

@@ -122,7 +122,11 @@ export interface Analysis {
     readonly survey: { readonly skipped: boolean; readonly answers: readonly { readonly item: string; readonly value: number | null; readonly via: string; readonly tMs: number }[] } | null;
     readonly transcript: { readonly source: string | null; readonly segments: number; readonly dropped: number; readonly echo: number; readonly language: string | null; readonly modelRevision: string | null };
     readonly alignment: { readonly voiceOffsetMs: number | null; readonly driftMs: number | null };
+    /** the window around a spot or an event for a remark, ms (--window-s) */
+    readonly windowMs: number;
     readonly warnings: readonly string[];
+    /** one stable code per warning, same order (the share-safe page prints these, never the messages) */
+    readonly warningCodes: readonly string[];
 }
 
 export interface AnalyzeOptions {
@@ -211,7 +215,8 @@ function signalsOf(seg: LessonSegment, rules: FeedbackRules): Signal[] {
             }
         }
     }
-    // idle: inside an attempt, no speed and the sticks at the centre for rules.idleMs
+    // idle: inside an attempt and not while the app speaks, no speed and no stick moved for rules.idleMs
+    const speaking = speakingSpans(seg.events);
     const attempts: [number, number][] = [];
     let open: number | null = null;
     for (const e of seg.events) {
@@ -225,22 +230,70 @@ function signalsOf(seg: LessonSegment, rules: FeedbackRules): Signal[] {
     if (open !== null) attempts.push([open, Infinity]);
     const inAttempt = (t: number): boolean => attempts.some(([a, b]) => t >= a && t < b);
     let still: number | null = null;
+    let from: readonly number[] = [];
     let flagged = false;
     for (const f of seg.frames) {
         const speed = Math.hypot(f.v[0], f.v[1], f.v[2]);
-        const centred = f.s.every((x) => Math.abs(x) <= rules.idleStick);
-        if (inAttempt(f.t) && speed < rules.idleSpeedMps && centred) {
-            if (still === null) {
-                still = f.t;
-                flagged = false;
-            } else if (!flagged && f.t - still >= rules.idleMs) {
+        const quiet = inAttempt(f.t) && !speaking.some(([a, b]) => f.t >= a && f.t < b) && speed < rules.idleSpeedMps;
+        if (quiet && still !== null && f.s.every((x, i) => Math.abs(x - (from[i] ?? 0)) <= rules.idleStick)) {
+            if (!flagged && f.t - still >= rules.idleMs) {
                 add('idle', still);
                 flagged = true;
             }
+        } else if (quiet) {
+            still = f.t;
+            from = f.s;
+            flagged = false;
         } else still = null;
     }
     return out.sort((a, b) => a.t - b.t);
 }
+
+/** When the app is speaking: from each `speech` event to the next speech.end (none recorded: no span). */
+function speakingSpans(events: readonly SessionEvent[]): [number, number][] {
+    const ends = events.filter((e) => e.kind === 'speech' && e.key === SPEECH_END_KEY).map((e) => e.t);
+    const out: [number, number][] = [];
+    for (const e of events) {
+        if (e.kind !== 'speech' || e.key === SPEECH_END_KEY) continue;
+        const end = ends.find((x) => x >= e.t);
+        if (end !== undefined) out.push([e.t, end]);
+    }
+    return out;
+}
+
+// a sentence ends with . ? ! or the ellipsis character (U+2026); kept ASCII in the source
+const SENTENCE_END = new RegExp(`(?<=[.?!${String.fromCharCode(0x2026)}])\\s+`, 'u');
+
+/** The best word error rate of what was heard against a run of the line's sentences, or (long enough) a run of its words. */
+function echoRate(line: string, heard: readonly string[], lang: string, rules: FeedbackRules): number {
+    if (heard.length === 0) return 1;
+    const sentences = line
+        .split(SENTENCE_END)
+        .map((s) => words(s, lang))
+        .filter((w) => w.length > 0);
+    let best = 1;
+    const tryRun = (ref: readonly string[]): void => {
+        if (ref.length > 0) best = Math.min(best, wordErrors(ref, heard).rate);
+    };
+    for (let i = 0; i < sentences.length; i++) {
+        let run: string[] = [];
+        for (let j = i; j < sentences.length; j++) {
+            run = [...run, ...(sentences[j] as string[])];
+            tryRun(run);
+        }
+    }
+    if (heard.length >= rules.echoMinRun) {
+        const all = sentences.flat();
+        for (let n = Math.max(1, heard.length - 1); n <= Math.min(all.length, heard.length + 1); n++) for (let i = 0; i + n <= all.length; i++) tryRun(all.slice(i, i + n));
+    }
+    return best;
+}
+
+/** Strings the sender controls, on the share-safe page: printed only when they match a strict pattern. */
+const SAFE_KEY = /^[a-z0-9]+([._-][a-z0-9]+)*$/i;
+const SAFE_VERSION = /^[\w.+-]{1,40}$/;
+const SAFE_TIME = /^[0-9TZ:.+-]{1,40}$/;
+const safe = (s: string | null, re: RegExp = SAFE_KEY): string => (s !== null && s.length <= 80 && re.test(s) ? s : 'invalid');
 
 function spotsOf(segments: readonly LessonSegment[], sessionTimes: readonly number[], rules: FeedbackRules, windowMs: number): Spot[] {
     const spots: Spot[] = [];
@@ -314,12 +367,20 @@ export function analyzePackage(pkg: SessionPackage, options: AnalyzeOptions = {}
     const windowMs = options.windowMs ?? rules.remarkWindowMs;
     const m = pkg.manifest;
     const warnings: string[] = pkg.problems.map((p) => `package: ${p.message}`);
+    const warningCodes: string[] = pkg.problems.map((p) => `package-${p.code}`);
+    const warn = (code: string, message: string): void => {
+        warnings.push(message);
+        warningCodes.push(code);
+    };
     const segments = lessonSegments(pkg);
     const offsetMs = pkg.voice === null ? 0 : (m.clock.voiceOffsetMs ?? 0);
-    if (options.transcript !== undefined && pkg.voice === null) warnings.push('a transcript was given but the package holds no voice: its times are taken as session times');
-    if (options.transcript === undefined && pkg.voice !== null) warnings.push('voice.webm is in the package but no transcript was given');
-    const lastFrameT = pkg.frames.length === 0 ? 0 : (pkg.frames[pkg.frames.length - 1] as { t: number }).t;
-    const lengthMs = Math.max(lastFrameT, ...pkg.events.map((e) => e.t), 0);
+    if (options.transcript !== undefined && pkg.voice === null) warn('transcript-without-voice', 'a transcript was given but the package holds no voice: its times are taken as session times');
+    if (options.transcript === undefined && pkg.voice !== null) warn('voice-without-transcript', 'voice.webm is in the package but no transcript was given');
+    if (pkg.voice !== null && !m.consent.voice) warn('consent-voice', 'voice.webm is in the package but the consent says voice: no');
+    if (m.consent.minor && m.consent.guardianConfirmed !== true) warn('consent-guardian', 'the pilot is a minor and a guardian did not confirm the consent');
+    // a loop, not Math.max(...events): a spread of 150 000 events or more overflows the call stack
+    let lengthMs = pkg.frames.length === 0 ? 0 : Math.max(0, (pkg.frames[pkg.frames.length - 1] as { t: number }).t);
+    for (const e of pkg.events) if (e.t > lengthMs) lengthMs = e.t;
 
     // lessons
     const lessons: LessonRow[] = segments.map((seg, k) => {
@@ -355,13 +416,22 @@ export function analyzePackage(pkg: SessionPackage, options: AnalyzeOptions = {}
     // remarks on the session clock; the survey tail starts with the first survey line
     const surveyStart = pkg.events.find((e) => e.kind === 'speech' && e.key.startsWith('survey.'))?.t ?? Infinity;
     const said = (options.transcript ?? []).map((s) => ({ t: Math.round(s.startMs + offsetMs), text: s.text }));
-    // the echo filter: the line of the app this segment repeats near its time, if any
-    const lang = m.device.locale.slice(0, 2).toLowerCase();
-    const speech = pkg.events.filter((e): e is Extract<SessionEvent, { kind: 'speech' }> => e.kind === 'speech');
+    // the echo filter: the line of the app this segment repeats while the line is said, if any; the language the
+    // transcriber used wins over the manifest's (Whisper may have switched)
+    const locale = options.transcribed?.language ?? m.device.locale;
+    const lang = locale.slice(0, 2).toLowerCase();
+    const ends = pkg.events.filter((e) => e.kind === 'speech' && e.key === SPEECH_END_KEY).map((e) => e.t);
+    const lines = pkg.events
+        .filter((e): e is Extract<SessionEvent, { kind: 'speech' }> => e.kind === 'speech' && e.key !== SPEECH_END_KEY)
+        .map((e) => {
+            const estimate = e.t + words(e.text, lang).length * rules.echoMsPerWord;
+            const end = ends.find((x) => x >= e.t);
+            return { e, from: e.t - rules.echoWindowMs, to: (end === undefined ? estimate : end) + rules.echoWindowMs };
+        });
     const echoOf = (t: number, text: string): Extract<SessionEvent, { kind: 'speech' }> | null => {
         if (options.echo === false) return null;
         const heard = words(text, lang);
-        for (const e of speech) if (Math.abs(e.t - t) <= rules.echoWindowMs && wordErrors(words(e.text, lang), heard).rate < rules.echoWer) return e;
+        for (const l of lines) if (t >= l.from && t <= l.to && echoRate(l.e.text, heard, lang, rules) < rules.echoWer) return l.e;
         return null;
     };
     const echoes: { t: number; lineT: number }[] = [];
@@ -376,7 +446,7 @@ export function analyzePackage(pkg: SessionPackage, options: AnalyzeOptions = {}
             return { t, key: null, anchor: null, tag: 'survey', item, text, echo, nearby };
         }
         const anchor = anchorAt(segments, t);
-        return { t, key: anchor.key, anchor, tag: tagOf(text, m.device.locale), item: null, text, echo, nearby };
+        return { t, key: anchor.key, anchor, tag: tagOf(text, locale), item: null, text, echo, nearby };
     });
     // drift of the voice against the session clock, read off the echoes: how much later (or earlier) the last echo
     // lands after its line than the first one does; null with fewer than two echoes
@@ -412,7 +482,9 @@ export function analyzePackage(pkg: SessionPackage, options: AnalyzeOptions = {}
             modelRevision: options.transcribed?.modelRevision ?? null
         },
         alignment: { voiceOffsetMs: m.clock.voiceOffsetMs ?? null, driftMs },
-        warnings
+        windowMs,
+        warnings,
+        warningCodes
     };
 }
 
@@ -434,28 +506,37 @@ const signalsText = (s: Spot): string => {
     return [...kinds].map(([k, n]) => (n > 1 ? `${k} x${n}` : k)).join(', ');
 };
 
-function header(a: Analysis): string[] {
+/** The page header; shareSafe: every string the sender controls through the strict patterns, warnings as codes. */
+function header(a: Analysis, shareSafe: boolean): string[] {
     const s = a.session;
     const c = s.consent;
+    const t = a.transcript;
+    const f = shareSafe ? safe : (x: string | null): string => x ?? 'none';
     return [
-        `- Session ${s.id}, ${s.created}, build ${a.build.release} / sound ${a.build.sonic}`,
-        `- Locale ${s.locale}, input ${s.input}, headphones ${s.headphones}, length ${formatClock(s.lengthMs)}, voice ${yes(s.voice)}`,
-        `- Consent: recording ${yes(c.recording)}, voice ${yes(c.voice)}, send ${yes(c.send)}, speech recognition ${yes(c.speechRecognition)}; minor ${yes(c.minor)}`,
-        `- Replay: ${a.lessons.map((l) => `${l.lessonId ?? 'none'} ${l.replay}`).join('; ')}`,
-        `- Data warnings: ${a.warnings.length === 0 ? 'none' : `${a.warnings.length} (${short(a.warnings[0] as string, 100)})`}`
+        `- Session ${f(s.id)}, ${shareSafe ? safe(s.created, SAFE_TIME) : s.created}, build ${shareSafe ? safe(a.build.release, SAFE_VERSION) : a.build.release} / sound ${shareSafe ? safe(a.build.sonic, SAFE_VERSION) : a.build.sonic}`,
+        `- Locale ${f(s.locale)}, input ${f(s.input)}, headphones ${f(s.headphones)}, length ${formatClock(s.lengthMs)}, voice ${yes(s.voice)}`,
+        `- Consent: recording ${yes(c.recording)}, voice ${yes(c.voice)}, send ${yes(c.send)}, speech recognition ${yes(c.speechRecognition)}; minor ${yes(c.minor)}${c.minor ? `, guardian confirmed ${yes(c.guardianConfirmed)}` : ''}`,
+        `- Transcript: ${t.segments} segments, ${t.echo} of them the app's own voice (echo), dropped ${t.dropped} as no speech or a silence phrase${t.dropped > 0 ? ' (see transcript.json)' : ''}`,
+        `- Replay: ${a.lessons.map((l) => `${f(l.lessonId)} ${shareSafe ? safe(l.replay.replace(/ \(.*\)$/, '').replace(/ /g, '-')) : l.replay}`).join('; ')}`,
+        shareSafe
+            ? `- Data warnings: ${a.warningCodes.length === 0 ? 'none' : `${a.warningCodes.length} (${a.warningCodes.map((x) => safe(x)).join(', ')})`}`
+            : `- Data warnings: ${a.warnings.length === 0 ? 'none' : `${a.warnings.length} (${short(a.warnings[0] as string, 100)})`}`
     ];
 }
 
-function lessonsTable(a: Analysis, withTitle: boolean): string[] {
+function lessonsTable(a: Analysis, withTitle: boolean, shareSafe: boolean): string[] {
     return table(
         ['Lesson', 'Time', 'Attempts', 'Result', 'Touches', 'Resets', 'Repeats asked', 'Refused answers'],
-        a.lessons.map((l) => [lessonName(l, withTitle), `${formatClock(l.fromMs)} (${formatClock(l.toMs - l.fromMs)})`, String(l.attempts), l.status, String(l.touches), String(l.resets), String(l.repeats), String(l.refused)])
+        a.lessons.map((l) => [shareSafe ? `${safe(l.lessonId)}@${l.version}${l.lead ? ' (lead)' : ''}` : lessonName(l, withTitle), `${formatClock(l.fromMs)} (${formatClock(l.toMs - l.fromMs)})`, String(l.attempts), l.status, String(l.touches), String(l.resets), String(l.repeats), String(l.refused)])
     );
 }
 
+/** A step key built from strict parts only (share-safe page). */
+const safeStep = (anchor: Anchor | null): string => (anchor === null ? 'invalid' : `${safe(anchor.lessonId ?? 'none')}@${anchor.version}#${safe(anchor.speechKey ?? 'start')}`);
+
 /** summary.md: one page for the owner's own reading (quotes verbatim). */
 export function renderSummary(a: Analysis): string {
-    const out: string[] = [`# Fly by Sound recording ${a.session.id}`, '', ...header(a), '', '## Lessons', '', ...lessonsTable(a, true), '', '## Hardest places', ''];
+    const out: string[] = [`# Fly by Sound recording ${a.session.id}`, '', ...header(a, false), '', '## Lessons', '', ...lessonsTable(a, true, false), '', '## Hardest places', ''];
     const top = topSpots(a);
     if (top.length === 0) out.push('No difficult spot found.');
     else
@@ -463,7 +544,7 @@ export function renderSummary(a: Analysis): string {
             ...table(
                 ['Time', 'Lesson and step', 'What happened', 'Score', 'The pilot said'],
                 top.map((s) => {
-                    const said = a.remarks.filter((r) => r.tag !== 'survey' && !r.echo && r.t >= s.t - RULES.remarkWindowMs && r.t <= s.toT + RULES.remarkWindowMs).map((r) => `"${r.text}"`);
+                    const said = a.remarks.filter((r) => r.tag !== 'survey' && !r.echo && r.t >= s.t - a.windowMs && r.t <= s.toT + a.windowMs).map((r) => `"${r.text}"`);
                     return [formatClock(s.t), `${s.key}${s.anchor.line === null ? '' : `: ${short(s.anchor.line, 50)}`}`, signalsText(s), String(s.score), said.join(' ') || '-'];
                 })
             )
@@ -486,15 +567,15 @@ export function renderSummary(a: Analysis): string {
 
 /** summary.share-safe.md: no quote, no nickname, no free text: tags, times, keys and counts only. */
 export function renderShareSafe(a: Analysis): string {
-    const out: string[] = [`# Fly by Sound recording ${a.session.id} (share-safe)`, '', ...header(a), '', '## Lessons', '', ...lessonsTable(a, false), '', '## Hardest places', ''];
+    const out: string[] = [`# Fly by Sound recording ${safe(a.session.id)} (share-safe)`, '', ...header(a, true), '', '## Lessons', '', ...lessonsTable(a, false, true), '', '## Hardest places', ''];
     const top = topSpots(a);
     if (top.length === 0) out.push('No difficult spot found.');
-    else out.push(...table(['Time', 'Step key', 'What happened', 'Score', 'Remark nearby'], top.map((s) => [formatClock(s.t), s.key, signalsText(s), String(s.score), yes(s.remark)])));
+    else out.push(...table(['Time', 'Step key', 'What happened', 'Score', 'Remark nearby'], top.map((s) => [formatClock(s.t), safeStep(s.anchor), signalsText(s), String(s.score), yes(s.remark)])));
     out.push('', '## Pilot remarks (tags only)', '');
-    out.push(...table(['Time', 'Step key', 'Tag'], a.remarks.filter((r) => !r.echo).slice(0, RULES.pageRemarks).map((r) => [formatClock(r.t), r.key ?? `survey ${r.item ?? ''}`, r.tag])));
+    out.push(...table(['Time', 'Step key', 'Tag'], a.remarks.filter((r) => !r.echo).slice(0, RULES.pageRemarks).map((r) => [formatClock(r.t), r.anchor !== null ? safeStep(r.anchor) : `survey ${r.item === null ? '' : safe(r.item)}`, r.tag])));
     out.push('', '## Survey', '');
     if (a.survey === null) out.push('No survey in the package.');
-    else out.push(...table(['Item', 'Answer', 'Via'], a.survey.answers.map((x) => [x.item, x.value === null ? '-' : String(x.value), x.via])));
+    else out.push(...table(['Item', 'Answer', 'Via'], a.survey.answers.map((x) => [safe(x.item), x.value === null ? '-' : String(x.value), safe(x.via)])));
     return `${out.join('\n')}\n`;
 }
 
@@ -559,10 +640,11 @@ export const localTranscriber: Transcriber = async (voice, lang, dir) => {
     const cache = process.env['SHRAMKO_LISTEN_CACHE'] ?? join(ROOT, '.cache', 'listen');
     const audio = join(dir, '.voice.webm');
     const out = join(dir, 'transcript.json');
-    await writeFile(audio, voice);
+    // the lock first, then the voice on disk inside the try: a lock timeout leaves no voice file behind
     const release = await takeGpuLock(process.env['GPU_LOCK'] ?? 'C:/dev/.gpu-lock');
     let r: ReturnType<typeof spawnSync>;
     try {
+        await writeFile(audio, voice);
         r = spawnSync(
             py,
             ['-X', 'utf8', join(ROOT, 'tools', 'listen', 'transcribe.py'), '--audio', audio, '--model', join(cache, MODEL_DIR), '--lang', lang, '--hallucinations', join(ROOT, 'tools', 'feedback', 'hallucinations.json'), '--out', out],
@@ -600,6 +682,10 @@ const USAGE = `Usage: analyze <package.zip | folder of packages> --out <dir> [op
   --no-transcribe       do not transcribe voice.webm when no transcript is given (otherwise Whisper runs on this
                         machine: SHRAMKO_LISTEN_PY, SHRAMKO_LISTEN_CACHE, GPU_LOCK; offline, never downloads)
   --help                this text
+
+If a run was killed while transcribing, the GPU lock folder (GPU_LOCK, default C:/dev/.gpu-lock) and
+<out>/<session id>/.voice.webm may stay behind: remove the lock folder only when no GPU job is running, and delete
+the .voice.webm file (it is the pilot's voice).
 `;
 
 /** The folder (or one above it) that holds a .git: a git working tree, or null. */
@@ -699,9 +785,17 @@ export async function main(argv: readonly string[], io: AnalyzeIo = nodeIo): Pro
         return 1;
     }
     let failed = 0;
+    const seen = new Map<string, string>();
     for (const job of jobs) {
         try {
             const pkg = await readOne(job.pkg);
+            const before = seen.get(pkg.manifest.id);
+            if (before !== undefined) {
+                io.stderr(`analyze: ${basename(job.pkg)}: the same session id ${pkg.manifest.id} as ${before}: skipped (it would overwrite that summary)\n`);
+                failed++;
+                continue;
+            }
+            seen.set(pkg.manifest.id, basename(job.pkg));
             const dir = join(out, pkg.manifest.id);
             await mkdir(dir, { recursive: true });
             let given: Pick<AnalyzeOptions, 'transcript' | 'transcriptName' | 'transcribed'> = {};
@@ -718,10 +812,11 @@ export async function main(argv: readonly string[], io: AnalyzeIo = nodeIo): Pro
             if (shareSafe) await writeFile(join(dir, 'summary.share-safe.md'), renderShareSafe(analysis), 'utf8');
             io.stdout(`${basename(job.pkg)}: ${dir} (${analysis.lessons.length} lessons, ${analysis.spots.length} spots, ${analysis.remarks.filter((r) => !r.echo).length} remarks, ${analysis.transcript.echo} echo)\n`);
         } catch (e) {
-            if (e instanceof PackageError || e instanceof ZipError || e instanceof ReportInputError || e instanceof TranscribeError || (e instanceof Error && 'code' in e)) {
-                io.stderr(`analyze: ${basename(job.pkg)}: ${e.message}\n`);
-                failed++;
-            } else throw e;
+            // any error of one package is that package's failure: the next package of a folder still runs
+            if (!(e instanceof Error)) throw e;
+            const known = e instanceof PackageError || e instanceof ZipError || e instanceof ReportInputError || e instanceof TranscribeError || 'code' in e;
+            io.stderr(`analyze: ${basename(job.pkg)}: ${known ? '' : `${e.name}: `}${e.message}\n`);
+            failed++;
         }
     }
     return failed === 0 ? 0 : 1;
