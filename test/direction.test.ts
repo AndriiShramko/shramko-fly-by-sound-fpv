@@ -75,6 +75,31 @@ describe('flying the wrong way along a corridor', () => {
         expect(lines(hall, 'fly.wrong-way')).toBe(0);
     }, 60000);
 
+    // train 2, the owner: "If I back the drone up, that does not mean I fly the wrong way. Wrong way is only when I
+    // fly FORWARD and it turns out to be the wrong direction."
+    it.each([1, 2, 3])('is never told for backing up along the track, nose forward, at %d m/s (owner, train 2)', (v) => {
+        const p = inCorridor();
+        const straightEnd = landmark('corridor', 'section-obstacle');
+        p.flyTo(straightEnd);
+        const yaw = p.yaw;
+        const t0 = p.t;
+        p.flyTo(back(straightEnd, 12), v, false); // 12 m back, 4 to 12 s, the nose still forward
+        expect(p.yaw).toBe(yaw);
+        expect((p.t - t0) / 1000).toBeGreaterThan(3.5);
+        expect(lines(p, 'fly.wrong-way')).toBe(0);
+        expect(cueOf(p, 'wrong-way')).toHaveLength(0);
+        // sliding sideways (the nose across the track) is not flying back either
+        p.flyTo(straightEnd);
+        p.turnTo(yaw + 90);
+        p.flyTo(back(straightEnd, 12), v, false);
+        expect(lines(p, 'fly.wrong-way')).toBe(0);
+        // control: the same way back nose-first is told
+        p.flyTo(straightEnd);
+        p.turnTo(yaw + 180);
+        p.flyTo(back(straightEnd, 12), v, false);
+        expect(lines(p, 'fly.wrong-way')).toBeGreaterThan(0);
+    }, 60000);
+
     it('takes the way from the world\'s own checkpoint list when the world has one (lane s13-worlds adds it)', () => {
         const lesson = getLesson('corridor');
         if (lesson.world.kind !== 'analytic') throw new Error('the corridor has a world');
@@ -431,11 +456,13 @@ describe('the start of an attempt (review E3 of lane s13-elev)', () => {
         return p;
     };
     /**
-     * backs straight away from gate 1, still facing it, as far as the room lets him: 1.2 m at 1 m/s (every start of these
-     * rooms is 5 to 6 m in front of gate 1 and 1.5 m from the wall behind it; the leg's line-up distance is 2.9 to 3.4 m)
+     * moves straight away from gate 1 as far as the room lets him: 1.2 m at 1 m/s (every start of these rooms is 5 to 6 m
+     * in front of gate 1 and 1.5 m from the wall behind it; the leg's line-up distance is 2.9 to 3.4 m); 'backing' still
+     * faces gate 1, 'turned' turns round first and flies nose-first (train 2: only that can be the wrong way)
      */
-    const backAway = (p: ScriptedPilot): void => {
+    const backAway = (p: ScriptedPilot, nose: 'backing' | 'turned'): void => {
         const g = gatesOf(p)[0] as SonicObject;
+        if (nose === 'turned') p.turnTo(p.yaw + 180);
         const d = Math.hypot(p.pos[0] - g.pos[0], p.pos[2] - g.pos[2]);
         expect((p.world as SonicWorld).castRay(p.pos, [(p.pos[0] - g.pos[0]) / d, 0, (p.pos[2] - g.pos[2]) / d], 50)?.distance).toBeCloseTo(1.5, 6);
         p.flyTo([p.pos[0] + ((p.pos[0] - g.pos[0]) * 1.2) / d, p.pos[1], p.pos[2] + ((p.pos[2] - g.pos[2]) * 1.2) / d], 1, false);
@@ -445,15 +472,17 @@ describe('the start of an attempt (review E3 of lane s13-elev)', () => {
         const still = atStart(id);
         still.hold(3);
         expect(lines(still, 'fly.wrong-way')).toBe(0);
-        const backing = atStart(id);
-        backAway(backing);
-        expect(backing.of('touch'), 'a clean flight').toEqual([]);
-        expect(lines(backing, 'fly.wrong-way')).toBe(0);
+        for (const nose of ['backing', 'turned'] as const) {
+            const backing = atStart(id);
+            backAway(backing, nose);
+            expect(backing.of('touch'), 'a clean flight').toEqual([]);
+            expect(lines(backing, 'fly.wrong-way'), nose).toBe(0);
+        }
     }, 60000);
 
     it.each(GATE_LESSONS)("control: %s with the lane's first rule tells the pilot who backs away", (id) => {
         const backing = atStart(id, { lineUp: 'no-progress' });
-        backAway(backing);
+        backAway(backing, 'turned');
         expect(lines(backing, 'fly.wrong-way')).toBe(1);
     }, 60000);
 
@@ -498,6 +527,7 @@ describe('the leg flown: a later lap, a course in any order (review E8 of lane s
         // on toward ring 1 (along the leg from ring 4), 5 m in front of it, then back toward ring 4 for 1.75 s
         p.flyTo([0, 1.5, 5], 2);
         expect(lineUpM(between((loop[3] as SonicObject).pos, (loop[0] as SonicObject).pos))).toBeLessThan(5);
+        p.face([3.5, 1.5, 5]); // turned round: flown nose-first (train 2)
         p.flyTo([3.5, 1.5, 5], 2, false);
         expect(toldAfter(p)).toEqual(['g4']);
     }, 60000);

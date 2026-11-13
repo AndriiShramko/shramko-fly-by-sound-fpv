@@ -71,6 +71,9 @@
 // 135 degrees) and a pilot backing away at the start are told only where v0.13 told them (review E1 and E3 of the
 // lane). A course in any order has no legs: v0.13's rule, toward the gate whose hum sounds. A gate crossed from its
 // back side gives 'wrong-side' and its line, and is not counted.
+// Train 2 (owner, 13.11: "backing up is not flying the wrong way"): flying back is told only while the craft also
+// flies nose-first, its horizontal speed along the nose (yawDeg) above WRONG_WAY_MPS, over the same second. A pilot
+// who faces forward and backs up, or slides sideways, is never told; one who turns round and flies back still is.
 //
 // Respawn (M41-20). A touch in a lesson that re-centres, or a short R, puts the craft RESPAWN_BEFORE_M
 // before the furthest point of the track passed in this attempt (a lesson checkpoint, or a point of the
@@ -1112,7 +1115,10 @@ class Runner implements LessonSession {
     /** M41-15: flying against the way forward for more than a second, told at most once every few seconds. */
     private checkDirection(s: FlightSample): void {
         const way = this.wayForward(s);
-        if (way === null || dot(s.vel, way.against) >= -WRONG_WAY_MPS) {
+        // the nose, horizontal (headingBasis: back is +Z at yaw 0): backing up or sliding aside is never the wrong way
+        const nose = headingBasis(s.yawDeg).back;
+        const noseFirst = -(s.vel[0] * nose[0] + s.vel[2] * nose[2]) > WRONG_WAY_MPS;
+        if (way === null || dot(s.vel, way.against) >= -WRONG_WAY_MPS || !noseFirst) {
             this.backSince = null;
             return;
         }
