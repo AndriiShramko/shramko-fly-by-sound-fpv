@@ -128,8 +128,18 @@ describe.skipIf(!hasPython)('tools/listen/transcribe.py without a model', () => 
                 seg(3, 'Thank you for watching!'),
                 seg(5, 'Hmm', 0.9, -1.5),
                 seg(7, 'Left, now left.', 0.9, -0.2),
-                seg(9, 'Субтитры сделал DimaTorzok'),
-                seg(11, 'Где кольцо?')
+                seg(9, '\u0421\u0443\u0431\u0442\u0438\u0442\u0440\u044b \u0441\u0434\u0435\u043b\u0430\u043b DimaTorzok'),
+                seg(11, '\u0413\u0434\u0435 \u043a\u043e\u043b\u044c\u0446\u043e?'),
+                // two sentences in one segment with a pause between them: two remarks, each at its first word
+                {
+                    ...seg(12.5, 'Too loud. Now better.'),
+                    words: [
+                        { start: 13, end: 13.4, word: 'Too', probability: 0.9 },
+                        { start: 13.4, end: 13.8, word: 'loud.', probability: 0.9 },
+                        { start: 15, end: 15.4, word: 'Now', probability: 0.9 },
+                        { start: 15.4, end: 15.9, word: 'better.', probability: 0.9 }
+                    ]
+                }
             ]
         };
         writeFileSync(join(dir, 'raw.json'), JSON.stringify(raw));
@@ -140,11 +150,13 @@ describe.skipIf(!hasPython)('tools/listen/transcribe.py without a model', () => 
             return JSON.parse(readFileSync(out, 'utf8')) as { segments: { start: number }[]; dropped: { start: number; reason: string }[] };
         };
         const ru = run('ru');
-        expect(ru.segments.map((s) => s.start)).toEqual([1, 7, 11]);
+        expect(ru.segments.map((s) => s.start)).toEqual([1, 7, 11, 13, 15]);
         expect(ru.dropped.map((d) => [d.start, d.reason])).toEqual([[3, 'hallucination'], [5, 'no speech'], [9, 'hallucination']]);
         // the Russian list is not applied to an English recording (English applies to every language)
-        expect(run('en').segments.map((s) => s.start)).toEqual([1, 7, 9, 11]);
+        expect(run('en').segments.map((s) => s.start)).toEqual([1, 7, 9, 11, 13, 15]);
         // what parseTranscript reads
-        expect(parseTranscript(readFileSync(join(dir, 'ru.json'), 'utf8')).map((s) => s.startMs)).toEqual([1000, 7000, 11000]);
+        const read = parseTranscript(readFileSync(join(dir, 'ru.json'), 'utf8'));
+        expect(read.map((s) => [s.startMs, s.text]).slice(3)).toEqual([[13000, 'Too loud.'], [15000, 'Now better.']]);
+        expect(read.map((s) => s.startMs)).toEqual([1000, 7000, 11000, 13000, 15000]);
     });
 });

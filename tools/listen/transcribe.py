@@ -46,6 +46,8 @@ OPTIONS = {'beam_size': 5, 'temperature': 0.0, 'condition_on_previous_text': Fal
 # measured on this project's recordings (estimate)
 NO_SPEECH = 0.6
 LOGPROB = -1.0
+# a segment is cut after a sentence end followed by a pause this long, s (estimate)
+SPLIT_GAP = 0.5
 # a given language gives way to the detected one at this probability (estimate)
 LANG_SWITCH = 0.9
 LANGS = ('en', 'es', 'pl', 'ru')
@@ -56,13 +58,14 @@ DECODE = {
     'computeType': 'float16',
     'call': 'WhisperModel.transcribe, the whole recording, in the package language',
     'options': {'beamSize': 5, 'temperature': 0.0, 'conditionOnPreviousText': False, 'vad': True, 'wordTimestamps': True},
-    'drop': {'noSpeechProb': NO_SPEECH, 'avgLogprob': LOGPROB, 'langSwitch': LANG_SWITCH}
+    'drop': {'noSpeechProb': NO_SPEECH, 'avgLogprob': LOGPROB, 'langSwitch': LANG_SWITCH},
+    'splitGapS': SPLIT_GAP
 }
 
 
 def norm(text):
     """Lower case, the letter yo as ye, every run of non-letters one space."""
-    t = text.lower().replace('ё', 'е')
+    t = text.lower().replace('\u0451', '\u0435')
     return re.sub(r'[\W_]+', ' ', t).strip()
 
 
@@ -81,11 +84,32 @@ def hallucination(text, phrases):
     return False
 
 
+def split_sentences(seg):
+    """One segment per sentence: Whisper may put several sentences in one segment; a remark is anchored by its start.
+    A cut falls after a word that ends a sentence and is followed by a pause of SPLIT_GAP or more. With words, a piece
+    starts at its first word and ends at its last."""
+    ws = seg.get('words') or []
+    if len(ws) == 0:
+        return [seg]
+    pieces, cur = [], []
+    for i, w in enumerate(ws):
+        cur.append(w)
+        nxt = ws[i + 1] if i + 1 < len(ws) else None
+        if nxt is not None and re.search(r'[.?!\u2026]$', w['word']) and nxt['start'] - w['end'] >= SPLIT_GAP:
+            pieces.append(cur)
+            cur = []
+    if cur:
+        pieces.append(cur)
+    if len(pieces) == 1:
+        return [dict(seg, start=ws[0]['start'], end=ws[-1]['end'])]
+    return [dict(seg, start=p[0]['start'], end=p[-1]['end'], text=' '.join(w['word'] for w in p), words=p) for p in pieces]
+
+
 def keep_or_drop(segments, lang, table):
     """The drop rules: (kept, dropped)."""
     phrases = table.get(lang, []) + ([] if lang == 'en' else table.get('en', []))
     kept, dropped = [], []
-    for s in segments:
+    for s in [p for seg in segments for p in split_sentences(seg)]:
         reason = None
         if s['text'].strip() == '':
             reason = 'empty'
