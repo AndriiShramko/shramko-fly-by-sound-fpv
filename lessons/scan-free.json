@@ -1,0 +1,79 @@
+{
+  "assists": {
+    "altitude": "hold",
+    "autoArm": true,
+    "control": "velocity",
+    "maxClimbMps": 2,
+    "maxSpeedMps": 5,
+    "maxYawDps": 120,
+    "onTouch": "bump"
+  },
+  "attemptLimitS": null,
+  "checkpoints": [],
+  "fastPath": false,
+  "format": "shramko-sonic-lesson/2",
+  "goals": [
+    {
+      "kind": "fly-distance",
+      "metres": 5000
+    }
+  ],
+  "id": "scan-free",
+  "intro": [
+    {
+      "key": "lesson.scan-free.intro.1"
+    },
+    {
+      "key": "lesson.scan-free.intro.2"
+    },
+    {
+      "key": "lesson.scan-free.goal.1"
+    }
+  ],
+  "layers": {
+    "hazardVoices": 3,
+    "heightBandM": null,
+    "on": [
+      "safety",
+      "height",
+      "room",
+      "voice"
+    ]
+  },
+  "module": 7,
+  "order": 28,
+  "pass": {
+    "attempts": 3,
+    "blocking": false,
+    "maxTouches": null,
+    "required": 1
+  },
+  "speech": {
+    "hints": [
+      {
+        "key": "lesson.scan-free.hint.1"
+      }
+    ],
+    "pass": {
+      "key": "lesson.scan-free.pass"
+    },
+    "retry": {
+      "key": "lesson.scan-free.retry"
+    }
+  },
+  "start": {
+    "pos": [0, 1.5, 0],
+    "yawDeg": 0
+  },
+  "title": {
+    "key": "lesson.scan-free.title"
+  },
+  "version": 1,
+  "world": {
+    "kind": "scan",
+    "sceneId": "any",
+    "sceneVersion": null,
+    "track": null,
+    "transform": [1, 0, 0, 0]
+  }
+}

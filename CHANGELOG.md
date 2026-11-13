@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Free flight over any scan (train 2): `scanFreeLesson(sceneId, transform)` makes the template `lessons/scan-free.json`
+  (not shipped, on no path) into a lesson on the pilot's scan at the pilot's size: no track, no target, no time limit, one
+  goal no flight reaches (fly-distance 5000 m). Its texts are in every locale (`LESSON_TEMPLATES` in the catalogue).
 - Lessons a pilot understands the first time (v0.13, the owner's flight of v0.12):
   - Lesson format 2 (`shramko-sonic-lesson/2`, breaking): `pass` is r counted attempts in total (1 to 3, failures in
     between do not reset) and, after `attempts` failures in a row (1 to 3), the reason and the offer of the next lesson

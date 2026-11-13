@@ -96,6 +96,9 @@ export const LESSONS: readonly LessonSpec[] = [
     { id: 'free-garden', module: 7, intro: 3, goals: 1, hints: 1 }
 ];
 
+/** Lessons made from a template at run time, on no path (lesson/library.ts scanFreeLesson); their keys follow the ladder's. */
+export const LESSON_TEMPLATES: readonly LessonSpec[] = [{ id: 'scan-free', module: 7, intro: 2, goals: 1, hints: 1 }];
+
 /** Keys of one lesson, in the order of the locale files. */
 export function lessonKeys(spec: LessonSpec): string[] {
     const p = `lesson.${spec.id}.`;
@@ -332,6 +335,7 @@ export function requiredKeys(): string[] {
     for (const m of MODULES) keys.push(`module.${m}.name`);
     for (const t of THEME_IDS) keys.push(`theme.${t}.name`, `theme.${t}.what`);
     for (const spec of LESSONS) keys.push(...lessonKeys(spec));
+    for (const spec of LESSON_TEMPLATES) keys.push(...lessonKeys(spec));
     keys.push(...FREE_KEYS);
     keys.push(...surveyKeys());
     return keys;

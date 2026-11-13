@@ -1,7 +1,8 @@
 // The lessons that ship: plain JSON files in lessons/, loaded through the same validator as any
 // lesson a teacher writes, so a broken shipped file fails loudly. Every lesson can be opened
 // directly (?sonic=<id>); the full and the fast path only recommend an order (spec section 3).
-import type { LessonDef } from '../contract';
+import type { LessonDef, SceneTransform } from '../contract';
+import scanFree from '../../lessons/scan-free.json';
 import corridor from '../../lessons/corridor.json';
 import earsGame from '../../lessons/ears-game.json';
 import earsGlossary from '../../lessons/ears-glossary.json';
@@ -118,6 +119,22 @@ export function nextLesson(id: string, path: 'full' | 'fast'): LessonDef | null 
  */
 export function lessonAfter(id: string, path: 'full' | 'fast'): LessonDef | null {
     return lessonPaths()[path].includes(id) ? nextLesson(id, path) : nextLesson(id, 'full');
+}
+
+/** The id of the template a free flight over any scan is made from (scanFreeLesson); it is not on any path. */
+export const SCAN_FREE_ID = 'scan-free';
+
+/**
+ * Free flight over any scan (train 2, the owner: "if I already fly by sound I just want to try other interiors and exteriors"):
+ * the template lessons/scan-free.json on the pilot's scan at the pilot's size. No track, no target, no time limit; the walls,
+ * the floor and the height are heard. Its one goal is a distance no flight reaches (5000 m, the validator's top), so the flight
+ * stays open until the pilot leaves it. Throws for an empty scene id or a size that is not above zero.
+ */
+export function scanFreeLesson(sceneId: string, transform: SceneTransform): LessonDef {
+    const src = scanFree as unknown as { world: Record<string, unknown> };
+    const result = validateLesson({ ...src, world: { ...src.world, sceneId, transform: [...transform] } });
+    if (!result.ok) throw new Error(`no free flight over '${sceneId}': ${formatIssues(result.issues)}`);
+    return result.value;
 }
 
 export function lessonBefore(id: string, path: 'full' | 'fast'): LessonDef | null {
