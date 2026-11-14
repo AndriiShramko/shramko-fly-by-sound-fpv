@@ -1,0 +1,718 @@
+{
+ "ref": "train3-z4b",
+ "attendHum": true,
+ "turnDps": null,
+ "budget": "on",
+ "rungs": [
+  1,
+  2,
+  3,
+  4,
+  6,
+  8,
+  10,
+  12,
+  15,
+  18,
+  22
+ ],
+ "seeds": [
+  1,
+  2,
+  3
+ ],
+ "results": [
+  {
+   "lessonId": "corridor",
+   "seeds": [
+    1,
+    2,
+    3
+   ],
+   "topBySeed": [
+    0,
+    0,
+    0
+   ],
+   "medianTopMps": 0,
+   "flights": [
+    {
+     "speedMps": 1,
+     "seed": 1,
+     "passed": false,
+     "why": "touch",
+     "touches": 1,
+     "timeS": 31.8,
+     "courseM": 125.22835937382872,
+     "hash": "d7f6c2f22d9800d7"
+    },
+    {
+     "speedMps": 2,
+     "seed": 1,
+     "passed": false,
+     "why": "touch",
+     "touches": 1,
+     "timeS": 22.12,
+     "courseM": 125.22835937382872,
+     "hash": "b89b808155821d84"
+    },
+    {
+     "speedMps": 3,
+     "seed": 1,
+     "passed": false,
+     "why": "touch",
+     "touches": 1,
+     "timeS": 11.82,
+     "courseM": 125.22835937382872,
+     "hash": "6c710a09ac780263"
+    },
+    {
+     "speedMps": 4,
+     "seed": 1,
+     "passed": false,
+     "why": "touch",
+     "touches": 1,
+     "timeS": 9.5,
+     "courseM": 125.22835937382872,
+     "hash": "812b1efbda581dcc"
+    },
+    {
+     "speedMps": 6,
+     "seed": 1,
+     "passed": false,
+     "why": "touch",
+     "touches": 1,
+     "timeS": 7.56,
+     "courseM": 125.22835937382872,
+     "hash": "52bc8d2cb99a3817"
+    },
+    {
+     "speedMps": 8,
+     "seed": 1,
+     "passed": false,
+     "why": "touch",
+     "touches": 1,
+     "timeS": 7.24,
+     "courseM": 125.22835937382872,
+     "hash": "aa891a994e14ae24"
+    },
+    {
+     "speedMps": 10,
+     "seed": 1,
+     "passed": false,
+     "why": "touch",
+     "touches": 1,
+     "timeS": 6,
+     "courseM": 125.22835937382872,
+     "hash": "baeacf954f609b28"
+    },
+    {
+     "speedMps": 12,
+     "seed": 1,
+     "passed": false,
+     "why": "touch",
+     "touches": 1,
+     "timeS": 5.36,
+     "courseM": 125.22835937382872,
+     "hash": "2e4b1c14f5e45cc3"
+    },
+    {
+     "speedMps": 15,
+     "seed": 1,
+     "passed": false,
+     "why": "touch",
+     "touches": 1,
+     "timeS": 4.56,
+     "courseM": 125.22835937382872,
+     "hash": "3caeb095e812441f"
+    },
+    {
+     "speedMps": 18,
+     "seed": 1,
+     "passed": false,
+     "why": "touch",
+     "touches": 1,
+     "timeS": 4.12,
+     "courseM": 125.22835937382872,
+     "hash": "a4ea519728a9e53c"
+    },
+    {
+     "speedMps": 22,
+     "seed": 1,
+     "passed": false,
+     "why": "touch",
+     "touches": 1,
+     "timeS": 3.84,
+     "courseM": 125.22835937382872,
+     "hash": "626df56f117a7aff"
+    },
+    {
+     "speedMps": 1,
+     "seed": 2,
+     "passed": false,
+     "why": "touch",
+     "touches": 1,
+     "timeS": 32.14,
+     "courseM": 125.22835937382872,
+     "hash": "0af4e3212015cc0f"
+    },
+    {
+     "speedMps": 2,
+     "seed": 2,
+     "passed": false,
+     "why": "touch",
+     "touches": 1,
+     "timeS": 19.96,
+     "courseM": 125.22835937382872,
+     "hash": "6340fe1581a63c3f"
+    },
+    {
+     "speedMps": 3,
+     "seed": 2,
+     "passed": false,
+     "why": "touch",
+     "touches": 1,
+     "timeS": 11.3,
+     "courseM": 125.22835937382872,
+     "hash": "c0f426b01918f60c"
+    },
+    {
+     "speedMps": 4,
+     "seed": 2,
+     "passed": false,
+     "why": "touch",
+     "touches": 1,
+     "timeS": 9.54,
+     "courseM": 125.22835937382872,
+     "hash": "b2b831f936053c64"
+    },
+    {
+     "speedMps": 6,
+     "seed": 2,
+     "passed": false,
+     "why": "touch",
+     "touches": 1,
+     "timeS": 6.7,
+     "courseM": 125.22835937382872,
+     "hash": "84c9f7b67f1828a8"
+    },
+    {
+     "speedMps": 8,
+     "seed": 2,
+     "passed": false,
+     "why": "touch",
+     "touches": 1,
+     "timeS": 6.04,
+     "courseM": 125.22835937382872,
+     "hash": "4e9bc8ac169df454"
+    },
+    {
+     "speedMps": 10,
+     "seed": 2,
+     "passed": false,
+     "why": "touch",
+     "touches": 1,
+     "timeS": 5.62,
+     "courseM": 125.22835937382872,
+     "hash": "d43c8e0393c23153"
+    },
+    {
+     "speedMps": 12,
+     "seed": 2,
+     "passed": false,
+     "why": "touch",
+     "touches": 1,
+     "timeS": 8.5,
+     "courseM": 125.22835937382872,
+     "hash": "7b25a617430613c7"
+    },
+    {
+     "speedMps": 15,
+     "seed": 2,
+     "passed": false,
+     "why": "touch",
+     "touches": 1,
+     "timeS": 4.38,
+     "courseM": 125.22835937382872,
+     "hash": "cb446c871a8177b7"
+    },
+    {
+     "speedMps": 18,
+     "seed": 2,
+     "passed": false,
+     "why": "touch",
+     "touches": 1,
+     "timeS": 4.24,
+     "courseM": 125.22835937382872,
+     "hash": "8f28855552314b4c"
+    },
+    {
+     "speedMps": 22,
+     "seed": 2,
+     "passed": false,
+     "why": "touch",
+     "touches": 1,
+     "timeS": 3.58,
+     "courseM": 125.22835937382872,
+     "hash": "cfb2e1e4664eea4c"
+    },
+    {
+     "speedMps": 1,
+     "seed": 3,
+     "passed": false,
+     "why": "touch",
+     "touches": 1,
+     "timeS": 31.26,
+     "courseM": 125.22835937382872,
+     "hash": "e567b0d9695d484c"
+    },
+    {
+     "speedMps": 2,
+     "seed": 3,
+     "passed": false,
+     "why": "touch",
+     "touches": 1,
+     "timeS": 27.16,
+     "courseM": 125.22835937382872,
+     "hash": "d863b2172a68afe8"
+    },
+    {
+     "speedMps": 3,
+     "seed": 3,
+     "passed": false,
+     "why": "touch",
+     "touches": 1,
+     "timeS": 11.84,
+     "courseM": 125.22835937382872,
+     "hash": "e42558e0ac95ce60"
+    },
+    {
+     "speedMps": 4,
+     "seed": 3,
+     "passed": false,
+     "why": "touch",
+     "touches": 1,
+     "timeS": 9.14,
+     "courseM": 125.22835937382872,
+     "hash": "b44162276a4aacf0"
+    },
+    {
+     "speedMps": 6,
+     "seed": 3,
+     "passed": false,
+     "why": "touch",
+     "touches": 1,
+     "timeS": 14.98,
+     "courseM": 125.22835937382872,
+     "hash": "bc595b10f29b93b0"
+    },
+    {
+     "speedMps": 8,
+     "seed": 3,
+     "passed": false,
+     "why": "touch",
+     "touches": 1,
+     "timeS": 5.56,
+     "courseM": 125.22835937382872,
+     "hash": "ed385b6da8a8badc"
+    },
+    {
+     "speedMps": 10,
+     "seed": 3,
+     "passed": false,
+     "why": "touch",
+     "touches": 1,
+     "timeS": 6,
+     "courseM": 125.22835937382872,
+     "hash": "d591e5aff77a0b2c"
+    },
+    {
+     "speedMps": 12,
+     "seed": 3,
+     "passed": false,
+     "why": "touch",
+     "touches": 1,
+     "timeS": 5.22,
+     "courseM": 125.22835937382872,
+     "hash": "6e4e2d6c5f2a7ae4"
+    },
+    {
+     "speedMps": 15,
+     "seed": 3,
+     "passed": false,
+     "why": "touch",
+     "touches": 1,
+     "timeS": 4.64,
+     "courseM": 125.22835937382872,
+     "hash": "cea151ee24c037e7"
+    },
+    {
+     "speedMps": 18,
+     "seed": 3,
+     "passed": false,
+     "why": "touch",
+     "touches": 1,
+     "timeS": 5.6,
+     "courseM": 125.22835937382872,
+     "hash": "b828ac1024923067"
+    },
+    {
+     "speedMps": 22,
+     "seed": 3,
+     "passed": false,
+     "why": "touch",
+     "touches": 1,
+     "timeS": 4.98,
+     "courseM": 125.22835937382872,
+     "hash": "58a226f54541302b"
+    }
+   ]
+  },
+  {
+   "lessonId": "rings-course",
+   "seeds": [
+    1,
+    2,
+    3
+   ],
+   "topBySeed": [
+    4,
+    6,
+    6
+   ],
+   "medianTopMps": 6,
+   "flights": [
+    {
+     "speedMps": 1,
+     "seed": 1,
+     "passed": true,
+     "why": "pass",
+     "touches": 0,
+     "timeS": 42.08,
+     "courseM": 40.59500322559678,
+     "hash": "fea355c9c5da9f8f"
+    },
+    {
+     "speedMps": 2,
+     "seed": 1,
+     "passed": true,
+     "why": "pass",
+     "touches": 0,
+     "timeS": 21.96,
+     "courseM": 40.59500322559678,
+     "hash": "5212df82e46e60b3"
+    },
+    {
+     "speedMps": 3,
+     "seed": 1,
+     "passed": true,
+     "why": "pass",
+     "touches": 0,
+     "timeS": 15.08,
+     "courseM": 40.59500322559678,
+     "hash": "c9f9b6144cbe8f87"
+    },
+    {
+     "speedMps": 4,
+     "seed": 1,
+     "passed": true,
+     "why": "pass",
+     "touches": 0,
+     "timeS": 11.5,
+     "courseM": 40.59500322559678,
+     "hash": "70372c64d615faaf"
+    },
+    {
+     "speedMps": 6,
+     "seed": 1,
+     "passed": false,
+     "why": "touch",
+     "touches": 1,
+     "timeS": 11.76,
+     "courseM": 40.59500322559678,
+     "hash": "38a1563e9cc4e3dc"
+    },
+    {
+     "speedMps": 8,
+     "seed": 1,
+     "passed": false,
+     "why": "touch",
+     "touches": 1,
+     "timeS": 2.02,
+     "courseM": 40.59500322559678,
+     "hash": "765b022b462f252c"
+    },
+    {
+     "speedMps": 10,
+     "seed": 1,
+     "passed": false,
+     "why": "fail",
+     "touches": 0,
+     "timeS": 1.86,
+     "courseM": 40.59500322559678,
+     "hash": "595e0eebf51b743f"
+    },
+    {
+     "speedMps": 12,
+     "seed": 1,
+     "passed": false,
+     "why": "fail",
+     "touches": 0,
+     "timeS": 1.78,
+     "courseM": 40.59500322559678,
+     "hash": "5f97e36506946254"
+    },
+    {
+     "speedMps": 15,
+     "seed": 1,
+     "passed": false,
+     "why": "fail",
+     "touches": 0,
+     "timeS": 1.76,
+     "courseM": 40.59500322559678,
+     "hash": "b5628e2b06946254"
+    },
+    {
+     "speedMps": 18,
+     "seed": 1,
+     "passed": false,
+     "why": "fail",
+     "touches": 0,
+     "timeS": 1.76,
+     "courseM": 40.59500322559678,
+     "hash": "4c56d27d06946254"
+    },
+    {
+     "speedMps": 22,
+     "seed": 1,
+     "passed": false,
+     "why": "fail",
+     "touches": 0,
+     "timeS": 1.76,
+     "courseM": 40.59500322559678,
+     "hash": "997779f406946254"
+    },
+    {
+     "speedMps": 1,
+     "seed": 2,
+     "passed": true,
+     "why": "pass",
+     "touches": 0,
+     "timeS": 42.58,
+     "courseM": 40.59500322559678,
+     "hash": "da044cc16e5fdfcf"
+    },
+    {
+     "speedMps": 2,
+     "seed": 2,
+     "passed": true,
+     "why": "pass",
+     "touches": 0,
+     "timeS": 22.26,
+     "courseM": 40.59500322559678,
+     "hash": "4cccb6b75ae0e19c"
+    },
+    {
+     "speedMps": 3,
+     "seed": 2,
+     "passed": true,
+     "why": "pass",
+     "touches": 0,
+     "timeS": 15.26,
+     "courseM": 40.59500322559678,
+     "hash": "ba84378c29e4418c"
+    },
+    {
+     "speedMps": 4,
+     "seed": 2,
+     "passed": true,
+     "why": "pass",
+     "touches": 0,
+     "timeS": 11.34,
+     "courseM": 40.59500322559678,
+     "hash": "3a8237c246fcee13"
+    },
+    {
+     "speedMps": 6,
+     "seed": 2,
+     "passed": true,
+     "why": "pass",
+     "touches": 0,
+     "timeS": 8.96,
+     "courseM": 40.59500322559678,
+     "hash": "a53386b3870d366c"
+    },
+    {
+     "speedMps": 8,
+     "seed": 2,
+     "passed": false,
+     "why": "touch",
+     "touches": 1,
+     "timeS": 2.02,
+     "courseM": 40.59500322559678,
+     "hash": "765b022b462f252c"
+    },
+    {
+     "speedMps": 10,
+     "seed": 2,
+     "passed": false,
+     "why": "fail",
+     "touches": 0,
+     "timeS": 1.86,
+     "courseM": 40.59500322559678,
+     "hash": "595e0eebf51b743f"
+    },
+    {
+     "speedMps": 12,
+     "seed": 2,
+     "passed": false,
+     "why": "fail",
+     "touches": 0,
+     "timeS": 1.78,
+     "courseM": 40.59500322559678,
+     "hash": "5f97e36506946254"
+    },
+    {
+     "speedMps": 15,
+     "seed": 2,
+     "passed": false,
+     "why": "fail",
+     "touches": 0,
+     "timeS": 1.76,
+     "courseM": 40.59500322559678,
+     "hash": "b5628e2b06946254"
+    },
+    {
+     "speedMps": 18,
+     "seed": 2,
+     "passed": false,
+     "why": "fail",
+     "touches": 0,
+     "timeS": 1.76,
+     "courseM": 40.59500322559678,
+     "hash": "4c56d27d06946254"
+    },
+    {
+     "speedMps": 22,
+     "seed": 2,
+     "passed": false,
+     "why": "fail",
+     "touches": 0,
+     "timeS": 1.76,
+     "courseM": 40.59500322559678,
+     "hash": "997779f406946254"
+    },
+    {
+     "speedMps": 1,
+     "seed": 3,
+     "passed": true,
+     "why": "pass",
+     "touches": 0,
+     "timeS": 41.94,
+     "courseM": 40.59500322559678,
+     "hash": "22fb9c22874f4857"
+    },
+    {
+     "speedMps": 2,
+     "seed": 3,
+     "passed": true,
+     "why": "pass",
+     "touches": 0,
+     "timeS": 22.12,
+     "courseM": 40.59500322559678,
+     "hash": "fff5f74d07661810"
+    },
+    {
+     "speedMps": 3,
+     "seed": 3,
+     "passed": true,
+     "why": "pass",
+     "touches": 0,
+     "timeS": 15.08,
+     "courseM": 40.59500322559678,
+     "hash": "4cedb92f0c040dbb"
+    },
+    {
+     "speedMps": 4,
+     "seed": 3,
+     "passed": true,
+     "why": "pass",
+     "touches": 0,
+     "timeS": 11.34,
+     "courseM": 40.59500322559678,
+     "hash": "219b07bb264c84eb"
+    },
+    {
+     "speedMps": 6,
+     "seed": 3,
+     "passed": true,
+     "why": "pass",
+     "touches": 0,
+     "timeS": 8.38,
+     "courseM": 40.59500322559678,
+     "hash": "500aadd3f2daa6ff"
+    },
+    {
+     "speedMps": 8,
+     "seed": 3,
+     "passed": false,
+     "why": "touch",
+     "touches": 1,
+     "timeS": 2.02,
+     "courseM": 40.59500322559678,
+     "hash": "765b022b462f252c"
+    },
+    {
+     "speedMps": 10,
+     "seed": 3,
+     "passed": false,
+     "why": "fail",
+     "touches": 0,
+     "timeS": 1.86,
+     "courseM": 40.59500322559678,
+     "hash": "595e0eebf51b743f"
+    },
+    {
+     "speedMps": 12,
+     "seed": 3,
+     "passed": false,
+     "why": "fail",
+     "touches": 0,
+     "timeS": 1.78,
+     "courseM": 40.59500322559678,
+     "hash": "5f97e36506946254"
+    },
+    {
+     "speedMps": 15,
+     "seed": 3,
+     "passed": false,
+     "why": "fail",
+     "touches": 0,
+     "timeS": 1.76,
+     "courseM": 40.59500322559678,
+     "hash": "b5628e2b06946254"
+    },
+    {
+     "speedMps": 18,
+     "seed": 3,
+     "passed": false,
+     "why": "fail",
+     "touches": 0,
+     "timeS": 1.76,
+     "courseM": 40.59500322559678,
+     "hash": "4c56d27d06946254"
+    },
+    {
+     "speedMps": 22,
+     "seed": 3,
+     "passed": false,
+     "why": "fail",
+     "touches": 0,
+     "timeS": 1.76,
+     "courseM": 40.59500322559678,
+     "hash": "997779f406946254"
+    }
+   ]
+  }
+ ]
+}
