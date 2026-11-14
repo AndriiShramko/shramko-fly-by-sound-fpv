@@ -69,7 +69,7 @@
   "title": {
     "key": "lesson.scan-free.title"
   },
-  "version": 1,
+  "version": 2,
   "world": {
     "kind": "scan",
     "sceneId": "any",

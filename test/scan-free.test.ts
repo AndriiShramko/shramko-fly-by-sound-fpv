@@ -23,6 +23,14 @@ describe('scanFreeLesson', () => {
         expect(l.goals).toEqual([{ kind: 'fly-distance', metres: 5000 }]);
     });
 
+    // review SO-2 (train 3): the stream budget (layers.speedBudget) changed what a free flight and every course built from it sounds
+    // like; recordings of train 2 carry version 1, and a replay says 'lesson-version' only when the number differs
+    it('is version 2 since the stream budget: a recording of version 1 (before it) is told apart on replay', () => {
+        const l = scanFreeLesson('7a475d38', [5, 0, 0, 0]);
+        expect(l.layers.speedBudget).toBe(true);
+        expect(l.version).toBe(2);
+    });
+
     it('is on no path and is not a shipped lesson', () => {
         expect(SHIPPED_LESSON_IDS).not.toContain(SCAN_FREE_ID);
         expect(lessonPaths().full).not.toContain(SCAN_FREE_ID);
