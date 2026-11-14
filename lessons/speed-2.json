@@ -1,0 +1,97 @@
+{
+  "assists": {
+    "altitude": "hold",
+    "autoArm": true,
+    "control": "velocity",
+    "maxClimbMps": 1.5,
+    "maxSpeedMps": 2.5,
+    "maxYawDps": 120,
+    "onTouch": "bump"
+  },
+  "attemptLimitS": 27,
+  "checkpoints": [],
+  "fastPath": false,
+  "format": "shramko-sonic-lesson/2",
+  "goals": [
+    {
+      "gateIds": "all",
+      "inOrder": true,
+      "kind": "pass-gates"
+    }
+  ],
+  "id": "speed-2",
+  "intro": [
+    {
+      "key": "lesson.speed-2.intro.1"
+    },
+    {
+      "cues": [
+        "target.lap"
+      ],
+      "key": "lesson.speed-2.intro.2"
+    },
+    {
+      "key": "lesson.speed-2.goal.1"
+    }
+  ],
+  "layers": {
+    "hazardVoices": 3,
+    "heightBandM": null,
+    "on": [
+      "safety",
+      "height",
+      "target",
+      "room",
+      "voice"
+    ],
+    "racingLine": true,
+    "speedBudget": true
+  },
+  "module": 5,
+  "order": 25,
+  "pass": {
+    "attempts": 3,
+    "blocking": true,
+    "maxTouches": 0,
+    "required": 1
+  },
+  "speech": {
+    "hints": [
+      {
+        "key": "lesson.speed-2.hint.1"
+      }
+    ],
+    "pass": {
+      "key": "lesson.speed-2.pass"
+    },
+    "retry": {
+      "key": "lesson.speed-2.retry"
+    }
+  },
+  "start": {
+    "pos": [0, 3, 20.25],
+    "yawDeg": 0
+  },
+  "title": {
+    "key": "lesson.speed-2.title"
+  },
+  "version": 2,
+  "world": {
+    "kind": "analytic",
+    "spec": {
+      "generator": "rings",
+      "params": {
+        "aheadM": 6,
+        "count": 6,
+        "depthM": 43.5,
+        "heightM": 5.5,
+        "layout": "course",
+        "sizeM": 3,
+        "spacingM": 7,
+        "widthM": 15
+      },
+      "seed": 7,
+      "version": 2
+    }
+  }
+}
