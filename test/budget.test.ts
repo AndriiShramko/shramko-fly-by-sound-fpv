@@ -18,10 +18,10 @@ const keys = (tier: SpeedTier, urgent: readonly string[] = [], frame: readonly S
     applyBudget(frame, tier, new Set(urgent)).kept.map((r) => r.key);
 
 describe('speed tiers', () => {
-    it('steps up at 3, 8 and 15 m/s and holds a tier at least the hold time', () => {
+    it('steps up at 4.5, 8 and 15 m/s and holds a tier at least the hold time', () => {
         const g = new TierGate();
-        expect(g.update(2.9, 0)).toBe(0);
-        expect(g.update(3, 1000)).toBe(1);
+        expect(g.update(4.4, 0)).toBe(0);
+        expect(g.update(4.5, 1000)).toBe(1);
         expect(g.update(9, 1000 + TIER_HOLD_MS - 1)).toBe(1);
         expect(g.update(9, 1000 + TIER_HOLD_MS)).toBe(2);
         expect(g.update(16, 3000)).toBe(3);

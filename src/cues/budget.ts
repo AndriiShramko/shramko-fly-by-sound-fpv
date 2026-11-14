@@ -5,11 +5,15 @@
 // touch, lap, praise) and narration previews are not streams and are never cut. Pure: the planner owns the tier gate
 // and hands the frame's requests in. Every number here is an estimate the ear pilot (src/pilot) measures.
 
-/** 0 under 3 m/s (every cue as before), 1 to 8 m/s, 2 to 15 m/s, 3 above */
+/** 0 under 4.5 m/s (every cue as before), 1 to 8 m/s, 2 to 15 m/s, 3 above */
 export type SpeedTier = 0 | 1 | 2 | 3;
 
-/** the speed where each tier begins, m/s (estimates) */
-export const TIER_EDGES_MPS: readonly [number, number, number] = [3, 8, 15];
+/**
+ * the speed where each tier begins, m/s (estimates; the first measured: at 3 m/s a climb on rings-course passes 3 m/s of
+ * speed and tier 1 cost the 2-loudest ear pilot its 3 m/s rung, seed 1; 3.2 still did, 4.5 gave back the before table
+ * 3 m/s (3 2 3): tools/ear-pilot.ts --lessons rings-course --rungs 2,3,4 --budget on, sonic3 Z4 pass 2)
+ */
+export const TIER_EDGES_MPS: readonly [number, number, number] = [4.5, 8, 15];
 /** a tier is left downwards below this share of its edge (hysteresis, estimate) */
 export const TIER_DOWN_SHARE = 0.85;
 /** a tier is held at least this long before it changes again, ms (estimate) */

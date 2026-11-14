@@ -29,7 +29,7 @@ describe('the stream budget in the planner', () => {
 
     it('at 6 m/s on the corridor: tier 1 keeps at most 3 streams and no shape trace', () => {
         const mid = plans('corridor', 6, true).filter((p) => p.tier === 1);
-        expect(mid.length).toBeGreaterThan(50);
+        expect(mid.length).toBeGreaterThan(20);
         for (const p of mid) {
             expect(streams(p).length).toBeLessThanOrEqual(TIER_STREAMS[1]);
             expect(streams(p).some((k) => k.startsWith('shape'))).toBe(false);
@@ -40,6 +40,13 @@ describe('the stream budget in the planner', () => {
         const ps = plans('corridor', 6, false);
         expect(ps.every((p) => (p.tier ?? 0) === 0)).toBe(true);
         expect(Math.max(...ps.map((p) => streams(p).length))).toBeGreaterThan(3);
+    });
+
+    it('at 3 m/s on rings-course, climbs included, the budget changes nothing (the 2-loudest pilot kept its 3 m/s rung)', () => {
+        const a = plans('rings-course', 3, true).map((p) => streams(p).join(','));
+        const b = plans('rings-course', 3, false).map((p) => streams(p).join(','));
+        expect(a.length).toBeGreaterThan(100);
+        expect(a).toEqual(b);
     });
 
     it('below 3 m/s the budget changes nothing: the same voices in every frame', () => {
