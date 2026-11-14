@@ -22,6 +22,8 @@ export interface Hearing {
     readonly frontBackError: number;
     /** voices followed at once, the loudest after ducking (estimate) */
     readonly maxStreams: number;
+    /** the target hum is always one of the followed streams, when it sounds (selective attention; plan: off) */
+    readonly attendHum?: boolean;
     readonly seed: number;
 }
 
@@ -112,7 +114,8 @@ export class Ear {
         }
         this.flips = keys;
         all.sort((a, b) => b.levelDb - a.levelDb || (a.key < b.key ? -1 : a.key > b.key ? 1 : 0));
-        const streams = all.slice(0, this.hearing.maxStreams);
+        const hum = this.hearing.attendHum === true ? all.find((x) => x.cue === 'target.hum') : undefined;
+        const streams = hum === undefined ? all.slice(0, this.hearing.maxStreams) : [hum, ...all.filter((x) => x !== hum)].slice(0, this.hearing.maxStreams);
         return { t: plan.t, urgent: plan.urgent && streams.some((s) => s.layer === 'safety'), streams };
     }
 

@@ -9,7 +9,7 @@ import { defaultPrefs } from '../prefs';
 import { getBuiltinTheme } from '../theme';
 import { createAnalyticWorld } from '../world';
 import { Craft, CRAFT_ACCEL_MPS2, CRAFT_CLIMB_MPS, CRAFT_YAW_DPS } from './craft';
-import { EarPilot, type StickCommand } from './ear-pilot';
+import { EarPilot, type EarPilotOptions, type StickCommand } from './ear-pilot';
 import { DEFAULT_HEARING, Ear, type Hearing, type Percepts } from './perceive';
 
 /** the speed set points, m/s (plan section 4) */
@@ -23,6 +23,8 @@ export interface FlyOptions {
     readonly theme?: ThemeDef;
     readonly prefs?: SonicPrefs;
     readonly hearing?: Partial<Hearing>;
+    /** the pilot's gains (the speed set point is the rung's) */
+    readonly pilot?: Omit<EarPilotOptions, 'speedMps'>;
     /** what reaches the ears: the tests' controls (left and right swapped, deaf, distances zeroed) */
     readonly mapPlan?: (p: FramePlan) => FramePlan;
     /** every frame: what the pilot heard and did (a tool's trace; the flight does not depend on it) */
@@ -64,7 +66,7 @@ export function flyLesson(lesson: LessonDef, speedMps: number, seed: number, o: 
     const run = createLessonRunner(capped, { seed });
     const planner = new CuePlanner({ theme, prefs, layers: lesson.layers });
     const ear = new Ear(theme, prefs, { ...DEFAULT_HEARING, ...o.hearing, seed: (o.hearing?.seed ?? DEFAULT_HEARING.seed) * 7919 + seed });
-    const pilot = new EarPilot({ speedMps });
+    const pilot = new EarPilot({ ...o.pilot, speedMps });
     const craft = new Craft(lesson.start, { speedMps, climbMps: Math.max(CRAFT_CLIMB_MPS, lesson.assists.maxClimbMps ?? 0), yawDps: CRAFT_YAW_DPS, accelMps2: CRAFT_ACCEL_MPS2 });
     const courseM = courseLengthM(lesson);
     const limitMs = (TIME_FACTOR * courseM * 1000) / speedMps;

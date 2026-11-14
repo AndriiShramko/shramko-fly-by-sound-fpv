@@ -7,6 +7,7 @@ export function main(argv: readonly string[]): number {
     const every = Number(argv[2] ?? '500');
     const lines: string[] = [];
     const r = flyLesson(getLesson(id), v, 1, {
+        ...(argv.includes('--attend-hum') ? { hearing: { attendHum: true } } : {}),
         trace: (f) => {
             if (f.t % every !== 0) return;
             const s = f.heard.streams.map((x) => `${x.cue}[${x.side}${x.behind ? 'B' : ''}${x.onCourse ? 'O' : ''}e${x.elevSteps} ${x.levelDb.toFixed(0)}]`).join(' ');
