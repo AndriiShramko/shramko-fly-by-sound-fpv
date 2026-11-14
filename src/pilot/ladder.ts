@@ -26,6 +26,8 @@ export interface FlyOptions {
     /** the pilot's gains (the speed set point is the rung's) */
     readonly pilot?: Omit<EarPilotOptions, 'speedMps'>;
     /** what reaches the ears: the tests' controls (left and right swapped, deaf, distances zeroed) */
+    /** the stream budget on (true) or off (false) whatever the lesson says; absent: the lesson's own */
+    readonly budget?: boolean;
     readonly mapPlan?: (p: FramePlan) => FramePlan;
     /** every frame: what the pilot heard and did (a tool's trace; the flight does not depend on it) */
     readonly trace?: (f: { readonly t: number; readonly pos: Vec3; readonly yaw: number; readonly heard: Percepts; readonly cmd: StickCommand; readonly plan: FramePlan }) => void;
@@ -64,7 +66,8 @@ export function flyLesson(lesson: LessonDef, speedMps: number, seed: number, o: 
     const theme = o.theme ?? getBuiltinTheme('soft');
     const capped: LessonDef = { ...lesson, assists: { ...lesson.assists, maxSpeedMps: speedMps } };
     const run = createLessonRunner(capped, { seed });
-    const planner = new CuePlanner({ theme, prefs, layers: lesson.layers });
+    const layers = o.budget === undefined ? lesson.layers : { ...lesson.layers, speedBudget: o.budget };
+    const planner = new CuePlanner({ theme, prefs, layers });
     const ear = new Ear(theme, prefs, { ...DEFAULT_HEARING, ...o.hearing, seed: (o.hearing?.seed ?? DEFAULT_HEARING.seed) * 7919 + seed });
     const pilot = new EarPilot({ ...o.pilot, speedMps });
     const craft = new Craft(lesson.start, { speedMps, climbMps: Math.max(CRAFT_CLIMB_MPS, lesson.assists.maxClimbMps ?? 0), yawDps: CRAFT_YAW_DPS, accelMps2: CRAFT_ACCEL_MPS2 });

@@ -389,6 +389,11 @@ export interface LessonLayers {
     readonly heightBandM: readonly [number, number] | null;
     /** at most this many hazard voices at once (3 or fewer) */
     readonly hazardVoices: number;
+    /**
+     * the stream budget at speed (cues/budget.ts, sonic3 plan 2.2): the faster the craft, the fewer continuous streams.
+     * Off when absent, so the lessons and recordings made before it sound as they did.
+     */
+    readonly speedBudget?: boolean;
 }
 
 /** A cue's stable id, `<layer>.<name>` (safety.wall, target.hum, shape.ring, ...): glossary, recordings. */

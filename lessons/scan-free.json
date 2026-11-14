@@ -33,6 +33,7 @@
   "layers": {
     "hazardVoices": 3,
     "heightBandM": null,
+    "speedBudget": true,
     "on": [
       "safety",
       "height",
