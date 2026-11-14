@@ -21,7 +21,7 @@ export function main(argv: readonly string[]): number {
         const t0 = Date.now();
         const r = ladder(getLesson(id), seeds, rungs);
         results.push(r);
-        const why = r.flights.map((f) => `${f.speedMps}:${f.why[0]}`).join(' ');
+        const why = r.flights.map((f) => `${f.speedMps}:${f.why}`).join(' ');
         process.stdout.write(`${id}: median top ${r.medianTopMps} m/s, by seed ${r.topBySeed.join(' ')} (${((Date.now() - t0) / 1000).toFixed(0)} s) ${why}\n`);
     }
     if (out !== undefined) {
