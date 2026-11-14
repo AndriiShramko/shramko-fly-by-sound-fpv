@@ -1,0 +1,719 @@
+{
+ "ref": "train3 992c9db",
+ "attendHum": false,
+ "turnDps": null,
+ "budget": "on",
+ "line": "on",
+ "rungs": [
+  1,
+  2,
+  3,
+  4,
+  6,
+  8,
+  10,
+  12,
+  15,
+  18,
+  22
+ ],
+ "seeds": [
+  1,
+  2,
+  3
+ ],
+ "results": [
+  {
+   "lessonId": "corridor",
+   "seeds": [
+    1,
+    2,
+    3
+   ],
+   "topBySeed": [
+    0,
+    0,
+    0
+   ],
+   "medianTopMps": 0,
+   "flights": [
+    {
+     "speedMps": 1,
+     "seed": 1,
+     "passed": false,
+     "why": "touch",
+     "touches": 1,
+     "timeS": 32.58,
+     "courseM": 125.22835937382872,
+     "hash": "4b12ca6d1226db37"
+    },
+    {
+     "speedMps": 2,
+     "seed": 1,
+     "passed": false,
+     "why": "touch",
+     "touches": 1,
+     "timeS": 15.52,
+     "courseM": 125.22835937382872,
+     "hash": "393aa6f74652bbc4"
+    },
+    {
+     "speedMps": 3,
+     "seed": 1,
+     "passed": false,
+     "why": "touch",
+     "touches": 1,
+     "timeS": 14.44,
+     "courseM": 125.22835937382872,
+     "hash": "19632e96e2a289e8"
+    },
+    {
+     "speedMps": 4,
+     "seed": 1,
+     "passed": false,
+     "why": "touch",
+     "touches": 1,
+     "timeS": 12.24,
+     "courseM": 125.22835937382872,
+     "hash": "584e4cbfbd6903d7"
+    },
+    {
+     "speedMps": 6,
+     "seed": 1,
+     "passed": false,
+     "why": "touch",
+     "touches": 1,
+     "timeS": 8.84,
+     "courseM": 125.22835937382872,
+     "hash": "0d45ad2053bc2b47"
+    },
+    {
+     "speedMps": 8,
+     "seed": 1,
+     "passed": false,
+     "why": "touch",
+     "touches": 1,
+     "timeS": 6.9,
+     "courseM": 125.22835937382872,
+     "hash": "2b4eda1a402c87e4"
+    },
+    {
+     "speedMps": 10,
+     "seed": 1,
+     "passed": false,
+     "why": "touch",
+     "touches": 1,
+     "timeS": 7.26,
+     "courseM": 125.22835937382872,
+     "hash": "7309272659040944"
+    },
+    {
+     "speedMps": 12,
+     "seed": 1,
+     "passed": false,
+     "why": "touch",
+     "touches": 1,
+     "timeS": 5.42,
+     "courseM": 125.22835937382872,
+     "hash": "0c41ccff21edcae8"
+    },
+    {
+     "speedMps": 15,
+     "seed": 1,
+     "passed": false,
+     "why": "touch",
+     "touches": 1,
+     "timeS": 7.36,
+     "courseM": 125.22835937382872,
+     "hash": "2389701d5ada9f4b"
+    },
+    {
+     "speedMps": 18,
+     "seed": 1,
+     "passed": false,
+     "why": "touch",
+     "touches": 1,
+     "timeS": 5.4,
+     "courseM": 125.22835937382872,
+     "hash": "c61d03d75eb2bdcb"
+    },
+    {
+     "speedMps": 22,
+     "seed": 1,
+     "passed": false,
+     "why": "touch",
+     "touches": 1,
+     "timeS": 3.56,
+     "courseM": 125.22835937382872,
+     "hash": "65a46fdbcbc2e1c8"
+    },
+    {
+     "speedMps": 1,
+     "seed": 2,
+     "passed": false,
+     "why": "touch",
+     "touches": 1,
+     "timeS": 21.96,
+     "courseM": 125.22835937382872,
+     "hash": "8fc917a82d544883"
+    },
+    {
+     "speedMps": 2,
+     "seed": 2,
+     "passed": false,
+     "why": "touch",
+     "touches": 1,
+     "timeS": 11.04,
+     "courseM": 125.22835937382872,
+     "hash": "34b6d6f88fa21b8c"
+    },
+    {
+     "speedMps": 3,
+     "seed": 2,
+     "passed": false,
+     "why": "touch",
+     "touches": 1,
+     "timeS": 8.62,
+     "courseM": 125.22835937382872,
+     "hash": "a870c6f45b15e13c"
+    },
+    {
+     "speedMps": 4,
+     "seed": 2,
+     "passed": false,
+     "why": "touch",
+     "touches": 1,
+     "timeS": 8.52,
+     "courseM": 125.22835937382872,
+     "hash": "8af353147f096c60"
+    },
+    {
+     "speedMps": 6,
+     "seed": 2,
+     "passed": false,
+     "why": "touch",
+     "touches": 1,
+     "timeS": 7.64,
+     "courseM": 125.22835937382872,
+     "hash": "1d1e14becb698c68"
+    },
+    {
+     "speedMps": 8,
+     "seed": 2,
+     "passed": false,
+     "why": "touch",
+     "touches": 1,
+     "timeS": 5.9,
+     "courseM": 125.22835937382872,
+     "hash": "2731526e46d6a068"
+    },
+    {
+     "speedMps": 10,
+     "seed": 2,
+     "passed": false,
+     "why": "touch",
+     "touches": 1,
+     "timeS": 5.68,
+     "courseM": 125.22835937382872,
+     "hash": "37fb59562a5bc2b0"
+    },
+    {
+     "speedMps": 12,
+     "seed": 2,
+     "passed": false,
+     "why": "touch",
+     "touches": 1,
+     "timeS": 5.12,
+     "courseM": 125.22835937382872,
+     "hash": "56d20a0b06d4e1c0"
+    },
+    {
+     "speedMps": 15,
+     "seed": 2,
+     "passed": false,
+     "why": "touch",
+     "touches": 1,
+     "timeS": 3.88,
+     "courseM": 125.22835937382872,
+     "hash": "81c8fbb6593320fc"
+    },
+    {
+     "speedMps": 18,
+     "seed": 2,
+     "passed": false,
+     "why": "touch",
+     "touches": 1,
+     "timeS": 4.94,
+     "courseM": 125.22835937382872,
+     "hash": "afe71272bb7a9ba8"
+    },
+    {
+     "speedMps": 22,
+     "seed": 2,
+     "passed": false,
+     "why": "touch",
+     "touches": 1,
+     "timeS": 3.48,
+     "courseM": 125.22835937382872,
+     "hash": "673a9b694b8b72ec"
+    },
+    {
+     "speedMps": 1,
+     "seed": 3,
+     "passed": false,
+     "why": "touch",
+     "touches": 1,
+     "timeS": 29.44,
+     "courseM": 125.22835937382872,
+     "hash": "996afd23de3c3553"
+    },
+    {
+     "speedMps": 2,
+     "seed": 3,
+     "passed": false,
+     "why": "touch",
+     "touches": 1,
+     "timeS": 12.04,
+     "courseM": 125.22835937382872,
+     "hash": "4855314eaa652560"
+    },
+    {
+     "speedMps": 3,
+     "seed": 3,
+     "passed": false,
+     "why": "touch",
+     "touches": 1,
+     "timeS": 14.32,
+     "courseM": 125.22835937382872,
+     "hash": "3e1f6d58e98ee22f"
+    },
+    {
+     "speedMps": 4,
+     "seed": 3,
+     "passed": false,
+     "why": "touch",
+     "touches": 1,
+     "timeS": 12,
+     "courseM": 125.22835937382872,
+     "hash": "a00a1f6d89735e47"
+    },
+    {
+     "speedMps": 6,
+     "seed": 3,
+     "passed": false,
+     "why": "touch",
+     "touches": 1,
+     "timeS": 8.64,
+     "courseM": 125.22835937382872,
+     "hash": "d95831f965e904f4"
+    },
+    {
+     "speedMps": 8,
+     "seed": 3,
+     "passed": false,
+     "why": "touch",
+     "touches": 1,
+     "timeS": 7.12,
+     "courseM": 125.22835937382872,
+     "hash": "5bda2a979110ad20"
+    },
+    {
+     "speedMps": 10,
+     "seed": 3,
+     "passed": false,
+     "why": "touch",
+     "touches": 1,
+     "timeS": 5.9,
+     "courseM": 125.22835937382872,
+     "hash": "b79b8cc69358ba83"
+    },
+    {
+     "speedMps": 12,
+     "seed": 3,
+     "passed": false,
+     "why": "touch",
+     "touches": 1,
+     "timeS": 5.36,
+     "courseM": 125.22835937382872,
+     "hash": "cff24b3128fe6643"
+    },
+    {
+     "speedMps": 15,
+     "seed": 3,
+     "passed": false,
+     "why": "touch",
+     "touches": 1,
+     "timeS": 6.16,
+     "courseM": 125.22835937382872,
+     "hash": "3ac769eecfa5c2d7"
+    },
+    {
+     "speedMps": 18,
+     "seed": 3,
+     "passed": false,
+     "why": "touch",
+     "touches": 1,
+     "timeS": 5.12,
+     "courseM": 125.22835937382872,
+     "hash": "ea77f890688b5947"
+    },
+    {
+     "speedMps": 22,
+     "seed": 3,
+     "passed": false,
+     "why": "touch",
+     "touches": 1,
+     "timeS": 3.54,
+     "courseM": 125.22835937382872,
+     "hash": "320f9fd0cbc2e1c8"
+    }
+   ]
+  },
+  {
+   "lessonId": "rings-course",
+   "seeds": [
+    1,
+    2,
+    3
+   ],
+   "topBySeed": [
+    4,
+    4,
+    2
+   ],
+   "medianTopMps": 4,
+   "flights": [
+    {
+     "speedMps": 1,
+     "seed": 1,
+     "passed": true,
+     "why": "pass",
+     "touches": 0,
+     "timeS": 41.34,
+     "courseM": 40.59500322559678,
+     "hash": "9a923c919b40f36b"
+    },
+    {
+     "speedMps": 2,
+     "seed": 1,
+     "passed": true,
+     "why": "pass",
+     "touches": 0,
+     "timeS": 21.08,
+     "courseM": 40.59500322559678,
+     "hash": "687ec153bdf8a504"
+    },
+    {
+     "speedMps": 3,
+     "seed": 1,
+     "passed": false,
+     "why": "touch",
+     "touches": 1,
+     "timeS": 7.98,
+     "courseM": 40.59500322559678,
+     "hash": "aca25e4f0a4f990b"
+    },
+    {
+     "speedMps": 4,
+     "seed": 1,
+     "passed": true,
+     "why": "pass",
+     "touches": 0,
+     "timeS": 11.48,
+     "courseM": 40.59500322559678,
+     "hash": "d53d9219e228f238"
+    },
+    {
+     "speedMps": 6,
+     "seed": 1,
+     "passed": false,
+     "why": "fail",
+     "touches": 0,
+     "timeS": 3.16,
+     "courseM": 40.59500322559678,
+     "hash": "884fffc1c6906223"
+    },
+    {
+     "speedMps": 8,
+     "seed": 1,
+     "passed": false,
+     "why": "fail",
+     "touches": 0,
+     "timeS": 1.46,
+     "courseM": 40.59500322559678,
+     "hash": "c17670dab0c3cc17"
+    },
+    {
+     "speedMps": 10,
+     "seed": 1,
+     "passed": false,
+     "why": "fail",
+     "touches": 0,
+     "timeS": 1.46,
+     "courseM": 40.59500322559678,
+     "hash": "997a1cdab0c3cc17"
+    },
+    {
+     "speedMps": 12,
+     "seed": 1,
+     "passed": false,
+     "why": "touch",
+     "touches": 1,
+     "timeS": 1.4,
+     "courseM": 40.59500322559678,
+     "hash": "beb24a4c26180663"
+    },
+    {
+     "speedMps": 15,
+     "seed": 1,
+     "passed": false,
+     "why": "touch",
+     "touches": 1,
+     "timeS": 1.38,
+     "courseM": 40.59500322559678,
+     "hash": "aa25da7c26180663"
+    },
+    {
+     "speedMps": 18,
+     "seed": 1,
+     "passed": false,
+     "why": "touch",
+     "touches": 1,
+     "timeS": 1.38,
+     "courseM": 40.59500322559678,
+     "hash": "fc2b930026180663"
+    },
+    {
+     "speedMps": 22,
+     "seed": 1,
+     "passed": false,
+     "why": "touch",
+     "touches": 1,
+     "timeS": 1.36,
+     "courseM": 40.59500322559678,
+     "hash": "454936be26180663"
+    },
+    {
+     "speedMps": 1,
+     "seed": 2,
+     "passed": true,
+     "why": "pass",
+     "touches": 0,
+     "timeS": 41.34,
+     "courseM": 40.59500322559678,
+     "hash": "9a923c919b40f36b"
+    },
+    {
+     "speedMps": 2,
+     "seed": 2,
+     "passed": true,
+     "why": "pass",
+     "touches": 0,
+     "timeS": 21.06,
+     "courseM": 40.59500322559678,
+     "hash": "7c941c4f25a8357f"
+    },
+    {
+     "speedMps": 3,
+     "seed": 2,
+     "passed": false,
+     "why": "touch",
+     "touches": 1,
+     "timeS": 7.3,
+     "courseM": 40.59500322559678,
+     "hash": "e04bc295f060b434"
+    },
+    {
+     "speedMps": 4,
+     "seed": 2,
+     "passed": true,
+     "why": "pass",
+     "touches": 0,
+     "timeS": 11.36,
+     "courseM": 40.59500322559678,
+     "hash": "bf0df4f1d21492bf"
+    },
+    {
+     "speedMps": 6,
+     "seed": 2,
+     "passed": false,
+     "why": "fail",
+     "touches": 0,
+     "timeS": 3.92,
+     "courseM": 40.59500322559678,
+     "hash": "1dfaa0bf34fa7273"
+    },
+    {
+     "speedMps": 8,
+     "seed": 2,
+     "passed": false,
+     "why": "fail",
+     "touches": 0,
+     "timeS": 1.46,
+     "courseM": 40.59500322559678,
+     "hash": "c42cb738b0c3cc17"
+    },
+    {
+     "speedMps": 10,
+     "seed": 2,
+     "passed": false,
+     "why": "fail",
+     "touches": 0,
+     "timeS": 1.46,
+     "courseM": 40.59500322559678,
+     "hash": "c9600dabb0c3cc17"
+    },
+    {
+     "speedMps": 12,
+     "seed": 2,
+     "passed": false,
+     "why": "fail",
+     "touches": 0,
+     "timeS": 1.44,
+     "courseM": 40.59500322559678,
+     "hash": "dcfb11efb0c3cc17"
+    },
+    {
+     "speedMps": 15,
+     "seed": 2,
+     "passed": false,
+     "why": "touch",
+     "touches": 1,
+     "timeS": 1.38,
+     "courseM": 40.59500322559678,
+     "hash": "aa25da7c26180663"
+    },
+    {
+     "speedMps": 18,
+     "seed": 2,
+     "passed": false,
+     "why": "touch",
+     "touches": 1,
+     "timeS": 1.38,
+     "courseM": 40.59500322559678,
+     "hash": "d1073d3a26180663"
+    },
+    {
+     "speedMps": 22,
+     "seed": 2,
+     "passed": false,
+     "why": "touch",
+     "touches": 1,
+     "timeS": 1.36,
+     "courseM": 40.59500322559678,
+     "hash": "a0b198a026180663"
+    },
+    {
+     "speedMps": 1,
+     "seed": 3,
+     "passed": true,
+     "why": "pass",
+     "touches": 0,
+     "timeS": 41.34,
+     "courseM": 40.59500322559678,
+     "hash": "9a923c919b40f36b"
+    },
+    {
+     "speedMps": 2,
+     "seed": 3,
+     "passed": true,
+     "why": "pass",
+     "touches": 0,
+     "timeS": 20.98,
+     "courseM": 40.59500322559678,
+     "hash": "99c764b6a6e6c48b"
+    },
+    {
+     "speedMps": 3,
+     "seed": 3,
+     "passed": false,
+     "why": "fail",
+     "touches": 0,
+     "timeS": 12.36,
+     "courseM": 40.59500322559678,
+     "hash": "f2b89104e3bc1433"
+    },
+    {
+     "speedMps": 4,
+     "seed": 3,
+     "passed": false,
+     "why": "fail",
+     "touches": 0,
+     "timeS": 12.56,
+     "courseM": 40.59500322559678,
+     "hash": "d6bad33d48e5166f"
+    },
+    {
+     "speedMps": 6,
+     "seed": 3,
+     "passed": false,
+     "why": "touch",
+     "touches": 1,
+     "timeS": 7.88,
+     "courseM": 40.59500322559678,
+     "hash": "6999a1b45ba59c23"
+    },
+    {
+     "speedMps": 8,
+     "seed": 3,
+     "passed": false,
+     "why": "fail",
+     "touches": 0,
+     "timeS": 1.46,
+     "courseM": 40.59500322559678,
+     "hash": "c42cb738b0c3cc17"
+    },
+    {
+     "speedMps": 10,
+     "seed": 3,
+     "passed": false,
+     "why": "fail",
+     "touches": 0,
+     "timeS": 1.46,
+     "courseM": 40.59500322559678,
+     "hash": "c9600dabb0c3cc17"
+    },
+    {
+     "speedMps": 12,
+     "seed": 3,
+     "passed": false,
+     "why": "fail",
+     "touches": 0,
+     "timeS": 1.44,
+     "courseM": 40.59500322559678,
+     "hash": "dcfb11efb0c3cc17"
+    },
+    {
+     "speedMps": 15,
+     "seed": 3,
+     "passed": false,
+     "why": "touch",
+     "touches": 1,
+     "timeS": 1.38,
+     "courseM": 40.59500322559678,
+     "hash": "aa25da7c26180663"
+    },
+    {
+     "speedMps": 18,
+     "seed": 3,
+     "passed": false,
+     "why": "touch",
+     "touches": 1,
+     "timeS": 1.38,
+     "courseM": 40.59500322559678,
+     "hash": "d1073d3a26180663"
+    },
+    {
+     "speedMps": 22,
+     "seed": 3,
+     "passed": false,
+     "why": "touch",
+     "touches": 1,
+     "timeS": 1.36,
+     "courseM": 40.59500322559678,
+     "hash": "a0b198a026180663"
+    }
+   ]
+  }
+ ]
+}

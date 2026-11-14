@@ -12,7 +12,8 @@ import { build } from 'vite';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
-const EVIDENCE = join(ROOT, 'evidence', 'audio-proofs.json');
+// PROOFS_OUT: a run of some proofs (PROOFS=a,b) writes its own file and leaves the full evidence as it is
+const EVIDENCE = process.env['PROOFS_OUT'] !== undefined ? join(ROOT, process.env['PROOFS_OUT']) : join(ROOT, 'evidence', 'audio-proofs.json');
 
 interface Check {
     readonly ok: boolean;

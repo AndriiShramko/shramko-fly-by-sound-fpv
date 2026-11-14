@@ -12,6 +12,7 @@ import { defaultPrefs } from '../../src/prefs/prefs';
 import { getBuiltinTheme } from '../../src/theme/builtin';
 import { createAnalyticWorld, makeSpec } from '../../src/world/analytic-world';
 import { yawQuat } from '../../src/util/vec';
+import type { SonicLineTarget } from '../../src/cues/line';
 
 export const SAMPLE_RATE = 48000;
 const FRAME_S = 1 / 60;
@@ -523,6 +524,28 @@ async function engineReset(): Promise<ProofResult> {
     return { name: 'engine-reset', claim, shipped, control: { ...control, broken: 'no engine.reset() when the next lesson opens' }, pass: shipped.ok && !control.ok };
 }
 
+// ------------------------------------------------------------------ 9. the racing line's side (sonic3 plan 2.3)
+
+async function lineSide(): Promise<ProofResult> {
+    const claim = 'the racing line 30 degrees to the right is heard 8 dB or more louder in the right ear below 1 kHz (the hum's band), and 30 degrees to the left in the left ear, not by the HRTF alone (the beacon alone gives about 2 dB there)';
+    const targetOnly: LessonLayers = { on: ['target'], heightBandM: null, hazardVoices: 0, racingLine: true };
+    const run = async (line: boolean): Promise<Check> => {
+        const side = async (deg: number): Promise<number> => {
+            const a = (deg * Math.PI) / 180;
+            const obj: SonicObject = { id: 'line:ahead', shape: { kind: 'zone', size: [1, 1, 1] }, pos: [8 * Math.sin(a), 3, -8 * Math.cos(a)], quat: yawQuat(0), order: null, solid: false, material: 'obstacle' };
+            const beacon: SonicObject = line ? ({ ...obj, lineOffM: 0 } as SonicLineTarget) : obj;
+            const r = await render({ seconds: 3, engine: {}, layers: targetOnly, frame: (t) => ({ sample: flight([0, 3, 0], [0, 0, 0], 0, t), world: null, target: null, beacon, floorY: 0 }) });
+            return db(rms(lowpass(r.right, 1000), 0.5, 3)) - db(rms(lowpass(r.left, 1000), 0.5, 3));
+        };
+        const right = await side(30);
+        const left = await side(-30);
+        return { ok: right >= 8 && left <= -8, measured: { RminusLdbAt30degRight: round(right), RminusLdbAt30degLeft: round(left), thresholdDb: 8 } };
+    };
+    const shipped = await run(true);
+    const control = await run(false);
+    return { name: 'line-side', claim, shipped, control: { ...control, broken: 'the same hum as the beacon of a gate (no racing line: its 2 dB side level only)' }, pass: shipped.ok && !control.ok };
+}
+
 function round(x: number, digits = 2): number {
     const f = 10 ** digits;
     return Math.round(x * f) / f;
@@ -536,7 +559,7 @@ export interface ProofReport {
     readonly proofs: readonly ProofResult[];
 }
 
-export const PROOFS: Readonly<Record<string, () => Promise<ProofResult>>> = { direction, 'pulse-rate': pulseRate, ceiling, 'fade-in': fadeIn, 'voice-budget': voiceBudget, 'target-note-gap': targetNoteGap, 'target-note-pan': targetNotePan, 'engine-reset': engineReset };
+export const PROOFS: Readonly<Record<string, () => Promise<ProofResult>>> = { direction, 'pulse-rate': pulseRate, ceiling, 'fade-in': fadeIn, 'voice-budget': voiceBudget, 'target-note-gap': targetNoteGap, 'target-note-pan': targetNotePan, 'engine-reset': engineReset, 'line-side': lineSide };
 
 export async function runProofs(names: readonly string[] = Object.keys(PROOFS)): Promise<ProofReport> {
     const proofs: ProofResult[] = [];
