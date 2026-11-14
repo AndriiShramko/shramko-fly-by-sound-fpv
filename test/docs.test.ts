@@ -43,10 +43,12 @@ describe('the README', () => {
             'docs/testing',
             'MIT licence',
             'CC BY 4.0',
-            'Spatial-audio researcher **Bart\u0142omiej Mr\u00f3z** (Gda\u0144sk University of Technology) will help Andrii Shramko with the sound design'
+            'Spatial-audio consultant: Bart\u0142omiej Mr\u00f3z (Gda\u0144sk University of Technology)'
         ]) {
             expect(readme, text).toContain(text);
         }
+        // the line he allowed (2026-11-14) is the only wording about him: the earlier sentence is gone
+        expect(readme).not.toContain('will help Andrii Shramko with the sound design');
     });
 
     it('uses the Polish letters of the researcher\'s name here and nowhere else', () => {

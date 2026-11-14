@@ -128,7 +128,9 @@ pnpm proof:audio
 
 ## Collaboration
 
-Spatial-audio researcher **Bartłomiej Mróz** (Gdańsk University of Technology) will help Andrii Shramko with the sound design. Schools, researchers, sound designers and pilots who want to test or improve Fly by Sound are welcome: write to the author below.
+Spatial-audio consultant: Bartłomiej Mróz (Gdańsk University of Technology)
+
+Schools, researchers, sound designers and pilots who want to test or improve Fly by Sound are welcome: write to the author below.
 
 ## Author & working together
 
