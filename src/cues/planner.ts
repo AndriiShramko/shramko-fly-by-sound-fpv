@@ -29,6 +29,7 @@ import { applyCalm } from '../theme/calm';
 import { gateMelody, noteHz, noteHzAt } from '../theme/pitch';
 import { applyBudget, layerPlanOn, TierGate, type SpeedTier } from './budget';
 import { beaconBearing, beaconSideIldDb, DEMO_TARGET_ID, foldToFront } from './beacon';
+import { isLineTarget, lineBeat, lineSideIldDb } from './line';
 import { alignOffset, heightTones, isGate, referenceHeightM, targetHeightM, type HeightToneRule, type TargetTone } from './height';
 import { add, dot, length, normalize, quatConjugate, quatRotate, scale, sub, yawQuat } from '../util/vec';
 import {
@@ -675,7 +676,9 @@ export class CuePlanner {
         const nose: Vec3 = [-basis.back[0], -basis.back[1], -basis.back[2]];
         const travel = speed > AIM_BY_VELOCITY_MPS ? scale(s.vel, 1 / speed) : normalize([nose[0], 0, nose[2]]);
         const rough = targetRoughness(aimMissM(toWorld, travel), distance, rule);
-        const beat = targetBeat(rough);
+        // sonic3 plan 2.3: on the racing line the beating says the distance off the line, not the aim's miss
+        const line = !trueDir && isLineTarget(target) ? target : null;
+        const beat = line !== null ? lineBeat(line.lineOffM) : targetBeat(rough);
         const rate = targetRateHz(distance, rule);
         const bearing = this.beacon && !trueDir ? beaconBearing(dirL, this.onCourseId === target.id) : null;
         if (!trueDir) this.onCourseId = bearing !== null && bearing.onCourse ? target.id : null;
@@ -691,7 +694,8 @@ export class CuePlanner {
         const dir = bearing === null ? dirL : foldToFront(dirL);
         // off course the beacon adds a level difference between the ears (BEACON_SIDE_DB, check VL-B1): the HRTF alone
         // gives this low hum under 2 dB within 30 degrees of the nose. Beacon off: as before
-        const ildDb = bearing !== null && !bearing.onCourse ? dc.ildDb + beaconSideIldDb(dir) : dc.ildDb;
+        // the racing line: up to LINE_SIDE_DB (10 dB) at 30 degrees, so the side is a level, not an HRTF guess (plan 2.3)
+        const ildDb = bearing !== null && !bearing.onCourse ? dc.ildDb + (line !== null ? lineSideIldDb(dir) : beaconSideIldDb(dir)) : dc.ildDb;
         return {
             key: 'target',
             cue: 'target.hum',

@@ -394,6 +394,11 @@ export interface LessonLayers {
      * Off when absent, so the lessons and recordings made before it sound as they did.
      */
     readonly speedBudget?: boolean;
+    /**
+     * the racing line (cues/line.ts, sonic3 plan 2.3): the hum points at the look-ahead point of the smoothed track, with
+     * a level difference between the ears for the side and beating by the distance off the line. Off when absent.
+     */
+    readonly racingLine?: boolean;
 }
 
 /** A cue's stable id, `<layer>.<name>` (safety.wall, target.hum, shape.ring, ...): glossary, recordings. */

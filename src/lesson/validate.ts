@@ -188,7 +188,7 @@ export function validateAssists(input: unknown): Validation<LessonAssists> {
 function layers(c: Collector, v: unknown, path: string): LessonLayers | undefined {
     const r = c.record(v, path);
     if (r === null) return undefined;
-    c.keys(r, path, ['on', 'heightBandM', 'hazardVoices', 'speedBudget'], ['on', 'heightBandM', 'hazardVoices']);
+    c.keys(r, path, ['on', 'heightBandM', 'hazardVoices', 'speedBudget', 'racingLine'], ['on', 'heightBandM', 'hazardVoices']);
     const on = c.array(r.on, joinPath(path, 'on'), { min: 1, max: LAYER_IDS.length });
     let ids: (typeof LAYER_IDS)[number][] | undefined;
     if (on !== null) {
@@ -200,7 +200,8 @@ function layers(c: Collector, v: unknown, path: string): LessonLayers | undefine
     const hazardVoices = c.number(r.hazardVoices, joinPath(path, 'hazardVoices'), { integer: true, min: 0, max: 3 });
     if (ids === undefined || heightBandM === undefined || hazardVoices === undefined) return undefined;
     if (r.speedBudget !== undefined && typeof r.speedBudget !== 'boolean') c.add(joinPath(path, 'speedBudget'), 'must be true or false');
-    return r.speedBudget === true ? { on: ids, heightBandM, hazardVoices, speedBudget: true } : { on: ids, heightBandM, hazardVoices };
+    if (r.racingLine !== undefined && typeof r.racingLine !== 'boolean') c.add(joinPath(path, 'racingLine'), 'must be true or false');
+    return { on: ids, heightBandM, hazardVoices, ...(r.speedBudget === true ? { speedBudget: true } : {}), ...(r.racingLine === true ? { racingLine: true } : {}) };
 }
 
 function goal(c: Collector, v: unknown, path: string): Goal | undefined {
