@@ -179,8 +179,8 @@ export interface EngineOptions {
     readonly dicts?: Dicts;
     /** default: the browser's speechSynthesis; null: captions only */
     readonly speech?: SpeechOut | null;
-    /** every spoken line's text, for the host's caption region */
-    readonly caption?: (text: string, line: SpeechLine) => void;
+    /** every spoken line's text, for the host's caption region; `quiet`: the narrator is off, the line is for the eye only */
+    readonly caption?: (text: string, line: SpeechLine, o: { readonly quiet: boolean }) => void;
     readonly sampler?: SamplerOptions;
     /** the engine's own 25 ms wake-up; default on for a live AudioContext, off for an OfflineAudioContext */
     readonly pump?: boolean;
@@ -1113,10 +1113,13 @@ export class FlyBySoundEngine implements SonicEngine {
         playNote(g.kit, g.layers[n.layer].centre, { timbre: n.timbre, hz: n.hz, t0: at, durS: n.durS, gain });
     }
 
-    async say(line: SpeechLine, o: { readonly interrupt?: boolean } = {}): Promise<void> {
+    async say(line: SpeechLine, o: { readonly interrupt?: boolean; readonly quiet?: boolean } = {}): Promise<void> {
         const text = this.translator.text(line);
+        const quiet = o.quiet === true;
         if (this.onSpeech !== null) this.onSpeech(line, text);
-        if (this.options.caption !== undefined) this.options.caption(text, line);
+        if (this.options.caption !== undefined) this.options.caption(text, line, { quiet });
+        // the narrator is off (train 3): reported for the eye and the record, not voiced, not waited for, no duck
+        if (quiet) return;
         const prefs = this.planner.prefs;
         const voice = this.planner.theme.layers.voice.params;
         this.speakingCount++;

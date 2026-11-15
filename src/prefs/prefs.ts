@@ -37,14 +37,15 @@ export function defaultPrefs(): SonicPrefs {
         motorGainDb: 0,
         heightDirection: true,
         beacon: true,
-        motorChoice: false
+        motorChoice: false,
+        narrator: true
     };
 }
 
-const KEYS = ['format', 'theme', 'calm', 'heightPolarity', 'layerGainDb', 'layerPitchSteps', 'selfVoice', 'speechRate', 'captions', 'motorSound', 'path', 'listenerFrame', 'heightTarget', 'motorGainDb', 'heightDirection', 'beacon', 'motorChoice'] as const;
+const KEYS = ['format', 'theme', 'calm', 'heightPolarity', 'layerGainDb', 'layerPitchSteps', 'selfVoice', 'speechRate', 'captions', 'motorSound', 'path', 'listenerFrame', 'heightTarget', 'motorGainDb', 'heightDirection', 'beacon', 'motorChoice', 'narrator'] as const;
 type Key = (typeof KEYS)[number];
-/** Keys added after the first documents were written (v0.13): a document without them is still valid (absent: the default). */
-const ADDED_KEYS: readonly Key[] = ['heightTarget', 'motorGainDb', 'heightDirection', 'beacon', 'motorChoice'];
+/** Keys added after the first documents were written (v0.13, train 3): a document without them is still valid (absent: the default). */
+const ADDED_KEYS: readonly Key[] = ['heightTarget', 'motorGainDb', 'heightDirection', 'beacon', 'motorChoice', 'narrator'];
 /** The keys every document must have. */
 const REQUIRED_KEYS: readonly Key[] = KEYS.filter((k) => !ADDED_KEYS.includes(k));
 
@@ -84,7 +85,8 @@ const FIELDS: Readonly<Record<Key, FieldCheck>> = {
     motorGainDb: (c, v, path) => c.number(v, path, PREFS_LIMITS.motorGainDb),
     heightDirection: (c, v, path) => c.boolean(v, path),
     beacon: (c, v, path) => c.boolean(v, path),
-    motorChoice: (c, v, path) => c.boolean(v, path)
+    motorChoice: (c, v, path) => c.boolean(v, path),
+    narrator: (c, v, path) => c.boolean(v, path)
 };
 
 /** Strict: every field present and valid (a field added in v0.13 may be absent), nothing else. */

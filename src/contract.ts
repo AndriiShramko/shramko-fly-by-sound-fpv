@@ -310,6 +310,12 @@ export interface SonicPrefs {
     readonly layerPitchSteps: Readonly<Partial<Record<LayerId, number>>>;
     /** false: "my screen reader speaks", menus are not self-voiced and use aria-live */
     readonly selfVoice: boolean;
+    /**
+     * Train 3 (the owner's message 54): the narrator. Absent or true: on. False, "sounds only": in a flight (not in a lesson
+     * of the lesson list) the host says no line and sends none to a screen reader (say with `quiet`); captions keep their own
+     * setting. Absent in documents written before train 3.
+     */
+    readonly narrator?: boolean;
     /** speechSynthesis rate, 0.5 to 2 */
     readonly speechRate: number;
     readonly captions: boolean;
@@ -716,8 +722,11 @@ export interface SonicEngine {
     /** once per rendered frame (or replayed frame) */
     update(input: SonicFrameInput): void;
     cue(e: CueEvent): void;
-    /** speaks (and captions) a line; other layers duck by theme.duckDb meanwhile */
-    say(line: SpeechLine, o?: { readonly interrupt?: boolean }): Promise<void>;
+    /**
+     * speaks (and captions) a line; other layers duck by theme.duckDb meanwhile. `quiet` (the narrator off in a flight): the line
+     * is reported (onSpeech, the caption with quiet) but neither voiced nor waited for; it resolves at once.
+     */
+    say(line: SpeechLine, o?: { readonly interrupt?: boolean; readonly quiet?: boolean }): Promise<void>;
     activeCues(): readonly ActiveCue[];
     /** every spoken line, for captions and events.jsonl */
     onSpeech: ((line: SpeechLine, text: string) => void) | null;
