@@ -399,6 +399,11 @@ export interface LessonLayers {
      * a level difference between the ears for the side and beating by the distance off the line. Off when absent.
      */
     readonly racingLine?: boolean;
+    /**
+     * sonic3 S1: a gate's hum points where the way through it leads (lesson/gate-aim.ts): around the frame from behind, at
+     * the approach point off the axis, beyond the gate close to its plane. Off when absent.
+     */
+    readonly gateAim?: boolean;
 }
 
 /** A cue's stable id, `<layer>.<name>` (safety.wall, target.hum, shape.ring, ...): glossary, recordings. */

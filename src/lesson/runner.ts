@@ -108,6 +108,7 @@ import { lessonTrack, yawOf, type LessonTrack, type TrackPoint } from './track';
 import { headingBasis, worldToListener } from '../sense/frame';
 import { beaconPointIndex, DEMO_TARGET_ID, lineClear, trackCorners } from '../cues/beacon';
 import { RacingLine, type SonicLineTarget } from '../cues/line';
+import { gateAim } from './gate-aim';
 
 // ------------------------------------------------------------------ host interface
 
@@ -2001,7 +2002,8 @@ class Runner implements LessonSession {
             const line = this.lineTarget();
             if (line !== null) return line;
         }
-        if (target !== null) return target;
+        // sonic3 S1 (layers.gateAim): a gate's hum leads through its opening from the entry side (lesson/gate-aim.ts)
+        if (target !== null) return this.lesson.layers.gateAim === true && target.order !== null ? gateAim(target, this.prev?.pos ?? this.startPose(Math.max(this.attemptNo, 1)).pos) : target;
         if (this.phaseValue !== 'flying' && this.phaseValue !== 'between') return null;
         // review R1: only a goal flown along the track ('track-end', 'fly-distance') takes the track's point; any other
         // goal without a target (a shape question, a height, a turn) stays silent as before the lane, so lessons whose

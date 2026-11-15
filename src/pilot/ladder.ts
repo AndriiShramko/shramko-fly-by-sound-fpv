@@ -2,7 +2,7 @@
 // host flies it (the lesson runner, the cue planner, one frame every 20 ms, every line spoken at once). The pilot gets
 // only the planner's frame through perceive.ts; this file holds the world, the runner and the craft, the pilot does not.
 // A flight passes when the runner says the attempt passed with no touch, within 3 x the course length / the speed.
-import type { LessonDef, SessionEvent, SonicPrefs, ThemeDef, Vec3 } from '../contract';
+import type { LessonDef, SessionEvent, SonicObject, SonicPrefs, ThemeDef, Vec3 } from '../contract';
 import { CuePlanner, type FramePlan } from '../cues/planner';
 import { BODY_RADIUS_M, createLessonRunner } from '../lesson';
 import { defaultPrefs } from '../prefs';
@@ -30,9 +30,11 @@ export interface FlyOptions {
     readonly budget?: boolean;
     /** the racing line on (true) or off (false) whatever the lesson says; absent: the lesson's own */
     readonly line?: boolean;
+    /** the gate aim (lesson/gate-aim.ts) on or off whatever the lesson says; absent: the lesson's own */
+    readonly gateAim?: boolean;
     readonly mapPlan?: (p: FramePlan) => FramePlan;
     /** every frame: what the pilot heard and did (a tool's trace; the flight does not depend on it) */
-    readonly trace?: (f: { readonly t: number; readonly pos: Vec3; readonly yaw: number; readonly heard: Percepts; readonly cmd: StickCommand; readonly plan: FramePlan }) => void;
+    readonly trace?: (f: { readonly t: number; readonly pos: Vec3; readonly yaw: number; readonly heard: Percepts; readonly cmd: StickCommand; readonly plan: FramePlan; readonly target: SonicObject | null; readonly beacon?: SonicObject | null }) => void;
 }
 
 export interface FlightResult {
@@ -66,7 +68,7 @@ export function flyLesson(lesson: LessonDef, speedMps: number, seed: number, o: 
     const world = createAnalyticWorld(lesson.world.spec);
     const prefs = o.prefs ?? { ...defaultPrefs(), beacon: true };
     const theme = o.theme ?? getBuiltinTheme('soft');
-    const layers = { ...lesson.layers, ...(o.budget === undefined ? {} : { speedBudget: o.budget }), ...(o.line === undefined ? {} : { racingLine: o.line }) };
+    const layers = { ...lesson.layers, ...(o.budget === undefined ? {} : { speedBudget: o.budget }), ...(o.line === undefined ? {} : { racingLine: o.line }), ...(o.gateAim === undefined ? {} : { gateAim: o.gateAim }) };
     const capped: LessonDef = { ...lesson, layers, assists: { ...lesson.assists, maxSpeedMps: speedMps } };
     const run = createLessonRunner(capped, { seed });
     const planner = new CuePlanner({ theme, prefs, layers });
@@ -127,10 +129,12 @@ export function flyLesson(lesson: LessonDef, speedMps: number, seed: number, o: 
         if (t0 !== null && t - t0 > limitMs) result ??= 'timeout';
         if (t > limitMs + 120_000) result ??= 'timeout';
         if (result !== null) break;
-        const plan = planner.plan({ sample, world, target: run.target(), ...(run.beaconTarget ? { beacon: run.beaconTarget() } : {}), floorY: world.floorY });
+        const target = run.target();
+        const beacon = run.beaconTarget ? run.beaconTarget() : undefined;
+        const plan = planner.plan({ sample, world, target, ...(beacon !== undefined ? { beacon } : {}), floorY: world.floorY });
         const heard = ear.hear(o.mapPlan ? o.mapPlan(plan) : plan);
         const cmd = pilot.step(heard);
-        o.trace?.({ t, pos: craft.pos, yaw: craft.yaw, heard, cmd, plan });
+        o.trace?.({ t, pos: craft.pos, yaw: craft.yaw, heard, cmd, plan, target, ...(beacon !== undefined ? { beacon } : {}) });
         craft.step(run.phase === 'flying' ? cmd : { forwardMps: 0, lateralMps: 0, climbMps: 0, yawDps: 0 }, DT_MS / 1000);
         if (frame % 5 === 0) for (const v of craft.pos) mix(Math.round(v * 1000));
     }
