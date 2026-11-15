@@ -1,8 +1,8 @@
 {
  "format": "shramko-listen-evidence/1",
- "key": "189c54ee0ba6e5818f5ad4343dba7cc00b2c784bdae60f82b07a7382d0a18688",
+ "key": "fe2c0b88a30b98f3395e318cfe3fb06745d5b12d86dba94db00fdb64b476492d",
  "inputs": {
-  "hash": "189c54ee0ba6e5818f5ad4343dba7cc00b2c784bdae60f82b07a7382d0a18688",
+  "hash": "fe2c0b88a30b98f3395e318cfe3fb06745d5b12d86dba94db00fdb64b476492d",
   "files": 15,
   "version": 2,
   "voices": {
@@ -32,7 +32,7 @@
    "numpy": "2.4.6"
   }
  },
- "date": "2026-11-13T19:03:17.490Z",
+ "date": "2026-11-15T01:26:50.788Z",
  "id": "VL-4-words",
  "claim": "every line of the four locales, said by the local Windows voice of its language and transcribed by Whisper large-v3, has a word error rate (case and punctuation normalised) at most its language's bound, and every line that names a key is heard with the key's name as a word of its own; the Russian lines said by the English voice fail the bound, and v0.13's lines that name a key, said by their voices, lose a key in each of Spanish, Polish and Russian",
  "run": "pnpm listen:words",
@@ -42,11 +42,11 @@
  "languages": {
   "en": {
    "voice": "Microsoft David Desktop",
-   "lines": 545,
-   "words": 4291,
+   "lines": 573,
+   "words": 4587,
    "bound": 0.2,
-   "exact": 537,
-   "meanRate": 0.0013,
+   "exact": 565,
+   "meanRate": 0.0012,
    "maxRate": 0.1667,
    "over": [],
    "keys": {
@@ -170,11 +170,11 @@
   },
   "es": {
    "voice": "Microsoft Helena Desktop",
-   "lines": 545,
-   "words": 4327,
+   "lines": 573,
+   "words": 4639,
    "bound": 0.2,
-   "exact": 530,
-   "meanRate": 0.0028,
+   "exact": 558,
+   "meanRate": 0.0027,
    "maxRate": 0.2,
    "over": [],
    "keys": {
@@ -228,11 +228,11 @@
   },
   "pl": {
    "voice": "Microsoft Paulina Desktop",
-   "lines": 545,
-   "words": 3679,
+   "lines": 573,
+   "words": 3930,
    "bound": 0.2,
-   "exact": 535,
-   "meanRate": 0.0024,
+   "exact": 560,
+   "meanRate": 0.0028,
    "maxRate": 0.2,
    "over": [],
    "keys": {
@@ -321,10 +321,10 @@
   },
   "ru": {
    "voice": "Microsoft Irina Desktop",
-   "lines": 545,
-   "words": 3498,
+   "lines": 573,
+   "words": 3745,
    "bound": 0.2,
-   "exact": 528,
+   "exact": 555,
    "meanRate": 0.0032,
    "maxRate": 0.2,
    "over": [],
@@ -500,8 +500,8 @@
  "control": {
   "locale": "ru",
   "voice": "Microsoft David Desktop",
-  "lines": 545,
-  "overBound": 545,
+  "lines": 573,
+  "overBound": 573,
   "share": 1,
   "medianRate": 1,
   "fails": true
@@ -743,6 +743,38 @@
    "heard": "Now there are 2 or 3 rings in a row, and then some with a turn.",
    "rawRate": 0.125,
    "rate": 0.125
+  },
+  {
+   "locale": "en",
+   "key": "lesson.speed-1.intro.1",
+   "text": "The ring course again, now as a speed lesson. Here you fly at most 1.5 metres per second. Learn the course slowly.",
+   "heard": "The ring course again, now as a speed lesson. Here you fly at most 1.5 meters per second. Learn the course slowly.",
+   "rawRate": 0.0435,
+   "rate": 0
+  },
+  {
+   "locale": "en",
+   "key": "lesson.speed-2.intro.1",
+   "text": "The same course, faster: up to 2.5 metres per second.",
+   "heard": "The same course, faster, up to 2.5 meters per second.",
+   "rawRate": 0.0909,
+   "rate": 0
+  },
+  {
+   "locale": "en",
+   "key": "lesson.speed-3.intro.1",
+   "text": "Up to 3.5 metres per second. Things come closer sooner now, so listen further ahead.",
+   "heard": "up to 3.5 meters per second. Things come closer sooner now, so listen further ahead.",
+   "rawRate": 0.0625,
+   "rate": 0
+  },
+  {
+   "locale": "en",
+   "key": "lesson.speed-4.intro.1",
+   "text": "Up to 4.5 metres per second. At this speed you hear fewer sounds: the line, the nearest danger and the free way.",
+   "heard": "Up to 4.5 meters per second. At this speed you hear fewer sounds, the line, the nearest danger and the freeway.",
+   "rawRate": 0.0435,
+   "rate": 0
   },
   {
    "locale": "en",
@@ -1566,6 +1598,30 @@
   },
   {
    "locale": "pl",
+   "key": "lesson.speed-1.intro.1",
+   "text": "Znowu tor z kołami, teraz jako lekcja prędkości. Tu lecisz najwyżej 1,5 metra na sekundę. Poznaj tor powoli.",
+   "heard": "Znowu tor z kołami, teraz ja kolekcja prędkości. Tu lecisz najwyżej 1,5 metra na sekundę. Poznaj tor powoli.",
+   "rawRate": 0.1053,
+   "rate": 0.1053
+  },
+  {
+   "locale": "pl",
+   "key": "lesson.speed-4.intro.1",
+   "text": "Do 4,5 metra na sekundę. Przy tej prędkości słyszysz mniej dźwięków: linię, najbliższą przeszkodę i wolną drogę.",
+   "heard": "Do 4,5 metra na sekundę. Przy tej prędkości słyszysz mniej dźwięków, linie, najbliższą przeszkodę i wolną drogę.",
+   "rawRate": 0.0556,
+   "rate": 0.0556
+  },
+  {
+   "locale": "pl",
+   "key": "lesson.speed-4.hint.1",
+   "text": "Lepiej małe skręty wcześnie niż duże późno.",
+   "heard": "Lepiej małe skręty wcześniej niż duże późno.",
+   "rawRate": 0.1429,
+   "rate": 0.1429
+  },
+  {
+   "locale": "pl",
    "key": "lesson.shapes-cube.title",
    "text": "Rama sześcianu",
    "heard": "Rama 60",
@@ -2220,6 +2276,78 @@
    "text": "Пролети сквозь каждое кольцо, ничего не коснувшись.",
    "heard": "Пролейте сквозь каждое кольцо, ничего не коснувшись",
    "rawRate": 0.1429,
+   "rate": 0
+  },
+  {
+   "locale": "ru",
+   "key": "lesson.speed-1.intro.2",
+   "text": "Гул идёт по гоночной линии. Когда линия поворачивает, гул громче в ухе с этой стороны. Поворачивай, пока он не окажется посередине.",
+   "heard": "Гол идёт по гоночной линии Когда линия поворачивает, гол громче в ухе с этой стороны Поворачивай, пока он не окажется посередине",
+   "rawRate": 0.0952,
+   "rate": 0
+  },
+  {
+   "locale": "ru",
+   "key": "lesson.speed-1.goal.1",
+   "text": "Пролети через все кольца, ничего не касаясь, пока не вышло время.",
+   "heard": "Пролейте через все кольца, ничего не касаясь, пока не вышло время",
+   "rawRate": 0.0909,
+   "rate": 0
+  },
+  {
+   "locale": "ru",
+   "key": "lesson.speed-1.hint.1",
+   "text": "Держи гул посередине, между ушами.",
+   "heard": "Держи гол посередине, между ушами",
+   "rawRate": 0.2,
+   "rate": 0
+  },
+  {
+   "locale": "ru",
+   "key": "lesson.speed-2.intro.2",
+   "text": "Гул показывает линию впереди. Поворачивай, когда он уходит в одно ухо, а не когда кольцо уже близко.",
+   "heard": "Гол показывает линию впереди Поворачивай, когда он уходит в одно ухо, а не когда кольцо уже близко",
+   "rawRate": 0.0588,
+   "rate": 0
+  },
+  {
+   "locale": "ru",
+   "key": "lesson.speed-2.goal.1",
+   "text": "Пролети через все кольца, ничего не касаясь, пока не вышло время.",
+   "heard": "Пролейте через все кольца, ничего не касаясь, пока не вышло время",
+   "rawRate": 0.0909,
+   "rate": 0
+  },
+  {
+   "locale": "ru",
+   "key": "lesson.speed-2.hint.1",
+   "text": "Чуть поверни и послушай, куда сдвинется гул.",
+   "heard": "Чуть поверни и послушай, куда сдвинется гол",
+   "rawRate": 0.1429,
+   "rate": 0
+  },
+  {
+   "locale": "ru",
+   "key": "lesson.speed-3.goal.1",
+   "text": "Пролети через все кольца, ничего не касаясь, пока не вышло время.",
+   "heard": "Пролейте через все кольца, ничего не касаясь, пока не вышло время",
+   "rawRate": 0.0909,
+   "rate": 0
+  },
+  {
+   "locale": "ru",
+   "key": "lesson.speed-4.intro.2",
+   "text": "Доверяй гулу. Он ведёт тебя по линии от кольца к кольцу.",
+   "heard": "Доверяй Голу Он ведёт тебя по линии от кольца к кольцу",
+   "rawRate": 0.0909,
+   "rate": 0.0909
+  },
+  {
+   "locale": "ru",
+   "key": "lesson.speed-4.goal.1",
+   "text": "Пролети через все кольца, ничего не касаясь, пока не вышло время.",
+   "heard": "Пролейте через все кольца, ничего не касаясь, пока не вышло время",
+   "rawRate": 0.0909,
    "rate": 0
   },
   {
