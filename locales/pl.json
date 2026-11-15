@@ -480,6 +480,7 @@
     "fly.stage": "Etap {n} zaliczony.",
     "fly.wrong-way": "Lecisz w złą stronę. Zawróć.",
     "fly.wrong-side": "Bramka przeleciana od tyłu. Wróć i przeleć ją od przodu.",
+    "fly.gate-behind": "Bramka jest za tobą.",
     "fly.lesson-passed": "Lekcja zaliczona. Dalej trochę trudniej: {title}.",
     "fly.last-lesson": "Lekcja zaliczona. To była ostatnia lekcja.",
     "fly.back-to": "Lekcja zaliczona. Wracamy do lekcji: {title}.",

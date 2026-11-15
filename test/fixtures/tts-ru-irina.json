@@ -72,6 +72,7 @@
     "dir.right": 1.57,
     "dir.up": 1.64,
     "fly.checkpoint": 2.34,
+    "fly.gate-behind": 2.31,
     "fly.go": 1.53,
     "fly.go-on": 1.785,
     "fly.lap": 1.93,

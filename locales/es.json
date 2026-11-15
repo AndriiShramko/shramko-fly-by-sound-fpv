@@ -480,6 +480,7 @@
     "fly.stage": "Etapa {n} superada.",
     "fly.wrong-way": "Vas en sentido contrario. Da la vuelta.",
     "fly.wrong-side": "Esa puerta la pasaste por el lado equivocado. Vuelve y crúzala de frente.",
+    "fly.gate-behind": "La puerta está detrás de ti.",
     "fly.lesson-passed": "Lección superada. La siguiente, un poco más difícil: {title}.",
     "fly.last-lesson": "Lección superada. Era la última lección.",
     "fly.back-to": "Lección superada. Volvemos a la lección: {title}.",
