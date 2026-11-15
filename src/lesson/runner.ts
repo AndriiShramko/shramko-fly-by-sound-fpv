@@ -109,6 +109,14 @@ import { headingBasis, worldToListener } from '../sense/frame';
 import { beaconPointIndex, DEMO_TARGET_ID, lineClear, trackCorners } from '../cues/beacon';
 import { RacingLine, type SonicLineTarget } from '../cues/line';
 import { gateAim } from './gate-aim';
+import { approachM } from '../cues/lead';
+
+/**
+ * Lane sonic4 design 5: with the racing line on, the gate aim takes over within this distance in front of the next gate's
+ * plane, m (measured: tools/bench/src/sonic-speed-measure.ts --line-near-aim 3 on Wroclaw 70b50d42 course 2 at 2 m/s
+ * counted 3 of 3, without it 0 of 3; at speed the gate's approach distance, cues/lead.ts approachM)
+ */
+export const LINE_NEAR_AIM_M = 3;
 
 // ------------------------------------------------------------------ host interface
 
@@ -2045,12 +2053,20 @@ class Runner implements LessonSession {
     beaconTarget(): SonicObject | null {
         const target = this.target();
         if (this.ears || this.left) return target;
+        const aimPos = this.prev?.pos ?? this.startPose(Math.max(this.attemptNo, 1)).pos;
+        const aimSpeed = this.prev === null ? 0 : Math.hypot(this.prev.vel[0], this.prev.vel[1], this.prev.vel[2]);
+        const aimed = target !== null && this.lesson.layers.gateAim === true && target.order !== null;
         if (this.lesson.layers.racingLine === true) {
-            const line = this.lineTarget();
-            if (line !== null) return line;
+            // lane sonic4 design 5 (V1-d): on the entry side of the next gate, within LINE_NEAR_AIM_M or the gate's approach
+            // distance at speed, the gate aim leads through the opening; the line's chord passes beside the frame there
+            const z = aimed ? toLocal(target, aimPos)[2] : Number.NaN;
+            if (!(z > 0 && z <= approachM(LINE_NEAR_AIM_M, aimSpeed))) {
+                const line = this.lineTarget();
+                if (line !== null) return line;
+            }
         }
         // sonic3 S1 (layers.gateAim): a gate's hum leads through its opening from the entry side (lesson/gate-aim.ts)
-        if (target !== null) return this.lesson.layers.gateAim === true && target.order !== null ? gateAim(target, this.prev?.pos ?? this.startPose(Math.max(this.attemptNo, 1)).pos) : target;
+        if (target !== null) return aimed ? gateAim(target, aimPos, aimSpeed) : target;
         if (this.phaseValue !== 'flying' && this.phaseValue !== 'between') return null;
         // review R1: only a goal flown along the track ('track-end', 'fly-distance') takes the track's point; any other
         // goal without a target (a shape question, a height, a turn) stays silent as before the lane, so lessons whose

@@ -498,9 +498,9 @@ export class CuePlanner {
         // previews (glossary, lesson narration) sound whatever layers the lesson has on
         this.previews = this.previews.filter((p) => t < p.t0 + p.durS * 1000 && t >= p.t0 - 1);
         const tier: SpeedTier = this.layersValue.speedBudget === true ? this.tiers.update(length(s.vel), t) : 0;
-        let height: HeightPlan | null = this.on.has('height') && layerPlanOn(tier) ? this.heightPlan(input) : null;
-        let speed: SpeedPlan | null = this.on.has('speed') && layerPlanOn(tier) ? this.speedPlan(length(s.vel)) : null;
-        let room: RoomPlan | null = this.on.has('room') ? this.roomPlan(openness(scene.meanFreeDistanceM, { opennessFullM: theme.layers.room.params['opennessFullM'] as number })) : null;
+        let height: HeightPlan | null = this.on.has('height') && layerPlanOn(tier, 'height') ? this.heightPlan(input) : null;
+        let speed: SpeedPlan | null = this.on.has('speed') && layerPlanOn(tier, 'speed') ? this.speedPlan(length(s.vel)) : null;
+        let room: RoomPlan | null = this.on.has('room') && layerPlanOn(tier, 'room') ? this.roomPlan(openness(scene.meanFreeDistanceM, { opennessFullM: theme.layers.room.params['opennessFullM'] as number })) : null;
         for (const p of this.previews) {
             const u = clamp01((t - p.t0) / (p.durS * 1000));
             const layer = p.cue.split('.')[0] as LayerId;
@@ -514,7 +514,7 @@ export class CuePlanner {
         }
 
         // the stream budget (sonic3 plan 2.2): at speed the low ranks stop; the cut keys are reported as dropped
-        const urgentKeys = new Set(this.on.has('safety') ? scene.hazards.filter((h) => isUrgent(h.ttcS, h.distance)).map((h) => `safety:${h.sector}`) : []);
+        const urgentKeys = new Set(this.on.has('safety') ? scene.hazards.filter((h) => isUrgent(h.ttcS, h.distance, length(s.vel))).map((h) => `safety:${h.sector}`) : []);
         const budget = applyBudget(requests, tier, urgentKeys);
         const alloc = this.moving.assign(budget.kept.map((r) => ({ key: r.key, priority: r.priority })));
         const voices: VoicePlan[] = [];
@@ -524,7 +524,7 @@ export class CuePlanner {
         }
         voices.sort((a, b) => b.priority - a.priority);
 
-        const urgent = this.on.has('safety') && scene.hazards.some((h) => isUrgent(h.ttcS, h.distance));
+        const urgent = this.on.has('safety') && scene.hazards.some((h) => isUrgent(h.ttcS, h.distance, length(s.vel)));
         this.notes = this.notes.filter((n) => n.endT > t);
         for (let i = 0; i < this.staticSlots.length; i++) {
             const n = this.staticSlots[i];

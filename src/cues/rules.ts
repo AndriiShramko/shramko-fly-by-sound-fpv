@@ -9,6 +9,7 @@
 // is a note again.
 import type { SonicPrefs, ThemeDef, Vec3 } from '../contract';
 import { heightNoteIndex, noteHz, scaleSize, shiftNote } from '../theme/pitch';
+import { urgentM } from './lead';
 
 export const clamp = (v: number, lo: number, hi: number): number => Math.min(Math.max(v, lo), hi);
 export const clamp01 = (v: number): number => clamp(v, 0, 1);
@@ -58,8 +59,12 @@ export const URGENT_DISTANCE_M = 0.4;
 /** How far the other layers duck while a hazard is urgent, dB. */
 export const URGENT_DUCK_DB = 9;
 
-export function isUrgent(ttcS: number | null, distanceM: number): boolean {
-    return (ttcS !== null && ttcS < URGENT_TTC_S) || distanceM < URGENT_DISTANCE_M;
+/**
+ * Lane sonic4 design 1: at speed (4.5 m/s and up) the urgent distance is the stop distance plus the reaction's flight
+ * (cues/lead.ts urgentM); under 4.5 m/s it is URGENT_DISTANCE_M as before.
+ */
+export function isUrgent(ttcS: number | null, distanceM: number, speedMps = 0): boolean {
+    return (ttcS !== null && ttcS < URGENT_TTC_S) || distanceM < urgentM(URGENT_DISTANCE_M, speedMps);
 }
 
 // ------------------------------------------------------------------ distance, redundantly

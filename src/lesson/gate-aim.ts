@@ -10,6 +10,7 @@
 // All distances are estimates (not measured yet by tools/ear-pilot.ts); the S1 browser runs measure them on the scans.
 import type { SonicObject, Vec3 } from '../contract';
 import { quatRotate } from '../util/vec';
+import { approachM, leadM, LEAD_THROUGH_S } from '../cues/lead';
 import { opening, toLocal } from './goals';
 
 /** the approach point's distance out from the gate on its entry side, m (estimate) */
@@ -34,18 +35,22 @@ function isOpening(o: SonicObject): boolean {
 }
 
 /** The local point (gate frame) the hum aims at for a craft at `pos`; null for an object that is no gate to fly through. */
-export function gateAimLocal(gate: SonicObject, pos: Vec3): Vec3 | null {
+export function gateAimLocal(gate: SonicObject, pos: Vec3, speedMps = 0): Vec3 | null {
     if (!isOpening(gate)) return null;
     const [x, y, z] = toLocal(gate, pos);
     const o = opening(gate.shape);
+    // lane sonic4 design 1: at speed the approach point lies a turn radius plus 1 s out and the through distance is
+    // 0.6 s of flight (cues/lead.ts); under 4.5 m/s both stay the metres of S1
+    const approach = approachM(GATE_AIM_APPROACH_M, speedMps);
+    const through = leadM(GATE_AIM_THROUGH_M, LEAD_THROUGH_S, speedMps);
     if (z <= 0) {
         // behind: go around the frame on the side the craft is on, out to the approach distance
         const side = x < 0 ? -1 : 1;
-        return [side * (o.edge + GATE_AIM_AROUND_M), 0, GATE_AIM_APPROACH_M];
+        return [side * (o.edge + GATE_AIM_AROUND_M), 0, approach];
     }
     // close to the plane and in front of the opening: beyond the gate, so the hum stays ahead while the craft passes
-    if (z <= GATE_AIM_THROUGH_M && o.inside(x, y)) return [0, 0, -GATE_AIM_PAST_M];
-    if (z <= GATE_AIM_THROUGH_M) {
+    if (z <= through && o.inside(x, y)) return [0, 0, -GATE_AIM_PAST_M];
+    if (z <= through) {
         // close to the plane beside the opening (S2, Tunis g11 and g14: the approach point lay behind the craft, the hum
         // turned 85 to 106 degrees, the craft crossed the plane 0.8 m off the centre: a miss). A point beyond the gate on the
         // axis when the straight way to it crosses the plane well inside the opening; else a point on the axis that keeps
@@ -57,12 +62,12 @@ export function gateAimLocal(gate: SonicObject, pos: Vec3): Vec3 | null {
     }
     const inCone = Math.hypot(x, y) <= Math.max(o.edge * 0.5, GATE_AIM_CONE * z);
     // the approach point is never behind the craft (it was 3 m out for a craft 2 to 3 m out)
-    return inCone ? [0, 0, 0] : [0, 0, Math.min(GATE_AIM_APPROACH_M, Math.max(z * 0.5, GATE_AIM_MIN_M))];
+    return inCone ? [0, 0, 0] : [0, 0, Math.min(approach, Math.max(z * 0.5, GATE_AIM_MIN_M))];
 }
 
 /** The gate as the hum's target, moved to its aim point (same id, so the planner's on-course state follows the gate). */
-export function gateAim(gate: SonicObject, pos: Vec3): SonicObject {
-    const local = gateAimLocal(gate, pos);
+export function gateAim(gate: SonicObject, pos: Vec3, speedMps = 0): SonicObject {
+    const local = gateAimLocal(gate, pos, speedMps);
     if (local === null) return gate;
     const w = quatRotate(gate.quat, local);
     return { ...gate, pos: [gate.pos[0] + w[0], gate.pos[1] + w[1], gate.pos[2] + w[2]] };

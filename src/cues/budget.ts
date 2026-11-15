@@ -19,7 +19,7 @@ export const TIER_DOWN_SHARE = 0.85;
 /** a tier is held at least this long before it changes again, ms (estimate) */
 export const TIER_HOLD_MS = 500;
 /** continuous streams at once, by tier */
-export const TIER_STREAMS: readonly [number, number, number, number] = [Number.POSITIVE_INFINITY, 3, 2, 2];
+export const TIER_STREAMS: readonly [number, number, number, number] = [Number.POSITIVE_INFINITY, 2, 2, 2];
 
 /** The tier with hysteresis: up at an edge, down at TIER_DOWN_SHARE of it, never two changes within TIER_HOLD_MS. */
 export class TierGate {
@@ -73,21 +73,31 @@ export interface BudgetResult<T> {
 }
 
 /**
- * The streams that sound at a tier. Tier 0 keeps everything. Tier 1 and up: no shape trace, then the `TIER_STREAMS`
- * first by rank (ties: higher priority first, then key). Tier 2 and up: when an open-way chime sounds it replaces the
- * hazards (it says where to go, they say where not to).
+ * The streams that sound at a tier. Tier 0 keeps everything. Tier 1 and up (lane sonic4 design 2, V1-a: the plan kept
+ * 5 streams at speed and the ear pilot follows 2): one guide and one danger. The guide is the target hum; the danger is
+ * the most pressing urgent hazard (rules.ts isUrgent, its distance in seconds at speed), or, when an open-way chime
+ * sounds while a hazard is urgent, the chime (the danger's way out). Stopped: the shape trace, every hazard that is not
+ * urgent, every second urgent hazard, a chime without an urgent hazard. Then at most `TIER_STREAMS` by rank (ties:
+ * higher priority first, then key).
  */
 export function applyBudget<T extends StreamRequest>(requests: readonly T[], tier: SpeedTier, urgentKeys: ReadonlySet<string>): BudgetResult<T> {
     if (tier === 0) return { kept: [...requests], cut: [] };
     const free = requests.some((r) => r.cue === 'safety.free');
+    const danger = requests.some((r) => streamRank(r, urgentKeys) === 1);
     const streams: { readonly r: T; readonly rank: number }[] = [];
     const kept: T[] = [];
     const cut: string[] = [];
     for (const r of requests) {
         const rank = streamRank(r, urgentKeys);
         if (rank === null) kept.push(r);
-        else if (rank === 6 || (tier >= 2 && free && (rank === 1 || rank === 4))) cut.push(r.key);
+        else if (rank === 6 || rank === 4 || (rank === 3 && !danger) || (rank === 1 && free)) cut.push(r.key);
         else streams.push({ r, rank });
+    }
+    // one danger: the first urgent hazard (or the chime) by priority; the others stop
+    const dangers = streams.filter((s) => s.rank === 1 || s.rank === 3).sort((a, b) => b.r.priority - a.r.priority || (a.r.key < b.r.key ? -1 : 1));
+    for (const s of dangers.slice(1)) {
+        streams.splice(streams.indexOf(s), 1);
+        cut.push(s.r.key);
     }
     streams.sort((a, b) => a.rank - b.rank || b.r.priority - a.r.priority || (a.r.key < b.r.key ? -1 : a.r.key > b.r.key ? 1 : 0));
     const n = TIER_STREAMS[tier];
@@ -95,7 +105,10 @@ export function applyBudget<T extends StreamRequest>(requests: readonly T[], tie
     return { kept: requests.filter((r) => kept.includes(r)), cut };
 }
 
-/** Speed ticks and the height tone stop at tier 2 and up (the guide's pitch says up and down there). */
-export function layerPlanOn(tier: SpeedTier): boolean {
-    return tier < 2;
+/**
+ * The beds at a tier. The height tone stops at tier 2 and up (the guide's pitch says up and down there); lane sonic4
+ * design 2: the speed ticks and the room bed stop from tier 1 (the plan kept them at speed, V1-a).
+ */
+export function layerPlanOn(tier: SpeedTier, layer: 'height' | 'speed' | 'room' = 'height'): boolean {
+    return layer === 'height' ? tier < 2 : tier < 1;
 }

@@ -57,19 +57,19 @@ describe('streams at a tier', () => {
         }
     });
 
-    it('tier 1: the guide, the open-way chime and the urgent hazard; no shape trace', () => {
-        expect(keys(1, ['safety:left'])).toEqual(['safety:left', 'free:right', 'target', 'preview:1']);
-        expect(keys(1)).not.toContain('shape');
+    it('sonic4 design 2, tier 1 and up: one guide and one danger; the chime is the danger when a hazard is urgent; no shape trace', () => {
+        for (const tier of [1, 2, 3] as const) {
+            expect(keys(tier, ['safety:left']), `tier ${tier}`).toEqual(['free:right', 'target', 'preview:1']);
+            expect(keys(tier), `tier ${tier}`).toEqual(['target', 'preview:1']);
+            const noFree = FRAME.filter((r) => r.cue !== 'safety.free');
+            expect(keys(tier, ['safety:front', 'safety:right'], noFree), `tier ${tier}`).toEqual(['safety:front', 'target', 'preview:1']);
+            expect(keys(tier, [], noFree), `tier ${tier}`).toEqual(['target', 'preview:1']);
+        }
     });
 
-    it('tier 2: the guide is always kept, and the open-way chime replaces the hazards', () => {
-        expect(keys(2, ['safety:front'])).toEqual(['free:right', 'target', 'preview:1']);
-        const noFree = FRAME.filter((r) => r.cue !== 'safety.free');
-        expect(keys(2, ['safety:front'], noFree)).toEqual(['safety:front', 'target', 'preview:1']);
-        expect(keys(2, [], noFree)).toEqual(['safety:front', 'target', 'preview:1']);
-    });
-
-    it('speed ticks and the height tone stop at tier 2 and up', () => {
+    it('sonic4 design 2: the height tone stops at tier 2, the speed ticks and the room bed at tier 1', () => {
         expect([0, 1, 2, 3].map((t) => layerPlanOn(t as SpeedTier))).toEqual([true, true, false, false]);
+        expect([0, 1, 2, 3].map((t) => layerPlanOn(t as SpeedTier, 'speed'))).toEqual([true, false, false, false]);
+        expect([0, 1, 2, 3].map((t) => layerPlanOn(t as SpeedTier, 'room'))).toEqual([true, false, false, false]);
     });
 });
