@@ -48,7 +48,7 @@
     "speedBudget": true
   },
   "module": 5,
-  "order": 24,
+  "order": 25,
   "pass": {
     "attempts": 3,
     "blocking": true,

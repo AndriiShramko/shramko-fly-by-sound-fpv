@@ -11,6 +11,7 @@ import earsShapes from '../../lessons/ears-shapes.json';
 import earsWalls from '../../lessons/ears-walls.json';
 import freeGarden from '../../lessons/free-garden.json';
 import hoverHeight from '../../lessons/hover-height.json';
+import turnListen from '../../lessons/turn-listen.json';
 import hoverTurn from '../../lessons/hover-turn.json';
 import moveSpeed from '../../lessons/move-speed.json';
 import moveStop from '../../lessons/move-stop.json';
@@ -46,6 +47,7 @@ const SOURCES: Readonly<Record<string, unknown>> = {
     'ears-shapes': earsShapes,
     'ears-game': earsGame,
     'hover-height': hoverHeight,
+    'turn-listen': turnListen,
     'hover-turn': hoverTurn,
     'move-speed': moveSpeed,
     'move-stop': moveStop,

@@ -1,8 +1,8 @@
 {
  "format": "shramko-listen-evidence/1",
- "key": "fe2c0b88a30b98f3395e318cfe3fb06745d5b12d86dba94db00fdb64b476492d",
+ "key": "dcc01838eed509cd7ebf233c773ae64b6b9c888dc8b2d49a77641fbd7ccf7a79",
  "inputs": {
-  "hash": "fe2c0b88a30b98f3395e318cfe3fb06745d5b12d86dba94db00fdb64b476492d",
+  "hash": "dcc01838eed509cd7ebf233c773ae64b6b9c888dc8b2d49a77641fbd7ccf7a79",
   "files": 15,
   "version": 2,
   "voices": {
@@ -32,7 +32,7 @@
    "numpy": "2.4.6"
   }
  },
- "date": "2026-11-15T01:26:50.788Z",
+ "date": "2026-11-15T07:00:28.991Z",
  "id": "VL-4-words",
  "claim": "every line of the four locales, said by the local Windows voice of its language and transcribed by Whisper large-v3, has a word error rate (case and punctuation normalised) at most its language's bound, and every line that names a key is heard with the key's name as a word of its own; the Russian lines said by the English voice fail the bound, and v0.13's lines that name a key, said by their voices, lose a key in each of Spanish, Polish and Russian",
  "run": "pnpm listen:words",
@@ -42,10 +42,10 @@
  "languages": {
   "en": {
    "voice": "Microsoft David Desktop",
-   "lines": 573,
-   "words": 4587,
+   "lines": 580,
+   "words": 4693,
    "bound": 0.2,
-   "exact": 565,
+   "exact": 572,
    "meanRate": 0.0012,
    "maxRate": 0.1667,
    "over": [],
@@ -170,11 +170,11 @@
   },
   "es": {
    "voice": "Microsoft Helena Desktop",
-   "lines": 573,
-   "words": 4639,
+   "lines": 580,
+   "words": 4753,
    "bound": 0.2,
-   "exact": 558,
-   "meanRate": 0.0027,
+   "exact": 565,
+   "meanRate": 0.0026,
    "maxRate": 0.2,
    "over": [],
    "keys": {
@@ -228,10 +228,10 @@
   },
   "pl": {
    "voice": "Microsoft Paulina Desktop",
-   "lines": 573,
-   "words": 3930,
+   "lines": 580,
+   "words": 4027,
    "bound": 0.2,
-   "exact": 560,
+   "exact": 566,
    "meanRate": 0.0028,
    "maxRate": 0.2,
    "over": [],
@@ -321,11 +321,11 @@
   },
   "ru": {
    "voice": "Microsoft Irina Desktop",
-   "lines": 573,
-   "words": 3745,
+   "lines": 580,
+   "words": 3840,
    "bound": 0.2,
-   "exact": 555,
-   "meanRate": 0.0032,
+   "exact": 562,
+   "meanRate": 0.0031,
    "maxRate": 0.2,
    "over": [],
    "keys": {
@@ -500,8 +500,8 @@
  "control": {
   "locale": "ru",
   "voice": "Microsoft David Desktop",
-  "lines": 573,
-  "overBound": 573,
+  "lines": 580,
+  "overBound": 580,
   "share": 1,
   "medianRate": 1,
   "fails": true
@@ -1515,6 +1515,14 @@
    "heard": "Teraz lecisz, ale spokojnie. Dran sam się poziomuje, więc ty wybierasz tylko, jak wysoko ma być.",
    "rawRate": 0.0625,
    "rate": 0
+  },
+  {
+   "locale": "pl",
+   "key": "lesson.turn-listen.intro.2",
+   "text": "Porusz drążkiem obrotu trochę w lewo, potem trochę w prawo, i słuchaj. Dźwięk z przodu ucieka od strony obrotu. Dźwięk z tyłu wchodzi do ucha po tej stronie, w którą się obracasz.",
+   "heard": "Porusz drążkiem obrotu trochę w lewo, potem trochę w prawo i słuchaj. Dźwięk z przodu ucieka od strony obrotu. Dźwięk z tyłu wchodzi do ucha po tej stronie, w którą się obrakasz.",
+   "rawRate": 0.0313,
+   "rate": 0.0313
   },
   {
    "locale": "pl",

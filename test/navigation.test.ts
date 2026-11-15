@@ -260,7 +260,7 @@ describe('where a go action leads', () => {
         expect(lessonAfter('hover-height', 'fast')?.id).toBe(fast[fast.indexOf('hover-height') + 1]);
         expect(lessonBefore('hover-height', 'fast')?.id).toBe('ears-headphones');
         expect(lessonAfter('hover-turn', 'fast')?.id).toBe(full[full.indexOf('hover-turn') + 1]);
-        expect(lessonBefore('hover-turn', 'fast')?.id).toBe('hover-height');
+        expect(lessonBefore('hover-turn', 'fast')?.id).toBe('turn-listen');
         expect(lessonBefore(full[0] as string, 'full')).toBeNull();
         expect(lessonAfter(full.at(-1) as string, 'full')).toBeNull();
     });

@@ -185,7 +185,9 @@ describe('the last run of the words check (evidence/listen/VL-4-words.json)', ()
         expect(ev.rows.length).toBeGreaterThan(0);
         for (const r of ev.rows) {
             const s = score({ locale: r.locale, key: r.key, text: r.text }, VOICES[r.locale], r.heard);
-            expect(s.rate, `${r.locale} ${r.key}`).toBeCloseTo(r.rate, 4);
+            // rounded the way the check writes its evidence (tools/listen-words.ts rowOut): a rate on a half of the fourth
+            // decimal (pl turn-listen intro.2, 1/32) is 0.00005 from its written value, which toBeCloseTo(.., 4) refuses
+            expect(Math.round(s.rate * 10000) / 10000, `${r.locale} ${r.key}`).toBe(r.rate);
             expect(s.rate, `${r.locale} ${r.key}: "${r.text}" heard "${r.heard}"`).toBeLessThanOrEqual(BOUNDS[r.locale]);
         }
     });
