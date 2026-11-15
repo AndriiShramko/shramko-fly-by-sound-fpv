@@ -256,6 +256,13 @@ export interface RunnerOptions {
      */
     readonly returnTo?: string | null;
     /**
+     * Train 3 (the owner's message 54: "I just want to open a scan and fly"): a free flight. The craft is the pilot's from the
+     * first frame; the task is said over the flight and the first attempt begins where the craft is when it ends: nothing he
+     * flew while it was said is undone (no place back to the start). Absent or false: as before (a course's first attempt
+     * begins at its start when the craft left it during the task).
+     */
+    readonly freeFlight?: boolean;
+    /**
      * @internal For the package's own negative controls only (review R15): each brings back a rule of v0.12 that a
      * check must catch. Not part of the host API; a host never sets it.
      */
@@ -893,7 +900,7 @@ class Runner implements LessonSession {
         // attempt counts (the distance flown, the gates) is the course's, not what is left of it (a pilot who flew 170 m
         // of the corridor during its task could never meet its 240 m before the dead end, and every touch there sent him
         // back to cp-5 for ever: the simulator's corridor pilot, found after the fix of review R9)
-        const left = first && this.prev !== null && dist3(this.prev.pos, this.startPose(1).pos) > START_SLACK_M;
+        const left = first && this.o.freeFlight !== true && this.prev !== null && dist3(this.prev.pos, this.startPose(1).pos) > START_SLACK_M;
         if ((!first || left) && !this.ears && this.returnsToStart()) {
             if (resume !== null) {
                 // the path flown to that point counts again, so the course's distance goals stay where they were

@@ -45,7 +45,8 @@ describe('the defaults', () => {
             motorGainDb: 0,
             heightDirection: true,
             beacon: true,
-            motorChoice: false
+            motorChoice: false,
+            narrator: true
         });
     });
 
