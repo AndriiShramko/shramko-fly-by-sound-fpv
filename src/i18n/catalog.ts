@@ -275,6 +275,8 @@ export const FREE_KEYS = [
     // flying back along a track, a gate crossed from its back side (M41-15)
     'fly.wrong-way',
     'fly.wrong-side',
+    // the gate that counts next passed beside it or over it, once: where it is (owner, message 53: no reproach)
+    'fly.gate-behind',
     'fly.lesson-passed',
     'fly.last-lesson',
     'fly.back-to',

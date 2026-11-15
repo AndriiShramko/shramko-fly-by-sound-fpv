@@ -99,9 +99,9 @@ import type { Checkpoint, CueEvent, CueId, FlightSample, Goal, IntroCue, LessonD
 import { DICTS } from '../i18n/dicts';
 import { createTranslator, type Dicts, type Translator } from '../i18n/translator';
 import { createRng } from '../util/rng';
-import { distance as dist3, dot, normalize, sub, yawQuat } from '../util/vec';
+import { distance as dist3, dot, normalize, quatRotate, sub, yawQuat } from '../util/vec';
 import { createAnalyticWorld, makeSpec, type AnalyticWorldInfo } from '../world/analytic-world';
-import { BODY_RADIUS_M, createTracker, toLocal, type GoalScore, type GoalTracker, type Outcome } from './goals';
+import { BODY_RADIUS_M, createTracker, gateCrossing, toLocal, type GoalScore, type GoalTracker, type Outcome } from './goals';
 import { getLesson, isShippedLesson, lessonAfter, lessonPaths, SCAN_FREE_ID } from './library';
 import { APPROACHES, GAME_SCENE_S, isGlossary, NARRATED_SCENE_S, playS, REPEAT_GAP_S, REPEAT_PLAYS, SHAPE_ORDER } from './sounds';
 import { lessonTrack, yawOf, type LessonTrack, type TrackPoint } from './track';
@@ -484,6 +484,8 @@ class Runner implements LessonSession {
     private backSince: number | null = null;
     private lastWrongWay = -Infinity;
     private lastWrongSide = -Infinity;
+    /** the id of the gate whose "The gate is behind you" was said (D7: once for a gate passed beside it) */
+    private behindSaid: string | null = null;
     // a course's leg (lane s13-elev, review E1, E3, E8): the gate passed last in this attempt (where the leg to the next
     // one begins; null: the start), and whether the craft has flown along that leg since it began (or since it was placed)
     private lastGate: SonicObject | null = null;
@@ -930,6 +932,7 @@ class Runner implements LessonSession {
                 // the leg to the next gate begins here; nothing of it is flown yet
                 this.lastGate = gate;
                 this.legFlown = false;
+                this.behindSaid = null;
                 this.emit({ t: at, kind: 'gate', gateId: gate.id, index, missM: Math.round(missM * 1000) / 1000 });
                 // lane sonic-beacon: where the target after the next one is (the planner previews the hum from there)
                 const after = this.tracker?.targetAfter?.() ?? null;
@@ -1027,7 +1030,7 @@ class Runner implements LessonSession {
                 this.legFlown = false;
             }
         }
-        this.checkDirection(s);
+        this.checkDirection(s, prev);
         this.evaluateGoals(s, prev, t);
     }
 
@@ -1117,11 +1120,27 @@ class Runner implements LessonSession {
     }
 
     /** M41-15: flying against the way forward for more than a second, told at most once every few seconds. */
-    private checkDirection(s: FlightSample): void {
+    private checkDirection(s: FlightSample, prev: FlightSample | null = null): void {
         const way = this.wayForward(s);
         // the nose, horizontal (headingBasis: back is +Z at yaw 0): backing up or sliding aside is never the wrong way
         const nose = headingBasis(s.yawDeg).back;
         const noseFirst = -(s.vel[0] * nose[0] + s.vel[2] * nose[2]) > WRONG_WAY_MPS;
+        // owner, message 53 (lane onecourse, D7): the wrong way is judged against the pilot's goal, the gate that counts next.
+        // A gate passed beside or over it is said once ("The gate is behind you"), and the hum leads back to it; while the craft
+        // comes nearer to that gate, or to the place in front of it from which it is passed (its line-up point), nothing says
+        // the wrong way, whatever way the track goes there.
+        const gate = this.courseGate();
+        if (gate !== null && prev !== null) {
+            const cross = gateCrossing(gate, prev.pos, s.pos);
+            if (cross !== null && !cross.inside && !cross.near && this.behindSaid !== gate.id) {
+                this.behindSaid = gate.id;
+                this.actions.push({ kind: 'say', line: { key: 'fly.gate-behind' }, interrupt: false });
+            }
+        }
+        if (gate !== null && this.nearing(gate, s)) {
+            this.backSince = null;
+            return;
+        }
         if (way === null || dot(s.vel, way.against) >= -WRONG_WAY_MPS || !noseFirst) {
             this.backSince = null;
             return;
@@ -1131,6 +1150,27 @@ class Runner implements LessonSession {
         this.lastWrongWay = s.t;
         this.actions.push({ kind: 'cue', event: { kind: 'wrong-way', dir: this.toListener(way.dir) } });
         this.actions.push({ kind: 'say', line: { key: 'fly.wrong-way' }, interrupt: false });
+    }
+
+    /** the gate of the course flown now that counts next (a 'pass-gates' or 'timed-course' goal), else null */
+    private courseGate(): SonicObject | null {
+        const goal = this.lesson.goals[this.goalIndex];
+        if (goal === undefined || (goal.kind !== 'pass-gates' && goal.kind !== 'timed-course')) return null;
+        return this.tracker?.target() ?? null;
+    }
+
+    /**
+     * D7 (message 53): the craft comes nearer, faster than WRONG_WAY_MPS, to the gate or to its line-up point (the leg's
+     * line-up distance in front of it, on its axis): it is on its way to the gate, not the wrong way.
+     */
+    private nearing(gate: SonicObject, s: FlightSample): boolean {
+        const closing = (p: Vec3): boolean => {
+            const to = sub(p, s.pos);
+            const d = Math.hypot(to[0], to[1], to[2]);
+            return d > 1e-6 && dot(s.vel, to) / d > WRONG_WAY_MPS;
+        };
+        const front = quatRotate(gate.quat, [0, 0, lineUpM(this.legTo(gate).metres)]);
+        return closing(gate.pos) || closing([gate.pos[0] + front[0], gate.pos[1] + front[1], gate.pos[2] + front[2]]);
     }
 
     /**
