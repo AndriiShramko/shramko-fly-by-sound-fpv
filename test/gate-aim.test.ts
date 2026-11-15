@@ -10,7 +10,7 @@ import { flyLesson } from '../src/pilot/ladder';
 import { yawQuat } from '../src/util/vec';
 
 /** a ring of 2 m at [0, 2, -10], turned 90 degrees (its +Z faces world +X) */
-const gate: SonicObject = { id: 'g1', shape: { kind: 'ring', diameter: 2, tube: 0.1 }, pos: [0, 2, -10], quat: yawQuat(Math.PI / 2), order: 1, solid: true, material: 'gate' };
+const gate: SonicObject = { id: 'g1', shape: { kind: 'ring', diameter: 2, tube: 0.1 }, pos: [0, 2, -10], quat: yawQuat(Math.PI / 2), order: 1, solid: true, material: 'gate' as unknown as SonicObject['material'] };
 /** a world point from the gate's frame */
 const world = (l: Vec3): Vec3 => {
     // the inverse of toLocal for this yaw: find it by toLocal of the axes (no new helper in the package)
