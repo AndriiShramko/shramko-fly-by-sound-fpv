@@ -168,11 +168,11 @@ describe('control: the v0.12 timing fails the same check (a line ends at the ear
         }
     }, 120000);
 
-    it('the fact as measured: 282 of the 401 English lines take the Windows voice longer than the estimate', () => {
+    it('the fact as measured: 301 of the 429 English lines take the Windows voice longer than the estimate', () => {
         const en = JSON.parse(readFileSync(new URL('../locales/en.json', import.meta.url), 'utf8')) as Record<string, string>;
         const keys = Object.keys(david);
         const longer = keys.filter((k) => (david[k] as number) > 0.7 + 0.065 * (MEASURED_TEXT[k] ?? (en[k] as string)).length);
-        expect(keys.length).toBe(401);
+        expect(keys.length).toBe(429);
         // 262 until merge s13-merge reworded walls-hall's intro.2 and hint.1 and the corridor's intro.2 (review m4 of
         // lane s13-sound); those three were measured again with the same voice and method (walls-hall's intro.1, not
         // changed then, measured 8.64 s again, as in the fixture). walls-hall's goal.1, reworded at the s13-worlds merge
@@ -201,14 +201,16 @@ describe('control: the v0.12 timing fails the same check (a line ends at the ear
         // the corridor and the tunnels), measured the same way (2026-11-12): 10.23 s, 10.96 s, 15.68 s, all three longer than
         // their estimates (the two reworded ones were before too): 394, 277. The free flight over any scan (train 2, template
         // scan-free) added its seven lines, measured the same way (2026-11-13), five of them longer than their estimates: 401, 282.
-        expect(longer.length).toBe(282);
+        // The speed lessons of train 3 (speed-1 to speed-4) added 28 lines, measured the same way (2026-11-15), 19 of them longer
+        // than their estimates: 429, 301.
+        expect(longer.length).toBe(301);
         // and under v0.12 the first sound of the check plays partly under the line before it
         const s = schedule('ears-headphones', { speech: measuredSpeech(david), runner: v012 });
         const first = s.plays.find((p) => p.kind !== 'one-off');
         expect(speechOverlapMs(s, first?.start ?? 0, first?.end ?? 0)).toBeGreaterThan(500);
     });
 
-    it('the fact as measured in the other languages: 264 of the 487 Spanish lines, 357 of the 487 Polish and all 487 Russian take their voice longer than the estimate (lane s13-elev E2-1)', () => {
+    it('the fact as measured in the other languages: 280 of the 515 Spanish lines, 376 of the 515 Polish and all 515 Russian take their voice longer than the estimate (lane s13-elev E2-1)', () => {
         // Each fixture holds every line of its language that has no parameters, measured on 2026-11-08 with the
         // voice's text as it is in locales/ (no line reworded since, so no MEASURED_TEXT here). None is longer than
         // the runner's fallback (twice the estimate and a second): the longest against its estimate is 1.59 times it
@@ -225,14 +227,15 @@ describe('control: the v0.12 timing fails the same check (a line ends at the ear
         // method: es 10.955, 10.965, 16.36 s (only the description longer, it was not before), pl 11.405, 11.59, 16.23 s and ru
         // 13.34, 12.855, 18.735 s (all longer).
         // The free flight over any scan (train 2, template scan-free) added seven lines, same voices and method (2026-11-13):
-        // longer than the estimate es 2, pl 5, ru 7 of them.
-        const longerThanEstimate: Readonly<Record<Exclude<Locale, 'en'>, number>> = { es: 264, pl: 357, ru: 487 };
+        // longer than the estimate es 2, pl 5, ru 7 of them. The speed lessons of train 3 added 28 lines, same voices and method
+        // (2026-11-15): longer than the estimate es 16, pl 19, ru 28 of them.
+        const longerThanEstimate: Readonly<Record<Exclude<Locale, 'en'>, number>> = { es: 280, pl: 376, ru: 515 };
         for (const locale of OTHER_LOCALES) {
             const dict = JSON.parse(readFileSync(new URL(`../locales/${locale}.json`, import.meta.url), 'utf8')) as Record<string, string>;
             const seconds = OTHER_VOICES[locale].seconds;
             const plain = Object.keys(dict).filter((k) => !(dict[k] as string).includes('{'));
             expect(Object.keys(seconds).sort(), `${locale}: every line without parameters is measured, and nothing else`).toEqual(plain.sort());
-            expect(plain.length, locale).toBe(487);
+            expect(plain.length, locale).toBe(515);
             const estimate = (k: string): number => 0.7 + 0.065 * (dict[k] as string).length;
             const longer = plain.filter((k) => (seconds[k] as number) > estimate(k));
             expect(longer.length, `${locale}: lines longer than the estimate`).toBe(longerThanEstimate[locale]);
