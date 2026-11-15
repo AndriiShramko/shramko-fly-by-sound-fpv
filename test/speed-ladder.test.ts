@@ -33,7 +33,7 @@ describe('speed lessons', () => {
             const l = getLesson(id);
             const r = hum.results.find((x) => x.lessonId === id);
             expect(r, id).toBeDefined();
-            expect(l.assists.maxSpeedMps * 1.25, id).toBeLessThanOrEqual(r?.medianTopMps as number);
+            expect((l.assists.maxSpeedMps as number) * 1.25, id).toBeLessThanOrEqual(r?.medianTopMps as number);
             const c = atCap.lessons[id];
             expect(c?.capMps, id).toBe(l.assists.maxSpeedMps);
             expect(l.attemptLimitS, id).toBe(Math.ceil(Math.max(...(c?.timesS ?? [Infinity])) * 1.5));
@@ -43,7 +43,7 @@ describe('speed lessons', () => {
     it('are flown to their end by the ear pilot at the cap within the lesson time', () => {
         for (const id of SPEED) {
             const l = getLesson(id);
-            const r = ladder(l, [1], [l.assists.maxSpeedMps], { hearing: { attendHum: true }, budget: true, line: true });
+            const r = ladder(l, [1], [l.assists.maxSpeedMps as number], { hearing: { attendHum: true }, budget: true, line: true });
             const f = r.flights[0];
             expect(f?.passed, `${id} ${f?.why}`).toBe(true);
             expect(f?.timeS as number, id).toBeLessThan(l.attemptLimitS as number);
