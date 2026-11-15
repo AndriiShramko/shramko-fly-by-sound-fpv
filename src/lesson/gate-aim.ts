@@ -22,6 +22,10 @@ export const GATE_AIM_PAST_M = 3;
 export const GATE_AIM_CONE = 0.6;
 /** behind the plane the aim lies this far outside the frame's edge, m (estimate) */
 export const GATE_AIM_AROUND_M = 1.5;
+/** close to the plane: the nearest aim point on the axis, in front (slide) or beyond (through), m (estimate) */
+export const GATE_AIM_MIN_M = 1;
+/** the straight way to the point beyond must cross the plane this much inside the opening (1.25: 20 % margin; estimate) */
+export const GATE_AIM_MARGIN = 1.25;
 
 /** Shapes a craft flies through (the others are passed by entering them, as before). */
 function isOpening(o: SonicObject): boolean {
@@ -41,8 +45,19 @@ export function gateAimLocal(gate: SonicObject, pos: Vec3): Vec3 | null {
     }
     // close to the plane and in front of the opening: beyond the gate, so the hum stays ahead while the craft passes
     if (z <= GATE_AIM_THROUGH_M && o.inside(x, y)) return [0, 0, -GATE_AIM_PAST_M];
+    if (z <= GATE_AIM_THROUGH_M) {
+        // close to the plane beside the opening (S2, Tunis g11 and g14: the approach point lay behind the craft, the hum
+        // turned 85 to 106 degrees, the craft crossed the plane 0.8 m off the centre: a miss). A point beyond the gate on the
+        // axis when the straight way to it crosses the plane well inside the opening; else a point on the axis that keeps
+        // the craft off the plane (slide to the axis, or back off a little when very close). Never toward the plane outside.
+        const deep = Math.max(z, GATE_AIM_MIN_M);
+        const k = (deep / (z + deep)) * GATE_AIM_MARGIN;
+        if (o.inside(x * k, y * k)) return [0, 0, -deep];
+        return [0, 0, Math.max(z * 0.5, GATE_AIM_MIN_M)];
+    }
     const inCone = Math.hypot(x, y) <= Math.max(o.edge * 0.5, GATE_AIM_CONE * z);
-    return inCone ? [0, 0, 0] : [0, 0, GATE_AIM_APPROACH_M];
+    // the approach point is never behind the craft (it was 3 m out for a craft 2 to 3 m out)
+    return inCone ? [0, 0, 0] : [0, 0, Math.min(GATE_AIM_APPROACH_M, Math.max(z * 0.5, GATE_AIM_MIN_M))];
 }
 
 /** The gate as the hum's target, moved to its aim point (same id, so the planner's on-course state follows the gate). */

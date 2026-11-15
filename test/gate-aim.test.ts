@@ -30,7 +30,32 @@ describe('gate aim, pure', () => {
     });
 
     it('in front, off the axis: the approach point on the axis', () => {
-        expect(gateAimLocal(gate, world([6, 0, 4]))).toEqual([0, 0, GATE_AIM_APPROACH_M]);
+        expect(gateAimLocal(gate, world([6, 0, 8]))).toEqual([0, 0, GATE_AIM_APPROACH_M]);
+        // 4 m out: the approach point is half way, never behind the craft
+        expect((gateAimLocal(gate, world([6, 0, 4])) as Vec3)[2]).toBeCloseTo(2, 6);
+    });
+
+    it('S2 Tunis g14: close to the plane beside the opening the aim is never behind the craft and never across the plane outside the opening', () => {
+        // the miss record of Tunis 5 m/s: ring 1.2 m, craft at local [-0.8, -0.3, 1.1], hum turned 90 degrees, plane crossed 0.8 m out
+        const ring: SonicObject = { ...gate, shape: { kind: 'ring', diameter: 1.2, tube: 0.08 } };
+        const r = 0.6;
+        let checked = 0;
+        for (let x = -3; x <= 3; x += 0.1) {
+            for (let z = 0.05; z <= 4; z += 0.1) {
+                if (Math.hypot(x, -0.3) <= r) continue; // in front of the opening: beyond the gate, as before
+                const a = gateAimLocal(ring, world([x, -0.3, z])) as Vec3;
+                checked++;
+                // never behind the craft
+                expect(a[2]).toBeLessThanOrEqual(Math.max(z, 1) + 1e-9);
+                // the straight way from the craft to the aim crosses the plane only inside the opening
+                if (a[2] < 0) {
+                    const k = z / (z - a[2]);
+                    expect(Math.hypot(x + (a[0] - x) * k, -0.3 + (a[1] + 0.3) * k)).toBeLessThan(r);
+                }
+            }
+        }
+        expect(checked).toBeGreaterThan(1000);
+        expect((gateAimLocal(ring, world([-0.8, -0.3, 1.1])) as Vec3)[2]).toBeLessThan(0);
     });
 
     it('in the approach cone: the centre; close to the plane in front of the opening: beyond the gate', () => {
