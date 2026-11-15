@@ -72,7 +72,7 @@ Everything works with the keyboard alone, and a headless check proves it (`pnpm 
 - the shared contract (`src/contract.ts`): the types both repositories compile against;
 - the analytic lesson worlds (every version of a generator that was ever published still builds, so a recording's
   walls can be built again), the scene sampler, tracks, themes and pilot preferences;
-- the lessons (28 in modules 0 to 7, and a fast path of 8) and the lesson runner;
+- the lessons (32 in modules 0 to 7, and a fast path of 8) and the lesson runner;
 - the strings in English, Spanish, Polish and Russian (`locales/`);
 - the audio engine in `src/audio/`, the only code that touches the browser;
 - the session package format, the replay core and the report tool.

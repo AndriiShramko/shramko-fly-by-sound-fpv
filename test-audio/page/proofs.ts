@@ -527,7 +527,7 @@ async function engineReset(): Promise<ProofResult> {
 // ------------------------------------------------------------------ 9. the racing line's side (sonic3 plan 2.3)
 
 async function lineSide(): Promise<ProofResult> {
-    const claim = 'the racing line 30 degrees to the right is heard 8 dB or more louder in the right ear below 1 kHz (the hum's band), and 30 degrees to the left in the left ear, not by the HRTF alone (the beacon alone gives about 2 dB there)';
+    const claim = 'the racing line 30 degrees to the right is heard 8 dB or more louder in the right ear below 1 kHz (the band of the hum), and 30 degrees to the left in the left ear, not by the HRTF alone (the beacon alone gives about 2 dB there)';
     const targetOnly: LessonLayers = { on: ['target'], heightBandM: null, hazardVoices: 0, racingLine: true };
     const run = async (line: boolean): Promise<Check> => {
         const side = async (deg: number): Promise<number> => {
