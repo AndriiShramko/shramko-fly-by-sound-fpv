@@ -107,6 +107,8 @@ import { APPROACHES, GAME_SCENE_S, isGlossary, NARRATED_SCENE_S, playS, REPEAT_G
 import { lessonTrack, yawOf, type LessonTrack, type TrackPoint } from './track';
 import { headingBasis, worldToListener } from '../sense/frame';
 import { beaconPointIndex, DEMO_TARGET_ID, lineClear, trackCorners } from '../cues/beacon';
+import { RacingLine, type SonicLineTarget } from '../cues/line';
+import { gateAim } from './gate-aim';
 
 // ------------------------------------------------------------------ host interface
 
@@ -477,6 +479,8 @@ class Runner implements LessonSession {
     private trackValue: LessonTrack | null | undefined = undefined;
     /** the track's positions and corner indices for beaconTarget(), built once (the track never changes; review R12) */
     private beaconTrackValue: { readonly positions: readonly Vec3[]; readonly corners: ReadonlySet<number> } | null = null;
+    /** sonic3 plan 2.3: the racing line of a lesson with layers.racingLine, built once from the start and the track */
+    private lineValue: RacingLine | null | undefined = undefined;
     private backSince: number | null = null;
     private lastWrongWay = -Infinity;
     private lastWrongSide = -Infinity;
@@ -1993,7 +1997,13 @@ class Runner implements LessonSession {
      */
     beaconTarget(): SonicObject | null {
         const target = this.target();
-        if (target !== null || this.ears || this.left) return target;
+        if (this.ears || this.left) return target;
+        if (this.lesson.layers.racingLine === true) {
+            const line = this.lineTarget();
+            if (line !== null) return line;
+        }
+        // sonic3 S1 (layers.gateAim): a gate's hum leads through its opening from the entry side (lesson/gate-aim.ts)
+        if (target !== null) return this.lesson.layers.gateAim === true && target.order !== null ? gateAim(target, this.prev?.pos ?? this.startPose(Math.max(this.attemptNo, 1)).pos) : target;
         if (this.phaseValue !== 'flying' && this.phaseValue !== 'between') return null;
         // review R1: only a goal flown along the track ('track-end', 'fly-distance') takes the track's point; any other
         // goal without a target (a shape question, a height, a turn) stays silent as before the lane, so lessons whose
@@ -2019,6 +2029,26 @@ class Runner implements LessonSession {
         const point = i === null ? undefined : track.points[i];
         if (point === undefined) return null;
         return { id: `beacon:${point.id}`, shape: { kind: 'zone', size: [1, 1, 1] }, pos: point.pos, quat: yawQuat(yawOf(point.dir)), order: null, solid: false, material: 'obstacle' };
+    }
+
+    /**
+     * sonic3 plan 2.3: the look-ahead point of the racing line (the lesson's start and track smoothed, cues/line.ts) at the
+     * craft's speed, and how far the craft is off the line; null without a track. Between attempts the line starts again.
+     */
+    private lineTarget(): SonicLineTarget | null {
+        if (this.phaseValue !== 'flying' && this.phaseValue !== 'between') return null;
+        if (this.lineValue === undefined) {
+            const track = this.track();
+            this.lineValue = track === null || track.points.length === 0 ? null : new RacingLine([this.startPose(1).pos, ...track.points.map((p) => p.pos)]);
+        }
+        const line = this.lineValue;
+        if (line === null) return null;
+        if (this.phaseValue === 'between') line.reset();
+        const pos = this.prev?.pos ?? this.startPose(Math.max(this.attemptNo, 1)).pos;
+        const v = this.prev?.vel ?? [0, 0, 0];
+        const at = line.update(pos, Math.hypot(v[0], v[1], v[2]));
+        const way = sub(at.ahead, pos);
+        return { id: 'line:ahead', shape: { kind: 'zone', size: [1, 1, 1] }, pos: at.ahead, quat: yawQuat(yawOf(way)), order: null, solid: false, material: 'obstacle', lineOffM: at.offM };
     }
 
     /** What the first goal of an attempt sounds as its target (null for a goal without one: a height, a distance). */

@@ -69,7 +69,8 @@ describe('R1: the track beacon only for a goal flown along the track', () => {
     it('every shipped lesson whose version did not change: beaconTarget() is target() in every frame, the pilot answering 6 s late', () => {
         const swept: string[] = [];
         for (const lesson of SHIPPED_LESSON_IDS.map((id): LessonDef => getLesson(id))) {
-            if (CHANGED.has(lesson.id) || lesson.world.kind !== 'analytic') continue;
+            // a lesson with the racing line aims the hum at the look-ahead point by design (src/cues/line.ts)
+            if (CHANGED.has(lesson.id) || lesson.world.kind !== 'analytic' || lesson.layers.racingLine === true) continue;
             const p = new ScriptedPilot(lesson);
             const truth = truthAnswerer(p);
             // the pilot answers 6 s after a question, not in the tick it is asked (the truth bot's habit)

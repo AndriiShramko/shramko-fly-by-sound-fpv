@@ -80,7 +80,7 @@ export function outsideBox(o: SonicObject, p: Vec3): number {
 }
 
 /** Clear opening of a gate (the half size a craft's centre may be off its centre), and how far its frame reaches. */
-function opening(shape: ObjectShape): { readonly inside: (x: number, y: number) => boolean; readonly edge: number } {
+export function opening(shape: ObjectShape): { readonly inside: (x: number, y: number) => boolean; readonly edge: number } {
     switch (shape.kind) {
         case 'ring':
             return { inside: (x, y) => Math.hypot(x, y) <= shape.diameter / 2, edge: shape.diameter / 2 + 2 * shape.tube };

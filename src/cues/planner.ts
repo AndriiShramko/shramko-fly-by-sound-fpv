@@ -27,7 +27,9 @@ import { headingBasis, listenerBasis, worldToListener, type Basis } from '../sen
 import type { Hazard, SceneSample } from '../sense/types';
 import { applyCalm } from '../theme/calm';
 import { gateMelody, noteHz, noteHzAt } from '../theme/pitch';
+import { applyBudget, layerPlanOn, TierGate, type SpeedTier } from './budget';
 import { beaconBearing, beaconSideIldDb, DEMO_TARGET_ID, foldToFront } from './beacon';
+import { isLineTarget, lineBeat, lineSideIldDb } from './line';
 import { alignOffset, heightTones, isGate, referenceHeightM, targetHeightM, type HeightToneRule, type TargetTone } from './height';
 import { add, dot, length, normalize, quatConjugate, quatRotate, scale, sub, yawQuat } from '../util/vec';
 import {
@@ -186,6 +188,8 @@ export interface FramePlan {
     readonly cues: readonly ActiveCue[];
     /** the free way beside an obstacle ahead, while the open-way chime sounds (M41-14), else null */
     readonly freeWay: FreeWay | null;
+    /** the speed tier of the stream budget (cues/budget.ts); 0 when the lesson has no budget */
+    readonly tier?: SpeedTier;
 }
 
 // ------------------------------------------------------------------ constants
@@ -380,6 +384,7 @@ export class CuePlanner {
     private readonly sampler: SceneSampler;
     private readonly moving: VoiceAllocator;
     private readonly steppedHeight: boolean;
+    private readonly tiers = new TierGate();
     private readonly staticSlots: (SoundingNote | null)[] = new Array<SoundingNote | null>(MAX_STATIC_VOICES).fill(null);
     private previews: Preview[] = [];
     private notes: SoundingNote[] = [];
@@ -452,6 +457,7 @@ export class CuePlanner {
         this.freeLast = null;
         this.praiseCount = 0;
         this.lastT = 0;
+        this.tiers.reset();
     }
 
     private pitch(layer: LayerId): number {
@@ -491,8 +497,9 @@ export class CuePlanner {
         }
         // previews (glossary, lesson narration) sound whatever layers the lesson has on
         this.previews = this.previews.filter((p) => t < p.t0 + p.durS * 1000 && t >= p.t0 - 1);
-        let height: HeightPlan | null = this.on.has('height') ? this.heightPlan(input) : null;
-        let speed: SpeedPlan | null = this.on.has('speed') ? this.speedPlan(length(s.vel)) : null;
+        const tier: SpeedTier = this.layersValue.speedBudget === true ? this.tiers.update(length(s.vel), t) : 0;
+        let height: HeightPlan | null = this.on.has('height') && layerPlanOn(tier) ? this.heightPlan(input) : null;
+        let speed: SpeedPlan | null = this.on.has('speed') && layerPlanOn(tier) ? this.speedPlan(length(s.vel)) : null;
         let room: RoomPlan | null = this.on.has('room') ? this.roomPlan(openness(scene.meanFreeDistanceM, { opennessFullM: theme.layers.room.params['opennessFullM'] as number })) : null;
         for (const p of this.previews) {
             const u = clamp01((t - p.t0) / (p.durS * 1000));
@@ -506,9 +513,12 @@ export class CuePlanner {
             }
         }
 
-        const alloc = this.moving.assign(requests.map((r) => ({ key: r.key, priority: r.priority })));
+        // the stream budget (sonic3 plan 2.2): at speed the low ranks stop; the cut keys are reported as dropped
+        const urgentKeys = new Set(this.on.has('safety') ? scene.hazards.filter((h) => isUrgent(h.ttcS, h.distance)).map((h) => `safety:${h.sector}`) : []);
+        const budget = applyBudget(requests, tier, urgentKeys);
+        const alloc = this.moving.assign(budget.kept.map((r) => ({ key: r.key, priority: r.priority })));
         const voices: VoicePlan[] = [];
-        for (const r of requests) {
+        for (const r of budget.kept) {
             const slot = alloc.slotOf.get(r.key);
             if (slot !== undefined) voices.push({ ...r, slot });
         }
@@ -521,7 +531,8 @@ export class CuePlanner {
             if (n !== null && n !== undefined && n.endT <= t) this.staticSlots[i] = null;
         }
         const cues = this.cues(voices, height, speed, room);
-        return { t, scene, voices, dropped: alloc.dropped, height, speed, room, urgent, cues, freeWay };
+        const dropped = budget.cut.length === 0 ? alloc.dropped : [...alloc.dropped, ...budget.cut];
+        return { t, scene, voices, dropped, height, speed, room, urgent, cues, freeWay, tier };
     }
 
     /** The free way now, with a short hold so the chime does not stutter as the probes pass the obstacle's edge. */
@@ -665,7 +676,9 @@ export class CuePlanner {
         const nose: Vec3 = [-basis.back[0], -basis.back[1], -basis.back[2]];
         const travel = speed > AIM_BY_VELOCITY_MPS ? scale(s.vel, 1 / speed) : normalize([nose[0], 0, nose[2]]);
         const rough = targetRoughness(aimMissM(toWorld, travel), distance, rule);
-        const beat = targetBeat(rough);
+        // sonic3 plan 2.3: on the racing line the beating says the distance off the line, not the aim's miss
+        const line = !trueDir && isLineTarget(target) ? target : null;
+        const beat = line !== null ? lineBeat(line.lineOffM) : targetBeat(rough);
         const rate = targetRateHz(distance, rule);
         const bearing = this.beacon && !trueDir ? beaconBearing(dirL, this.onCourseId === target.id) : null;
         if (!trueDir) this.onCourseId = bearing !== null && bearing.onCourse ? target.id : null;
@@ -681,7 +694,8 @@ export class CuePlanner {
         const dir = bearing === null ? dirL : foldToFront(dirL);
         // off course the beacon adds a level difference between the ears (BEACON_SIDE_DB, check VL-B1): the HRTF alone
         // gives this low hum under 2 dB within 30 degrees of the nose. Beacon off: as before
-        const ildDb = bearing !== null && !bearing.onCourse ? dc.ildDb + beaconSideIldDb(dir) : dc.ildDb;
+        // the racing line: up to LINE_SIDE_DB (10 dB) at 30 degrees, so the side is a level, not an HRTF guess (plan 2.3)
+        const ildDb = bearing !== null && !bearing.onCourse ? dc.ildDb + (line !== null ? lineSideIldDb(dir) : beaconSideIldDb(dir)) : dc.ildDb;
         return {
             key: 'target',
             cue: 'target.hum',

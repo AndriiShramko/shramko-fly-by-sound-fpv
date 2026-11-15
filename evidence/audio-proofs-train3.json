@@ -1,0 +1,508 @@
+{
+  "what": "Fly by Sound audio proofs: the real engine rendered offline in headless Chromium, each check also run on an engine broken on purpose (control), which must fail",
+  "run": "pnpm proof:audio",
+  "date": "2026-11-15T06:40:05.562Z",
+  "browser": "157.0.8103.52",
+  "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/157.0.0.0 Safari/537.36",
+  "sampleRate": 48000,
+  "proofs": [
+    {
+      "name": "direction",
+      "claim": "a wall on the left is heard on the left and one on the right on the right: louder in the near ear over the whole band (2 dB or more) and above 2 kHz (8 dB or more), and earlier in the near ear below 800 Hz (0.25 ms or more); the craft 2.5 m from the wall drifts toward it at 1.2 m/s (2 s to contact: since v0.13 a still craft hears a wall only within 0.8 m)",
+      "shipped": {
+        "ok": true,
+        "measured": {
+          "leftWall": {
+            "LminusRdb": 3.06,
+            "LminusRdbAbove2kHz": 17.91,
+            "leftLeadsMsBelow800Hz": 0.833
+          },
+          "rightWall": {
+            "LminusRdb": -3.23,
+            "LminusRdbAbove2kHz": -18.47,
+            "leftLeadsMsBelow800Hz": -0.833
+          },
+          "thresholds": {
+            "broadDb": 2,
+            "above2kHzDb": 8,
+            "leadMs": 0.25
+          }
+        }
+      },
+      "control": {
+        "ok": false,
+        "measured": {
+          "leftWall": {
+            "LminusRdb": -0.12,
+            "LminusRdbAbove2kHz": -0.05,
+            "leftLeadsMsBelow800Hz": 0
+          },
+          "rightWall": {
+            "LminusRdb": -0.12,
+            "LminusRdbAbove2kHz": -0.05,
+            "leftLeadsMsBelow800Hz": 0
+          },
+          "thresholds": {
+            "broadDb": 2,
+            "above2kHzDb": 8,
+            "leadMs": 0.25
+          }
+        },
+        "broken": "HRTF panner bypassed: both ears get the same signal"
+      },
+      "pass": true
+    },
+    {
+      "name": "pulse-rate",
+      "claim": "the safety pulse period matches the time-to-collision rule within 5 % for times to collision of 0.6, 1.2, 2 and 2.4 s (a wall is heard from 2.5 s since v0.13)",
+      "shipped": {
+        "ok": true,
+        "measured": {
+          "cases": [
+            {
+              "ttcS": 0.6,
+              "expectedS": 0.1611,
+              "measuredS": 0.162,
+              "relError": 0.0056,
+              "pulses": 15
+            },
+            {
+              "ttcS": 1.2,
+              "expectedS": 0.2359,
+              "measuredS": 0.236,
+              "relError": 0.0002,
+              "pulses": 11
+            },
+            {
+              "ttcS": 2,
+              "expectedS": 0.3924,
+              "measuredS": 0.392,
+              "relError": 0.0011,
+              "pulses": 8
+            },
+            {
+              "ttcS": 2.4,
+              "expectedS": 0.5061,
+              "measuredS": 0.506,
+              "relError": 0.0002,
+              "pulses": 7
+            }
+          ],
+          "tolerance": 0.05
+        }
+      },
+      "control": {
+        "ok": false,
+        "measured": {
+          "cases": [
+            {
+              "ttcS": 0.6,
+              "expectedS": 0.1611,
+              "measuredS": 0.186,
+              "relError": 0.1545,
+              "pulses": 14
+            },
+            {
+              "ttcS": 1.2,
+              "expectedS": 0.2359,
+              "measuredS": 0.272,
+              "relError": 0.1528,
+              "pulses": 9
+            },
+            {
+              "ttcS": 2,
+              "expectedS": 0.3924,
+              "measuredS": 0.452,
+              "relError": 0.1518,
+              "pulses": 7
+            },
+            {
+              "ttcS": 2.4,
+              "expectedS": 0.5061,
+              "measuredS": 0.582,
+              "relError": 0.15,
+              "pulses": 6
+            }
+          ],
+          "tolerance": 0.05
+        },
+        "broken": "every pulse period stretched by 15 %"
+      },
+      "pass": true
+    },
+    {
+      "name": "ceiling",
+      "claim": "with every layer at its maximum gain and everything sounding at once, no sample passes -6 dBFS",
+      "shipped": {
+        "ok": true,
+        "measured": {
+          "peak": 0.50081,
+          "peakDbfs": -6.01,
+          "ceilingDbfs": -6
+        }
+      },
+      "control": {
+        "ok": false,
+        "measured": {
+          "peak": 3.19622,
+          "peakDbfs": 10.09,
+          "ceilingDbfs": -6
+        },
+        "broken": "compressor and soft clipper removed"
+      },
+      "pass": true
+    },
+    {
+      "name": "fade-in",
+      "claim": "the output comes in over the theme fade (1 s) on start and again on a re-fade (resume, device change): under 0.1 of full in the first 50 ms, 0.4 to 0.6 at the middle, 0.97 or more after it, never falling",
+      "shipped": {
+        "ok": true,
+        "measured": {
+          "method": "rms of the render over rms of the same render without the fade, 25 ms windows",
+          "start": {
+            "first50ms": 0.006,
+            "middle": 0.512,
+            "afterFade": 1,
+            "monotonic": true,
+            "every100ms": [
+              0.003,
+              0.037,
+              0.116,
+              0.234,
+              0.377,
+              0.533,
+              0.685,
+              0.818,
+              0.922,
+              0.984,
+              1
+            ]
+          },
+          "refade": {
+            "first50ms": 0.004,
+            "middle": 0.51,
+            "afterFade": 1,
+            "monotonic": true,
+            "every100ms": [
+              0.002,
+              0.036,
+              0.114,
+              0.233,
+              0.374,
+              0.531,
+              0.683,
+              0.817,
+              0.921,
+              0.983,
+              1,
+              1
+            ]
+          }
+        }
+      },
+      "control": {
+        "ok": false,
+        "measured": {
+          "method": "rms of the render over rms of the same render without the fade, 25 ms windows",
+          "start": {
+            "first50ms": 1,
+            "middle": 1,
+            "afterFade": 1,
+            "monotonic": true,
+            "every100ms": [
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1
+            ]
+          },
+          "refade": {
+            "first50ms": 1,
+            "middle": 1,
+            "afterFade": 1,
+            "monotonic": true,
+            "every100ms": [
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1
+            ]
+          }
+        },
+        "broken": "no fade: full level at once"
+      },
+      "pass": true
+    },
+    {
+      "name": "voice-budget",
+      "claim": "at most 8 moving voices sound at once when 15 ask for one, the hazards keep theirs, and the engine makes no more than 8 + 24 panners and one for the target note",
+      "shipped": {
+        "ok": true,
+        "measured": {
+          "movingPeak": 8,
+          "budget": 8,
+          "pannersMade": 33,
+          "hazardsKeptTheirVoices": true
+        }
+      },
+      "control": {
+        "ok": false,
+        "measured": {
+          "movingPeak": 15,
+          "budget": 8,
+          "pannersMade": 41,
+          "hazardsKeptTheirVoices": true
+        },
+        "broken": "the budget raised to 16 moving voices"
+      },
+      "pass": true
+    },
+    {
+      "name": "target-note-gap",
+      "claim": "a target note from the target (through its HRTF panner, whose response begins about 5.6 ms late) and the height tone never sound together: in every note of a render, no sample has both above -60 dB of their own peaks",
+      "shipped": {
+        "ok": true,
+        "measured": {
+          "notes": 8,
+          "overlapMsPerNote": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "toneOffToNoteOnMs": [
+            24.25,
+            6,
+            6.083,
+            6.208,
+            6.354,
+            6.333,
+            6.292,
+            6.333
+          ],
+          "noteOffToToneOnMs": [
+            5,
+            2.813,
+            2.896,
+            2.875,
+            3.063,
+            3.042,
+            2.083,
+            2.104
+          ],
+          "thresholdDb": -60
+        }
+      },
+      "control": {
+        "ok": false,
+        "measured": {
+          "notes": 8,
+          "overlapMsPerNote": [
+            6.75,
+            9.188,
+            9.146,
+            9.125,
+            8.479,
+            8.5,
+            9.188,
+            9.229
+          ],
+          "toneOffToNoteOnMs": [
+            24.25,
+            6,
+            6.083,
+            6.208,
+            6.354,
+            6.333,
+            6.292,
+            6.333
+          ],
+          "noteOffToToneOnMs": [
+            0.021,
+            0.021,
+            0.021,
+            0.021,
+            0.021,
+            0.021,
+            0.021,
+            0.021
+          ],
+          "thresholdDb": -60
+        },
+        "broken": "the height tone back at the note's end, not after the HRTF's delay"
+      },
+      "pass": true
+    },
+    {
+      "name": "target-note-pan",
+      "claim": "a target note comes from its own direction from its first milliseconds: after the target moves from the left to the right, the next note's level difference between the ears over its first 20 ms is within 1 dB of the one over its held part",
+      "shipped": {
+        "ok": true,
+        "measured": {
+          "notes": [
+            {
+              "t0": 0.005,
+              "onsetLminusRdb": 4.99,
+              "heldLminusRdb": 4.54
+            },
+            {
+              "t0": 1.255,
+              "onsetLminusRdb": 5.07,
+              "heldLminusRdb": 4.55
+            },
+            {
+              "t0": 2.505,
+              "onsetLminusRdb": -5.07,
+              "heldLminusRdb": -4.55
+            },
+            {
+              "t0": 3.755,
+              "onsetLminusRdb": -5.07,
+              "heldLminusRdb": -4.56
+            }
+          ],
+          "worstOnsetFromHeldDb": 0.52,
+          "thresholdDb": 1,
+          "turnS": 1.9
+        }
+      },
+      "control": {
+        "ok": false,
+        "measured": {
+          "notes": [
+            {
+              "t0": 0.005,
+              "onsetLminusRdb": 1.62,
+              "heldLminusRdb": 4.54
+            },
+            {
+              "t0": 1.255,
+              "onsetLminusRdb": 5.07,
+              "heldLminusRdb": 4.55
+            },
+            {
+              "t0": 2.505,
+              "onsetLminusRdb": 1.99,
+              "heldLminusRdb": -4.55
+            },
+            {
+              "t0": 3.755,
+              "onsetLminusRdb": -5.07,
+              "heldLminusRdb": -4.56
+            }
+          ],
+          "worstOnsetFromHeldDb": 6.54,
+          "thresholdDb": 1,
+          "turnS": 1.9
+        },
+        "broken": "the panner moved at the note's start, not 60 ms before it"
+      },
+      "pass": true
+    },
+    {
+      "name": "engine-reset",
+      "claim": "a new lesson hears nothing of the last one: the craft flies at the left wall, then the host opens the next lesson (its frame clock back at 0, the craft at rest 3 m over the floor and 20 m from every wall, where a new engine voices no hazard) and calls engine.reset(); from the new lesson's first frame to the end of the sampler's hold (300 ms) no hazard of the last lesson is active and no moving voice holds one (the last lesson voiced the left wall up to the switch)",
+      "shipped": {
+        "ok": true,
+        "measured": {
+          "atSwitch": {
+            "cues": [
+              "safety.wall:left",
+              "safety.wall:front-left",
+              "safety.wall:front"
+            ],
+            "voices": [
+              "safety:left",
+              "safety:front-left",
+              "safety:front"
+            ]
+          },
+          "newEngineInTheMiddle": [],
+          "framesOfTheHoldWithTheLastLesson": 0,
+          "of": 18,
+          "first": {
+            "ms": 0,
+            "cues": [],
+            "voices": []
+          }
+        }
+      },
+      "control": {
+        "ok": false,
+        "measured": {
+          "atSwitch": {
+            "cues": [
+              "safety.wall:left",
+              "safety.wall:front-left",
+              "safety.wall:front"
+            ],
+            "voices": [
+              "safety:left",
+              "safety:front-left",
+              "safety:front"
+            ]
+          },
+          "newEngineInTheMiddle": [],
+          "framesOfTheHoldWithTheLastLesson": 18,
+          "of": 18,
+          "first": {
+            "ms": 0,
+            "cues": [
+              "safety.floor:front-down",
+              "safety.ceiling:front-up",
+              "safety.wall:front-left"
+            ],
+            "voices": [
+              "safety:front-down",
+              "safety:front-left",
+              "safety:front-up"
+            ]
+          }
+        },
+        "broken": "no engine.reset() when the next lesson opens"
+      },
+      "pass": true
+    },
+    {
+      "name": "line-side",
+      "claim": "the racing line 30 degrees to the right is heard 8 dB or more louder in the right ear below 1 kHz (the band of the hum), and 30 degrees to the left in the left ear, not by the HRTF alone (the beacon alone gives about 2 dB there)",
+      "shipped": {
+        "ok": true,
+        "measured": {
+          "RminusLdbAt30degRight": 11.51,
+          "RminusLdbAt30degLeft": -11.37,
+          "thresholdDb": 8
+        }
+      },
+      "control": {
+        "ok": false,
+        "measured": {
+          "RminusLdbAt30degRight": 3.66,
+          "RminusLdbAt30degLeft": -3.44,
+          "thresholdDb": 8
+        },
+        "broken": "the same hum as the beacon of a gate (no racing line: its 2 dB side level only)"
+      },
+      "pass": true
+    }
+  ]
+}

@@ -389,6 +389,21 @@ export interface LessonLayers {
     readonly heightBandM: readonly [number, number] | null;
     /** at most this many hazard voices at once (3 or fewer) */
     readonly hazardVoices: number;
+    /**
+     * the stream budget at speed (cues/budget.ts, sonic3 plan 2.2): the faster the craft, the fewer continuous streams.
+     * Off when absent, so the lessons and recordings made before it sound as they did.
+     */
+    readonly speedBudget?: boolean;
+    /**
+     * the racing line (cues/line.ts, sonic3 plan 2.3): the hum points at the look-ahead point of the smoothed track, with
+     * a level difference between the ears for the side and beating by the distance off the line. Off when absent.
+     */
+    readonly racingLine?: boolean;
+    /**
+     * sonic3 S1: a gate's hum points where the way through it leads (lesson/gate-aim.ts): around the frame from behind, at
+     * the approach point off the axis, beyond the gate close to its plane. Off when absent.
+     */
+    readonly gateAim?: boolean;
 }
 
 /** A cue's stable id, `<layer>.<name>` (safety.wall, target.hum, shape.ring, ...): glossary, recordings. */

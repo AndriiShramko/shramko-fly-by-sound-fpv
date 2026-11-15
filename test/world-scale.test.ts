@@ -17,6 +17,7 @@ import { ScriptedPilot } from './helpers/pilot';
 import { alongTrack } from './helpers/along';
 import { fullStickSeconds, scaleRow, type Reach, type ScaleRow } from './helpers/reach';
 import { playLesson } from './helpers/truth';
+import { SPEED_LESSONS } from './helpers/new-lessons';
 
 /** Every wall and every leg at full stick, seconds. */
 export const WALL_S: readonly [number, number] = [2, 3];
@@ -54,7 +55,8 @@ export function scaleProblems(row: ScaleRow, gates: boolean): string[] {
 const hasGates = (w: AnalyticWorldInfo | null): boolean => (w?.objects() ?? []).some((o) => o.order !== null && o.shape.kind !== 'zone');
 const volume = (w: AnalyticWorldInfo): number => (w.cavities ?? []).reduce((a, b) => a + 8 * b.hx * b.hy * b.hz, 0);
 
-const ROOM_LESSONS = SHIPPED_LESSON_IDS.filter((id) => isRoomLesson(getLesson(id)));
+// the speed lessons fly rings-course's room at slow caps on purpose (test/helpers/new-lessons.ts SPEED_LESSONS)
+const ROOM_LESSONS = SHIPPED_LESSON_IDS.filter((id) => isRoomLesson(getLesson(id)) && !SPEED_LESSONS.includes(id));
 /** The lessons whose world, start or distances this lane changed. */
 const CHANGED = ['hover-turn', 'move-speed', 'move-stop', 'walls-hall', 'walls-pillar', 'walls-row', 'corridor', 'rings-first', 'rings-line', 'rings-small', 'rings-course', 'shapes-square', 'shapes-series', 'shapes-cube'];
 

@@ -1,0 +1,62 @@
+{
+ "tool": "tools/ear-pilot.ts --attend-hum --budget on --line on, rung = the lesson cap, seeds 1 2 3",
+ "rule": "attemptLimitS = ceil(slowest seed time x 1.5)",
+ "lessons": {
+  "speed-1": {
+   "capMps": 1.5,
+   "timesS": [
+    27.78,
+    28.28,
+    28.16
+   ],
+   "passed": [
+    true,
+    true,
+    true
+   ],
+   "limitS": 43
+  },
+  "speed-2": {
+   "capMps": 2.5,
+   "timesS": [
+    17.38,
+    17.58,
+    17.4
+   ],
+   "passed": [
+    true,
+    true,
+    true
+   ],
+   "limitS": 27
+  },
+  "speed-3": {
+   "capMps": 3.5,
+   "timesS": [
+    12.68,
+    12.58,
+    12.92
+   ],
+   "passed": [
+    true,
+    true,
+    true
+   ],
+   "limitS": 20
+  },
+  "speed-4": {
+   "capMps": 4.5,
+   "timesS": [
+    10.06,
+    10.1,
+    9.98
+   ],
+   "passed": [
+    true,
+    true,
+    true
+   ],
+   "limitS": 16
+  }
+ }
+}
