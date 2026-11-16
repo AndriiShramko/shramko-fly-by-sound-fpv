@@ -109,7 +109,7 @@ import { headingBasis, worldToListener } from '../sense/frame';
 import { beaconPointIndex, DEMO_TARGET_ID, lineClear, trackCorners } from '../cues/beacon';
 import { RacingLine, type SonicLineTarget } from '../cues/line';
 import { gateAim } from './gate-aim';
-import { approachM } from '../cues/lead';
+import { approachM, SPEED_LEAD_FROM_MPS } from '../cues/lead';
 
 /**
  * Lane sonic4 design 5: with the racing line on, the gate aim takes over within this distance in front of the next gate's
@@ -320,6 +320,12 @@ export const ASK_REMIND_S = 7;
 export const REFUSED_DIGIT_ACTION = 'answer.refused';
 /** Pause between attempts, s. */
 export const BETWEEN_S = 1.5;
+/**
+ * Lane sonic5 design 3 (speech at speed): an attempt that fails while the craft flies at SPEED_LEAD_FROM_MPS or faster says
+ * only the count at once; its retry and hint lines wait until the craft is slower than this, m/s (estimate; sonic4 V1-a: the
+ * miss lines are the bulk of the words at speed). Nothing waits for them: they are dropped when the lesson ends first.
+ */
+export const SPEECH_SLOW_MPS = 2;
 /** v0.12 (testHooks.speechWait only): a preview was given this long, s. */
 export const PREVIEW_WAIT_S = 3.3;
 /** Flying against the track faster than this, m/s, ... */
@@ -499,6 +505,8 @@ class Runner implements LessonSession {
     private backSince: number | null = null;
     private lastWrongWay = -Infinity;
     private lastWrongSide = -Infinity;
+    /** design 3: the miss lines of an attempt failed at speed, said once the craft is slower than SPEECH_SLOW_MPS */
+    private slowLines: SpeechLine[] = [];
     /** the id of the gate whose "The gate is behind you" was said (D7: once for a gate passed beside it) */
     private behindSaid: string | null = null;
     // a course's leg (lane s13-elev, review E1, E3, E8): the gate passed last in this attempt (where the leg to the next
@@ -999,7 +1007,14 @@ class Runner implements LessonSession {
         if (this.pausedAt !== null) return this.drain(); // a host steps no paused frame; one that does changes nothing
         const prev = this.prev;
         this.prev = sample;
-        if (!this.began || this.left || this.phaseValue === 'passed') return this.drain();
+        if (!this.began || this.left || this.phaseValue === 'passed') {
+            this.slowLines = [];
+            return this.drain();
+        }
+        if (this.slowLines.length > 0 && speedOf(sample) < SPEECH_SLOW_MPS) {
+            for (const line of this.slowLines) this.actions.push({ kind: 'say', line, interrupt: false });
+            this.slowLines = [];
+        }
         const jump = prev !== null && dist3(prev.pos, sample.pos) >= JUMP_M;
         if (prev !== null && !this.listening && !jump) this.pathM += dist3(prev.pos, sample.pos); // a longer jump is a reset, not flight
         // the lesson's lines were not reported said and the longest wait for them ran out: a held refusal goes before what follows
@@ -1352,7 +1367,10 @@ class Runner implements LessonSession {
         } else {
             const hints = this.lesson.speech.hints;
             const hint = hints.length === 0 ? [] : [hints[(this.attemptsDone - 1) % hints.length] as SpeechLine];
-            this.push({ kind: 'say', lines: [progress, this.lesson.speech.retry, ...hint] });
+            if (this.prev !== null && speedOf(this.prev) >= SPEED_LEAD_FROM_MPS) {
+                this.slowLines = [this.lesson.speech.retry, ...hint];
+                this.push({ kind: 'say', lines: [progress] });
+            } else this.push({ kind: 'say', lines: [progress, this.lesson.speech.retry, ...hint] });
         }
         this.push({ kind: 'wait', s: BETWEEN_S });
     }
