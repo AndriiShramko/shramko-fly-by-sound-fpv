@@ -321,9 +321,10 @@ export const REFUSED_DIGIT_ACTION = 'answer.refused';
 /** Pause between attempts, s. */
 export const BETWEEN_S = 1.5;
 /**
- * Lane sonic5 design 3 (speech at speed): an attempt that fails while the craft flies at SPEED_LEAD_FROM_MPS or faster says
- * only the count at once; its retry and hint lines wait until the craft is slower than this, m/s (estimate; sonic4 V1-a: the
- * miss lines are the bulk of the words at speed). Nothing waits for them: they are dropped when the lesson ends first.
+ * Lane sonic5 design 3 (speech at speed): in a lesson whose speed cap is SPEED_LEAD_FROM_MPS or more, an attempt that fails
+ * while the craft flies at this speed or faster says only the count at once; its retry and hint lines wait until the craft
+ * is slower than this, m/s (estimate; sonic4 V1-a: the miss lines are the bulk of the words at speed; sonic5 W1-b: the craft
+ * flies 3.2 to 3.6 m/s when an 8 m/s attempt fails). Nothing waits for them: they are dropped when the lesson ends first.
  */
 export const SPEECH_SLOW_MPS = 2;
 /** v0.12 (testHooks.speechWait only): a preview was given this long, s. */
@@ -1367,7 +1368,8 @@ class Runner implements LessonSession {
         } else {
             const hints = this.lesson.speech.hints;
             const hint = hints.length === 0 ? [] : [hints[(this.attemptsDone - 1) % hints.length] as SpeechLine];
-            if (this.prev !== null && speedOf(this.prev) >= SPEED_LEAD_FROM_MPS) {
+            const cap = this.lesson.assists.maxSpeedMps;
+            if (cap !== null && cap >= SPEED_LEAD_FROM_MPS && this.prev !== null && speedOf(this.prev) >= SPEECH_SLOW_MPS) {
                 this.slowLines = [this.lesson.speech.retry, ...hint];
                 this.push({ kind: 'say', lines: [progress] });
             } else this.push({ kind: 'say', lines: [progress, this.lesson.speech.retry, ...hint] });

@@ -1,6 +1,6 @@
-// Lane sonic5 design 3 (speech at speed): an attempt that fails while the craft flies at 4.5 m/s or faster says only the
-// count at once; the retry and hint lines wait until the craft is slower than SPEECH_SLOW_MPS. Slower failures say them at
-// once, as before.
+// Lane sonic5 design 3 (speech at speed): in a lesson capped at 4.5 m/s or more, an attempt that fails while the craft flies
+// at SPEECH_SLOW_MPS or faster says only the count at once; the retry and hint lines wait until the craft is slower. A lesson
+// with a lower cap says them at once, as before.
 import { describe, expect, it } from 'vitest';
 import type { FlightSample, Vec3 } from '../src/contract';
 import { createLessonRunner, getLesson, type RunnerAction } from '../src/lesson';
@@ -10,8 +10,9 @@ import { createAnalyticWorld } from '../src/world';
 
 const DT = 20;
 
-function flyHoverMiss(speedAtMiss: number): { keys: string[]; retryAtSpeed: number | null } {
-    const lesson = getLesson('hover-height');
+function flyHoverMiss(speedAtMiss: number, capMps: number): { keys: string[]; retryAtSpeed: number | null } {
+    const base = getLesson('hover-height');
+    const lesson = { ...base, assists: { ...base.assists, maxSpeedMps: capMps } };
     if (lesson.world.kind !== 'analytic') throw new Error('analytic world expected');
     const world = createAnalyticWorld(lesson.world.spec);
     const run = createLessonRunner(lesson, {});
@@ -60,15 +61,15 @@ function flyHoverMiss(speedAtMiss: number): { keys: string[]; retryAtSpeed: numb
 }
 
 describe('speech at speed (design 3)', () => {
-    it('a miss at 8 m/s says the count at once and the retry line only once the craft is slow', () => {
-        const r = flyHoverMiss(8);
+    it('a miss at 3.4 m/s in a lesson capped at 8 m/s says the count at once and the retry line only once the craft is slow', () => {
+        const r = flyHoverMiss(3.4, 8);
         expect(r.keys[0]).toBe('fly.progress');
         expect(r.keys.some((k) => k.endsWith('.retry'))).toBe(true);
         expect(r.retryAtSpeed).not.toBeNull();
         expect(r.retryAtSpeed as number).toBeLessThan(SPEECH_SLOW_MPS);
     });
-    it('a miss at 3 m/s says the count and the retry line at once, as before', () => {
-        const r = flyHoverMiss(3);
+    it('a miss at 3 m/s in a lesson capped at 3 m/s says the count and the retry line at once, as before', () => {
+        const r = flyHoverMiss(3, 3);
         expect(r.keys.slice(0, 2)).toEqual(['fly.progress', 'lesson.hover-height.retry']);
         expect(r.retryAtSpeed).toBe(3);
     });
