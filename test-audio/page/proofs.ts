@@ -546,6 +546,66 @@ async function lineSide(): Promise<ProofResult> {
     return { name: 'line-side', claim, shipped, control: { ...control, broken: 'the same hum as the beacon of a gate (no racing line: its 2 dB side level only)' }, pass: shipped.ok && !control.ok };
 }
 
+// ------------------------------------------------------------------ 10 and 11. at FPV speed (lane sonic5, design 2 and 4)
+
+/** The moving voices that are streams (previews are not cut by the budget), counted every 0.1 s from `from` to the end. */
+async function streamsAt(speedBudget: boolean, from: number, seconds: number): Promise<number[]> {
+    const pillars = createAnalyticWorld(makeSpec('pillars', { layout: 'single', aheadM: 4, widthM: 8, heightM: 3, startHeightM: 0.6 }, 1));
+    const gate: SonicObject = { id: 'g', shape: { kind: 'ring', diameter: 2, tube: 0.1 }, pos: [2.6, 1, 14], quat: [1, 0, 0, 0], order: 0, solid: false, material: 'obstacle' };
+    const counts: number[] = [];
+    const at: { t: number; run: (e: FlyBySoundEngine) => void }[] = [];
+    for (let t = from; t < seconds - 0.05; t += 0.1) at.push({ t, run: (e) => counts.push(e.stats().movingKeys.filter((k) => !k.startsWith('preview:')).length) });
+    await render({
+        seconds,
+        engine: {},
+        layers: { on: LAYER_IDS, heightBandM: [3, 4], hazardVoices: 3, speedBudget },
+        frame: (t) => ({ sample: flight([2.6, 0.5, 26], [0, 0, -8], 0, t), world: pillars, target: gate, floorY: 0 }),
+        at
+    });
+    return counts;
+}
+
+async function streamsAtSpeed(): Promise<ProofResult> {
+    const claim = 'at 8 m/s among pillars, with a gate ahead and every layer on, the stream budget keeps at most 3 streams (one guide, one danger and what is never cut) at any 0.1 s, counted after the tier hold';
+    const check = (counts: number[]): Check => {
+        const sorted = [...counts].sort((a, b) => a - b);
+        const worst = sorted[sorted.length - 1] ?? 0;
+        return { ok: counts.length > 0 && worst <= 3, measured: { samples: counts.length, median: sorted[Math.floor(sorted.length / 2)] ?? 0, worst, bound: 3 } };
+    };
+    const shipped = check(await streamsAt(true, 0.8, 3));
+    const control = check(await streamsAt(false, 0.8, 3));
+    return { name: 'streams-at-speed', claim, shipped, control: { ...control, broken: 'the stream budget off (every stream kept at speed)' }, pass: shipped.ok && !control.ok };
+}
+
+async function brakeCeiling(): Promise<ProofResult> {
+    const claim = 'at 8 m/s with the gate 56 deg aside the brake cue sounds on the speed layer (rms over 10 times the same render with the gate ahead), and with every layer at its maximum gain and the brake cue sounding no sample passes -6 dBFS';
+    const loud: ThemeDef = { ...soft, master: { ...soft.master, gainDb: 0 } };
+    const prefs = { ...defaultPrefs(), layerGainDb: Object.fromEntries(LAYER_IDS.map((l) => [l, 12])) };
+    const narrow = createAnalyticWorld(makeSpec('corridor', { layout: 'straight', widthM: 2.4, heightM: 2.4, startHeightM: 1 }, 1));
+    const gateAt = (pos: Vec3): SonicObject => ({ id: 'g', shape: { kind: 'ring', diameter: 1.2, tube: 0.06 }, pos, quat: [1, 0, 0, 0], order: 0, solid: false, material: 'obstacle' });
+    const ceilingLinear = dbToGain(loud.master.ceilingDb);
+    const scene = (on: LessonLayers['on'], gate: SonicObject, hooks: EngineOptions['testHooks']): Promise<Rendered> =>
+        render({
+            seconds: 2.5,
+            engine: { theme: loud, prefs, testHooks: hooks },
+            layers: { on, heightBandM: [3, 4], hazardVoices: 3, speedBudget: true },
+            frame: (t) => ({ sample: flight([0, 1.4, 0], [0, 0, -8], 0, t), world: narrow, target: gate, floorY: 0 })
+        });
+    const run = async (hooks: EngineOptions['testHooks']): Promise<Check> => {
+        const aside = await scene(['speed'], gateAt([3, 1.4, -2]), hooks);
+        const ahead = await scene(['speed'], gateAt([0, 1.4, -6]), hooks);
+        const brakeRms = rms(mono(aside), 0.6, 2.5);
+        const aheadRms = rms(mono(ahead), 0.6, 2.5);
+        const full = await scene(LAYER_IDS, gateAt([3, 1.4, -2]), hooks);
+        const p = peak(full.left, full.right);
+        const heard = brakeRms > 10 * Math.max(aheadRms, 1e-6);
+        return { ok: heard && p <= ceilingLinear, measured: { brakeRms: round(brakeRms, 5), aheadRms: round(aheadRms, 5), brakeHeard: heard, peak: round(p, 5), peakDbfs: round(db(p), 2), ceilingDbfs: loud.master.ceilingDb } };
+    };
+    const shipped = await run({});
+    const control = await run({ limiter: false });
+    return { name: 'brake-ceiling', claim, shipped, control: { ...control, broken: 'compressor and soft clipper removed' }, pass: shipped.ok && !control.ok };
+}
+
 function round(x: number, digits = 2): number {
     const f = 10 ** digits;
     return Math.round(x * f) / f;
@@ -559,7 +619,7 @@ export interface ProofReport {
     readonly proofs: readonly ProofResult[];
 }
 
-export const PROOFS: Readonly<Record<string, () => Promise<ProofResult>>> = { direction, 'pulse-rate': pulseRate, ceiling, 'fade-in': fadeIn, 'voice-budget': voiceBudget, 'target-note-gap': targetNoteGap, 'target-note-pan': targetNotePan, 'engine-reset': engineReset, 'line-side': lineSide };
+export const PROOFS: Readonly<Record<string, () => Promise<ProofResult>>> = { direction, 'pulse-rate': pulseRate, ceiling, 'fade-in': fadeIn, 'voice-budget': voiceBudget, 'target-note-gap': targetNoteGap, 'target-note-pan': targetNotePan, 'engine-reset': engineReset, 'line-side': lineSide, 'streams-at-speed': streamsAtSpeed, 'brake-ceiling': brakeCeiling };
 
 export async function runProofs(names: readonly string[] = Object.keys(PROOFS)): Promise<ProofReport> {
     const proofs: ProofResult[] = [];

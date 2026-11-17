@@ -1,0 +1,62 @@
+{
+  "what": "Fly by Sound audio proofs: the real engine rendered offline in headless Chromium, each check also run on an engine broken on purpose (control), which must fail",
+  "run": "pnpm proof:audio",
+  "date": "2026-11-17T19:37:45.281Z",
+  "browser": "157.0.8103.52",
+  "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/157.0.0.0 Safari/537.36",
+  "sampleRate": 48000,
+  "proofs": [
+    {
+      "name": "streams-at-speed",
+      "claim": "at 8 m/s among pillars, with a gate ahead and every layer on, the stream budget keeps at most 3 streams (one guide, one danger and what is never cut) at any 0.1 s, counted after the tier hold",
+      "shipped": {
+        "ok": true,
+        "measured": {
+          "samples": 22,
+          "median": 2,
+          "worst": 2,
+          "bound": 3
+        }
+      },
+      "control": {
+        "ok": false,
+        "measured": {
+          "samples": 22,
+          "median": 4,
+          "worst": 4,
+          "bound": 3
+        },
+        "broken": "the stream budget off (every stream kept at speed)"
+      },
+      "pass": true
+    },
+    {
+      "name": "brake-ceiling",
+      "claim": "at 8 m/s with the gate 56 deg aside the brake cue sounds on the speed layer (rms over 10 times the same render with the gate ahead), and with every layer at its maximum gain and the brake cue sounding no sample passes -6 dBFS",
+      "shipped": {
+        "ok": true,
+        "measured": {
+          "brakeRms": 0.06464,
+          "aheadRms": 0,
+          "brakeHeard": true,
+          "peak": 0.47516,
+          "peakDbfs": -6.46,
+          "ceilingDbfs": -6
+        }
+      },
+      "control": {
+        "ok": false,
+        "measured": {
+          "brakeRms": 0.05475,
+          "aheadRms": 0,
+          "brakeHeard": true,
+          "peak": 0.57549,
+          "peakDbfs": -4.8,
+          "ceilingDbfs": -6
+        },
+        "broken": "compressor and soft clipper removed"
+      },
+      "pass": true
+    }
+  ]
+}
