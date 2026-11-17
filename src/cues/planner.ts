@@ -28,6 +28,7 @@ import type { Hazard, SceneSample } from '../sense/types';
 import { applyCalm } from '../theme/calm';
 import { gateMelody, noteHz, noteHzAt } from '../theme/pitch';
 import { applyBudget, layerPlanOn, TierGate, type SpeedTier } from './budget';
+import { brakeNeeded } from './brake';
 import { beaconBearing, beaconSideIldDb, DEMO_TARGET_ID, foldToFront } from './beacon';
 import { isLineTarget, lineBeat, lineSideIldDb } from './line';
 import { alignOffset, heightTones, isGate, referenceHeightM, targetHeightM, type HeightToneRule, type TargetTone } from './height';
@@ -140,6 +141,8 @@ export interface SpeedPlan {
     readonly noteS: number;
     readonly noiseMix: number;
     readonly timbre: Timbre;
+    /** the brake cue (cues/brake.ts): the ticks fall in pitch and the cue is 'speed.brake' */
+    readonly brake?: boolean;
 }
 
 export interface RoomPlan {
@@ -500,6 +503,8 @@ export class CuePlanner {
         const tier: SpeedTier = this.layersValue.speedBudget === true ? this.tiers.update(length(s.vel), t) : 0;
         let height: HeightPlan | null = this.on.has('height') && layerPlanOn(tier, 'height') ? this.heightPlan(input) : null;
         let speed: SpeedPlan | null = this.on.has('speed') && layerPlanOn(tier, 'speed') ? this.speedPlan(length(s.vel)) : null;
+        // the brake cue (Design 4): sounds on the speed layer at any tier while the hum is aside and near at speed
+        if (this.on.has('speed') && this.layersValue.speedBudget === true && hum !== null && brakeNeeded(sub(hum.pos, s.pos), s.vel)) speed = { ...this.speedPlan(length(s.vel)), brake: true };
         let room: RoomPlan | null = this.on.has('room') && layerPlanOn(tier, 'room') ? this.roomPlan(openness(scene.meanFreeDistanceM, { opennessFullM: theme.layers.room.params['opennessFullM'] as number })) : null;
         for (const p of this.previews) {
             const u = clamp01((t - p.t0) / (p.durS * 1000));
@@ -622,7 +627,7 @@ export class CuePlanner {
         }
         if (height !== null) out.push({ id: height.rough > 0 ? 'height.rough' : 'height.tone', layer: 'height', dir: null, distance: null, rateHz: null, pitchHz: height.hz, rough: height.rough });
         if (height !== null && height.target !== null) out.push({ id: 'height.target', layer: 'height', dir: height.target.dir ?? null, distance: null, rateHz: null, pitchHz: height.target.hz, rough: 0 });
-        if (speed !== null && speed.tempoHz > 0) out.push({ id: 'speed.tick', layer: 'speed', dir: null, distance: null, rateHz: speed.tempoHz, pitchHz: speed.hz, rough: 0 });
+        if (speed !== null && speed.tempoHz > 0) out.push({ id: speed.brake === true ? 'speed.brake' : 'speed.tick', layer: 'speed', dir: null, distance: null, rateHz: speed.tempoHz, pitchHz: speed.hz, rough: 0 });
         if (room !== null) out.push({ id: 'room.bed', layer: 'room', dir: null, distance: null, rateHz: null, pitchHz: room.hz, rough: 0 });
         for (const n of this.notes) out.push({ id: n.cue, layer: n.layer, dir: n.dir, distance: null, rateHz: null, pitchHz: n.hz, rough: 0 });
         return out;

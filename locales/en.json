@@ -26,6 +26,8 @@
     "cue.height.target.glossary": "About once a second, a short note marks the height to fly at. Change height so your tone moves toward that note. When they sound the same, you are there.",
     "cue.speed.tick.name": "Speed ticks",
     "cue.speed.tick.glossary": "Soft ticks, like a clock. The faster you fly, the faster they tick.",
+    "cue.speed.brake.name": "Brake tone",
+    "cue.speed.brake.glossary": "Two falling notes in place of the ticks: you fly too fast for the turn to the hum. Slow down, then turn.",
     "cue.target.hum.name": "Target hum",
     "cue.target.hum.glossary": "A low, warm hum from the middle of the next gate, or from the way ahead in a corridor or a tunnel. Fly toward it. It repeats faster as you get close.",
     "cue.target.off.name": "Off course",

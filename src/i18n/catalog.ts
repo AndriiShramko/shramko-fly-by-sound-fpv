@@ -34,6 +34,7 @@ export const CUE_IDS = [
     'height.rough',
     'height.target',
     'speed.tick',
+    'speed.brake',
     'target.hum',
     'target.off',
     'target.note',

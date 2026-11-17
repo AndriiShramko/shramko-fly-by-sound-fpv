@@ -85,6 +85,8 @@ export class EarPilot {
         const free = p.streams.find((s) => s.cue === 'safety.free');
         const hazards = p.streams.filter((s): s is StreamPercept => s.layer === 'safety' && s.cue !== 'safety.free');
         for (const h of hazards) if (!h.behind && h.side !== 0) lateral -= h.side * dodge;
+        // the brake cue (Design 4): the matching rule, a slower approach while it sounds
+        if (p.brake === true) forward = this.o.speedMps * (this.o.brakeShare ?? BRAKE_SHARE);
         if (p.urgent) {
             forward = this.o.speedMps * (this.o.brakeShare ?? BRAKE_SHARE);
             // the material is a timbre: a ceiling or a floor is told apart by ear

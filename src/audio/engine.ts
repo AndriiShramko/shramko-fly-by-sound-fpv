@@ -74,6 +74,8 @@ const STEADY_TARGET_DB = -6;
 /** How fast the control's steady target tone moves to the next gate's note, s. */
 const TARGET_GLIDE_S = 0.12;
 const TICK_GAIN = 0.4;
+/** the brake cue's second note against the first: a fourth down (cues/brake.ts) */
+const BRAKE_FALL = 0.75;
 const BED_GAIN = 0.5;
 const DRONE_GAIN = 0.1;
 const CENTRE_SEND = 0.12;
@@ -1068,6 +1070,13 @@ export class FlyBySoundEngine implements SonicEngine {
         if (sp !== null && sp.tempoHz > 0) {
             for (const t0 of duePulses(g.speedTrain, now, horizon, 1 / sp.tempoHz)) {
                 const toneTimbre: Timbre = sp.timbre === 'air' || sp.timbre === 'noise' ? 'sine' : sp.timbre;
+                if (sp.brake === true) {
+                    // the brake cue: a falling tone, the tick's note then a fourth under it, tonal whatever the noise mix
+                    const half = 0.45 / sp.tempoHz;
+                    playNote(g.kit, g.speedOut, { timbre: toneTimbre, hz: sp.hz, t0, durS: Math.min(sp.noteS * 2, half), gain: TICK_GAIN, maxS: half });
+                    playNote(g.kit, g.speedOut, { timbre: toneTimbre, hz: sp.hz * BRAKE_FALL, t0: t0 + half, durS: Math.min(sp.noteS * 2, half), gain: TICK_GAIN, maxS: half });
+                    continue;
+                }
                 if (sp.noiseMix < 1) playNote(g.kit, g.speedOut, { timbre: toneTimbre, hz: sp.hz, t0, durS: sp.noteS, gain: TICK_GAIN * (1 - sp.noiseMix), maxS: 0.9 / sp.tempoHz });
                 if (sp.noiseMix > 0) playNote(g.kit, g.speedOut, { timbre: 'air', hz: sp.hz, t0, durS: sp.noteS, gain: TICK_GAIN * sp.noiseMix * 1.4, maxS: 0.9 / sp.tempoHz });
             }

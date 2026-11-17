@@ -52,6 +52,8 @@ export interface Percepts {
     readonly urgent: boolean;
     /** the voices followed, loudest first */
     readonly streams: readonly StreamPercept[];
+    /** the brake cue (cues/brake.ts) is heard: a centred falling tone on the speed layer */
+    readonly brake?: boolean;
 }
 
 const rng32 = (seed: number): (() => number) => {
@@ -116,7 +118,7 @@ export class Ear {
         all.sort((a, b) => b.levelDb - a.levelDb || (a.key < b.key ? -1 : a.key > b.key ? 1 : 0));
         const hum = this.hearing.attendHum === true ? all.find((x) => x.cue === 'target.hum') : undefined;
         const streams = hum === undefined ? all.slice(0, this.hearing.maxStreams) : [hum, ...all.filter((x) => x !== hum)].slice(0, this.hearing.maxStreams);
-        return { t: plan.t, urgent: plan.urgent && streams.some((s) => s.layer === 'safety'), streams };
+        return { t: plan.t, urgent: plan.urgent && streams.some((s) => s.layer === 'safety'), streams, brake: plan.speed?.brake === true };
     }
 
     private side(dir: Vec3, ildDb: number): -1 | 0 | 1 {
