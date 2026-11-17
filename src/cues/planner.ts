@@ -503,8 +503,9 @@ export class CuePlanner {
         const tier: SpeedTier = this.layersValue.speedBudget === true ? this.tiers.update(length(s.vel), t) : 0;
         let height: HeightPlan | null = this.on.has('height') && layerPlanOn(tier, 'height') ? this.heightPlan(input) : null;
         let speed: SpeedPlan | null = this.on.has('speed') && layerPlanOn(tier, 'speed') ? this.speedPlan(length(s.vel)) : null;
-        // the brake cue (Design 4): sounds on the speed layer at any tier while the hum is aside and near at speed
-        if (this.on.has('speed') && this.layersValue.speedBudget === true && hum !== null && brakeNeeded(sub(hum.pos, s.pos), s.vel)) speed = { ...this.speedPlan(length(s.vel)), brake: true };
+        // the brake cue (Design 4): in every lesson with the speed budget, also one without the speed ticks (scan-free and the
+        // courses), it sounds on the speed layer at any tier while the hum is aside and near at speed
+        if (this.layersValue.speedBudget === true && hum !== null && brakeNeeded(sub(hum.pos, s.pos), s.vel)) speed = { ...this.speedPlan(length(s.vel)), brake: true };
         let room: RoomPlan | null = this.on.has('room') && layerPlanOn(tier, 'room') ? this.roomPlan(openness(scene.meanFreeDistanceM, { opennessFullM: theme.layers.room.params['opennessFullM'] as number })) : null;
         for (const p of this.previews) {
             const u = clamp01((t - p.t0) / (p.durS * 1000));

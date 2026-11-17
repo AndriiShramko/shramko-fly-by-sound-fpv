@@ -1,5 +1,6 @@
 // The stream budget wired into the planner (sonic3 plan 2.2, stage Z4): a lesson with layers.speedBudget plays at most
-// the tier's streams at speed, no shape trace and no height or speed layer from tier 2; a lesson without it plays as before.
+// the tier's streams at speed, no shape trace and no height layer and no speed ticks from tier 2 (the brake cue may sound);
+// a lesson without it plays as before.
 import { describe, expect, it } from 'vitest';
 import type { FramePlan } from '../src/cues/planner';
 import { TIER_STREAMS } from '../src/cues/budget';
@@ -23,7 +24,8 @@ describe('the stream budget in the planner', () => {
             expect(streams(p).length).toBeLessThanOrEqual(TIER_STREAMS[2]);
             expect(streams(p).some((k) => k.startsWith('shape'))).toBe(false);
             expect(p.height).toBeNull();
-            expect(p.speed).toBeNull();
+            // the speed ticks stay off; only the brake cue (cues/brake.ts, design 4) may sound
+            expect(p.speed === null || p.speed.brake === true).toBe(true);
         }
     });
 

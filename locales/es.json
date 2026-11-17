@@ -26,8 +26,6 @@
     "cue.height.target.glossary": "Más o menos una vez por segundo, una nota corta marca la altura a la que debes volar. Cambia de altura para que tu tono se acerque a esa nota. Cuando suenan igual, has llegado.",
     "cue.speed.tick.name": "Tics de velocidad",
     "cue.speed.tick.glossary": "Tics suaves, como un reloj. Cuanto más rápido vuelas, más rápido suenan.",
-    "cue.speed.brake.name": "Tono de freno",
-    "cue.speed.brake.glossary": "Dos notas que bajan en lugar de los tics: vuelas demasiado rápido para girar hacia el zumbido. Frena y luego gira.",
     "cue.target.hum.name": "Murmullo del objetivo",
     "cue.target.hum.glossary": "Un murmullo grave y cálido desde el centro de la siguiente puerta, o desde el camino en un pasillo o un túnel. Vuela hacia él. Se repite más rápido cuando te acercas.",
     "cue.target.off.name": "Fuera de rumbo",
