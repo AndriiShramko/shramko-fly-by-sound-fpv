@@ -13,6 +13,9 @@ import { getBuiltinTheme } from '../../src/theme/builtin';
 import { createAnalyticWorld, makeSpec } from '../../src/world/analytic-world';
 import { yawQuat } from '../../src/util/vec';
 import type { SonicLineTarget } from '../../src/cues/line';
+import { gateAim } from '../../src/lesson/gate-aim';
+import { approachM, LEAD_APPROACH_S, turnRadiusM } from '../../src/cues/lead';
+import { quatRotate } from '../../src/util/vec';
 
 export const SAMPLE_RATE = 48000;
 const FRAME_S = 1 / 60;
@@ -606,6 +609,71 @@ async function brakeCeiling(): Promise<ProofResult> {
     return { name: 'brake-ceiling', claim, shipped, control: { ...control, broken: 'compressor and soft clipper removed' }, pass: shipped.ok && !control.ok };
 }
 
+// ------------------------------------------------------------------ 12. the hum's lead at speed (lane sonic5, design 1)
+
+/** The fundamental of a pitched signal, Hz: the first autocorrelation peak (lag 1 to 25 ms) that reaches 0.9 of the best. */
+function fundamentalHz(x: Float32Array, from: number, to: number): number {
+    const a = Math.floor(from * SAMPLE_RATE);
+    const b = Math.floor(to * SAMPLE_RATE);
+    const lo = Math.round(0.001 * SAMPLE_RATE);
+    const hi = Math.round(0.025 * SAMPLE_RATE);
+    const corr: number[] = [];
+    for (let lag = lo; lag <= hi; lag++) {
+        let sum = 0;
+        for (let i = a; i < b - hi; i++) sum += (x[i] as number) * (x[i + lag] as number);
+        corr.push(sum);
+    }
+    const best = Math.max(...corr);
+    for (let k = 1; k < corr.length - 1; k++) {
+        const c = corr[k] as number;
+        if (c >= 0.9 * best && c >= (corr[k - 1] as number) && c >= (corr[k + 1] as number)) return SAMPLE_RATE / (lo + k);
+    }
+    return SAMPLE_RATE / (lo + corr.indexOf(best));
+}
+
+async function humLead(): Promise<ProofResult> {
+    const v = 8;
+    const leadS = (approachM(3, v) - turnRadiusM(v)) / v;
+    const claim = `at ${v} m/s a craft beside a gate's axis (out of the approach cone, 24 m out) that heads at the gate's approach point (turn radius ${round(turnRadiusM(v))} m plus ${LEAD_APPROACH_S} s of flight: ${round(approachM(3, v))} m out on the entry axis, ${round(leadS)} s of lead) hears the hum on course, an octave (1.8 to 2.2 times) above the same hum heard 30 degrees off its nose; with every layer at its maximum gain no sample passes the ceiling`;
+    const gate: SonicObject = { id: 'g', shape: { kind: 'ring', diameter: 2, tube: 0.1 }, pos: [0, 1.5, 0], quat: [1, 0, 0, 0], order: 0, solid: false, material: 'obstacle' };
+    const pos: Vec3 = [16, 1.5, 24];
+    const approachPoint: Vec3 = [0, 1.5, approachM(3, v)];
+    const heading = (turnDeg: number): Vec3 => {
+        const a0 = Math.atan2(approachPoint[0] - pos[0], approachPoint[2] - pos[2]) + (turnDeg * Math.PI) / 180;
+        return [Math.sin(a0), 0, Math.cos(a0)];
+    };
+    const yawOf = (h: Vec3): number => {
+        const deg = (Math.atan2(-h[0], -h[2]) * 180) / Math.PI;
+        const f = quatRotate(yawQuat(deg), [0, 0, -1]);
+        return f[0] * h[0] + f[2] * h[2] > 0.99 ? deg : -deg;
+    };
+    const loud: ThemeDef = { ...soft, master: { ...soft.master, gainDb: 0 } };
+    const scene = (aimSpeed: number, turnDeg: number, layers: LessonLayers, engine: EngineOptions): Promise<Rendered> => {
+        const h = heading(turnDeg);
+        const yaw = yawOf(h);
+        // the runner's own gate aim (src/lesson/gate-aim.ts), at the craft's speed for the shipped run
+        const aimed = gateAim(gate, pos, aimSpeed);
+        return render({ seconds: 3, engine, layers, frame: (t) => ({ sample: flight(pos, [h[0] * v, 0, h[2] * v], yaw, t), world: null, target: aimed, beacon: aimed, floorY: 0 }) });
+    };
+    const targetOnly: LessonLayers = { on: ['target'], heightBandM: null, hazardVoices: 0, speedBudget: true };
+    const run = async (aimSpeed: number): Promise<Check> => {
+        const at = await scene(aimSpeed, 0, targetOnly, {});
+        const off = await scene(aimSpeed, 30, targetOnly, {});
+        const fAt = fundamentalHz(lowpass(mono(at), 1000), 0.5, 3);
+        const fOff = fundamentalHz(lowpass(mono(off), 1000), 0.5, 3);
+        const ratio = fAt / fOff;
+        const prefs = { ...defaultPrefs(), layerGainDb: Object.fromEntries(LAYER_IDS.map((l) => [l, 12])) };
+        const full = await scene(aimSpeed, 0, { on: LAYER_IDS, heightBandM: [3, 4], hazardVoices: 3, speedBudget: true }, { theme: loud, prefs });
+        const p = peak(full.left, full.right);
+        const ceilingLinear = dbToGain(loud.master.ceilingDb);
+        const aimZ = round(gateAim(gate, pos, aimSpeed).pos[2]);
+        return { ok: ratio >= 1.8 && ratio <= 2.2 && p <= ceilingLinear, measured: { aimPointMOut: aimZ, humHzHeadingAtApproach: round(fAt, 1), humHz30degOff: round(fOff, 1), ratio: round(ratio, 3), bounds: [1.8, 2.2], peakDbfs: round(db(p), 2), ceilingDbfs: loud.master.ceilingDb } };
+    };
+    const shipped = await run(v);
+    const control = await run(0);
+    return { name: 'hum-lead', claim, shipped, control: { ...control, broken: 'the approach point at the metres of today (3 m: no lead in seconds)' }, pass: shipped.ok && !control.ok };
+}
+
 function round(x: number, digits = 2): number {
     const f = 10 ** digits;
     return Math.round(x * f) / f;
@@ -619,7 +687,7 @@ export interface ProofReport {
     readonly proofs: readonly ProofResult[];
 }
 
-export const PROOFS: Readonly<Record<string, () => Promise<ProofResult>>> = { direction, 'pulse-rate': pulseRate, ceiling, 'fade-in': fadeIn, 'voice-budget': voiceBudget, 'target-note-gap': targetNoteGap, 'target-note-pan': targetNotePan, 'engine-reset': engineReset, 'line-side': lineSide, 'streams-at-speed': streamsAtSpeed, 'brake-ceiling': brakeCeiling };
+export const PROOFS: Readonly<Record<string, () => Promise<ProofResult>>> = { direction, 'pulse-rate': pulseRate, ceiling, 'fade-in': fadeIn, 'voice-budget': voiceBudget, 'target-note-gap': targetNoteGap, 'target-note-pan': targetNotePan, 'engine-reset': engineReset, 'line-side': lineSide, 'streams-at-speed': streamsAtSpeed, 'brake-ceiling': brakeCeiling, 'hum-lead': humLead };
 
 export async function runProofs(names: readonly string[] = Object.keys(PROOFS)): Promise<ProofReport> {
     const proofs: ProofResult[] = [];

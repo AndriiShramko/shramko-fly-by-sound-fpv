@@ -1,0 +1,46 @@
+{
+  "what": "Fly by Sound audio proofs: the real engine rendered offline in headless Chromium, each check also run on an engine broken on purpose (control), which must fail",
+  "run": "pnpm proof:audio",
+  "date": "2026-11-17T19:50:59.367Z",
+  "browser": "157.0.8103.52",
+  "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/157.0.0.0 Safari/537.36",
+  "sampleRate": 48000,
+  "proofs": [
+    {
+      "name": "hum-lead",
+      "claim": "at 8 m/s a craft beside a gate's axis (out of the approach cone, 24 m out) that heads at the gate's approach point (turn radius 3.82 m plus 1 s of flight: 11.82 m out on the entry axis, 1 s of lead) hears the hum on course, an octave (1.8 to 2.2 times) above the same hum heard 30 degrees off its nose; with every layer at its maximum gain no sample passes the ceiling",
+      "shipped": {
+        "ok": true,
+        "measured": {
+          "aimPointMOut": 11.82,
+          "humHzHeadingAtApproach": 169,
+          "humHz30degOff": 84.7,
+          "ratio": 1.996,
+          "bounds": [
+            1.8,
+            2.2
+          ],
+          "peakDbfs": -17.37,
+          "ceilingDbfs": -6
+        }
+      },
+      "control": {
+        "ok": false,
+        "measured": {
+          "aimPointMOut": 3,
+          "humHzHeadingAtApproach": 85,
+          "humHz30degOff": 84.5,
+          "ratio": 1.005,
+          "bounds": [
+            1.8,
+            2.2
+          ],
+          "peakDbfs": -13.43,
+          "ceilingDbfs": -6
+        },
+        "broken": "the approach point at the metres of today (3 m: no lead in seconds)"
+      },
+      "pass": true
+    }
+  ]
+}
