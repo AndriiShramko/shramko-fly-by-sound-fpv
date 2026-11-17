@@ -141,14 +141,24 @@ export class RacingLine {
         this.s = 0;
     }
 
-    /** Where the craft is on the line and where the hum points at this speed. */
-    update(pos: Vec3, speedMps: number): LinePlace {
+    /** The place on the line nearest `p` within the window ahead of the furthest place reached, m along the line. */
+    placeOf(p: Vec3): number {
+        return this.nearest(p, this.s - LINE_BACK_MAX_M, this.s + LINE_AHEAD_WINDOW_M).s;
+    }
+
+    /**
+     * Where the craft is on the line and where the hum points at this speed. `capS` (lane sonic5 W1.5, design 5): the
+     * look-ahead point never lies further along the line than this place (the next gate's approach point), so near a gate
+     * the hum does not run past the frame on the line's chord; it never lies behind the craft.
+     */
+    update(pos: Vec3, speedMps: number, capS = Number.POSITIVE_INFINITY): LinePlace {
         let n = this.nearest(pos, this.s - LINE_BACK_MAX_M, this.s + LINE_AHEAD_WINDOW_M);
         if (n.d > LINE_LOST_M) n = this.nearest(pos, 0, this.lengthM);
         // never back more than LINE_BACK_MAX_M behind the furthest place reached
         this.s = Math.max(this.s, n.s);
         const look = Math.max(LINE_LOOK_MIN_M, LINE_LOOK_S * Math.max(speedMps, 0));
-        return { s: n.s, offM: n.d, ahead: this.pointAt(Math.max(this.s, n.s) + look) };
+        const here = Math.max(this.s, n.s);
+        return { s: n.s, offM: n.d, ahead: this.pointAt(Math.max(here, Math.min(here + look, capS))) };
     }
 }
 

@@ -108,7 +108,7 @@ import { lessonTrack, yawOf, type LessonTrack, type TrackPoint } from './track';
 import { headingBasis, worldToListener } from '../sense/frame';
 import { beaconPointIndex, DEMO_TARGET_ID, lineClear, trackCorners } from '../cues/beacon';
 import { RacingLine, type SonicLineTarget } from '../cues/line';
-import { gateAim } from './gate-aim';
+import { gateAim, gateAimLocal } from './gate-aim';
 import { approachM, SPEED_LEAD_FROM_MPS } from '../cues/lead';
 
 /**
@@ -2129,7 +2129,16 @@ class Runner implements LessonSession {
         if (this.phaseValue === 'between') line.reset();
         const pos = this.prev?.pos ?? this.startPose(Math.max(this.attemptNo, 1)).pos;
         const v = this.prev?.vel ?? [0, 0, 0];
-        const at = line.update(pos, Math.hypot(v[0], v[1], v[2]));
+        const speed = Math.hypot(v[0], v[1], v[2]);
+        // lane sonic5 W1.5 (design 5): in front of the next gate the look ends at the gate's approach point (Facts W1-d of
+        // the simulator's docs/wip/sonic5.md: with the full look the line led past the frame, course 1 counted 0 of 3 at 2 m/s)
+        let capS = Number.POSITIVE_INFINITY;
+        const gate = this.lesson.layers.gateAim === true ? this.target() : null;
+        if (gate !== null && gate.order !== null && gateAimLocal(gate, pos, speed) !== null && toLocal(gate, pos)[2] > 0) {
+            const off = quatRotate(gate.quat, [0, 0, approachM(LINE_NEAR_AIM_M, speed)]);
+            capS = line.placeOf([gate.pos[0] + off[0], gate.pos[1] + off[1], gate.pos[2] + off[2]]);
+        }
+        const at = line.update(pos, speed, capS);
         const way = sub(at.ahead, pos);
         return { id: 'line:ahead', shape: { kind: 'zone', size: [1, 1, 1] }, pos: at.ahead, quat: yawQuat(yawOf(way)), order: null, solid: false, material: 'obstacle', lineOffM: at.offM };
     }
