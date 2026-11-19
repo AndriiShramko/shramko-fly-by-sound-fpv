@@ -27,7 +27,7 @@ function set(obj: unknown, key: string, value: unknown): unknown {
 describe('the defaults', () => {
     const d = defaultPrefs();
 
-    it('are what the spec says: soft theme, not calm, up is higher, the app speaks, captions on, the motor off (train 2, the owner) at its calibrated level and not chosen, the full path, the heading frame, the target tone on, up and down by direction too (lane s13-elev), the target hum as a beacon (lane sonic-beacon)', () => {
+    it('are what the spec says: soft theme, not calm, up is higher, the app speaks, captions on, the motor off (train 2, the owner) at its calibrated level and not chosen, the quick path (lane sound6), the heading frame, the target tone on, up and down by direction too (lane s13-elev), the target hum as a beacon (lane sonic-beacon)', () => {
         expect(d).toEqual({
             format: FORMATS.prefs,
             theme: 'soft',
@@ -39,7 +39,7 @@ describe('the defaults', () => {
             speechRate: 1,
             captions: true,
             motorSound: false,
-            path: 'full',
+            path: 'fast',
             listenerFrame: 'heading',
             heightTarget: true,
             motorGainDb: 0,

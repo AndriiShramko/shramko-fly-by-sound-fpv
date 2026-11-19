@@ -6,6 +6,10 @@ import { DICTS } from '../src/i18n';
 import { getLesson, SHIPPED_LESSON_IDS, TURN_OFFSETS, type DemoScene, type Question } from '../src/lesson';
 import { lessonSchedule } from '../src/lesson/schedule';
 import { createAnalyticWorld } from '../src/world/analytic-world';
+import { lessonPaths } from '../src/lesson/library';
+import { HEADPHONE_CUE } from '../src/lesson/runner';
+import { validatePaths } from '../src/lesson/validate';
+import { defaultPrefs } from '../src/prefs';
 
 /** keys that name or ask a place in front or behind */
 const FRONT_BACK_KEYS = /^(dir\.front|dir\.back|headphones\.q-front-back)/;
@@ -78,5 +82,32 @@ describe('no lesson asks or tells front against behind', () => {
         expect(off(lesson.start.yawDeg + (TURN_OFFSETS[0] as number))).toBeLessThan(120);
         expect(off(lesson.start.yawDeg + (TURN_OFFSETS[1] as number))).toBeLessThan(-60);
         expect(off(lesson.start.yawDeg + (TURN_OFFSETS[1] as number))).toBeGreaterThan(-120);
+    });
+});
+
+describe('the quick path is the default (owner 2026-11-19: headphones, then at once a room, then fly)', () => {
+    it('(c) the fast path: headphones, the walls, then the small room; it is valid and the default of new prefs', () => {
+        const p = lessonPaths();
+        expect(p.fast).toEqual(['ears-headphones', 'ears-walls', 'walls-hall', 'corridor', 'tunnel-gaps', 'rings-first', 'rings-course', 'free-garden']);
+        expect(validatePaths(p).ok).toBe(true);
+        expect(defaultPrefs().path).toBe('fast');
+    });
+
+    it('(c) the headphone check plays the wall knocks after one intro line; the advice comes only after a miss', () => {
+        expect(HEADPHONE_CUE).toBe('safety.wall');
+        const lesson = getLesson('ears-headphones');
+        const s = lessonSchedule(lesson, { answer: (q) => (Number(q.id.split(':')[2]) % 2 === 1 ? 1 : 2), runner: { seed: 1 } });
+        const first = s.plays[0];
+        if (first === undefined) throw new Error('no sound');
+        expect(first.cue).toBe('safety.wall');
+        const before = s.speech.filter((l) => l.start < first.start).map((l) => l.key);
+        expect(before).toEqual(['lesson.ears-headphones.title', 'lesson.ears-headphones.intro.1', 'headphones.trial']);
+        expect(s.speech.map((l) => l.key)).not.toContain('headphones.wired');
+    });
+
+    it('(c) the room lesson names the height tone and the best-height note: the quick path has no hover-height', () => {
+        const intro = getLesson('walls-hall').intro;
+        expect(intro.map((l) => l.key)).toEqual(['lesson.walls-hall.intro.1', 'lesson.walls-hall.goal.1']);
+        expect(intro[0]?.cues).toEqual(['height.tone', 'height.target']);
     });
 });

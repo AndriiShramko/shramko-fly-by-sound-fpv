@@ -101,7 +101,7 @@ describe('rooms at the scale of a micro drone (M41-18)', () => {
         expect(left).toBeLessThanOrEqual(within(asV012('walls-hall').goals[0] as Goal));
         const en = createTranslator('en', DICTS);
         expect(en.text(l.title)).toBe('A small room');
-        expect(en.text(l.intro[0] as SpeechLine)).toMatch(/^You are in a small, empty room\./);
+        expect(en.text(l.intro[0] as SpeechLine)).toMatch(/^You are in a small room\./);
     });
 
     it('the zones of move-speed and move-stop come in 2 to 3 s at their caps; control: v0.12 took 7.7 s to move-stop\'s', () => {

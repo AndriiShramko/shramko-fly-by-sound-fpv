@@ -10,7 +10,7 @@
   },
   "attemptLimitS": 60,
   "checkpoints": [],
-  "fastPath": true,
+  "fastPath": false,
   "format": "shramko-sonic-lesson/2",
   "goals": [
     {

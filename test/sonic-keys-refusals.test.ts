@@ -116,7 +116,7 @@ describe('I3 and claim 2: the word that fits, right after the sound', () => {
     function atTrialSound(): RecordingHost {
         const h = new RecordingHost(getLesson('ears-headphones'), { answerer: () => 1, cutOnInterrupt: true });
         h.begin();
-        h.until(() => h.planner !== null && h.frames.some((f) => f.c.some((c) => c.startsWith('target'))), 120);
+        h.until(() => h.planner !== null && h.frames.some((f) => f.c.some((c) => c.startsWith('safety.wall'))), 120);
         return h;
     }
 

@@ -34,6 +34,7 @@ export const CUE_IDS = [
     'height.rough',
     'height.target',
     'speed.tick',
+    'speed.brake',
     'target.hum',
     'target.off',
     'target.note',
@@ -66,9 +67,9 @@ export interface LessonSpec {
 
 /** The lesson ladder of spec section 3, in order. Which of them form the fast path is decided by the lesson files. */
 export const LESSONS: readonly LessonSpec[] = [
-    { id: 'ears-headphones', module: 0, intro: 2, goals: 1, hints: 1 },
+    { id: 'ears-headphones', module: 0, intro: 1, goals: 0, hints: 1 },
     { id: 'ears-glossary', module: 0, intro: 2, goals: 1, hints: 1 },
-    { id: 'ears-walls', module: 0, intro: 2, goals: 1, hints: 1 },
+    { id: 'ears-walls', module: 0, intro: 1, goals: 0, hints: 1 },
     { id: 'ears-shapes', module: 0, intro: 2, goals: 1, hints: 1 },
     { id: 'ears-game', module: 0, intro: 3, goals: 1, hints: 1 },
     { id: 'hover-height', module: 1, intro: 3, goals: 1, hints: 1 },
@@ -76,7 +77,7 @@ export const LESSONS: readonly LessonSpec[] = [
     { id: 'hover-turn', module: 1, intro: 2, goals: 1, hints: 1 },
     { id: 'move-speed', module: 2, intro: 2, goals: 1, hints: 1 },
     { id: 'move-stop', module: 2, intro: 2, goals: 1, hints: 1 },
-    { id: 'walls-hall', module: 3, intro: 3, goals: 1, hints: 1 },
+    { id: 'walls-hall', module: 3, intro: 1, goals: 1, hints: 1 },
     { id: 'walls-pillar', module: 3, intro: 3, goals: 1, hints: 1 },
     { id: 'walls-row', module: 3, intro: 2, goals: 1, hints: 1 },
     { id: 'corridor', module: 4, intro: 5, goals: 2, hints: 1 },
@@ -123,7 +124,6 @@ export const FREE_KEYS = [
     'glossary.done',
     'glossary.again',
     // the headphone check (lesson ears-headphones)
-    'headphones.intro',
     'headphones.q-side',
     'headphones.good',
     'headphones.swapped',

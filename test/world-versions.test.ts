@@ -9,6 +9,7 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import type { AnalyticWorldSpec, LessonDef, Vec3 } from '../src/contract';
 import { WORLD_GENERATORS } from '../src/contract';
+import { requiredKeys } from '../src/i18n/catalog';
 import { getLesson, validateLesson } from '../src/lesson';
 import { checkSession, formatReplayCheck, rebuildSession, ReplayError } from '../src/replay';
 import { readPackage } from '../src/session';
@@ -43,7 +44,10 @@ function fingerprint(w: AnalyticWorldInfo): string {
 }
 
 function v012Lesson(): LessonDef {
-    const v = validateLesson(JSON.parse(fixture('v012-lesson-walls-hall.json')));
+    // the world is what these tests check; the intro lines this build no longer has (lane sound6 shortened walls-hall) are left out
+    const raw = JSON.parse(fixture('v012-lesson-walls-hall.json')) as { intro: { key: string }[] };
+    const known = new Set(requiredKeys());
+    const v = validateLesson({ ...raw, intro: raw.intro.filter((l) => known.has(l.key)) });
     if (!v.ok) throw new Error(JSON.stringify(v.issues));
     return v.value;
 }

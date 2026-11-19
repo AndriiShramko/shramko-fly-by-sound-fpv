@@ -95,7 +95,8 @@ describe('the catalogue', () => {
             const lk = lessonKeys(l);
             expect(lk.some((k) => k.endsWith('.title'))).toBe(true);
             expect(l.intro).toBeGreaterThanOrEqual(1);
-            expect(l.goals).toBeGreaterThanOrEqual(1);
+            // an ears lesson (module 0) may have no goal line: its question says what to do (lane sound6, the quick path)
+            expect(l.goals).toBeGreaterThanOrEqual(l.module === 0 ? 0 : 1);
             expect(lk).toContain(`lesson.${l.id}.pass`);
             expect(lk).toContain(`lesson.${l.id}.retry`);
         }

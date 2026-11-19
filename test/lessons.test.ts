@@ -117,7 +117,7 @@ describe('the shipped lessons', () => {
         expect(p.fast.length).toBeLessThanOrEqual(8);
         for (const id of SHIPPED_LESSON_IDS) expect(getLesson(id).fastPath, id).toBe(p.fast.includes(id));
         expect(lessonsOnPath('fast').map((l) => l.module)).toEqual([...lessonsOnPath('fast').map((l) => l.module)].sort((a, b) => a - b));
-        expect(nextLesson('hover-height', 'fast')?.id).toBe('walls-hall');
+        expect(nextLesson('ears-walls', 'fast')?.id).toBe('walls-hall');
         expect(nextLesson('free-garden', 'full')).toBeNull();
         // every lesson can be opened directly: each has its own start
         for (const id of p.full) expect(getLesson(id).start.pos.length).toBe(3);
@@ -209,8 +209,9 @@ describe('lesson format 2 and the files of format 1 (v0.12)', () => {
         // plays the chime above and below, walls-pillar names its chime in a line of its own; a recording of that build
         // is told apart as older, as v0.12's are
         // lane sonic-beacon: the corridor and the six tunnels have the target layer on (the beacon), each a new version
-        // lane sound6: no front or behind in the ears lessons (ears-game, ears-walls, ears-shapes) and the cube's words
-        const CHANGED_AFTER_V013: Readonly<Record<string, number>> = { corridor: 3, 'tunnel-wide': 2, 'tunnel-narrow': 2, 'tunnel-narrower': 2, 'tunnel-bends': 2, 'tunnel-long': 2, 'tunnel-gaps': 3, 'walls-pillar': 3, 'ears-headphones': 3, 'ears-glossary': 3, 'ears-game': 4, 'shapes-cube': 4, 'ears-walls': 3, 'ears-shapes': 3, 'turn-listen': 3 };
+        // lane sound6: no front or behind in the ears lessons (ears-game, ears-walls, ears-shapes) and the cube's words; the
+        // quick path: the headphone check's one line and wall knocks, the walls' one line, the room's height line, the brake cue
+        const CHANGED_AFTER_V013: Readonly<Record<string, number>> = { corridor: 3, 'tunnel-wide': 2, 'tunnel-narrow': 2, 'tunnel-narrower': 2, 'tunnel-bends': 2, 'tunnel-long': 2, 'tunnel-gaps': 3, 'walls-pillar': 3, 'ears-headphones': 4, 'ears-glossary': 4, 'ears-game': 4, 'shapes-cube': 4, 'ears-walls': 4, 'walls-hall': 3, 'ears-shapes': 3, 'turn-listen': 3 };
         for (const id of SHIPPED_LESSON_IDS) {
             const l = getLesson(id);
             expect(current(id)['format'], id).toBe('shramko-sonic-lesson/2');

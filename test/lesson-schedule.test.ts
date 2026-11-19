@@ -168,11 +168,11 @@ describe('control: the v0.12 timing fails the same check (a line ends at the ear
         }
     }, 120000);
 
-    it('the fact as measured: 303 of the 436 English lines take the Windows voice longer than the estimate', () => {
+    it('the fact as measured: 300 of the 431 English lines take the Windows voice longer than the estimate', () => {
         const en = JSON.parse(readFileSync(new URL('../locales/en.json', import.meta.url), 'utf8')) as Record<string, string>;
         const keys = Object.keys(david);
         const longer = keys.filter((k) => (david[k] as number) > 0.7 + 0.065 * (MEASURED_TEXT[k] ?? (en[k] as string)).length);
-        expect(keys.length).toBe(436);
+        expect(keys.length).toBe(431);
         // 262 until merge s13-merge reworded walls-hall's intro.2 and hint.1 and the corridor's intro.2 (review m4 of
         // lane s13-sound); those three were measured again with the same voice and method (walls-hall's intro.1, not
         // changed then, measured 8.64 s again, as in the fixture). walls-hall's goal.1, reworded at the s13-worlds merge
@@ -205,8 +205,9 @@ describe('control: the v0.12 timing fails the same check (a line ends at the ear
         // than their estimates: 429, 301. The lesson turn-listen (sonic3 S3) added 7 lines, measured the same way (2026-11-15),
         // 5 of them longer than their estimates: 436, 306. Lane sound6 (2026-11-19) took front and behind out of the lessons:
         // headphones.q-front-back deleted, turn-listen's four lines, reason.turn-behind (measured now, it was not), the cube's four
-        // lines and quiz.where-options reworded, measured the same way: 436, 303.
-        expect(longer.length).toBe(303);
+        // lines and quiz.where-options reworded, measured the same way: 436, 303. Its stage S2 (the quick path) deleted seven
+        // intro lines, reworded three and added the brake cue's two, measured the same way: 431, 300.
+        expect(longer.length).toBe(300);
         // and under v0.12 the first sound of the check plays partly under the line before it
         const s = schedule('ears-headphones', { speech: measuredSpeech(david), runner: v012 });
         const first = s.plays.find((p) => p.kind !== 'one-off');
@@ -235,14 +236,15 @@ describe('control: the v0.12 timing fails the same check (a line ends at the ear
         // same voices and method (2026-11-15): longer than the estimate es 2, pl 5, ru 7 of them. The line fly.gate-behind
         // (simulator lane onecourse, D7, 2026-11-15), same voices and method: es 2.19 s (not longer), pl 2.095 s, ru 2.31 s (longer).
         // Lane sound6 (2026-11-19) deleted headphones.q-front-back and reworded ten lines that taught front and behind, same voices
-        // and method: 522 lines, longer es 280, pl 379, ru 522.
-        const longerThanEstimate: Readonly<Record<Exclude<Locale, 'en'>, number>> = { es: 280, pl: 379, ru: 522 };
+        // and method: 522 lines, longer es 280, pl 379, ru 522. Its stage S2 (the quick path, the brake cue's glossary entry):
+        // 517 lines, longer es 276, pl 376, ru 517.
+        const longerThanEstimate: Readonly<Record<Exclude<Locale, 'en'>, number>> = { es: 276, pl: 376, ru: 517 };
         for (const locale of OTHER_LOCALES) {
             const dict = JSON.parse(readFileSync(new URL(`../locales/${locale}.json`, import.meta.url), 'utf8')) as Record<string, string>;
             const seconds = OTHER_VOICES[locale].seconds;
             const plain = Object.keys(dict).filter((k) => !(dict[k] as string).includes('{'));
             expect(Object.keys(seconds).sort(), `${locale}: every line without parameters is measured, and nothing else`).toEqual(plain.sort());
-            expect(plain.length, locale).toBe(522);
+            expect(plain.length, locale).toBe(517);
             const estimate = (k: string): number => 0.7 + 0.065 * (dict[k] as string).length;
             const longer = plain.filter((k) => (seconds[k] as number) > estimate(k));
             expect(longer.length, `${locale}: lines longer than the estimate`).toBe(longerThanEstimate[locale]);
@@ -319,8 +321,8 @@ describe('how long the ears lessons take now (measured voice, answers a second a
         const minutes: Record<string, number> = {};
         for (const id of EARS) minutes[id] = Math.round(schedule(id, { speech: measuredSpeech(david) }).endT / 6000) / 10;
         // the glossary names every sound, 26 since the s13-worlds merge (item 8f), three plays each: 8.4 minutes with the
-        // measured voice (2026-11-08)
-        expect(minutes['ears-glossary']).toBeLessThan(9);
+        // measured voice (2026-11-08); 28 with the brake cue (lane sound6): 9.1 minutes
+        expect(minutes['ears-glossary']).toBeLessThan(9.5);
         expect(minutes['ears-game']).toBeLessThan(10);
         expect(minutes['ears-headphones']).toBeLessThan(3);
         expect(minutes['ears-walls']).toBeLessThan(3);
@@ -331,7 +333,8 @@ describe('how long the ears lessons take now (measured voice, answers a second a
         // measured 2026-11-08: the glossary 8.6 minutes in Spanish, 8.8 in Polish and 9.9 in Russian (Irina says the
         // lines 1.3 times as slowly as the runner estimates); the game 6.9, 7.5 and 8.0; the other three as in English
         // but for the Russian headphone check (2.2) and walls (2.1)
-        const glossaryUnder: Readonly<Record<Exclude<Locale, 'en'>, number>> = { es: 9.5, pl: 9.5, ru: 10.5 };
+        // with the brake cue's entry (lane sound6) the Polish glossary takes 9.6 minutes, the Russian 10.7
+        const glossaryUnder: Readonly<Record<Exclude<Locale, 'en'>, number>> = { es: 9.5, pl: 10, ru: 11 };
         for (const locale of OTHER_LOCALES) {
             const minutes: Record<string, number> = {};
             for (const id of EARS) minutes[id] = Math.round(schedule(id, { locale, speech: measuredSpeech(OTHER_VOICES[locale].seconds) }).endT / 6000) / 10;

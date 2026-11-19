@@ -28,6 +28,7 @@
         "height.rough",
         "height.target",
         "speed.tick",
+        "speed.brake",
         "target.hum",
         "target.off",
         "target.note",
@@ -100,7 +101,7 @@
   "title": {
     "key": "lesson.ears-glossary.title"
   },
-  "version": 3,
+  "version": 4,
   "world": {
     "kind": "none"
   }

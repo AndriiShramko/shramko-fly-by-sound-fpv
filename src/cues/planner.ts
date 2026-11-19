@@ -511,7 +511,8 @@ export class CuePlanner {
             const u = clamp01((t - p.t0) / (p.durS * 1000));
             const layer = p.cue.split('.')[0] as LayerId;
             if (layer === 'height') height = this.previewHeight(p.cue, u);
-            else if (layer === 'speed') speed = this.speedPlan((theme.layers.speed.params['speedMaxMps'] as number) * tri(u));
+            // the brake cue's preview (the glossary, lane sound6): the same ramp of ticks with the brake flag, so its falling notes sound
+            else if (layer === 'speed') speed = { ...this.speedPlan((theme.layers.speed.params['speedMaxMps'] as number) * tri(u)), brake: p.cue === 'speed.brake' };
             else if (layer === 'room') room = this.roomPlan(u);
             else {
                 const v = this.previewVoice(p, u, (t - p.t0) / 1000);

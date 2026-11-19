@@ -72,9 +72,10 @@ describe('a sound heard while flying is named where the pilot first hears it (re
                 expect(named.has(c), `${c} sounds while flying ${id}, and no lesson so far named it`).toBe(true);
             }
         }
-        // the test sees each sound where it first sounds: the target note in hover-height, the fast path's first flight,
+        // the test sees each sound where it first sounds: the target note in rings-first (walls-hall, the fast path's first
+        // flight, names it since lane sound6 took hover-height off the fast path),
         // and the open-way chime and the target hum (the beacon along the track) in the corridor
-        expect(where).toEqual({ 'height.target': 'hover-height', 'safety.free': 'corridor', 'target.hum': 'corridor' });
+        expect(where).toEqual({ 'height.target': 'rings-first', 'safety.free': 'corridor', 'target.hum': 'corridor' });
     }, 120000);
 
     it('the corridor names the beacon hum in its own line, played from the left, before the goal (lane sonic-beacon, review R3)', () => {

@@ -116,7 +116,7 @@ describe('sonic-keys (b): every digit is acknowledged by a short sound and a wor
         expect(h.said()).not.toContain('answer.not-now');
         h.until((x) => x.said().includes('answer.not-now'), 60);
         const said = h.said();
-        expect(said.indexOf('answer.not-now')).toBeGreaterThan(said.indexOf('lesson.ears-headphones.goal.1'));
+        expect(said.indexOf('answer.not-now')).toBeGreaterThan(said.indexOf('lesson.ears-headphones.intro.1'));
         expect(said.filter((k) => k === 'answer.not-now')).toHaveLength(1);
         // the question of trial 1 asked (lines said at once), then a 7
         const q = new Host();
@@ -164,16 +164,20 @@ describe('sonic-keys (c): no long silence and no silent skip', () => {
     });
 });
 
-describe('sonic-keys (d): a failed check asks again only what failed, without its intro', () => {
-    it('trial 2 answered wrong: attempt 2 is that one trial, with no headphone intro', () => {
+describe('sonic-keys (d): a failed check asks again only what failed, with the advice that helps after a miss', () => {
+    it('trial 2 answered wrong: attempt 2 is that one trial, after the wired and surround advice (lane sound6)', () => {
         const h = new Host((a) => (a.kind === 'ask' ? (a.question.id.split(':')[2] === '2' ? 1 : a.question.id.split(':')[2] === '1' ? 1 : 1) : null));
         h.until(failed, 200);
+        const firstSaid = h.log.flatMap((l) => (l.a.kind === 'say' ? [l.a.line.key] : []));
         const firstFail = h.log.length;
-        const introKeys = ['headphones.intro', 'headphones.wired', 'headphones.os-spatial'];
+        const adviceKeys = ['headphones.wired', 'headphones.os-spatial'];
+        // the first attempt goes from the one intro line straight to the sounds
+        for (const k of adviceKeys) expect(firstSaid, k).not.toContain(k);
         h.until((x) => x.run.phase === 'passed' || x.events.filter((e) => e.kind === 'lesson' && e.what === 'attempt-fail').length >= 2, 200);
         const second = h.log.slice(firstFail);
         const secondSaid = second.flatMap((l) => (l.a.kind === 'say' ? [l.a.line.key] : []));
-        for (const k of introKeys) expect(secondSaid, k).not.toContain(k);
+        for (const k of adviceKeys) expect(secondSaid, k).toContain(k);
+        expect(secondSaid.indexOf('headphones.os-spatial')).toBeLessThan(secondSaid.indexOf('headphones.trial'));
         const secondAsks = second.flatMap((l) => (l.a.kind === 'ask' ? [l.a.question.id] : []));
         expect(secondAsks.length).toBe(1);
         expect(secondAsks[0]?.split(':')[1]).toBe('2');

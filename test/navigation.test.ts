@@ -164,7 +164,7 @@ describe('a lesson of module 0: the intro, then one step per sound', () => {
         const p = slowSpeech('ears-glossary');
         p.begin();
         const steps = p.run.view().steps;
-        expect(steps).toBe(1 + 27); // the intro and each of its 27 sounds
+        expect(steps).toBe(1 + 28); // the intro and each of its 28 sounds
         const seen: number[] = [p.run.view().step];
         for (let k = 1; k < steps; k++) {
             p.press((run, t) => run.next(t));
@@ -257,8 +257,8 @@ describe('a lesson opened with G from another one: a detour back to it (review R
 describe('where a go action leads', () => {
     it('the lesson after and before on the pilot\'s path, the full ladder off it, null at the ends', () => {
         const { full, fast } = lessonPaths();
-        expect(lessonAfter('hover-height', 'fast')?.id).toBe(fast[fast.indexOf('hover-height') + 1]);
-        expect(lessonBefore('hover-height', 'fast')?.id).toBe('ears-headphones');
+        expect(lessonAfter('ears-walls', 'fast')?.id).toBe(fast[fast.indexOf('ears-walls') + 1]);
+        expect(lessonBefore('ears-walls', 'fast')?.id).toBe('ears-headphones');
         expect(lessonAfter('hover-turn', 'fast')?.id).toBe(full[full.indexOf('hover-turn') + 1]);
         expect(lessonBefore('hover-turn', 'fast')?.id).toBe('turn-listen');
         expect(lessonBefore(full[0] as string, 'full')).toBeNull();

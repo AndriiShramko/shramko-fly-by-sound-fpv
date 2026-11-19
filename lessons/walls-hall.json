@@ -23,20 +23,10 @@
   "intro": [
     {
       "cues": [
-        "safety.wall",
-        "safety.floor",
-        "safety.ceiling"
+        "height.tone",
+        "height.target"
       ],
       "key": "lesson.walls-hall.intro.1"
-    },
-    {
-      "key": "lesson.walls-hall.intro.2"
-    },
-    {
-      "cues": [
-        "safety.touch"
-      ],
-      "key": "lesson.walls-hall.intro.3"
     },
     {
       "key": "lesson.walls-hall.goal.1"
@@ -80,7 +70,7 @@
   "title": {
     "key": "lesson.walls-hall.title"
   },
-  "version": 2,
+  "version": 3,
   "world": {
     "kind": "analytic",
     "spec": {

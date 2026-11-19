@@ -393,6 +393,10 @@ const SIDES: readonly { readonly dir: Vec3; readonly sector: 'left' | 'right' }[
     { dir: [1, 0, 0], sector: 'right' }
 ];
 
+/** The sound of the headphone check (lane sound6): a wall's short knocks tell left from right better than a hum, and the
+ * quick path's first sound is the one its next lesson and its first room are made of. */
+export const HEADPHONE_CUE: CueId = 'safety.wall';
+
 // ------------------------------------------------------------------ the script
 
 type Step =
@@ -1578,10 +1582,11 @@ class Runner implements LessonSession {
             const correct = sector === 'left' ? 1 : 2;
             const id = `${this.lesson.id}:${this.attemptNo}:${i + 1}:side`;
             const steps: Step[] = [];
-            // every trial begins with a line, so a key that moves here cuts what was being said (N, B, Z); the intro once, in the first attempt
-            if (i === 0 && this.earsRetry === null) steps.push({ kind: 'say', lines: [{ key: 'headphones.intro' }, { key: 'headphones.wired' }, { key: 'headphones.os-spatial' }], once: true });
+            // every trial begins with a line, so a key that moves here cuts what was being said (N, B, Z). The lesson's one
+            // intro line comes before (lane sound6: the first sound within seconds); what helps after a miss, before the retry
+            if (i === 0 && this.attemptNo > 1) steps.push({ kind: 'say', lines: [{ key: 'headphones.wired' }, { key: 'headphones.os-spatial' }], once: true });
             steps.push({ kind: 'say', lines: [{ key: 'headphones.trial', params: { n: i + 1, total: sides.length } }] });
-            steps.push({ kind: 'sound', cue: 'target.hum', dir: side.dir, plays: REPEAT_PLAYS });
+            steps.push({ kind: 'sound', cue: HEADPHONE_CUE, dir: side.dir, plays: REPEAT_PLAYS });
             steps.push({
                 kind: 'ask',
                 early: true,

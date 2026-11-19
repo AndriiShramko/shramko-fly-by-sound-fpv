@@ -22,12 +22,6 @@
   "intro": [
     {
       "key": "lesson.ears-headphones.intro.1"
-    },
-    {
-      "key": "lesson.ears-headphones.intro.2"
-    },
-    {
-      "key": "lesson.ears-headphones.goal.1"
     }
   ],
   "layers": {
@@ -66,7 +60,7 @@
   "title": {
     "key": "lesson.ears-headphones.title"
   },
-  "version": 3,
+  "version": 4,
   "world": {
     "kind": "none"
   }

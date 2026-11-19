@@ -31,7 +31,7 @@ export function defaultPrefs(): SonicPrefs {
         speechRate: 1,
         captions: true,
         motorSound: false,
-        path: 'full',
+        path: 'fast',
         listenerFrame: 'heading',
         heightTarget: true,
         motorGainDb: 0,

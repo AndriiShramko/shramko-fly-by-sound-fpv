@@ -10,7 +10,7 @@
   },
   "attemptLimitS": null,
   "checkpoints": [],
-  "fastPath": false,
+  "fastPath": true,
   "format": "shramko-sonic-lesson/2",
   "goals": [
     {
@@ -27,12 +27,6 @@
   "intro": [
     {
       "key": "lesson.ears-walls.intro.1"
-    },
-    {
-      "key": "lesson.ears-walls.intro.2"
-    },
-    {
-      "key": "lesson.ears-walls.goal.1"
     }
   ],
   "layers": {
@@ -71,7 +65,7 @@
   "title": {
     "key": "lesson.ears-walls.title"
   },
-  "version": 3,
+  "version": 4,
   "world": {
     "kind": "none"
   }
