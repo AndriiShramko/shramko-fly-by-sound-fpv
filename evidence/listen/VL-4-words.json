@@ -1,8 +1,8 @@
 {
  "format": "shramko-listen-evidence/1",
- "key": "0dc0b2db7d2bbe89a4c3e517d3585624a3f554f2bb3a69129a8d796e11d1c830",
+ "key": "45f942b2a2bcfc870f7f02ece06eff26a9a24fb839d7419032ab5782e99518f2",
  "inputs": {
-  "hash": "0dc0b2db7d2bbe89a4c3e517d3585624a3f554f2bb3a69129a8d796e11d1c830",
+  "hash": "45f942b2a2bcfc870f7f02ece06eff26a9a24fb839d7419032ab5782e99518f2",
   "files": 15,
   "version": 2,
   "voices": {
@@ -32,7 +32,7 @@
    "numpy": "2.4.6"
   }
  },
- "date": "2026-11-15T11:58:27.051Z",
+ "date": "2026-11-19T17:09:07.525Z",
  "id": "VL-4-words",
  "claim": "every line of the four locales, said by the local Windows voice of its language and transcribed by Whisper large-v3, has a word error rate (case and punctuation normalised) at most its language's bound, and every line that names a key is heard with the key's name as a word of its own; the Russian lines said by the English voice fail the bound, and v0.13's lines that name a key, said by their voices, lose a key in each of Spanish, Polish and Russian",
  "run": "pnpm listen:words",
@@ -42,10 +42,10 @@
  "languages": {
   "en": {
    "voice": "Microsoft David Desktop",
-   "lines": 581,
-   "words": 4698,
+   "lines": 575,
+   "words": 4524,
    "bound": 0.2,
-   "exact": 573,
+   "exact": 567,
    "meanRate": 0.0012,
    "maxRate": 0.1667,
    "over": [],
@@ -170,11 +170,11 @@
   },
   "es": {
    "voice": "Microsoft Helena Desktop",
-   "lines": 581,
-   "words": 4759,
+   "lines": 575,
+   "words": 4596,
    "bound": 0.2,
-   "exact": 566,
-   "meanRate": 0.0026,
+   "exact": 560,
+   "meanRate": 0.0027,
    "maxRate": 0.2,
    "over": [],
    "keys": {
@@ -228,11 +228,11 @@
   },
   "pl": {
    "voice": "Microsoft Paulina Desktop",
-   "lines": 581,
-   "words": 4031,
+   "lines": 575,
+   "words": 3883,
    "bound": 0.2,
-   "exact": 567,
-   "meanRate": 0.0028,
+   "exact": 563,
+   "meanRate": 0.0026,
    "maxRate": 0.2,
    "over": [],
    "keys": {
@@ -321,11 +321,11 @@
   },
   "ru": {
    "voice": "Microsoft Irina Desktop",
-   "lines": 581,
-   "words": 3843,
+   "lines": 575,
+   "words": 3698,
    "bound": 0.2,
-   "exact": 563,
-   "meanRate": 0.0031,
+   "exact": 557,
+   "meanRate": 0.0033,
    "maxRate": 0.2,
    "over": [],
    "keys": {
@@ -500,8 +500,8 @@
  "control": {
   "locale": "ru",
   "voice": "Microsoft David Desktop",
-  "lines": 581,
-  "overBound": 581,
+  "lines": 575,
+  "overBound": 575,
   "share": 1,
   "medianRate": 1,
   "fails": true
@@ -1502,27 +1502,11 @@
   },
   {
    "locale": "pl",
-   "key": "lesson.ears-headphones.intro.1",
-   "text": "Sprawdźmy twoje słuchawki. Najlepiej działają słuchawki z kablem, a głośność ma być wygodna, nigdy zbyt duża.",
-   "heard": "Sprawdźcie migrek Twoje słuchawki. Najlepiej działają słuchawki z kablem, a głośność ma być wygodna, nigdy zbyt duża.",
-   "rawRate": 0.125,
-   "rate": 0.125
-  },
-  {
-   "locale": "pl",
    "key": "lesson.hover-height.intro.1",
    "text": "Teraz lecisz, ale spokojnie. Dron sam się poziomuje, więc ty wybierasz tylko, jak wysoko ma być.",
    "heard": "Teraz lecisz, ale spokojnie. Dran sam się poziomuje, więc ty wybierasz tylko, jak wysoko ma być.",
    "rawRate": 0.0625,
    "rate": 0
-  },
-  {
-   "locale": "pl",
-   "key": "lesson.turn-listen.intro.2",
-   "text": "Porusz drążkiem obrotu trochę w lewo, potem trochę w prawo, i słuchaj. Dźwięk z przodu ucieka od strony obrotu. Dźwięk z tyłu wchodzi do ucha po tej stronie, w którą się obracasz.",
-   "heard": "Porusz drążkiem obrotu trochę w lewo, potem trochę w prawo i słuchaj. Dźwięk z przodu ucieka od strony obrotu. Dźwięk z tyłu wchodzi do ucha po tej stronie, w którą się obrakasz.",
-   "rawRate": 0.0313,
-   "rate": 0.0313
   },
   {
    "locale": "pl",
@@ -1639,9 +1623,9 @@
   {
    "locale": "pl",
    "key": "lesson.shapes-cube.intro.1",
-   "text": "Rama sześcianu to pudło z belek, otwarte ze wszystkich stron. Jej dźwięk przeskakuje między przodem a tyłem.",
-   "heard": "Rama szeisianu to pudło z belek, otwarte ze wszystkich stron. Jej dźwięk przeskakuje między przodem a tyłem.",
-   "rawRate": 0.0588,
+   "text": "Rama sześcianu to pudło z belek, otwarte ze wszystkich stron. Jej dźwięk przeskakuje między bliską a daleką ramą.",
+   "heard": "Rama szeisianu to pudło z belek, otwarte ze wszystkich stron. Jej dźwięk przeskakuje między bliską a daleką ramą.",
+   "rawRate": 0.0556,
    "rate": 0
   },
   {
@@ -1671,9 +1655,9 @@
   {
    "locale": "pl",
    "key": "lesson.shapes-cube.hint.1",
-   "text": "Dźwięk przeskakuje między przodem a tyłem. Pomiędzy nimi jesteś w środku sześcianu.",
-   "heard": "Dźwięk przeskakuje między przodem a tyłem. Pomiędzy nimi jesteś w środku szeisianu.",
-   "rawRate": 0.0833,
+   "text": "Dźwięk przeskakuje między bliską a daleką ramą. Pomiędzy nimi jesteś w środku sześcianu.",
+   "heard": "Dźwięk przeskakuje między bliską a daleką ramą. Pomiędzy nimi jesteś w środku szeisianu.",
+   "rawRate": 0.0769,
    "rate": 0
   },
   {
@@ -2016,6 +2000,14 @@
   },
   {
    "locale": "ru",
+   "key": "lesson.ears-headphones.intro.1",
+   "text": "Надень наушники, L на левое ухо.",
+   "heard": "Надень наушники, эль на левое ухо",
+   "rawRate": 0.1667,
+   "rate": 0.1667
+  },
+  {
+   "locale": "ru",
    "key": "lesson.ears-game.hint.1",
    "text": "Вслушайся в окраску звука: стук, глухой удар, дуновение, кружение или тиканье.",
    "heard": "Вслушайся в окраску звука, стук, глухой удар, дуновение, кружение или тикание",
@@ -2040,6 +2032,14 @@
   },
   {
    "locale": "ru",
+   "key": "lesson.turn-listen.intro.1",
+   "text": "Гул звучит с одной стороны от тебя.",
+   "heard": "Гол звучит с одной стороны от тебя",
+   "rawRate": 0.1429,
+   "rate": 0
+  },
+  {
+   "locale": "ru",
    "key": "lesson.move-speed.intro.2",
    "text": "Пролети немного вперёд, потом отпусти стик. Дрон замедлится и остановится.",
    "heard": "Пролейте немного вперёд, потом отпусти стик Дрон замедлится и остановится",
@@ -2061,14 +2061,6 @@
    "heard": "Замедлийся до того, как подлетишь Чем ближе зона, тем чаще повторяется гол",
    "rawRate": 0.1667,
    "rate": 0.0833
-  },
-  {
-   "locale": "ru",
-   "key": "lesson.walls-hall.intro.3",
-   "text": "Если всё же коснёшься, ничего не сломается. Это просто мягкий удар.",
-   "heard": "Если всё же кознёшься, ничего не сломается. Это просто мягкий удар.",
-   "rawRate": 0.0909,
-   "rate": 0.0909
   },
   {
    "locale": "ru",
