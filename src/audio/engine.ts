@@ -30,6 +30,7 @@ import { createTranslator, type Dicts, type Translator } from '../i18n/translato
 import { defaultPrefs } from '../prefs/prefs';
 import type { SamplerOptions } from '../sense/sampler';
 import { getBuiltinTheme } from '../theme/builtin';
+import { placeListener } from './listener';
 import { createOutputChain, type OutputChain } from './output';
 import { createBrowserSpeech, estimateSpeechS, type SpeakOptions } from './speech';
 import { addAir, createSynthKit, makeReverbImpulse, playNote, Roughness, ToneVoice, type SynthKit } from './synth';
@@ -496,16 +497,7 @@ export class FlyBySoundEngine implements SonicEngine {
         output.setMasterDb(theme.master.gainDb, ctx.currentTime);
         output.master.gain.value = dbToGain(theme.master.gainDb);
 
-        const listener = ctx.listener;
-        listener.positionX.value = 0;
-        listener.positionY.value = 0;
-        listener.positionZ.value = 0;
-        listener.forwardX.value = 0;
-        listener.forwardY.value = 0;
-        listener.forwardZ.value = -1;
-        listener.upX.value = 0;
-        listener.upY.value = 1;
-        listener.upZ.value = 0;
+        placeListener(ctx.listener);
 
         const reverbIn = ctx.createGain();
         const convolver = ctx.createConvolver();
