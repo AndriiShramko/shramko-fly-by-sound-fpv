@@ -46,10 +46,10 @@ export function playS(cue: CueId): number {
     return ONE_OFF_PLAY_S[cue] ?? REPEAT_PLAY_S;
 }
 
-/** Where each wall-like cue comes from in the narrated scenes of ears-walls (spec: front, left, right, above, below). */
+/** Where each wall-like cue comes from in the narrated scenes of ears-walls: left, right, above, below. No wall in front:
+ * in headphones a sound in front and a sound behind are not told apart (owner, 2026-11-19). */
 export const APPROACHES: Readonly<Record<string, readonly { readonly dir: Vec3; readonly sector: string }[]>> = {
     'safety.wall': [
-        { dir: [0, 0, -1], sector: 'front' },
         { dir: [-1, 0, 0], sector: 'left' },
         { dir: [1, 0, 0], sector: 'right' }
     ],

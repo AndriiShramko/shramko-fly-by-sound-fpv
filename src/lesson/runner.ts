@@ -386,11 +386,11 @@ export const TURN_OFFSETS = [0, 180, 90, -135] as const;
 /** Where an intro line's cue comes from, listener frame (x right, y up, -z ahead). */
 const SIDE_DIRS: Readonly<Record<IntroCue['from'], Vec3>> = { left: [-1, 0, 0], right: [1, 0, 0], front: [0, 0, -1], back: [0, 0, 1], up: [0, 1, 0], down: [0, -1, 0] };
 
-const SIDES: readonly { readonly dir: Vec3; readonly sector: 'left' | 'right' | 'front' | 'back' }[] = [
+/** Where a sound of the ears game comes from. Only left and right: in headphones that do not follow the head, a sound in
+ * front and a sound behind sound the same, so the game never asks the pilot to tell them apart (owner, 2026-11-19). */
+const SIDES: readonly { readonly dir: Vec3; readonly sector: 'left' | 'right' }[] = [
     { dir: [-1, 0, 0], sector: 'left' },
-    { dir: [1, 0, 0], sector: 'right' },
-    { dir: [0, 0, -1], sector: 'front' },
-    { dir: [0, 0, 1], sector: 'back' }
+    { dir: [1, 0, 0], sector: 'right' }
 ];
 
 // ------------------------------------------------------------------ the script
@@ -1548,12 +1548,15 @@ class Runner implements LessonSession {
         }
         const out: Block[] = [];
         for (const cue of cues) {
-            const ways = APPROACHES[cue] ?? [{ dir: [0, 0, -1] as Vec3, sector: 'front' }];
+            // a cue with no named approach (a shape, a gate) comes from ahead and is named without a side: "in front" is
+            // not told by ear in headphones, so it is not said either
+            const ways: readonly { readonly dir: Vec3; readonly sector: string | null }[] = APPROACHES[cue] ?? [{ dir: [0, 0, -1], sector: null }];
             for (const w of ways) {
+                const name = { key: 'narrate.coming', params: { name: this.cueName(cue) } };
                 out.push({
                     kind: 'scene',
                     steps: [
-                        { kind: 'say', lines: [{ key: 'narrate.coming', params: { name: this.cueName(cue) } }, { key: `dir.${w.sector}` }] },
+                        { kind: 'say', lines: w.sector === null ? [name] : [name, { key: `dir.${w.sector}` }] },
                         { kind: 'scene', scene: { cue, dir: w.dir, moving: true, durS: NARRATED_SCENE_S }, plays: REPEAT_PLAYS }
                     ]
                 });
@@ -1622,7 +1625,7 @@ class Runner implements LessonSession {
                 const where = SIDES.indexOf(side) + 1;
                 steps.push({
                     kind: 'ask',
-                    question: { id: `${id}:where`, lines: [{ key: 'quiz.q-where' }, { key: 'quiz.where-options' }], options: 4, skippable: true },
+                    question: { id: `${id}:where`, lines: [{ key: 'quiz.q-where' }, { key: 'quiz.where-options' }], options: SIDES.length, skippable: true },
                     onAnswer: (value) => {
                         const right = value === where;
                         this.earsAnswers.set(`${id}:where`, { kind: 'where', value, right });

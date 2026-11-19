@@ -125,7 +125,6 @@ export const FREE_KEYS = [
     // the headphone check (lesson ears-headphones)
     'headphones.intro',
     'headphones.q-side',
-    'headphones.q-front-back',
     'headphones.good',
     'headphones.swapped',
     'headphones.unclear',
