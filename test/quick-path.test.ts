@@ -1,10 +1,11 @@
 // The quick first lesson (simulator lane sound6, owner 2026-11-19): in headphones that do not follow the head a sound in
 // front and a sound behind sound the same, so no lesson asks the pilot to tell them apart, and no lesson teaches it.
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import type { LessonDef, Vec3 } from '../src/contract';
+import type { LessonDef, Locale, Vec3 } from '../src/contract';
 import { DICTS } from '../src/i18n';
 import { getLesson, SHIPPED_LESSON_IDS, TURN_OFFSETS, type DemoScene, type Question } from '../src/lesson';
-import { lessonSchedule } from '../src/lesson/schedule';
+import { lessonSchedule, measuredSpeech, type Schedule, type SpeechModel } from '../src/lesson/schedule';
 import { createAnalyticWorld } from '../src/world/analytic-world';
 import { lessonPaths } from '../src/lesson/library';
 import { HEADPHONE_CUE } from '../src/lesson/runner';
@@ -26,6 +27,57 @@ function answerOf(lesson: LessonDef, dirs: Vec3[]): (q: Question, scene: DemoSce
         if (q.id.endsWith(':where')) return s.dir[0] < 0 ? 1 : 2;
         return s.moving ? 1 : 2;
     };
+}
+
+const LOCALES = ['en', 'es', 'pl', 'ru'] as const;
+const fixture = (name: string): Record<string, number> => (JSON.parse(readFileSync(new URL(`./fixtures/${name}`, import.meta.url), 'utf8')) as { seconds: Record<string, number> }).seconds;
+/** the Windows voices measured line by line (test/fixtures/measure-tts.ps1): David, Helena, Paulina, Irina */
+const VOICE: Readonly<Record<Locale, Record<string, number>>> = {
+    en: fixture('tts-en-david.json'),
+    es: fixture('tts-es-helena.json'),
+    pl: fixture('tts-pl-paulina.json'),
+    ru: fixture('tts-ru-irina.json')
+};
+/** the design's promise (simulator lane sound6): a wall knock within 12 s of the press */
+const FIRST_WALL_MAX_S = 12;
+/**
+ * A guard against new talk on the quick path: its small room's flight begins 205.0 s after the press with David at this
+ * build (headphone check 82.2 s, the walls 89.2 s, the room's intro 33.6 s; the design guessed 135 s), so 210 s.
+ */
+const ROOM_FLIGHT_MAX_S = 210;
+
+/** one lesson's schedule as the path plays it: every question answered right when it has been read out */
+function pathSchedule(id: string, locale: Locale, speech: SpeechModel): Schedule {
+    const lesson = getLesson(id);
+    return lessonSchedule(lesson, { locale, speech, answer: answerOf(lesson, []), runner: { seed: 1 } });
+}
+
+/**
+ * Seconds from the press that opens the path's first lesson to the first play of `cue`, the lessons played one after
+ * another; Infinity when the path reaches a flight (where the sound depends on the pilot) before it.
+ */
+function secondsToFirst(ids: readonly string[], cue: string, locale: Locale, speech: SpeechModel): number {
+    let t = 0;
+    for (const id of ids) {
+        const s = pathSchedule(id, locale, speech);
+        const p = s.plays.find((x) => x.cue === cue);
+        if (p !== undefined) return (t + p.start) / 1000;
+        if (s.phase === 'flying') return Infinity;
+        t += s.endT;
+    }
+    return Infinity;
+}
+
+/** Seconds from the press to the start of the flight of lesson `flightId`, the lessons before it passed one by one. */
+function secondsToFlight(ids: readonly string[], flightId: string, locale: Locale, speech: SpeechModel): number {
+    let t = 0;
+    for (const id of ids) {
+        const s = pathSchedule(id, locale, speech);
+        if (id === flightId) return s.phase === 'flying' ? (t + s.endT) / 1000 : Infinity;
+        if (s.phase === 'flying') return Infinity;
+        t += s.endT;
+    }
+    return Infinity;
 }
 
 describe('no lesson asks or tells front against behind', () => {
@@ -103,6 +155,23 @@ describe('the quick path is the default (owner 2026-11-19: headphones, then at o
         const before = s.speech.filter((l) => l.start < first.start).map((l) => l.key);
         expect(before).toEqual(['lesson.ears-headphones.title', 'lesson.ears-headphones.intro.1', 'headphones.trial']);
         expect(s.speech.map((l) => l.key)).not.toContain('headphones.wired');
+    });
+
+    it.each(LOCALES.map((l) => [l]))('(b) %s, measured voice: the first wall sound comes within 12 s of the press on both paths', (locale) => {
+        const speech = measuredSpeech(VOICE[locale]);
+        const paths = lessonPaths();
+        // at this build: en 6.9 s, es 7.9 s, pl 7.1 s, ru 8.0 s on both paths (the headphone check's first knock).
+        // Before lane sound6 (package bd79c96) the full path's first knock came after the headphone check, in
+        // ears-glossary; the fast path had none before its first flight (Infinity)
+        for (const path of ['fast', 'full'] as const) {
+            const s = secondsToFirst(paths[path], 'safety.wall', locale, speech);
+            expect(s, `${path}, ${locale}`).toBeLessThanOrEqual(FIRST_WALL_MAX_S);
+        }
+    });
+
+    it('(b) en, measured voice (David): on the quick path the small room flies within 210 s of the press', () => {
+        const s = secondsToFlight(lessonPaths().fast, 'walls-hall', 'en', measuredSpeech(VOICE.en));
+        expect(s).toBeLessThanOrEqual(ROOM_FLIGHT_MAX_S);
     });
 
     it('(c) the room lesson names the height tone and the best-height note: the quick path has no hover-height', () => {
