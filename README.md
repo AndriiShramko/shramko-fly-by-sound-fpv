@@ -136,7 +136,7 @@ Schools, researchers, sound designers and pilots who want to test or improve Fly
 
 <img src="docs/assets/andrii-shramko.webp" alt="Andrii Shramko" width="120" height="120" align="left">
 
-**Andrii Shramko** — I fly drones and scan cities and buildings as 3D Gaussian splats with drones and 360° cameras; ShramkoGSFPV lets anyone fly through those scans in a browser. I have wanted blind and low-vision people to fly drones since 2021, and a simulator is the safe place to start: by sound first, real drones later.
+**Andrii Shramko** — I fly drones and scan cities and buildings as 3D Gaussian splats with drones and 360° cameras; ShramkoGSFPV lets anyone fly through those scans in a browser. Since 2021 I have wanted blind and low-vision people to hear what a camera sees. This November I asked a new question: could a blind pilot fly a drone this way? A simulator is the safe place to start: by sound first, real drones later.
 
 **Open to interesting people and ready to help teams build ambitious projects** — accessible games, spatial audio, simulators, 3D scanning, VR, partnerships, licensing or funding. Get in touch:
 
