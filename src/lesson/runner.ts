@@ -95,7 +95,7 @@
 // Never silence (M41-10, the runner's part). Between attempts target() keeps giving the first target of the
 // next attempt (the gate, the zone, the sound to turn to), so the target layer goes on sounding while the
 // attempt's lines are said and the pause runs; a step never waits in silence without a line said first.
-import type { Checkpoint, CueEvent, CueId, FlightSample, Goal, IntroCue, LessonDef, LessonProgress, LessonRunner, Locale, MaterialClass, Pose, SessionEvent, SonicFrameInput, SonicObject, SonicWorld, SpeechLine, Vec3 } from '../contract';
+import type { Checkpoint, CueEvent, CueId, FlightSample, Goal, GuideLevel, IntroCue, LessonDef, LessonProgress, LessonRunner, Locale, MaterialClass, MomentView, Pose, SessionEvent, SonicFrameInput, SonicObject, SonicWorld, SpeechLine, Vec3 } from '../contract';
 import { DICTS } from '../i18n/dicts';
 import { createTranslator, type Dicts, type Translator } from '../i18n/translator';
 import { createRng } from '../util/rng';
@@ -155,7 +155,14 @@ export type RunnerAction =
      * 'previous': the way back first too, else the lesson before (lessonBefore), else the start screen. The runner is
      * done after it (a lesson event 'leave').
      */
-    | { readonly kind: 'go'; readonly to: 'next' | 'previous' };
+    | { readonly kind: 'go'; readonly to: 'next' | 'previous' }
+    /** train 4 (MomentDef): non-null, the flight freezes and the moment runs; null, the flight goes on */
+    | { readonly kind: 'moment'; readonly moment: MomentView | null }
+    /** train 4: the cues the engine may sound now (CuePlanner.setAudible); null: all, as before. Speech is not a cue and is never cut. */
+    | { readonly kind: 'audible'; readonly cues: readonly CueId[] | null };
+
+/** The keys of a moment (LessonSession.momentKey): hear the sound again, go on, "I know this sound". */
+export type MomentKey = 'again' | 'on' | 'know';
 
 /** What a step of a lesson is (see "Steps" above). */
 export type StepKind = 'task' | 'fly' | 'intro' | 'sound' | 'scene' | 'trial' | 'round';
@@ -225,6 +232,8 @@ export interface LessonSession extends LessonRunner {
     pause(t: number): readonly SessionEvent[];
     /** the flight goes on: every clock moves on by the pause; then report spoken(t) once the speech queue is empty */
     resume(t: number): readonly SessionEvent[];
+    /** train 4: a key of the moment running (MomentKey); no moment running: nothing happens, no events */
+    momentKey(key: MomentKey, t: number): readonly SessionEvent[];
     /** where the pilot is: lesson, step, attempt, count */
     view(): LessonView;
     /** the view as one line to say (I) */
@@ -270,6 +279,13 @@ export interface RunnerOptions {
      * begins at its start when the craft left it during the task).
      */
     readonly freeFlight?: boolean;
+    /**
+     * Train 4: the sounds the pilot has learned already (in earlier lessons or with "I know this"): their moments are
+     * skipped and their cues are audible from the start. Absent: none.
+     */
+    readonly known?: readonly CueId[];
+    /** Train 4: how much a moment says (GuideLevel). Absent: 'full', so old recordings replay. */
+    readonly guide?: GuideLevel;
     /**
      * @internal For the package's own negative controls only (review R15): each brings back a rule of v0.12 that a
      * check must catch. Not part of the host API; a host never sets it.
@@ -2011,6 +2027,12 @@ class Runner implements LessonSession {
         this.advance(t);
         this.afterScript(t);
         return this.drain();
+    }
+
+    // -------------------------------------------------------------- moments (train 4)
+
+    momentKey(_key: MomentKey, _t: number): readonly SessionEvent[] {
+        return [];
     }
 
     // -------------------------------------------------------------- what the host shows and says

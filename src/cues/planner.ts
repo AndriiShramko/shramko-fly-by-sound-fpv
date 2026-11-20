@@ -384,6 +384,8 @@ export class CuePlanner {
     private onCourseId: string | null = null;
     private layersValue: LessonLayers;
     private on: Set<LayerId>;
+    /** train 4 (setAudible): the cues the engine may sound; null: all */
+    private audible: ReadonlySet<CueId> | null = null;
     private readonly sampler: SceneSampler;
     private readonly moving: VoiceAllocator;
     private readonly steppedHeight: boolean;
@@ -520,9 +522,13 @@ export class CuePlanner {
             }
         }
 
+        // train 4 (setAudible): a cue not taught yet is never planned, so it takes no voice, no slot and no urgency
+        const audible = this.audible;
+        const heard = audible === null ? requests : requests.filter((r) => audible.has(r.cue));
+        const heardKeys = new Set(heard.map((r) => r.key));
         // the stream budget (sonic3 plan 2.2): at speed the low ranks stop; the cut keys are reported as dropped
-        const urgentKeys = new Set(this.on.has('safety') ? scene.hazards.filter((h) => isUrgent(h.ttcS, h.distance, length(s.vel))).map((h) => `safety:${h.sector}`) : []);
-        const budget = applyBudget(requests, tier, urgentKeys);
+        const urgentKeys = new Set(this.on.has('safety') ? scene.hazards.filter((h) => isUrgent(h.ttcS, h.distance, length(s.vel))).map((h) => `safety:${h.sector}`).filter((k) => heardKeys.has(k)) : []);
+        const budget = applyBudget(heard, tier, urgentKeys);
         const alloc = this.moving.assign(budget.kept.map((r) => ({ key: r.key, priority: r.priority })));
         const voices: VoicePlan[] = [];
         for (const r of budget.kept) {
@@ -531,15 +537,36 @@ export class CuePlanner {
         }
         voices.sort((a, b) => b.priority - a.priority);
 
-        const urgent = this.on.has('safety') && scene.hazards.some((h) => isUrgent(h.ttcS, h.distance, length(s.vel)));
+        const urgent = this.on.has('safety') && scene.hazards.some((h) => isUrgent(h.ttcS, h.distance, length(s.vel)) && (audible === null || heardKeys.has(`safety:${h.sector}`)));
         this.notes = this.notes.filter((n) => n.endT > t);
         for (let i = 0; i < this.staticSlots.length; i++) {
             const n = this.staticSlots[i];
             if (n !== null && n !== undefined && n.endT <= t) this.staticSlots[i] = null;
         }
+        if (audible !== null) {
+            height = height === null || !audible.has('height.tone') ? null : height.target !== null && !audible.has('height.target') ? { ...height, target: null } : height;
+            speed = speed === null ? null : this.audibleSpeed(speed, audible);
+            room = room !== null && audible.has('room.bed') ? room : null;
+            if (freeWay !== null && !audible.has('safety.free')) freeWay = null;
+        }
         const cues = this.cues(voices, height, speed, room);
         const dropped = budget.cut.length === 0 ? alloc.dropped : [...alloc.dropped, ...budget.cut];
         return { t, scene, voices, dropped, height, speed, room, urgent, cues, freeWay, tier };
+    }
+
+    /**
+     * Train 4 (lane tutor-moment): what the engine may sound. A set: only these cues are planned (a voice, the height tone
+     * and its target, the speed tick or brake, the room bed, a one-off note or a preview); every other cue is left out
+     * before the budget, so it takes no slot. Null: every cue, as before. Speech is not a cue and is never cut by it.
+     */
+    setAudible(cues: ReadonlySet<CueId> | null): void {
+        this.audible = cues === null ? null : new Set(cues);
+    }
+
+    /** The speed plan as far as it may sound: the brake falls back to the tick when only the tick is audible. */
+    private audibleSpeed(speed: SpeedPlan, audible: ReadonlySet<CueId>): SpeedPlan | null {
+        if (speed.brake === true) return audible.has('speed.brake') ? speed : audible.has('speed.tick') ? { ...speed, brake: false } : null;
+        return audible.has('speed.tick') ? speed : null;
     }
 
     /** The free way now, with a short hold so the chime does not stutter as the probes pass the obstacle's edge. */
@@ -1061,6 +1088,7 @@ export class CuePlanner {
         // static slots for spatial notes: the first free one, else steal the least important or the oldest
         const out: NotePlan[] = [];
         for (const raw of notes) {
+            if (this.audible !== null && !this.audible.has(raw.cue)) continue; // train 4: a cue not taught yet is not sounded
             if (raw.atS >= capS) continue;
             const n = raw.atS + raw.durS > capS ? { ...raw, durS: Math.max(0.03, capS - raw.atS) } : raw;
             const key = `note:${++this.noteCount}`;
@@ -1092,6 +1120,7 @@ export class CuePlanner {
      * sounds nothing.
      */
     private previewCue(cue: CueId, rawDir: Vec3 | null, t: number, durS: number, cut = false): NotePlan[] {
+        if (this.audible !== null && !this.audible.has(cue)) return [];
         const dir = rawDir === null ? null : normalize(rawDir);
         const oneOff: Readonly<Record<string, CueEvent>> = {
             'safety.touch': { kind: 'touch', material: 'wall', dir, speed: 2 },

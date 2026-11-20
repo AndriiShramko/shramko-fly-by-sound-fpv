@@ -9,7 +9,7 @@
 // Decoding is strict about every field a line must have. Unknown extra keys on an event are refused
 // in strict mode and ignored in lenient mode, so a newer app's package can still be read for a report.
 import type { FlightFrame, MaterialClass, SessionEvent, SurveyAnswers, Vec3 } from '../contract';
-import { FORMATS, MATERIAL_CLASSES } from '../contract';
+import { FORMATS, MATERIAL_CLASSES, MOMENT_EVENT_WHAT } from '../contract';
 import { canonicalJson, canonicalPretty } from '../util/canonical';
 import { Collector, joinPath, type Validation } from '../util/check';
 
@@ -97,7 +97,7 @@ export function encodeEvent(e: SessionEvent): string {
     return canonicalJson(roundEvent(e));
 }
 
-const EVENT_KINDS = ['session', 'lesson', 'goal', 'touch', 'gate', 'checkpoint', 'reset', 'speech', 'key', 'answer', 'recording', 'send'] as const;
+const EVENT_KINDS = ['session', 'lesson', 'goal', 'touch', 'gate', 'checkpoint', 'reset', 'speech', 'key', 'answer', 'recording', 'send', 'moment'] as const;
 const SESSION_WHAT = ['start', 'pause', 'resume', 'end', 'recovered'] as const;
 const LESSON_WHAT = ['open', 'intro', 'attempt-start', 'attempt-pass', 'attempt-fail', 'block-pass', 'passed', 'leave'] as const;
 const GOAL_WHAT = ['met', 'missed'] as const;
@@ -123,7 +123,8 @@ const EVENT_KEYS: Readonly<Record<SessionEvent['kind'], readonly string[]>> = {
     key: ['t', 'kind', 'code', 'action'],
     answer: ['t', 'kind', 'item', 'value', 'via'],
     recording: ['t', 'kind', 'what'],
-    send: ['t', 'kind', 'what', 'channel']
+    send: ['t', 'kind', 'what', 'channel'],
+    moment: ['t', 'kind', 'id', 'what']
 };
 
 export interface EventValidationOptions {
@@ -222,6 +223,12 @@ export function validateEvent(input: unknown, options: EventValidationOptions = 
             const what = c.oneOf(r['what'], 'what', SEND_WHAT);
             const channel = r['channel'] === null ? null : c.oneOf(r['channel'], 'channel', SEND_CHANNEL);
             if (what !== undefined && channel !== undefined && t !== undefined) e = { t, kind, what, channel };
+            break;
+        }
+        case 'moment': {
+            const id = str('id');
+            const what = c.oneOf(r['what'], 'what', MOMENT_EVENT_WHAT);
+            if (id !== undefined && what !== undefined && t !== undefined) e = { t, kind, id, what };
             break;
         }
     }

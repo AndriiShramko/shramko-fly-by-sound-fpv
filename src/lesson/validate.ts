@@ -3,12 +3,13 @@
 // code, so the loader is strict: unknown and missing keys are refused, every number has a range,
 // every spoken line must be a key of the locale catalogue, a lesson without a world asks only
 // questions, and a lesson with a world flies.
-import type { Checkpoint, Goal, IntroCue, IntroLine, LessonAssists, LessonDef, LessonLayers, LessonWorldRef, PassRule, Pose, SpeechLine } from '../contract';
+import type { Checkpoint, Goal, IntroCue, IntroLine, LessonAssists, LessonDef, LessonLayers, LessonWorldRef, MomentDef, MomentForm, MomentWhen, PassRule, Pose, SpeechLine } from '../contract';
 import { FORMATS, LAYER_IDS, MODULES, WORLD_GENERATORS } from '../contract';
 import { CUE_IDS, requiredKeys } from '../i18n/catalog';
 import { canonicalPretty } from '../util/canonical';
 import { Collector, joinPath, type Validation } from '../util/check';
 import { sceneCues, sceneSilentReason } from './sounds';
+import { MOMENT_FORMS_MAX_S, MOMENT_FORMS_MIN_S } from './moments';
 
 export const LESSON_ID = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 const OBJECT_ID = /^[A-Za-z0-9][A-Za-z0-9._-]{0,39}$/;
@@ -205,6 +206,93 @@ function layers(c: Collector, v: unknown, path: string): LessonLayers | undefine
     return { on: ids, heightBandM, hazardVoices, ...(r.speedBudget === true ? { speedBudget: true } : {}), ...(r.racingLine === true ? { racingLine: true } : {}), ...(r.gateAim === true ? { gateAim: true } : {}) };
 }
 
+const MOMENT_WHEN = ['start', 'near', 'free', 'gate', 'passed', 'speed', 'height'] as const;
+const NEAR_DIRS = ['front', 'side', 'up', 'down'] as const;
+/** a lesson teaches at most this many sounds by moments (decision 6: the first set is small) */
+export const MOMENTS_MAX = 8;
+
+function momentWhen(c: Collector, v: unknown, path: string): MomentWhen | undefined {
+    const r = c.record(v, path);
+    if (r === null) return undefined;
+    const kind = c.oneOf(r.kind, joinPath(path, 'kind'), MOMENT_WHEN);
+    const at = (k: string): string => joinPath(path, k);
+    switch (kind) {
+        case 'start':
+        case 'free':
+        case 'passed':
+            c.keys(r, path, ['kind']);
+            return { kind };
+        case 'near': {
+            c.keys(r, path, ['kind', 'dir', 'withinM']);
+            const dir = c.oneOf(r.dir, at('dir'), NEAR_DIRS);
+            const withinM = c.number(r.withinM, at('withinM'), { min: 0.3, max: 20 });
+            return dir !== undefined && withinM !== undefined ? { kind, dir, withinM } : undefined;
+        }
+        case 'gate': {
+            c.keys(r, path, ['kind', 'withinM']);
+            const withinM = c.number(r.withinM, at('withinM'), { min: 0.5, max: 50 });
+            return withinM !== undefined ? { kind, withinM } : undefined;
+        }
+        case 'speed': {
+            c.keys(r, path, ['kind', 'aboveMps']);
+            const aboveMps = c.number(r.aboveMps, at('aboveMps'), { min: 0.1, max: 30 });
+            return aboveMps !== undefined ? { kind, aboveMps } : undefined;
+        }
+        case 'height': {
+            c.keys(r, path, ['kind', 'aboveM']);
+            const aboveM = c.number(r.aboveM, at('aboveM'), { min: 0.1, max: 50 });
+            return aboveM !== undefined ? { kind, aboveM } : undefined;
+        }
+    }
+    return undefined;
+}
+
+function momentForm(c: Collector, v: unknown, path: string): MomentForm | undefined {
+    const r = c.record(v, path);
+    if (r === null) return undefined;
+    c.keys(r, path, ['dir', 'distanceM', 'durS']);
+    const dir = c.vec3(r.dir, joinPath(path, 'dir'));
+    if (dir !== undefined && Math.hypot(dir[0], dir[1], dir[2]) < 1e-6) c.add(joinPath(path, 'dir'), 'must not be zero');
+    const distanceM = orNull(r.distanceM, () => c.number(r.distanceM, joinPath(path, 'distanceM'), { min: 0.1, max: 50 }));
+    const durS = c.number(r.durS, joinPath(path, 'durS'), { min: 0.5, max: MOMENT_FORMS_MAX_S });
+    return dir !== undefined && distanceM !== undefined && durS !== undefined ? { dir, distanceM, durS } : undefined;
+}
+
+/**
+ * A moment (train 4): one new sound taught at its action. Its forms are 1-2 and together 2-3 s; its lines are
+ * 'moment.<id>.do' and 'moment.<id>.hint'; its task is a goal of a flying lesson, or null.
+ */
+function moment(c: Collector, v: unknown, path: string): MomentDef | undefined {
+    const r = c.record(v, path);
+    if (r === null) return undefined;
+    const at = (k: string): string => joinPath(path, k);
+    c.keys(r, path, ['id', 'cue', 'when', 'forms', 'do', 'hint', 'hintAfterS', 'task']);
+    const id = c.string(r.id, at('id'), { min: 1, max: 40, pattern: LESSON_ID, patternHint: 'must be kebab case' });
+    const cue = typeof r.cue === 'string' && (CUE_IDS as readonly string[]).includes(r.cue) ? r.cue : undefined;
+    if (cue === undefined) c.add(at('cue'), 'must be a cue id of src/i18n/catalog.ts CUE_IDS');
+    const when = momentWhen(c, r.when, at('when'));
+    let forms: MomentForm[] | undefined;
+    const arr = c.array(r.forms, at('forms'), { min: 1, max: 2 });
+    if (arr !== null) {
+        const out = arr.map((x, i) => momentForm(c, x, joinPath(at('forms'), i))).filter((x): x is MomentForm => x !== undefined);
+        if (out.length === arr.length) {
+            const total = out.reduce((s, f) => s + f.durS, 0);
+            if (total < MOMENT_FORMS_MIN_S || total > MOMENT_FORMS_MAX_S) c.add(at('forms'), `must last ${MOMENT_FORMS_MIN_S}-${MOMENT_FORMS_MAX_S} s together, got ${total}`);
+            if (out.length === 2 && out[0]?.distanceM != null && out[1]?.distanceM != null && out[0].distanceM < out[1].distanceM) c.add(at('forms'), 'must come far first, then near');
+            forms = out;
+        }
+    }
+    const doLine = speechLine(c, r.do, at('do'));
+    const hint = speechLine(c, r.hint, at('hint'));
+    if (id !== undefined && doLine !== undefined && doLine.key !== `moment.${id}.do`) c.add(at('do'), `must be the key 'moment.${id}.do'`);
+    if (id !== undefined && hint !== undefined && hint.key !== `moment.${id}.hint`) c.add(at('hint'), `must be the key 'moment.${id}.hint'`);
+    const hintAfterS = c.number(r.hintAfterS, at('hintAfterS'), { min: 3, max: 120 });
+    const task = r.task === null ? null : goal(c, r.task, at('task'));
+    if (task != null && (QUESTION_GOALS as readonly string[]).includes(task.kind)) c.add(at('task'), "must be a goal of a flying lesson, not 'name-cues' or 'locate'");
+    if (id === undefined || cue === undefined || when === undefined || forms === undefined || doLine === undefined || hint === undefined || hintAfterS === undefined || task === undefined) return undefined;
+    return { id, cue, when, forms, do: doLine, hint, hintAfterS, task };
+}
+
 function goal(c: Collector, v: unknown, path: string): Goal | undefined {
     const r = c.record(v, path);
     if (r === null) return undefined;
@@ -348,7 +436,7 @@ export function validateLesson(input: unknown): Validation<LessonDef> {
     const c = new Collector();
     const r = c.record(input, '');
     if (r === null) return c.result(undefined as never);
-    c.keys(r, '', TOP);
+    c.keys(r, '', [...TOP, 'moments'], TOP);
     // format 1 (v0.12 and before) is read and migrated to format 2 (its pass rule counted blocks of attempts in a row)
     const format: 1 | 2 = r.format === LESSON_FORMAT_V1 ? 1 : 2;
     if (r.format !== FORMATS.lesson && r.format !== LESSON_FORMAT_V1 && r.format !== undefined) c.add('format', `must be '${FORMATS.lesson}' (or '${LESSON_FORMAT_V1}', migrated on load), got ${JSON.stringify(r.format)}`);
@@ -412,12 +500,24 @@ export function validateLesson(input: unknown): Validation<LessonDef> {
         const hints = lines(c, sp.hints, 'speech.hints', 0, 12);
         if (p !== undefined && rt !== undefined && hints !== undefined) speech = { pass: p, retry: rt, hints };
     }
+    // train 4: the sounds the lesson teaches at their actions (absent: none; the format stays /2)
+    let moments: MomentDef[] | undefined;
+    if (r.moments !== undefined) {
+        const arr = c.array(r.moments, 'moments', { min: 1, max: MOMENTS_MAX });
+        if (arr !== null) {
+            const out = arr.map((x, i) => moment(c, x, joinPath('moments', i))).filter((x): x is MomentDef => x !== undefined);
+            if (new Set(out.map((m) => m.id)).size !== out.length) c.add('moments', 'must not repeat a moment id');
+            if (new Set(out.map((m) => m.cue)).size !== out.length) c.add('moments', 'must teach each sound once (one new sound a moment)');
+            if (out.length === arr.length) moments = out;
+        }
+    }
 
     // the kind of lesson and its goals agree
     if (w !== undefined && goals !== undefined) {
         const asks = goals.filter((g) => (QUESTION_GOALS as readonly string[]).includes(g.kind)).length;
         if (w.kind === 'none' && asks !== goals.length) c.add('goals', "a lesson without a world (module 0, the ears) can only have 'name-cues' and 'locate' goals");
         if (w.kind !== 'none' && asks > 0) c.add('goals', "'name-cues' and 'locate' goals belong to a lesson without a world");
+        if (w.kind === 'none' && moments !== undefined) c.add('moments', 'belong to a lesson with a world: a moment freezes a flight');
         if (module !== undefined && (module === 0) !== (w.kind === 'none')) c.add('world', 'module 0 (the ears) and only module 0 runs without a world');
         if (goals.some((g) => g.kind === 'track-end') && (checkpoints?.length ?? 0) < 2) c.add('goals', "a 'track-end' goal needs the lesson's track: two checkpoints or more");
         // M41-9: a scene of module 0 is heard through the lesson's own layers (a preview sounds whatever is on), so every scene must have its layer on
@@ -447,7 +547,8 @@ export function validateLesson(input: unknown): Validation<LessonDef> {
         pass: pass as PassRule,
         checkpoints: checkpoints as Checkpoint[],
         attemptLimitS: attemptLimitS as number | null,
-        speech: speech as LessonDef['speech']
+        speech: speech as LessonDef['speech'],
+        ...(moments === undefined ? {} : { moments })
     });
 }
 

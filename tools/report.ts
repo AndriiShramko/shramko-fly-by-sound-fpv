@@ -242,6 +242,8 @@ function describeEvent(e: SessionEvent): string | null {
             return `recording ${e.what}`;
         case 'send':
             return `sending ${e.what}${e.channel === null ? '' : ` by ${e.channel}`}`;
+        case 'moment':
+            return `moment ${e.id}: ${e.what}`;
     }
 }
 

@@ -18,7 +18,7 @@
 // frame and the elevation raised 7.5 degrees (research 01 section 9); distance is coded by the
 // engine itself (level slope, reverb send, low-pass, repetition, ILD boost, own Doppler), so the
 // panners do no distance attenuation.
-import type { ActiveCue, AudioContextLike, CueEvent, LayerId, LessonLayers, Locale, SonicEngine, SonicFrameInput, SonicPrefs, SpeechLine, SpeechOut, ThemeDef, Timbre } from '../contract';
+import type { ActiveCue, AudioContextLike, CueEvent, CueId, LayerId, LessonLayers, Locale, SonicEngine, SonicFrameInput, SonicPrefs, SpeechLine, SpeechOut, ThemeDef, Timbre } from '../contract';
 import { LAYER_IDS } from '../contract';
 import { CuePlanner, duckDb, layerGainDb, tracePosition, type FramePlan, type HeightPlan, type NotePlan, type VoicePlan } from '../cues/planner';
 import { clamp, compressorMakeupDb, dbToGain, pannerDirection, URGENT_DUCK_DB } from '../cues/rules';
@@ -458,6 +458,10 @@ export class FlyBySoundEngine implements SonicEngine {
 
     setLayers(layers: LessonLayers): void {
         this.planner.setLayers(layers);
+    }
+
+    setAudible(cues: readonly CueId[] | null): void {
+        this.planner.setAudible(cues === null ? null : new Set(cues));
     }
 
     /**

@@ -476,6 +476,67 @@ export interface IntroCue {
     readonly from: 'left' | 'right' | 'front' | 'back' | 'up' | 'down';
 }
 
+// ------------------------------------------------------------------ moments (train 4, lane tutor-moment)
+
+/**
+ * How much a moment says (the guide level). 'full': the sound's `what` line, the sound alone, the `do` line, the hint
+ * and the lesson's lines as written. 'short': what, the sound, do; no hint line. 'new': the sound's name and the sound
+ * only; no other lesson line.
+ */
+export type GuideLevel = 'full' | 'short' | 'new';
+
+/** When a moment comes: the action the sound belongs to. */
+export type MomentWhen =
+    /** the lesson's first flying frame */
+    | { readonly kind: 'start' }
+    /** a surface this close in that direction (listener frame) */
+    | { readonly kind: 'near'; readonly dir: 'front' | 'side' | 'up' | 'down'; readonly withinM: number }
+    /** the planner finds a way through */
+    | { readonly kind: 'free' }
+    /** the next gate this close */
+    | { readonly kind: 'gate'; readonly withinM: number }
+    /** the first gate passed */
+    | { readonly kind: 'passed' }
+    | { readonly kind: 'speed'; readonly aboveMps: number }
+    | { readonly kind: 'height'; readonly aboveM: number };
+
+/** One play of the new sound while the flight is frozen: from `dir` (listener frame), `distanceM` away (null: the cue's own), `durS` long. */
+export interface MomentForm {
+    readonly dir: Vec3;
+    readonly distanceM: number | null;
+    readonly durS: number;
+}
+
+/**
+ * A moment (the pilot's feedback, point 2): at the action a sound belongs to the flight freezes, the sound is named
+ * and played alone, the pilot is told what to do, and the flight goes on. The 'what' line is always the sound's own
+ * `cue.<cue>.what` (one name, one definition).
+ */
+export interface MomentDef {
+    /** unique in the package, kebab case: 'wall-ahead' */
+    readonly id: string;
+    /** the ONE new sound */
+    readonly cue: CueId;
+    readonly when: MomentWhen;
+    /** 1-2, far first, together 2-3 s */
+    readonly forms: readonly MomentForm[];
+    /** 'moment.<id>.do': one sentence, verb first */
+    readonly do: SpeechLine;
+    /** 'moment.<id>.hint': shorter than do */
+    readonly hint: SpeechLine;
+    readonly hintAfterS: number;
+    /** the lesson goal kinds; null: on at once */
+    readonly task: Goal | null;
+}
+
+/** Where a moment is, for the host (RunnerAction 'moment'). `form`: the form playing (0-based) in phase 'sound'. */
+export interface MomentView {
+    readonly id: string;
+    readonly cue: CueId;
+    readonly phase: 'what' | 'sound' | 'do' | 'task' | 'done';
+    readonly form: number;
+}
+
 /** A lesson is data (spec section 3). Every lesson can be opened directly; the ladder only recommends. */
 export interface LessonDef {
     readonly format: (typeof FORMATS)['lesson'];
@@ -499,6 +560,8 @@ export interface LessonDef {
     /** an attempt ends unpassed after this long; null = no limit */
     readonly attemptLimitS: number | null;
     readonly speech: { readonly pass: SpeechLine; readonly retry: SpeechLine; readonly hints: readonly SpeechLine[] };
+    /** train 4: the sounds this lesson teaches at their actions, in order (format stays /2: absent = none) */
+    readonly moments?: readonly MomentDef[];
 }
 
 export interface LessonProgress {
@@ -543,7 +606,13 @@ export type SessionEvent =
     | { readonly t: number; readonly kind: 'key'; readonly code: string; readonly action: string | null }
     | { readonly t: number; readonly kind: 'answer'; readonly item: string; readonly value: number | null; readonly via: 'key' | 'voice' | 'skip' }
     | { readonly t: number; readonly kind: 'recording'; readonly what: 'start' | 'stop' | 'mic-denied' }
-    | { readonly t: number; readonly kind: 'send'; readonly what: 'asked' | 'stored' | 'delivered' | 'failed'; readonly channel: 'server' | 'telegram' | 'email' | null };
+    | { readonly t: number; readonly kind: 'send'; readonly what: 'asked' | 'stored' | 'delivered' | 'failed'; readonly channel: 'server' | 'telegram' | 'email' | null }
+    /** train 4: a moment of the lesson (MomentDef): the flight froze, went on, the hint was said, the sound was learned or known, the task done */
+    | { readonly t: number; readonly kind: 'moment'; readonly id: string; readonly what: MomentEventWhat };
+
+/** What happened to a moment (SessionEvent 'moment'). */
+export const MOMENT_EVENT_WHAT = ['freeze', 'resume', 'hint', 'learned', 'known', 'done'] as const;
+export type MomentEventWhat = (typeof MOMENT_EVENT_WHAT)[number];
 
 export interface Consent {
     /** the session is recorded at all (off until the pilot allows it) */
@@ -719,6 +788,11 @@ export interface SonicEngine {
     setTheme(theme: ThemeDef): void;
     setPrefs(prefs: SonicPrefs): void;
     setLayers(layers: LessonLayers): void;
+    /**
+     * Train 4 (lane tutor-moment): the cues the engine may sound (RunnerAction 'audible'); null: all, as before. A cue not
+     * taught yet is never planned; speech is not a cue and is never cut by it. Absent on an older engine.
+     */
+    setAudible?(cues: readonly CueId[] | null): void;
     /** once per rendered frame (or replayed frame) */
     update(input: SonicFrameInput): void;
     cue(e: CueEvent): void;
