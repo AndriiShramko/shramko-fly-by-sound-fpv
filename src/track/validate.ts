@@ -22,15 +22,33 @@ export const GATE_KINDS = ['ring', 'square', 'cube-frame'] as const;
 
 const CONTROL = /[\u0000-\u001f]/;
 
-function checkShape(c: Collector, v: unknown, path: string): ObjectShape | undefined {
+/**
+ * The size rules of a gate, in FLOWN metres (scene units x the transform's scale s), the unit a leg is checked in: a
+ * course laid at any Scene size (a whoop's 0.34 m gate on a scan enlarged x15 is 0.023 scene units) passes, and a course
+ * at s = 1 meets exactly the numbers it met before. The opening is 0.05-100 m flown, the bar or tube 0.005-10 m flown.
+ */
+export const GATE_OPENING_M = { min: 0.05, max: 100 } as const;
+export const GATE_BAR_M = { min: 0.005, max: 10 } as const;
+
+function flownSize(c: Collector, v: unknown, path: string, s: number, rule: { readonly min: number; readonly max: number }): number | undefined {
+    const n = c.number(v, path);
+    if (n === undefined) return undefined;
+    const m = n * s;
+    const shown = s === 1 ? `${n}` : `${n} x scale ${s} = ${m} m`;
+    if (m < rule.min) c.add(path, `must be at least ${rule.min} m flown, got ${shown}`);
+    if (m > rule.max) c.add(path, `must be at most ${rule.max} m flown, got ${shown}`);
+    return n;
+}
+
+function checkShape(c: Collector, v: unknown, path: string, s: number): ObjectShape | undefined {
     const rec = v === undefined ? null : c.record(v, path);
     if (rec === null) return undefined;
     const kind = c.oneOf(rec.kind, joinPath(path, 'kind'), GATE_KINDS);
     if (kind === undefined) return undefined;
     if (kind === 'ring') {
         c.keys(rec, path, ['kind', 'diameter', 'tube']);
-        const diameter = c.number(rec.diameter, joinPath(path, 'diameter'), { min: 0.05, max: 100 });
-        const tube = c.number(rec.tube, joinPath(path, 'tube'), { min: 0.005, max: 10 });
+        const diameter = flownSize(c, rec.diameter, joinPath(path, 'diameter'), s, GATE_OPENING_M);
+        const tube = flownSize(c, rec.tube, joinPath(path, 'tube'), s, GATE_BAR_M);
         if (diameter !== undefined && tube !== undefined) {
             if (tube > diameter) c.add(joinPath(path, 'tube'), `must not exceed the diameter (${tube} > ${diameter})`);
             return { kind, diameter, tube };
@@ -38,8 +56,8 @@ function checkShape(c: Collector, v: unknown, path: string): ObjectShape | undef
         return undefined;
     }
     c.keys(rec, path, ['kind', 'side', 'bar']);
-    const side = c.number(rec.side, joinPath(path, 'side'), { min: 0.05, max: 100 });
-    const bar = c.number(rec.bar, joinPath(path, 'bar'), { min: 0.005, max: 10 });
+    const side = flownSize(c, rec.side, joinPath(path, 'side'), s, GATE_OPENING_M);
+    const bar = flownSize(c, rec.bar, joinPath(path, 'bar'), s, GATE_BAR_M);
     if (side !== undefined && bar !== undefined) {
         if (bar > side) c.add(joinPath(path, 'bar'), `must not exceed the side (${bar} > ${side})`);
         return { kind, side, bar };
@@ -113,7 +131,8 @@ export function validateTrack(input: unknown): Validation<TrackFile> {
                 if (seen.has(gid)) c.add(joinPath(path, 'id'), `'${gid}' is used twice`);
                 seen.add(gid);
             }
-            const shape = checkShape(c, rec.shape, joinPath(path, 'shape'));
+            // sizes in flown m: times the transform's scale (1 while the transform is missing or refused above)
+            const shape = checkShape(c, rec.shape, joinPath(path, 'shape'), transform?.[0] ?? 1);
             const pos = c.vec3(rec.pos, joinPath(path, 'pos'));
             let quat: TrackGate['quat'] | undefined;
             if (rec.quat !== undefined) {

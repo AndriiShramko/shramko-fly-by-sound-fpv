@@ -138,6 +138,49 @@ describe('the validator', () => {
     });
 });
 
+// A gate's size is checked in flown metres (scene units x transform[0]), the unit a leg is in: a course laid on a scan
+// enlarged x15 or x100 is valid. The same table runs in the simulator against its server's validators
+// (apps/api/tests/fixtures/track-sizes.json there; simulator lane gap-save).
+describe('gate sizes in flown metres', () => {
+    /** V1 flown at `s`: every position and the row's flown sizes divided by s */
+    const at = (s: number, shape: Record<string, string | number>): unknown => {
+        const t = clone(V1) as unknown as { transform: number[]; start: { pos: number[] }; gates: { pos: number[]; shape: unknown }[] };
+        t.transform = [s, 0, 0, 0];
+        t.start.pos = t.start.pos.map((x) => x / s);
+        for (const g of t.gates) {
+            g.pos = g.pos.map((x) => x / s);
+            g.shape = Object.fromEntries(Object.entries(shape).map(([k, v]) => [k, typeof v === 'number' ? v / s : v]));
+        }
+        return t;
+    };
+    const whoop = { kind: 'square', side: 0.34, bar: 0.028 };
+    const fiveInch = { kind: 'square', side: 1.5, bar: 0.1 };
+    const ring = { kind: 'ring', diameter: 1.2, tube: 0.08 };
+    for (const s of [1, 5.6, 15, 100, 0.1]) {
+        it(`a whoop's and a 5 inch's gates are valid at Scene size x${s}`, () => {
+            for (const shape of [whoop, fiveInch, ring]) {
+                const r = validateTrack(at(s, shape));
+                expect(r.ok ? [] : r.issues).toEqual([]);
+            }
+        });
+    }
+    it('refuses a gate too small or too big in flown metres at any Scene size, and says so in metres', () => {
+        const cases: [number, Record<string, string | number>, string][] = [
+            [1, { kind: 'square', side: 0.03, bar: 0.005 }, 'side'],
+            [15, { kind: 'square', side: 0.03, bar: 0.005 }, 'side'],
+            [15, { kind: 'square', side: 0.34, bar: 0.003 }, 'bar'],
+            [100, { kind: 'ring', diameter: 1.2, tube: 0.003 }, 'tube'],
+            [0.1, { kind: 'square', side: 150, bar: 0.1 }, 'side'],
+            [15, { kind: 'ring', diameter: 120, tube: 0.1 }, 'diameter']
+        ];
+        for (const [s, shape, key] of cases) {
+            const r = validateTrack(at(s, shape));
+            expect(r.ok, `${key} at x${s}`).toBe(false);
+            if (!r.ok) expect(r.issues.find((i) => i.path === `gates[0].shape.${key}`)?.message).toMatch(/m flown/);
+        }
+    });
+});
+
 describe('the canonical writer', () => {
     it('sorts keys, keeps positions on one line, and is stable', () => {
         const text = writeTrack(V1);
