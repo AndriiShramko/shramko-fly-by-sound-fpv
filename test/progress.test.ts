@@ -64,7 +64,7 @@ describe('the progress view (I and the host panel)', () => {
         const run = createLessonRunner(getLesson('walls-hall'), { path: 'fast' });
         run.begin(0);
         let v = run.view();
-        expect(v).toMatchObject({ lessonId: 'walls-hall', lessonIndex: 3, lessonCount: lessonPaths().fast.length, path: 'fast', step: 1, steps: 2, stepKind: 'task', attempt: 0, counted: 0, required: 3, phase: 'intro' });
+        expect(v).toMatchObject({ lessonId: 'walls-hall', lessonIndex: 2, lessonCount: lessonPaths().fast.length, path: 'fast', step: 1, steps: 2, stepKind: 'task', attempt: 0, counted: 0, required: 3, phase: 'intro' });
         // a lesson that is not on the pilot's path is placed on the full ladder
         expect(createLessonRunner(getLesson('hover-turn'), { path: 'fast' }).view()).toMatchObject({ lessonIndex: full.indexOf('hover-turn') + 1, lessonCount: full.length, path: 'full' });
         const p = new ScriptedPilot(getLesson('corridor'));
@@ -87,7 +87,7 @@ describe('the progress view (I and the host panel)', () => {
     }, 60000);
 
     it('gives every lesson without a world its steps: the intro, then each sound, scene, trial or round', () => {
-        const counts: Record<string, number> = { 'ears-headphones': 1 + 3, 'ears-glossary': 1 + 28, 'ears-walls': 1 + 4, 'ears-shapes': 1 + 3, 'ears-game': 1 + 8 };
+        const counts: Record<string, number> = { 'ears-headphones': 1 + 2, 'ears-glossary': 1 + 28, 'ears-walls': 1 + 4, 'ears-shapes': 1 + 3, 'ears-game': 1 + 8 };
         for (const [id, steps] of Object.entries(counts)) {
             const p = new ScriptedPilot(getLesson(id));
             p.answerer = () => 1;

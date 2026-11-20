@@ -106,7 +106,8 @@ describe('a sound heard while flying is named where the pilot first hears it (re
     it('the lines that name the open-way chime play it, from the left: the corridor\'s and tunnel-gaps\' intro.2', () => {
         const free = [{ cue: 'safety.free', from: 'left' }];
         expect(cuesOf(getLesson('corridor'), 'lesson.corridor.intro.3')).toEqual(free);
-        expect(cuesOf(getLesson('tunnel-gaps'), 'lesson.tunnel-gaps.intro.2')).toEqual(free);
+        // lane gap-sound: tunnel-gaps no longer says it again (the corridor comes before it on both paths)
+        expect(getLesson('tunnel-gaps').intro.map((x) => x.key)).not.toContain('lesson.tunnel-gaps.intro.2');
     });
 
     it('tunnel-gaps\' intro.3 plays the chime above and below that it describes, and walls-pillar names its chime with a play (lane s13-elev)', () => {

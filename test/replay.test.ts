@@ -248,10 +248,10 @@ describe('what the replay needs from the recording, and what it checks', () => {
         const a = checkSession({ ...first.pkg, manifest: { ...m, lesson } });
         expect(a.setup.exact).toBe(false);
         expect(a.setup.notes.map((n) => n.code)).toEqual(['lesson-version']);
-        expect(formatReplayCheck(a.check)).toMatch(/not the recording's own build: lesson rings-first is version 2 here, the session was flown with 1/);
+        expect(formatReplayCheck(a.check)).toMatch(/not the recording's own build: lesson rings-first is version 3 here, the session was flown with 1/);
         // it re-derives all the same, so it passes; the notes keep both versions
         expect(a.check.verdict).toBe('pass');
-        expect(a.setup.notes[0]).toMatchObject({ recorded: 1, here: 2 });
+        expect(a.setup.notes[0]).toMatchObject({ recorded: 1, here: 3 });
         expect(rebuildSession({ ...m, theme: { id: 'soft', version: 9 } }).notes.map((n) => n.code)).toEqual(['theme-version']);
         expect(rebuildSession({ ...m, theme: { id: 'my-own', version: 1 } }).notes.map((n) => n.code)).toEqual(['unknown-theme']);
         expect(rebuildSession(m).exact).toBe(true);
@@ -273,11 +273,11 @@ describe('what the replay needs from the recording, and what it checks', () => {
             expect(check.ok).toBe(false);
             expect(check.verdict).toBe('older-build');
             const line = formatReplayCheck(check);
-            expect(line).toMatch(/^replay check: recorded with an older build \(.*version 2 here, the session was flown with 1.*\), so this build cannot verify it: events \d+ of \d+ re-derived/);
+            expect(line).toMatch(/^replay check: recorded with an older build \(.*version \d here, the session was flown with 1.*\), so this build cannot verify it: events \d+ of \d+ re-derived/);
             expect(line).not.toMatch(/FAIL|PASS/);
         }
         // a newer version, or an older lesson with a newer theme, is not an older build
-        expect(moved({ ...m, lesson: { ...lesson, version: 3 } }).check.verdict).toBe('fail');
+        expect(moved({ ...m, lesson: { ...lesson, version: 4 } }).check.verdict).toBe('fail');
         expect(moved({ ...m, lesson: { ...lesson, version: 1 }, theme: { id: 'soft', version: 3 } }).check.verdict).toBe('fail');
         // another world with the build's own versions, or an unknown theme: FAIL, saying which. A recording whose only
         // difference is the world's id stays FAIL (merge item 8i of s13-merge): a lesson's world never changes without a
@@ -325,12 +325,12 @@ describe('keys, contacts and resets: walls-hall', () => {
 describe('questions and answers: ears-headphones, module 0', () => {
     it('re-derives the lesson from the answers the pilot gave', async () => {
         const { pkg } = await earsHeadphones();
-        expect(kinds(pkg.events, 'answer')).toHaveLength(3);
+        expect(kinds(pkg.events, 'answer')).toHaveLength(2);
         expect(lessonSteps(pkg.events)).toContain('passed');
         const { check } = checkSession(pkg);
         expect(check.events.diffs).toEqual([]);
         expect(check.ok).toBe(true);
-        expect(check.events.byKind.answer.matched).toBe(3);
+        expect(check.events.byKind.answer.matched).toBe(2);
         // control: other answers give another lesson
         const swapped = pkg.events.map((e) => (e.kind === 'answer' && e.item.endsWith(':1:side') ? { ...e, value: 2 } : e));
         expect(checkSession({ ...pkg, events: swapped as SessionEvent[] }).check.ok).toBe(false);

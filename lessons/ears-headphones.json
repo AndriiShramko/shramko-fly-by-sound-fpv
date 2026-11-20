@@ -15,7 +15,7 @@
   "goals": [
     {
       "kind": "locate",
-      "trials": 3
+      "trials": 2
     }
   ],
   "id": "ears-headphones",
@@ -60,7 +60,7 @@
   "title": {
     "key": "lesson.ears-headphones.title"
   },
-  "version": 4,
+  "version": 5,
   "world": {
     "kind": "none"
   }

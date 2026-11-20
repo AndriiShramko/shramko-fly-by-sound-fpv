@@ -536,7 +536,7 @@ describe('pass rules, touches, resets and progress', () => {
 
     it('progress carries on from earlier progress and dates itself on the session clock', () => {
         const lesson = getLesson('rings-first');
-        const p = new Pilot(lesson, { progress: { lessonId: 'rings-first', version: 2, attempts: 4, successes: 1, blocksPassed: 0, passed: false, bestTimeMs: null, lastAt: '2026-11-01T10:00:00.000Z' }, sessionStartMs: Date.UTC(2026, 10, 7, 12) });
+        const p = new Pilot(lesson, { progress: { lessonId: 'rings-first', version: lesson.version, attempts: 4, successes: 1, blocksPassed: 0, passed: false, bestTimeMs: null, lastAt: '2026-11-01T10:00:00.000Z' }, sessionStartMs: Date.UTC(2026, 10, 7, 12) });
         p.begin();
         p.flyTo(along(objectOf('rings-first', 'ring-1').pos, 3.5), 3);
         const pr = p.run.progress();
@@ -546,7 +546,7 @@ describe('pass rules, touches, resets and progress', () => {
         const old = new Pilot(lesson, { progress: { lessonId: 'rings-first', version: 1, attempts: 9, successes: 7, blocksPassed: 0, passed: false, bestTimeMs: null, lastAt: '2026-11-01T10:00:00.000Z' } });
         old.begin();
         old.flyTo(along(objectOf('rings-first', 'ring-1').pos, 3.5), 3);
-        expect(old.run.progress()).toMatchObject({ version: 2, attempts: 1, successes: 1, passed: false });
+        expect(old.run.progress()).toMatchObject({ version: lesson.version, attempts: 1, successes: 1, passed: false });
     });
 
     it('the same flight gives the same events (a replay re-derives them)', () => {

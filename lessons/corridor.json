@@ -83,13 +83,10 @@
   "id": "corridor",
   "intro": [
     {
-      "key": "lesson.corridor.intro.1"
-    },
-    {
       "cues": [
-        "safety.wall"
+        "height.tone"
       ],
-      "key": "lesson.corridor.intro.2"
+      "key": "cue.height.tone.name"
     },
     {
       "cues": [
@@ -118,9 +115,6 @@
     },
     {
       "key": "lesson.corridor.goal.1"
-    },
-    {
-      "key": "lesson.corridor.goal.2"
     }
   ],
   "layers": {
@@ -162,7 +156,7 @@
   "title": {
     "key": "lesson.corridor.title"
   },
-  "version": 3,
+  "version": 4,
   "world": {
     "kind": "analytic",
     "spec": {

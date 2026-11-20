@@ -41,10 +41,18 @@ const VOICE: Readonly<Record<Locale, Record<string, number>>> = {
 /** the design's promise (simulator lane sound6): a wall knock within 12 s of the press */
 const FIRST_WALL_MAX_S = 12;
 /**
- * A guard against new talk on the quick path: its small room's flight begins 205.0 s after the press with David at this
- * build (headphone check 82.2 s, the walls 89.2 s, the room's intro 33.6 s; the design guessed 135 s), so 210 s.
+ * The owner's 'try to move' within two minutes (lane gap-sound): the small room's flight begins 114.1 s after the press with
+ * David at this build (headphone check 60.8 s with 2 trials, the room's four sounds and its goal 53.3 s). Package 53a5675:
+ * 205.0 s (3 trials, the walls as a lesson of their own, the room's height line).
  */
-const ROOM_FLIGHT_MAX_S = 210;
+const ROOM_FLIGHT_MAX_S = 120;
+/**
+ * A guard against talk creeping back onto the quick path (lane gap-sound): the seconds of speech of every lesson of the
+ * fast path up to its flight, the measured Windows voices, every question answered after it is read. At this build en
+ * 131.0 s, es 136.0, pl 139.7, ru 163.2 (Irina, the slowest); package 53a5675 said en 253.1 s. The corridor keeps its
+ * three lines on the way-through chime, the stages and the target hum (reviews R3 and E2): the pilot flies by them.
+ */
+const QUICK_TALK_MAX_S = 165;
 
 /** one lesson's schedule as the path plays it: every question answered right when it has been read out */
 function pathSchedule(id: string, locale: Locale, speech: SpeechModel): Schedule {
@@ -138,9 +146,9 @@ describe('no lesson asks or tells front against behind', () => {
 });
 
 describe('the quick path is the default (owner 2026-11-19: headphones, then at once a room, then fly)', () => {
-    it('(c) the fast path: headphones, the walls, then the small room; it is valid and the default of new prefs', () => {
+    it('(c) the fast path: headphones, then at once the small room; it is valid and the default of new prefs', () => {
         const p = lessonPaths();
-        expect(p.fast).toEqual(['ears-headphones', 'ears-walls', 'walls-hall', 'corridor', 'tunnel-gaps', 'rings-first', 'rings-course', 'free-garden']);
+        expect(p.fast).toEqual(['ears-headphones', 'walls-hall', 'corridor', 'tunnel-gaps', 'rings-first', 'rings-course', 'free-garden']);
         expect(validatePaths(p).ok).toBe(true);
         expect(defaultPrefs().path).toBe('fast');
     });
@@ -169,14 +177,41 @@ describe('the quick path is the default (owner 2026-11-19: headphones, then at o
         }
     });
 
-    it('(b) en, measured voice (David): on the quick path the small room flies within 210 s of the press', () => {
+    it('(b) en, measured voice (David): on the quick path the small room flies within 120 s of the press', () => {
         const s = secondsToFlight(lessonPaths().fast, 'walls-hall', 'en', measuredSpeech(VOICE.en));
         expect(s).toBeLessThanOrEqual(ROOM_FLIGHT_MAX_S);
     });
 
-    it('(c) the room lesson names the height tone and the best-height note: the quick path has no hover-height', () => {
-        const intro = getLesson('walls-hall').intro;
-        expect(intro.map((l) => l.key)).toEqual(['lesson.walls-hall.intro.1', 'lesson.walls-hall.goal.1']);
-        expect(intro[0]?.cues).toEqual(['height.tone', 'height.target']);
+    it.each(LOCALES.map((l) => [l]))('(b) %s, measured voice: the whole quick path talks at most 165 s before its flights', (locale) => {
+        const speech = measuredSpeech(VOICE[locale]);
+        let talk = 0;
+        for (const id of lessonPaths().fast) {
+            const s = lessonSchedule(getLesson(id), { locale, speech, answer: answerOf(getLesson(id), []), runner: { seed: 1 }, stopAtFlying: true });
+            for (const l of s.speech) talk += (l.end - l.start) / 1000;
+        }
+        expect(talk, locale).toBeLessThanOrEqual(QUICK_TALK_MAX_S);
+    });
+
+    it('(c) the room: the wall, the wall on the right, the ceiling, the floor, each played in the room, then the goal (owner 2026-11-19)', () => {
+        const room = getLesson('walls-hall');
+        expect(room.world.kind).toBe('analytic');
+        expect(room.intro.map((l) => [l.key, l.cues])).toEqual([
+            ['cue.safety.wall.name', [{ cue: 'safety.wall', from: 'left' }]],
+            ['dir.right', [{ cue: 'safety.wall', from: 'right' }]],
+            ['cue.safety.ceiling.name', [{ cue: 'safety.ceiling', from: 'up' }]],
+            ['cue.safety.floor.name', [{ cue: 'safety.floor', from: 'down' }]],
+            ['lesson.walls-hall.goal.1', undefined]
+        ]);
+        // no listening lesson without a world on the quick path after the headphone check
+        expect(lessonPaths().fast.slice(1).map((id) => getLesson(id).world.kind)).not.toContain('none');
+    });
+
+    it('(c) the later quick lessons: each says its goal and only the names the sounds it brings need; the height tone in the corridor', () => {
+        const intro = (id: string): string[] => getLesson(id).intro.map((l) => l.key);
+        expect(intro('corridor')).toEqual(['cue.height.tone.name', 'lesson.corridor.intro.3', 'lesson.corridor.intro.4', 'lesson.corridor.intro.5', 'lesson.corridor.goal.1']);
+        expect(intro('tunnel-gaps')).toEqual(['lesson.tunnel-gaps.intro.3', 'lesson.tunnel-gaps.goal.1']);
+        expect(intro('rings-first')).toEqual(['lesson.rings-first.intro.1', 'cue.height.target.name', 'lesson.rings-first.goal.1']);
+        expect(intro('rings-course')).toEqual(['lesson.rings-course.goal.1']);
+        expect(intro('free-garden')).toEqual(['lesson.free-garden.goal.1']);
     });
 });

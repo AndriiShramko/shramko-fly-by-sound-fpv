@@ -50,7 +50,19 @@ describe('the shipped lessons', () => {
         for (const spec of LESSONS) {
             const l = getLesson(spec.id);
             const keys = lessonKeys(spec);
-            expect([l.title, ...l.intro].map((x) => x.key), spec.id).toEqual(keys.filter((k) => /\.(title|intro\.\d+|goal\.\d+)$/.test(k)));
+            expect(l.title.key, spec.id).toBe(keys.find((k) => k.endsWith('.title')));
+            // lane gap-sound (owner 2026-11-19, "no chatter"): an intro says its own lines in catalogue order, at least its
+            // first goal, and may leave lines out; a line that is not its own names the sound it plays: the cue's name
+            // (cue.<id>.name) or the side the sound comes from (dir.<side>)
+            const own = keys.filter((k) => /\.(intro\.\d+|goal\.\d+)$/.test(k));
+            const said = l.intro.map((x) => x.key).filter((k) => own.includes(k));
+            expect(said, spec.id).toEqual(own.filter((k) => said.includes(k)));
+            const goal1 = own.find((k) => k.endsWith('.goal.1'));
+            if (goal1 !== undefined) expect(said, spec.id).toContain(goal1);
+            for (const x of l.intro.filter((y) => !own.includes(y.key))) {
+                const cues = (x.cues ?? []).map((c) => (typeof c === 'string' ? { cue: c, from: null } : c));
+                expect(cues.some((c) => x.key === `cue.${c.cue}.name` || x.key === `dir.${c.from}`), `${spec.id}: ${x.key}`).toBe(true);
+            }
             expect(l.speech.pass.key).toBe(`lesson.${spec.id}.pass`);
             expect(l.speech.retry.key).toBe(`lesson.${spec.id}.retry`);
             expect(l.speech.hints.map((h) => h.key)).toEqual(keys.filter((k) => k.includes('.hint.')));
@@ -68,7 +80,7 @@ describe('the shipped lessons', () => {
         for (const locale of LOCALES) {
             const problems: string[] = [];
             const tr = createTranslator(locale, DICTS, (p) => problems.push(`${p.key}: ${p.message}`));
-            for (const l of SHIPPED_LESSON_IDS.map(getLesson)) for (const line of allLines(l)) expect(tr.text(line).length).toBeGreaterThan(3);
+            for (const l of SHIPPED_LESSON_IDS.map(getLesson)) for (const line of allLines(l)) expect(tr.text(line).length, `${locale} ${line.key}`).toBeGreaterThan(/^cue\.[\w.]+\.name$/.test(line.key) ? 1 : 3); // a cue's name may be one short word (the ru floor has 3 letters)
             expect(problems, locale).toEqual([]);
         }
     });
@@ -117,7 +129,7 @@ describe('the shipped lessons', () => {
         expect(p.fast.length).toBeLessThanOrEqual(8);
         for (const id of SHIPPED_LESSON_IDS) expect(getLesson(id).fastPath, id).toBe(p.fast.includes(id));
         expect(lessonsOnPath('fast').map((l) => l.module)).toEqual([...lessonsOnPath('fast').map((l) => l.module)].sort((a, b) => a - b));
-        expect(nextLesson('ears-walls', 'fast')?.id).toBe('walls-hall');
+        expect(nextLesson('ears-headphones', 'fast')?.id).toBe('walls-hall');
         expect(nextLesson('free-garden', 'full')).toBeNull();
         // every lesson can be opened directly: each has its own start
         for (const id of p.full) expect(getLesson(id).start.pos.length).toBe(3);
@@ -211,7 +223,8 @@ describe('lesson format 2 and the files of format 1 (v0.12)', () => {
         // lane sonic-beacon: the corridor and the six tunnels have the target layer on (the beacon), each a new version
         // lane sound6: no front or behind in the ears lessons (ears-game, ears-walls, ears-shapes) and the cube's words; the
         // quick path: the headphone check's one line and wall knocks, the walls' one line, the room's height line, the brake cue
-        const CHANGED_AFTER_V013: Readonly<Record<string, number>> = { corridor: 3, 'tunnel-wide': 2, 'tunnel-narrow': 2, 'tunnel-narrower': 2, 'tunnel-bends': 2, 'tunnel-long': 2, 'tunnel-gaps': 3, 'walls-pillar': 3, 'ears-headphones': 4, 'ears-glossary': 4, 'ears-game': 4, 'shapes-cube': 4, 'ears-walls': 4, 'walls-hall': 3, 'ears-shapes': 3, 'turn-listen': 3 };
+        // lane gap-sound: the headphone check's 2 trials, the four wall sounds in the room, the later quick lessons' intros cut
+        const CHANGED_AFTER_V013: Readonly<Record<string, number>> = { corridor: 4, 'rings-first': 3, 'rings-course': 3, 'free-garden': 3, 'tunnel-wide': 2, 'tunnel-narrow': 2, 'tunnel-narrower': 2, 'tunnel-bends': 2, 'tunnel-long': 2, 'tunnel-gaps': 4, 'walls-pillar': 3, 'ears-headphones': 5, 'ears-glossary': 4, 'ears-game': 4, 'shapes-cube': 4, 'ears-walls': 4, 'walls-hall': 4, 'ears-shapes': 3, 'turn-listen': 3 };
         for (const id of SHIPPED_LESSON_IDS) {
             const l = getLesson(id);
             expect(current(id)['format'], id).toBe('shramko-sonic-lesson/2');

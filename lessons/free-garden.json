@@ -21,18 +21,6 @@
   "id": "free-garden",
   "intro": [
     {
-      "key": "lesson.free-garden.intro.1"
-    },
-    {
-      "cues": [
-        "target.hum"
-      ],
-      "key": "lesson.free-garden.intro.2"
-    },
-    {
-      "key": "lesson.free-garden.intro.3"
-    },
-    {
       "key": "lesson.free-garden.goal.1"
     }
   ],
@@ -75,7 +63,7 @@
   "title": {
     "key": "lesson.free-garden.title"
   },
-  "version": 2,
+  "version": 3,
   "world": {
     "kind": "scan",
     "sceneId": "7a475d38",

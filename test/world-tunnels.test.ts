@@ -361,7 +361,8 @@ describe('tunnels (M41-21)', () => {
         const l = getLesson('tunnel-gaps');
         const en = createTranslator('en', DICTS);
         const text = l.intro.map((x) => en.text(x)).join(' ');
-        expect(text).toMatch(/chime comes from the free side/);
+        // the free side was told in the corridor, the lesson before it on both paths (lane gap-sound: said once)
+        expect(getLesson('corridor').intro.map((x) => en.text(x)).join(' ')).toMatch(/Equal notes come from the free side/);
         // by its contour, as the glossary says (lane s13-sound, review m2): a way above moves like the height tone in a
         // climb, which is lower notes for a pilot whose height polarity is up-lower; "high" would be wrong for him. And
         // since lane s13-elev (owner's message 42) from above or below too, with the setting on (its review E2: with it off
