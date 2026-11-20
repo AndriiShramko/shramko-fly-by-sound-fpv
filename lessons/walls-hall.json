@@ -23,10 +23,39 @@
   "intro": [
     {
       "cues": [
-        "height.tone",
-        "height.target"
+        {
+          "cue": "safety.wall",
+          "from": "left"
+        }
       ],
-      "key": "lesson.walls-hall.intro.1"
+      "key": "cue.safety.wall.name"
+    },
+    {
+      "cues": [
+        {
+          "cue": "safety.wall",
+          "from": "right"
+        }
+      ],
+      "key": "dir.right"
+    },
+    {
+      "cues": [
+        {
+          "cue": "safety.ceiling",
+          "from": "up"
+        }
+      ],
+      "key": "cue.safety.ceiling.name"
+    },
+    {
+      "cues": [
+        {
+          "cue": "safety.floor",
+          "from": "down"
+        }
+      ],
+      "key": "cue.safety.floor.name"
     },
     {
       "key": "lesson.walls-hall.goal.1"
@@ -70,7 +99,7 @@
   "title": {
     "key": "lesson.walls-hall.title"
   },
-  "version": 3,
+  "version": 4,
   "world": {
     "kind": "analytic",
     "spec": {

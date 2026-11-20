@@ -22,15 +22,6 @@
   "id": "rings-course",
   "intro": [
     {
-      "key": "lesson.rings-course.intro.1"
-    },
-    {
-      "cues": [
-        "target.lap"
-      ],
-      "key": "lesson.rings-course.intro.2"
-    },
-    {
       "key": "lesson.rings-course.goal.1"
     }
   ],
@@ -73,7 +64,7 @@
   "title": {
     "key": "lesson.rings-course.title"
   },
-  "version": 2,
+  "version": 3,
   "world": {
     "kind": "analytic",
     "spec": {

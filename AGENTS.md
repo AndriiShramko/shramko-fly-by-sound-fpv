@@ -18,7 +18,7 @@ Shramko Fly by Sound: the sound engine, lessons and session format that let blin
 | `src/replay/` | Replay core: rebuild frames, re-run runner and planner, compare with the recording. |
 | `src/i18n/`, `locales/` | Strings in en, es, pl, ru; key catalogue; formatter. |
 | `src/survey/`, `src/prefs/`, `src/util/` | Surveys, pilot preferences, helpers (sha256, rng, vectors). |
-| `lessons/`, `themes/` | Lessons (33; `paths.json`: the full path and a fast path of 8) and themes as JSON. |
+| `lessons/`, `themes/` | Lessons (33; `paths.json`: the full path and a fast path of 7) and themes as JSON. |
 | `tools/` | Report tool, layout check, locale lint (run through `node tools/run-tool.mjs`). |
 | `tools/listen.ts`, `tools/listen/`, `test-audio/page/listen*.ts` | The virtual listener's first rig: scripted flights rendered through the real engine, stems, truth, measurements (`measure.py`), clip maker. |
 | `tools/listen-words.ts`, `tools/listen/words.py` | The words check (`pnpm listen:words`): every line of the four locales said by the local Windows voice of its language, transcribed by Whisper large-v3, word error rate per line against one bound per language, and every line that names a key heard with the key's name as a word of its own (v0.13's key lines, `tools/listen/key-lines-v013.json`, as its control) (`evidence/listen/VL-4-words.json`); `--sim` runs it on the simulator's Fly by Sound lines. |

@@ -201,13 +201,13 @@ describe('sonic-keys (d): a failed check asks again only what failed, with the a
 });
 
 describe('sonic-keys (e): the headphone check asks left and right only', () => {
-    it('no front-and-back question, three trials left, right, left', () => {
+    it('no front-and-back question, two trials, left then right (lane gap-sound, the owner: headphones left and right)', () => {
         const h = new Host((a) => (a.kind === 'ask' ? (a.question.id.split(':')[2] === '2' ? 2 : 1) : null));
         h.until((x) => x.run.phase === 'passed', 200);
         expect(h.run.phase).toBe('passed');
         expect(h.asks().some((id) => id.endsWith(':front-back'))).toBe(false);
         expect(h.said()).not.toContain('headphones.q-front-back');
         const dirs = h.log.flatMap((l) => (l.a.kind === 'cue' && l.a.event.kind === 'repeat-cue' && l.a.event.index === 1 ? [l.a.event.dir?.[0]] : []));
-        expect(dirs).toEqual([-1, 1, -1]);
+        expect(dirs).toEqual([-1, 1]);
     });
 });

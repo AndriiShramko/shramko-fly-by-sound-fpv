@@ -218,7 +218,7 @@ describe('a lesson of module 0: the intro, then one step per sound', () => {
         p.press((run, t) => run.next(t));
         expect(p.of('answer').at(-1)).toMatchObject({ value: null, via: 'skip' });
         expect(p.run.view().step).toBe(3);
-        expect(says(actionsSince(p, from))[0]).toMatchObject({ line: { key: 'headphones.trial', params: { n: 2, total: 3 } }, interrupt: true });
+        expect(says(actionsSince(p, from))[0]).toMatchObject({ line: { key: 'headphones.trial', params: { n: 2, total: 2 } }, interrupt: true });
     });
 });
 
@@ -257,8 +257,8 @@ describe('a lesson opened with G from another one: a detour back to it (review R
 describe('where a go action leads', () => {
     it('the lesson after and before on the pilot\'s path, the full ladder off it, null at the ends', () => {
         const { full, fast } = lessonPaths();
-        expect(lessonAfter('ears-walls', 'fast')?.id).toBe(fast[fast.indexOf('ears-walls') + 1]);
-        expect(lessonBefore('ears-walls', 'fast')?.id).toBe('ears-headphones');
+        expect(lessonAfter('walls-hall', 'fast')?.id).toBe(fast[fast.indexOf('walls-hall') + 1]);
+        expect(lessonBefore('walls-hall', 'fast')?.id).toBe('ears-headphones');
         expect(lessonAfter('hover-turn', 'fast')?.id).toBe(full[full.indexOf('hover-turn') + 1]);
         expect(lessonBefore('hover-turn', 'fast')?.id).toBe('turn-listen');
         expect(lessonBefore(full[0] as string, 'full')).toBeNull();

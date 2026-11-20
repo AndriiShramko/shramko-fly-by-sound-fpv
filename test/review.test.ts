@@ -180,8 +180,8 @@ describe('review D3: the headphone check is about left and right, not about fron
     it('asks only left and right, and records every answer for the report', () => {
         const r = playHeadphoneCheck(lateralRight);
         const answers = r.events.filter((e): e is Extract<SessionEvent, { kind: 'answer' }> => e.kind === 'answer');
-        expect(answers.map((a) => a.item.split(':').slice(-1)[0])).toEqual(['side', 'side', 'side']);
-        expect(answers.map((a) => a.value)).toEqual([1, 2, 1]);
+        expect(answers.map((a) => a.item.split(':').slice(-1)[0])).toEqual(['side', 'side']);
+        expect(answers.map((a) => a.value)).toEqual([1, 2]);
     });
 });
 

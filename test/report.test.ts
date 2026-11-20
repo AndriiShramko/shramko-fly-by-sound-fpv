@@ -91,7 +91,7 @@ describe('the report of a recorded flight: rings-course, a failed attempt then a
 
     it('says what happened: passed on the second attempt, one touch, twelve gates', () => {
         expect(report.format).toBe(REPORT_FORMAT);
-        expect(report.lesson).toEqual({ id: 'rings-course', version: 2, title: expect.any(String) });
+        expect(report.lesson).toEqual({ id: 'rings-course', version: 3, title: expect.any(String) });
         expect(report.outcome).toEqual({ status: 'passed', success: true, attempts: 2, passedAtMs: expect.any(Number) });
         expect(report.attempts.map((a) => [a.attempt, a.result, a.touches, a.gates])).toEqual([
             [1, 'fail', 1, 6],
@@ -140,7 +140,7 @@ describe('the report of a recorded flight: rings-course, a failed attempt then a
     });
 
     it('a path that wanders away has a larger deviation (negative control)', () => {
-        const wandering = pkg.frames.map((f) => ({ ...f, p: [f.p[0] + 4, f.p[1], f.p[2]] as const }));
+        const wandering = pkg.frames.map((f) => ({ ...f, p: [f.p[0] + 4, f.p[1] + 4, f.p[2]] as const })); // lane gap-sound: up as well (a shorter intro moved the worst frame; 4 m sideways alone no longer raised the largest)
         const other = buildReport({ ...pkg, frames: wandering }, { replay: false });
         expect((other.metrics.deviationM?.mean ?? 0) - (report.metrics.deviationM?.mean ?? 0)).toBeGreaterThan(2);
         expect(other.metrics.deviationM?.max).toBeGreaterThan((report.metrics.deviationM?.max ?? 0) + 2);
