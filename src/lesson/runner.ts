@@ -2012,6 +2012,7 @@ class Runner implements LessonSession {
         this.listening = false;
         this.lessonEvent('leave', t);
         this.left = true;
+        this.moments.leave();
         this.actions.push({ kind: 'go', to });
     }
 

@@ -261,6 +261,17 @@ export class MomentMachine {
         return true;
     }
 
+    /**
+     * The pilot leaves the lesson (RunnerAction 'go'): a frozen flight goes on and the engine may sound every cue again,
+     * so the next lesson starts from nothing held (a lesson without moments sends no 'audible' of its own).
+     */
+    leave(): void {
+        const a = this.active;
+        this.active = null;
+        if (a !== null && a.frozenAt !== null) this.host.act({ kind: 'moment', moment: null });
+        if (this.gated) this.host.act({ kind: 'audible', cues: null });
+    }
+
     /** The flight was paused (the lesson menu) for `ms`: every clock of the moment moves on by it. */
     shift(ms: number): void {
         const a = this.active;
