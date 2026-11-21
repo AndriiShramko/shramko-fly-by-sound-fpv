@@ -4,7 +4,6 @@
 // Touches are real: a sample is touched when the craft comes within its radius of a solid surface of
 // the lesson's analytic world (after 0.5 s of not touching), as the simulator's bridge reports them.
 import type { FlightSample, LessonDef, SessionEvent, SonicObject, SonicWorld, Vec3 } from '../../src/contract';
-import { CUE_IDS } from '../../src/i18n/catalog';
 import { BODY_RADIUS_M, createLessonRunner, type DemoScene, type LessonSession, type Question, type RunnerAction, type RunnerOptions } from '../../src/lesson';
 import { yawQuat } from '../../src/util/vec';
 import { createAnalyticWorld, type AnalyticWorldInfo } from '../../src/world';
@@ -40,9 +39,10 @@ export class ScriptedPilot {
 
     constructor(lesson: LessonDef, options: RunnerOptions = {}, world?: SonicWorld | null) {
         this.lesson = lesson;
-        // train 4: the flights of these tests are about the flight, not the teaching: a pilot who knows every sound has no
-        // moment (test/moments.test.ts and test/first-set.test.ts fly the moments); options.known overrides it
-        this.run = createLessonRunner(lesson, { known: CUE_IDS, ...options });
+        // train 4: the flights of these tests are about the flight, not the teaching: a host that does not teach (no
+        // RunnerOptions.known: every sound known, no moment, the lines as before; test/moments.test.ts and
+        // test/first-set.test.ts fly the moments); options.known makes it one that teaches
+        this.run = createLessonRunner(lesson, options);
         this.analytic = lesson.world.kind === 'analytic' ? createAnalyticWorld(lesson.world.spec) : null;
         this.world = world !== undefined ? world : this.analytic;
         this.given = options.objects;

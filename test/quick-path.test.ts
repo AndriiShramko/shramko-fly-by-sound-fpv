@@ -192,14 +192,15 @@ describe('the quick path is the default (owner 2026-11-19: headphones, then at o
         expect(talk, locale).toBeLessThanOrEqual(QUICK_TALK_MAX_S);
     });
 
-    it('(c) the room: nothing is said before the flight; the height tone, then the wall ahead, each taught in flight (lane tutor-moment)', () => {
+    it('(c) the room: its goal, then the flight; the wall ahead, then the height tone, each taught in flight (lane tutor-moment)', () => {
         const room = getLesson('walls-hall');
         expect(room.world.kind).toBe('analytic');
-        // the pilot's feedback, point 2: a sound is brought in at the action it belongs to, not described before the flight
-        expect(room.intro).toEqual([]);
+        // the pilot's feedback, point 2: a sound is brought in at the action it belongs to, not described before the flight.
+        // The pilot flies at once (decision 10: moving within 60 s); the height tone opens the next attempt
+        expect(room.intro).toEqual([{ key: 'lesson.walls-hall.goal.1' }]);
         expect(room.moments?.map((m) => [m.id, m.cue, m.when.kind])).toEqual([
-            ['height', 'height.tone', 'start'],
-            ['wall-ahead', 'safety.wall', 'near']
+            ['wall-ahead', 'safety.wall', 'near'],
+            ['height', 'height.tone', 'start']
         ]);
         // no listening lesson without a world on the quick path after the headphone check
         expect(lessonPaths().fast.slice(1).map((id) => getLesson(id).world.kind)).not.toContain('none');

@@ -105,7 +105,7 @@ function fly(host: RecordingHost, id: string, n: number): void {
         return;
     }
     // the rings: each ring in order, through it along its axis; the course slow to its first ring, then faster
-    const rings = w.objects().filter((o) => o.shape.kind === 'ring').sort((a, b) => a.order - b.order);
+    const rings = w.objects().filter((o) => o.shape.kind === 'ring').sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
     const goal = host.lesson.goals.find((g) => g.kind === 'pass-gates');
     const ids = goal?.kind === 'pass-gates' && goal.gateIds !== 'all' ? goal.gateIds : rings.map((r) => r.id);
     ids.forEach((gid, i) => {
@@ -195,8 +195,16 @@ describe('the first set, flown by a scripted pilot (train 4, decision 10)', () =
     }, 120_000);
 
     it.each(LOCALES.map((l) => [l]))('%s: no prompt is longer than two sentences', (locale) => {
-        const long = run(locale).said.filter((l) => sentences(l.text) > SENTENCES_MAX).map((l) => `${l.key}: ${l.text}`);
+        const r = run(locale);
+        const long = r.said.filter((l) => sentences(l.text) > SENTENCES_MAX).map((l) => `${l.key}: ${l.text}`);
         expect(long).toEqual([]);
+        // nothing said twice that the pilot has heard (the feedback, point 1): the keys of the headphone question once, no
+        // "Taken: n." (the answer's sound says it), no "next lesson" announcement before the next lesson says its own title
+        const keys = r.said.map((l) => l.key);
+        expect(keys.filter((k) => k === 'headphones.q-side').length).toBe(1);
+        expect(keys).not.toContain('answer.got');
+        expect(keys).not.toContain('fly.lesson-passed');
+        expect(keys.filter((k) => k === 'headphones.good').length).toBe(1);
     }, 120_000);
 
     it.each(LOCALES.map((l) => [l]))('%s: every moment brings exactly one new sound, never audible before it', (locale) => {

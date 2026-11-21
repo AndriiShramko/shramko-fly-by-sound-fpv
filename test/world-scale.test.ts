@@ -101,9 +101,9 @@ describe('rooms at the scale of a micro drone (M41-18)', () => {
         expect(left).toBeLessThanOrEqual(within(asV012('walls-hall').goals[0] as Goal));
         const en = createTranslator('en', DICTS);
         expect(en.text(l.title)).toBe('A small room');
-        // lane gap-sound: the title alone calls the room small; lane tutor-moment: nothing is said before the flight, the
+        // lane gap-sound: the title alone calls the room small; lane tutor-moment: one line before the flight (its goal), the
         // wall is taught in flight when the craft comes near one (the moment wall-ahead)
-        expect(l.intro).toEqual([]);
+        expect(l.intro).toEqual([{ key: 'lesson.walls-hall.goal.1' }]);
         expect(l.moments?.find((m) => m.cue === 'safety.wall')).toMatchObject({ id: 'wall-ahead', when: { kind: 'near', dir: 'front' } });
     });
 
