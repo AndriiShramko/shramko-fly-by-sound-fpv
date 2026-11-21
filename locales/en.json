@@ -395,7 +395,7 @@
     "moment.wall-ahead.do": "Fly on slowly until the knocks come fast, then stop.",
     "moment.wall-ahead.hint": "Fly ahead until it knocks fast.",
     "moment.target.do": "Turn until the hum is straight ahead, then fly to it.",
-    "moment.target.hint": "Fly toward the hum.",
+    "moment.target.hint": "Keep the hum ahead and fly to it.",
     "moment.way-through.do": "Turn toward the notes and fly through the open way.",
     "moment.way-through.hint": "Follow the notes.",
     "moment.gate-height.do": "Climb or sink until your tone matches this note.",

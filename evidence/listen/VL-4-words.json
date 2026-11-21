@@ -1,8 +1,8 @@
 {
  "format": "shramko-listen-evidence/1",
- "key": "45f942b2a2bcfc870f7f02ece06eff26a9a24fb839d7419032ab5782e99518f2",
+ "key": "a1aa56dbe1a3bad514e05daa243be35e6762fb3b416770fff27bdf9878307ca5",
  "inputs": {
-  "hash": "45f942b2a2bcfc870f7f02ece06eff26a9a24fb839d7419032ab5782e99518f2",
+  "hash": "a1aa56dbe1a3bad514e05daa243be35e6762fb3b416770fff27bdf9878307ca5",
   "files": 15,
   "version": 2,
   "voices": {
@@ -32,7 +32,7 @@
    "numpy": "2.4.6"
   }
  },
- "date": "2026-11-19T17:09:07.525Z",
+ "date": "2026-11-21T08:00:54.460Z",
  "id": "VL-4-words",
  "claim": "every line of the four locales, said by the local Windows voice of its language and transcribed by Whisper large-v3, has a word error rate (case and punctuation normalised) at most its language's bound, and every line that names a key is heard with the key's name as a word of its own; the Russian lines said by the English voice fail the bound, and v0.13's lines that name a key, said by their voices, lose a key in each of Spanish, Polish and Russian",
  "run": "pnpm listen:words",
@@ -42,11 +42,11 @@
  "languages": {
   "en": {
    "voice": "Microsoft David Desktop",
-   "lines": 575,
-   "words": 4524,
+   "lines": 648,
+   "words": 5234,
    "bound": 0.2,
-   "exact": 567,
-   "meanRate": 0.0012,
+   "exact": 635,
+   "meanRate": 0.0018,
    "maxRate": 0.1667,
    "over": [],
    "keys": {
@@ -170,11 +170,11 @@
   },
   "es": {
    "voice": "Microsoft Helena Desktop",
-   "lines": 575,
-   "words": 4596,
+   "lines": 648,
+   "words": 5278,
    "bound": 0.2,
-   "exact": 560,
-   "meanRate": 0.0027,
+   "exact": 629,
+   "meanRate": 0.0031,
    "maxRate": 0.2,
    "over": [],
    "keys": {
@@ -228,11 +228,11 @@
   },
   "pl": {
    "voice": "Microsoft Paulina Desktop",
-   "lines": 575,
-   "words": 3883,
+   "lines": 648,
+   "words": 4461,
    "bound": 0.2,
-   "exact": 563,
-   "meanRate": 0.0026,
+   "exact": 631,
+   "meanRate": 0.0034,
    "maxRate": 0.2,
    "over": [],
    "keys": {
@@ -321,11 +321,11 @@
   },
   "ru": {
    "voice": "Microsoft Irina Desktop",
-   "lines": 575,
-   "words": 3698,
+   "lines": 648,
+   "words": 4269,
    "bound": 0.2,
-   "exact": 557,
-   "meanRate": 0.0033,
+   "exact": 628,
+   "meanRate": 0.0034,
    "maxRate": 0.2,
    "over": [],
    "keys": {
@@ -500,8 +500,8 @@
  "control": {
   "locale": "ru",
   "voice": "Microsoft David Desktop",
-  "lines": 575,
-  "overBound": 575,
+  "lines": 648,
+  "overBound": 648,
   "share": 1,
   "medianRate": 1,
   "fails": true
@@ -594,6 +594,22 @@
  "rows": [
   {
    "locale": "en",
+   "key": "cue.safety.wall.do",
+   "text": "Slow down and turn away from the knocks.",
+   "heard": "Slow down and turn away from the nox.",
+   "rawRate": 0.125,
+   "rate": 0.125
+  },
+  {
+   "locale": "en",
+   "key": "cue.safety.floor.what",
+   "text": "Floor: a soft thud from below when you sink near the ground.",
+   "heard": "a soft thud from below when you sink near the ground.",
+   "rawRate": 0.0833,
+   "rate": 0.0833
+  },
+  {
+   "locale": "en",
    "key": "cue.safety.free.glossary",
    "text": "A pair of quick notes, again and again, while the way ahead is blocked. Equal notes from left or right: the way is there. Like your height tone in a climb: above. The other way: below. With Sound from above and below on, from there too.",
    "heard": "A pair of quick notes, again and again, while the way ahead is blocked. Equal notes from left or right, the way is there. Like your high tone in a climb, above. The other way, below. With sound from above and below on, from there too.",
@@ -610,10 +626,26 @@
   },
   {
    "locale": "en",
+   "key": "cue.safety.reset.what",
+   "text": "Re-centre: a quick sweep when the drone is put back a little way.",
+   "heard": "Re-center, a quick sweep when the drone is put back a little way.",
+   "rawRate": 0.0714,
+   "rate": 0
+  },
+  {
+   "locale": "en",
    "key": "cue.height.tone.name",
    "text": "Height tone",
    "heard": "High tone",
    "rawRate": 0.5,
+   "rate": 0
+  },
+  {
+   "locale": "en",
+   "key": "cue.height.tone.what",
+   "text": "Height tone: a soft tone that slides up as you climb and down as you sink.",
+   "heard": "High tone, a soft tone that slides up as you climb and down as you sink.",
+   "rawRate": 0.0625,
    "rate": 0
   },
   {
@@ -639,6 +671,22 @@
    "heard": "Of course.",
    "rawRate": 0.5,
    "rate": 0
+  },
+  {
+   "locale": "en",
+   "key": "cue.target.off.what",
+   "text": "Off course: the hum turns rough when you are not lined up with the gate.",
+   "heard": "Of course, the hum turns rough when you are not lined up with the gate.",
+   "rawRate": 0.0667,
+   "rate": 0.0667
+  },
+  {
+   "locale": "en",
+   "key": "cue.target.checkpoint.what",
+   "text": "Checkpoint: one chime from low to high when you reach a point of the track.",
+   "heard": "One chime from low to high when you reach a point of the track.",
+   "rawRate": 0.0667,
+   "rate": 0.0667
   },
   {
    "locale": "en",
@@ -775,6 +823,14 @@
    "heard": "Up to 4.5 meters per second. At this speed you hear fewer sounds, the line, the nearest danger and the freeway.",
    "rawRate": 0.0435,
    "rate": 0
+  },
+  {
+   "locale": "en",
+   "key": "moment.gate-height.do",
+   "text": "Climb or sink until your tone matches this note.",
+   "heard": "Climb or sync until your tone matches this note.",
+   "rawRate": 0.1111,
+   "rate": 0.1111
   },
   {
    "locale": "en",
@@ -1100,10 +1156,26 @@
   },
   {
    "locale": "es",
+   "key": "cue.safety.touch.what",
+   "text": "Contacto: un ping corto cuando chocas con algo.",
+   "heard": "Contacto, un pingú corto cuando chocas con algo.",
+   "rawRate": 0.125,
+   "rate": 0.125
+  },
+  {
+   "locale": "es",
    "key": "cue.safety.reset.glossary",
    "text": "Un barrido rápido que avisa de que el dron volvió al último punto de control.",
    "heard": "Un barrido rápido que avisa de que el Dran volvió al último punto de control.",
    "rawRate": 0.0667,
+   "rate": 0
+  },
+  {
+   "locale": "es",
+   "key": "cue.safety.reset.what",
+   "text": "Recentrado: un barrido rápido cuando el dron vuelve un poco atrás.",
+   "heard": "Recentrado, un barrido rápido cuando el Dran vuelve un poco atrás.",
+   "rawRate": 0.0909,
    "rate": 0
   },
   {
@@ -1113,6 +1185,30 @@
    "heard": "Una campanilla de grave agudo, una sola vez, cuando llegas a un punto de control.",
    "rawRate": 0.0625,
    "rate": 0.0625
+  },
+  {
+   "locale": "es",
+   "key": "cue.target.checkpoint.what",
+   "text": "Punto de control: un timbre de grave a agudo al llegar a un punto de la pista.",
+   "heard": "Punto de control, un timbre de grave agudo al llegar a un punto de la pista.",
+   "rawRate": 0.0588,
+   "rate": 0.0588
+  },
+  {
+   "locale": "es",
+   "key": "cue.target.checkpoint.do",
+   "text": "Sigue: si chocas, vuelves solo hasta aquí.",
+   "heard": "Sigue, si chocas, vuelve solo hasta aquí.",
+   "rawRate": 0.1429,
+   "rate": 0.1429
+  },
+  {
+   "locale": "es",
+   "key": "cue.target.answer.do",
+   "text": "Pulsa otra vez la tecla de número si las notas bajaron.",
+   "heard": "Pulsa otra vez la tecla de números y las notas bajaron.",
+   "rawRate": 0.1818,
+   "rate": 0.1818
   },
   {
    "locale": "es",
@@ -1486,11 +1582,59 @@
   },
   {
    "locale": "pl",
+   "key": "cue.safety.floor.do",
+   "text": "Wznieś się trochę, aż ucichnie.",
+   "heard": "Wznieś się trochę, aż ucicznie.",
+   "rawRate": 0.2,
+   "rate": 0.2
+  },
+  {
+   "locale": "pl",
+   "key": "cue.safety.touch.do",
+   "text": "Cofnij się trochę i leć dalej powoli.",
+   "heard": "Kownij się trochę i leć dalej powoli.",
+   "rawRate": 0.1429,
+   "rate": 0.1429
+  },
+  {
+   "locale": "pl",
    "key": "cue.safety.reset.glossary",
    "text": "Szybki przesuw, który mówi, że dron wrócił do ostatniego punktu kontrolnego.",
    "heard": "Szybki przesuw, który mówi, że dran wrócił do ostatniego punktu kontrolnego.",
    "rawRate": 0.0909,
    "rate": 0
+  },
+  {
+   "locale": "pl",
+   "key": "cue.safety.reset.what",
+   "text": "Powrót na miejsce: szybki szum, gdy dron wraca kawałek do tyłu.",
+   "heard": "Powrót na miejsce, szybki szum, gdy dran wraca kawałek do tyłu.",
+   "rawRate": 0.0909,
+   "rate": 0
+  },
+  {
+   "locale": "pl",
+   "key": "cue.height.rough.do",
+   "text": "Zmień wysokość, aż brzęczenie ucichnie.",
+   "heard": "Zmień wysokość, aż brzęczenie ucicznie.",
+   "rawRate": 0.2,
+   "rate": 0.2
+  },
+  {
+   "locale": "pl",
+   "key": "cue.height.target.what",
+   "text": "Docelowa wysokość: krótka nuta mniej więcej co sekundę, która wyznacza wysokość lotu.",
+   "heard": "Docelowa wysokość, krótka nuta mniej więcej co sekundy, która wyznacza wysokość lotu.",
+   "rawRate": 0.0833,
+   "rate": 0.0833
+  },
+  {
+   "locale": "pl",
+   "key": "cue.shape.cube.what",
+   "text": "Sześcian: dźwięk skaczący między bliską a daleką ramą.",
+   "heard": "6. Dźwięk skaczący między bliską a daleką ramą.",
+   "rawRate": 0.125,
+   "rate": 0.125
   },
   {
    "locale": "pl",
@@ -1912,10 +2056,26 @@
   },
   {
    "locale": "ru",
+   "key": "cue.safety.free.do",
+   "text": "Повернись к нотам и пролети там.",
+   "heard": "Повернись к нотам и пролейте там",
+   "rawRate": 0.1667,
+   "rate": 0
+  },
+  {
+   "locale": "ru",
    "key": "cue.safety.wrong-side.glossary",
    "text": "Три ноты вниз: кольцо пройдено с обратной стороны. Так не считается. Вернись и пролети через него с нужной стороны.",
    "heard": "Три ноты вниз, кольцо пройдено с обратной стороны Так не считается Вернись и пролейте через него с нужной стороны",
    "rawRate": 0.0526,
+   "rate": 0
+  },
+  {
+   "locale": "ru",
+   "key": "cue.safety.wrong-side.do",
+   "text": "Вернись и пролети ворота спереди.",
+   "heard": "Вернись и пролейте ворота спереди",
+   "rawRate": 0.2,
    "rate": 0
   },
   {
@@ -1936,10 +2096,34 @@
   },
   {
    "locale": "ru",
+   "key": "cue.target.hum.what",
+   "text": "Гул цели: низкий гул с пути впереди или из центра следующих ворот.",
+   "heard": "Гол цели, низкий гол с пути впереди или из центра следующих ворот",
+   "rawRate": 0.1667,
+   "rate": 0
+  },
+  {
+   "locale": "ru",
    "key": "cue.target.off.glossary",
    "text": "Когда гул становится шершавым, ты не на одной линии с воротами. Когда он снова гладкий, ты на линии.",
    "heard": "Когда гол становится шершавым, ты не на одной линии с воротами Когда он снова гладкий, ты на линии",
    "rawRate": 0.0556,
+   "rate": 0
+  },
+  {
+   "locale": "ru",
+   "key": "cue.target.off.what",
+   "text": "Сход с курса: гул становится шершавым, когда ты не на линии ворот.",
+   "heard": "Сход с курса, гол становится шершавым, когда ты не на линии ворот",
+   "rawRate": 0.0833,
+   "rate": 0
+  },
+  {
+   "locale": "ru",
+   "key": "cue.target.off.do",
+   "text": "Подруливай, пока гул снова не станет гладким.",
+   "heard": "Подруливай, пока гол снова не станет гладким",
+   "rawRate": 0.1429,
    "rate": 0
   },
   {
@@ -1952,10 +2136,42 @@
   },
   {
    "locale": "ru",
+   "key": "cue.target.note.do",
+   "text": "Пролетай ворота, чтобы ноты поднимались.",
+   "heard": "Пролетай в ворота, чтобы ноты поднимались",
+   "rawRate": 0.2,
+   "rate": 0.2
+  },
+  {
+   "locale": "ru",
+   "key": "cue.target.lap.do",
+   "text": "Пролети круг ещё раз, чтобы улучшить время.",
+   "heard": "Пролейте круг еще раз, чтобы улучшить время.",
+   "rawRate": 0.1429,
+   "rate": 0
+  },
+  {
+   "locale": "ru",
+   "key": "cue.target.praise.what",
+   "text": "Молодец: короткий яркий подъём нот, когда попытка засчитана.",
+   "heard": "Молодец, короткий и яркий подъём нот, когда попытка засчитана",
+   "rawRate": 0.125,
+   "rate": 0.125
+  },
+  {
+   "locale": "ru",
    "key": "cue.shape.pillar.name",
    "text": "Столб",
    "heard": "СТОЛП",
    "rawRate": 1,
+   "rate": 0
+  },
+  {
+   "locale": "ru",
+   "key": "cue.shape.pillar.do",
+   "text": "Облети его, не задевая.",
+   "heard": "Облейте его, не задевая",
+   "rawRate": 0.25,
    "rate": 0
   },
   {
@@ -2412,6 +2628,46 @@
    "text": "Пролети цепочку колец как можно быстрее, не касаясь стен.",
    "heard": "Пролейте цепочку колец как можно быстрее, не касаясь стен",
    "rawRate": 0.1111,
+   "rate": 0
+  },
+  {
+   "locale": "ru",
+   "key": "moment.target.do",
+   "text": "Повернись, пока гул не будет впереди, и лети к нему.",
+   "heard": "Повернись, пока гол не будет впереди, и лети к нему",
+   "rawRate": 0.1,
+   "rate": 0
+  },
+  {
+   "locale": "ru",
+   "key": "moment.target.hint",
+   "text": "Лети на гул.",
+   "heard": "Лети на гол",
+   "rawRate": 0.3333,
+   "rate": 0
+  },
+  {
+   "locale": "ru",
+   "key": "moment.way-through.do",
+   "text": "Повернись к нотам и пролети в свободный проход.",
+   "heard": "Повернись к нотам и пролейте в свободный проход",
+   "rawRate": 0.125,
+   "rate": 0
+  },
+  {
+   "locale": "ru",
+   "key": "moment.gate-passed.do",
+   "text": "Пролети кольцо ещё раз и послушай её.",
+   "heard": "Пролейте кольцо ещё раз и послушай её",
+   "rawRate": 0.1429,
+   "rate": 0
+  },
+  {
+   "locale": "ru",
+   "key": "moment.gate-passed.hint",
+   "text": "Пролети кольцо.",
+   "heard": "Пролейте кольцо",
+   "rawRate": 0.5,
    "rate": 0
   },
   {
