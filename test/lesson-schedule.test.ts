@@ -168,11 +168,11 @@ describe('control: the v0.12 timing fails the same check (a line ends at the ear
         }
     }, 120000);
 
-    it('the fact as measured: 300 of the 431 English lines take the Windows voice longer than the estimate', () => {
+    it('the fact as measured: 309 of the 476 English lines take the Windows voice longer than the estimate', () => {
         const en = JSON.parse(readFileSync(new URL('../locales/en.json', import.meta.url), 'utf8')) as Record<string, string>;
         const keys = Object.keys(david);
         const longer = keys.filter((k) => (david[k] as number) > 0.7 + 0.065 * (MEASURED_TEXT[k] ?? (en[k] as string)).length);
-        expect(keys.length).toBe(431);
+        expect(keys.length).toBe(476);
         // 262 until merge s13-merge reworded walls-hall's intro.2 and hint.1 and the corridor's intro.2 (review m4 of
         // lane s13-sound); those three were measured again with the same voice and method (walls-hall's intro.1, not
         // changed then, measured 8.64 s again, as in the fixture). walls-hall's goal.1, reworded at the s13-worlds merge
@@ -206,8 +206,10 @@ describe('control: the v0.12 timing fails the same check (a line ends at the ear
         // 5 of them longer than their estimates: 436, 306. Lane sound6 (2026-11-19) took front and behind out of the lessons:
         // headphones.q-front-back deleted, turn-listen's four lines, reason.turn-behind (measured now, it was not), the cube's four
         // lines and quiz.where-options reworded, measured the same way: 436, 303. Its stage S2 (the quick path) deleted seven
-        // intro lines, reworded three and added the brake cue's two, measured the same way: 431, 300.
-        expect(longer.length).toBe(300);
+        // intro lines, reworded three and added the brake cue's two, measured the same way: 431, 300. Lane tutor-moment (2026-11-21)
+        // added the sounds' definitions and the moments' lines and reworded the headphone check's pass line, the 46 of them
+        // without parameters measured the same way (measure-tts.ps1 on those lines alone): 476, 309.
+        expect(longer.length).toBe(309);
         // and under v0.12 the first sound of the check plays partly under the line before it
         const s = schedule('ears-headphones', { speech: measuredSpeech(david), runner: v012 });
         const first = s.plays.find((p) => p.kind !== 'one-off');
@@ -237,14 +239,15 @@ describe('control: the v0.12 timing fails the same check (a line ends at the ear
         // (simulator lane onecourse, D7, 2026-11-15), same voices and method: es 2.19 s (not longer), pl 2.095 s, ru 2.31 s (longer).
         // Lane sound6 (2026-11-19) deleted headphones.q-front-back and reworded ten lines that taught front and behind, same voices
         // and method: 522 lines, longer es 280, pl 379, ru 522. Its stage S2 (the quick path, the brake cue's glossary entry):
-        // 517 lines, longer es 276, pl 376, ru 517.
-        const longerThanEstimate: Readonly<Record<Exclude<Locale, 'en'>, number>> = { es: 276, pl: 376, ru: 517 };
+        // 517 lines, longer es 276, pl 376, ru 517. Lane tutor-moment (2026-11-21: the sounds' definitions, the moments' lines,
+        // the headphone check's pass line), the 46 lines without parameters measured the same way: 562, longer es 283, pl 403, ru 562.
+        const longerThanEstimate: Readonly<Record<Exclude<Locale, 'en'>, number>> = { es: 283, pl: 403, ru: 562 };
         for (const locale of OTHER_LOCALES) {
             const dict = JSON.parse(readFileSync(new URL(`../locales/${locale}.json`, import.meta.url), 'utf8')) as Record<string, string>;
             const seconds = OTHER_VOICES[locale].seconds;
             const plain = Object.keys(dict).filter((k) => !(dict[k] as string).includes('{'));
             expect(Object.keys(seconds).sort(), `${locale}: every line without parameters is measured, and nothing else`).toEqual(plain.sort());
-            expect(plain.length, locale).toBe(517);
+            expect(plain.length, locale).toBe(562);
             const estimate = (k: string): number => 0.7 + 0.065 * (dict[k] as string).length;
             const longer = plain.filter((k) => (seconds[k] as number) > estimate(k));
             expect(longer.length, `${locale}: lines longer than the estimate`).toBe(longerThanEstimate[locale]);
