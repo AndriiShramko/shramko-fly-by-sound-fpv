@@ -13,7 +13,8 @@ import type { CueId, LessonDef, Locale } from '../src/contract';
 import { LOCALES } from '../src/contract';
 import { DICTS } from '../src/i18n/dicts';
 import { CuePlanner } from '../src/cues';
-import { getLesson, lessonPaths } from '../src/lesson';
+import { CUE_IDS, MOMENT_IDS } from '../src/i18n/catalog';
+import { getLesson, lessonPaths, SHIPPED_LESSON_IDS } from '../src/lesson';
 import { defaultPrefs } from '../src/prefs';
 import { getBuiltinTheme } from '../src/theme';
 import { ScriptedPilot } from './helpers/pilot';
@@ -29,6 +30,8 @@ function namedBy(l: LessonDef): Set<string> {
     const out = new Set<string>();
     for (const line of l.intro) for (const c of line.cues ?? []) out.add(typeof c === 'string' ? c : c.cue);
     for (const g of l.goals) if (g.kind === 'name-cues') for (const c of g.cues) out.add(c);
+    // lane tutor-moment: a moment names its sound and plays it alone where it belongs (cue.<id>.what, then the sound)
+    for (const m of l.moments ?? []) out.add(m.cue);
     return out;
 }
 
@@ -78,11 +81,9 @@ describe('a sound heard while flying is named where the pilot first hears it (re
         expect(where).toEqual({ 'height.target': 'rings-first', 'safety.free': 'corridor', 'target.hum': 'corridor' });
     }, 120000);
 
-    it('the corridor names the beacon hum in its own line, played from the left, before the goal (lane sonic-beacon, review R3)', () => {
-        const keys = getLesson('corridor').intro.map((x) => x.key);
-        expect(cuesOf(getLesson('corridor'), 'lesson.corridor.intro.5')).toEqual([{ cue: 'target.hum', from: 'left' }]);
-        expect(keys.indexOf('lesson.corridor.intro.5')).toBeLessThan(keys.indexOf('lesson.corridor.goal.1'));
-        // the corridor comes before every tunnel in both paths, so its line names the hum for them too
+    it('the corridor teaches the beacon hum by its first moment, at the start of the flight (lane sonic-beacon, review R3; lane tutor-moment)', () => {
+        expect(getLesson('corridor').moments?.[0]).toMatchObject({ id: 'target', cue: 'target.hum', when: { kind: 'start' } });
+        // the corridor comes before every tunnel in both paths, so its moment names the hum for them too
         for (const path of [lessonPaths().fast, lessonPaths().full]) {
             const c = path.indexOf('corridor');
             for (const [i, id] of path.entries()) if (id.startsWith('tunnel-')) expect(i, id).toBeGreaterThan(c);
@@ -103,18 +104,14 @@ describe('a sound heard while flying is named where the pilot first hears it (re
         expect(intro[at('height.target')]?.cues).toEqual(['height.target']);
     });
 
-    it('the lines that name the open-way chime play it, from the left: the corridor\'s and tunnel-gaps\' intro.2', () => {
-        const free = [{ cue: 'safety.free', from: 'left' }];
-        expect(cuesOf(getLesson('corridor'), 'lesson.corridor.intro.3')).toEqual(free);
-        // lane gap-sound: tunnel-gaps no longer says it again (the corridor comes before it on both paths)
-        expect(getLesson('tunnel-gaps').intro.map((x) => x.key)).not.toContain('lesson.tunnel-gaps.intro.2');
+    it('the open-way chime is taught in the corridor by the moment way-through, where a way past first opens (lane tutor-moment)', () => {
+        expect(getLesson('corridor').moments?.find((m) => m.cue === 'safety.free')).toMatchObject({ id: 'way-through', when: { kind: 'free' } });
+        // tunnel-gaps does not describe it again before its flight (lane gap-sound: the corridor comes before it on both
+        // paths; lane tutor-moment: the chime above and below is told by the glossary, held by the E2 test below)
+        expect(getLesson('tunnel-gaps').intro.map((x) => x.key)).toEqual(['lesson.tunnel-gaps.goal.1']);
     });
 
-    it('tunnel-gaps\' intro.3 plays the chime above and below that it describes, and walls-pillar names its chime with a play (lane s13-elev)', () => {
-        expect(cuesOf(getLesson('tunnel-gaps'), 'lesson.tunnel-gaps.intro.3')).toEqual([
-            { cue: 'safety.free', from: 'up' },
-            { cue: 'safety.free', from: 'down' }
-        ]);
+    it('walls-pillar names its chime with a play (lane s13-elev)', () => {
         const pillar = getLesson('walls-pillar');
         const line = pillar.intro.find((x) => (x.cues ?? []).some((c) => (typeof c === 'string' ? c : c.cue) === 'safety.free'));
         expect(line?.key).toBe('lesson.walls-pillar.intro.3');
@@ -176,12 +173,65 @@ describe('a sound heard while flying is named where the pilot first hears it (re
         }
     });
 
-    it('the corridor names what its checkpoints sound like: the stage figure, and the reset after a touch (review m1)', () => {
+    it('the corridor\'s checkpoints sound the stage figure and the reset after a touch; the glossary names them (review m1; lane tutor-moment)', () => {
         const corridor = getLesson('corridor');
-        expect(cuesOf(corridor, 'lesson.corridor.intro.4')).toEqual(['target.stage', 'safety.reset']);
+        // lane tutor-moment: the first set has room for eight moments, so these two are no longer played before the flight;
+        // they stay audible, and the glossary (key G in flight, lesson 2 of the full path) names and plays them
+        expect(cuesOf(corridor, 'lesson.corridor.intro.4')).toBeUndefined();
+        for (const c of ['target.stage', 'safety.reset']) expect(namedBy(getLesson('ears-glossary')).has(c), c).toBe(true);
         // its checkpoints end stages or end the track: the checkpoint chime is neither named nor heard there
         expect(namedBy(corridor).has('target.checkpoint')).toBe(false);
         expect(corridor.checkpoints.slice(1, -1).every((cp) => cp.stage !== undefined)).toBe(true);
         expect(corridor.goals.at(-1)?.kind).toBe('track-end');
+    });
+});
+
+// Lane tutor-moment (train 4, the pilot's feedback point 2, Part C 4 of the plan): every sound has ONE name, cue.<id>.name,
+// and a definition in three parts: what it is and when it sounds (cue.<id>.what, naming the sound only through {sound}),
+// what to do (cue.<id>.do). A moment says its sound's `what`, plays it alone, then says its own `do`; its lines never
+// type a sound's name by hand, so the name the pilot hears in a moment, a hint, the glossary and a lesson is one.
+describe('one name and one definition for every sound (lane tutor-moment)', () => {
+    const sentences = (text: string): number => text.split(/(?<=[.!?])\s+(?=\S)/).length;
+    const momentsOf = (): { lesson: string; id: string; cue: CueId }[] =>
+        SHIPPED_LESSON_IDS.flatMap((lesson) => (getLesson(lesson).moments ?? []).map((m) => ({ lesson, id: m.id, cue: m.cue })));
+
+    it('every one of the sounds has what and do in four languages, one sentence each; what names it only through {sound}', () => {
+        expect(CUE_IDS.length).toBe(28);
+        for (const locale of LOCALES) {
+            for (const id of CUE_IDS) {
+                const name = DICTS[locale][`cue.${id}.name`] as string;
+                const what = DICTS[locale][`cue.${id}.what`] as string;
+                const todo = DICTS[locale][`cue.${id}.do`] as string;
+                expect(what, `${locale} ${id}`).toMatch(/^\{sound\}/);
+                // a name of one word is a plain word too ('Wall', 'Ring'): the rule holds the names of two words and more
+                if (/\s/.test(name)) expect(what.toLocaleLowerCase(locale).includes(name.toLocaleLowerCase(locale)), `${locale} ${id}: the name typed in its what`).toBe(false);
+                expect(sentences(what), `${locale} ${id} what`).toBe(1);
+                expect(sentences(todo), `${locale} ${id} do`).toBe(1);
+            }
+        }
+    });
+
+    it('the shipped moments have ids of MOMENT_IDS, each once, each teaching another sound; their en lines never type a sound\'s name', () => {
+        const all = momentsOf();
+        expect(all.map((m) => m.id).sort()).toEqual([...MOMENT_IDS].sort());
+        expect(new Set(all.map((m) => m.cue)).size).toBe(all.length);
+        const en = DICTS.en;
+        for (const m of all) {
+            for (const part of ['do', 'hint']) {
+                const text = en[`moment.${m.id}.${part}`] as string;
+                expect(sentences(text), `${m.id}.${part}`).toBe(1);
+                for (const id of CUE_IDS) {
+                    const name = (en[`cue.${id}.name`] as string).toLowerCase();
+                    if (!/\s/.test(name)) continue; // one word: a plain word too ('wall', 'ring')
+                    expect(new RegExp(`\\b${name.replace(/[-]/g, '\\-')}\\b`, 'i').test(text), `moment.${m.id}.${part} types "${name}"`).toBe(false);
+                }
+            }
+        }
+    });
+
+    it('control: a definition that types its name, and a moment line that does, are caught', () => {
+        const name = (DICTS.en['cue.target.hum.name'] as string).toLowerCase();
+        expect('{sound}: the target hum from ahead.'.toLowerCase().includes(name)).toBe(true);
+        expect(new RegExp(`\\b${name}\\b`, 'i').test('Turn to the Target hum.')).toBe(true);
     });
 });

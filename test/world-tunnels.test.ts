@@ -357,18 +357,19 @@ describe('tunnels (M41-21)', () => {
         expect(strictlyHarder(measure(wider))).toBe(false);
     });
 
-    it('tunnel-gaps tells the pilot that the open-way chime comes from the free side and how a way above and below sound', () => {
-        const l = getLesson('tunnel-gaps');
+    it('the open-way chime is taught in flight in the corridor; its glossary tells how a way above and below sound', () => {
         const en = createTranslator('en', DICTS);
-        const text = l.intro.map((x) => en.text(x)).join(' ');
-        // the free side was told in the corridor, the lesson before it on both paths (lane gap-sound: said once)
-        expect(getLesson('corridor').intro.map((x) => en.text(x)).join(' ')).toMatch(/Equal notes come from the free side/);
+        // lane tutor-moment (the pilot's feedback, point 2): the chime is no longer described before a flight; the corridor's
+        // moment way-through plays it alone where it first sounds, with its one definition (cue.safety.free.what)
+        expect(getLesson('corridor').moments?.find((m) => m.cue === 'safety.free')?.id).toBe('way-through');
+        expect(getLesson('tunnel-gaps').intro.map((x) => en.text(x)).join(' ')).not.toMatch(/chime/i);
+        expect(en.say('cue.safety.free.what', { sound: en.say('cue.safety.free.name') })).toMatch(/from the side where the way past is open/);
         // by its contour, as the glossary says (lane s13-sound, review m2): a way above moves like the height tone in a
         // climb, which is lower notes for a pilot whose height polarity is up-lower; "high" would be wrong for him. And
-        // since lane s13-elev (owner's message 42) from above or below too, with the setting on (its review E2: with it off
-        // the chime comes from ahead, so the direction is said with the setting's name), never "from ahead"
-        expect(text).toMatch(/the way is above, the chime moves like your height tone in a climb\. If it is below, the other way\./);
-        expect(text).toMatch(/With Sound from above and below on, it comes from there too\./);
+        // since lane s13-elev (owner's message 42) from above or below too, with the setting on, never "from ahead"
+        const text = en.say('cue.safety.free.glossary');
+        expect(text).toMatch(/Like your height tone in a climb: above\. The other way: below\./);
+        expect(text).toMatch(/With Sound from above and below on, from there too\./);
         expect(text).not.toMatch(/high chime/i);
         expect(text).not.toMatch(/ahead if it goes up or down|from ahead/i);
     });

@@ -101,8 +101,10 @@ describe('rooms at the scale of a micro drone (M41-18)', () => {
         expect(left).toBeLessThanOrEqual(within(asV012('walls-hall').goals[0] as Goal));
         const en = createTranslator('en', DICTS);
         expect(en.text(l.title)).toBe('A small room');
-        // lane gap-sound: the title alone calls the room small; the intro begins with the wall it plays (owner: no chatter)
-        expect((l.intro[0] as SpeechLine).key).toBe('cue.safety.wall.name');
+        // lane gap-sound: the title alone calls the room small; lane tutor-moment: nothing is said before the flight, the
+        // wall is taught in flight when the craft comes near one (the moment wall-ahead)
+        expect(l.intro).toEqual([]);
+        expect(l.moments?.find((m) => m.cue === 'safety.wall')).toMatchObject({ id: 'wall-ahead', when: { kind: 'near', dir: 'front' } });
     });
 
     it('the zones of move-speed and move-stop come in 2 to 3 s at their caps; control: v0.12 took 7.7 s to move-stop\'s', () => {

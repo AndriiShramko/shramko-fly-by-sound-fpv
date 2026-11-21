@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { FlightSample, LessonDef, SessionEvent, SonicObject, SonicWorld, Vec3 } from '../src/contract';
+import { CUE_IDS } from '../src/i18n/catalog';
 import { CuePlanner } from '../src/cues';
 import { createLessonRunner, getLesson, GIVE_UP_MS, RESPAWN_BEFORE_M, type LessonSession, type Question, type RunnerAction, type DemoScene } from '../src/lesson';
 import { getBuiltinTheme } from '../src/theme';
@@ -39,7 +40,8 @@ class Pilot {
     answerer: ((q: Question, scene: DemoScene | null) => number) | null = null;
 
     constructor(readonly lesson: LessonDef, options: Parameters<typeof createLessonRunner>[1] = {}, world?: SonicWorld | null) {
-        this.run = createLessonRunner(lesson, options);
+        // flight tests: every sound known (no moment freezes the flight); test/moments.test.ts tests the teaching
+        this.run = createLessonRunner(lesson, { known: CUE_IDS, ...options });
         this.world = world !== undefined ? world : lesson.world.kind === 'analytic' ? createAnalyticWorld(lesson.world.spec) : null;
         const start = options.start ?? lesson.start;
         this.pos = start.pos;

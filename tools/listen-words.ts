@@ -276,6 +276,7 @@ export function sampleParams(key: string, template: string, tr: Translator): Non
         else if (name === 'name') params[name] = tr.say(key === 'status.theme' ? 'theme.soft.name' : 'cue.safety.wall.name');
         else if (name === 'label') params[name] = tr.say(key === 'menu.item' ? 'menu.setting.height-direction' : 'cue.safety.wall.name');
         else if (name === 'layer') params[name] = tr.say('layer.height.name');
+        else if (name === 'sound') params[name] = tr.say(/^cue\..+\.what$/.test(key) ? `${key.slice(0, -'.what'.length)}.name` : 'cue.safety.wall.name');
         else if (name === 'time') params[name] = tr.duration(65_000);
         else if (NUMBERS[name] !== undefined) params[name] = NUMBERS[name] as number;
         else throw new Error(`${key}: no sample value for the argument '${name}'`);

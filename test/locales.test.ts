@@ -67,7 +67,9 @@ const ARGUMENTS: Readonly<Record<string, readonly string[]>> = {
     'survey.howto-voice': ['skip'],
     'survey.question-of': ['n', 'total'],
     'survey.repeat-hint': ['key'],
-    'survey.open-howto': ['key']
+    'survey.open-howto': ['key'],
+    // a sound's definition names it by its one name (cue.<id>.name), never typed by hand (lane tutor-moment, Part C 4)
+    ...Object.fromEntries(CUE_IDS.map((id) => [`cue.${id}.what`, ['sound']]))
 };
 
 describe('the catalogue', () => {

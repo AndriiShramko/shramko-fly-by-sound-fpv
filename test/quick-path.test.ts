@@ -192,26 +192,29 @@ describe('the quick path is the default (owner 2026-11-19: headphones, then at o
         expect(talk, locale).toBeLessThanOrEqual(QUICK_TALK_MAX_S);
     });
 
-    it('(c) the room: the wall, the wall on the right, the ceiling, the floor, each played in the room, then the goal (owner 2026-11-19)', () => {
+    it('(c) the room: nothing is said before the flight; the height tone, then the wall ahead, each taught in flight (lane tutor-moment)', () => {
         const room = getLesson('walls-hall');
         expect(room.world.kind).toBe('analytic');
-        expect(room.intro.map((l) => [l.key, l.cues])).toEqual([
-            ['cue.safety.wall.name', [{ cue: 'safety.wall', from: 'left' }]],
-            ['dir.right', [{ cue: 'safety.wall', from: 'right' }]],
-            ['cue.safety.ceiling.name', [{ cue: 'safety.ceiling', from: 'up' }]],
-            ['cue.safety.floor.name', [{ cue: 'safety.floor', from: 'down' }]],
-            ['lesson.walls-hall.goal.1', undefined]
+        // the pilot's feedback, point 2: a sound is brought in at the action it belongs to, not described before the flight
+        expect(room.intro).toEqual([]);
+        expect(room.moments?.map((m) => [m.id, m.cue, m.when.kind])).toEqual([
+            ['height', 'height.tone', 'start'],
+            ['wall-ahead', 'safety.wall', 'near']
         ]);
         // no listening lesson without a world on the quick path after the headphone check
         expect(lessonPaths().fast.slice(1).map((id) => getLesson(id).world.kind)).not.toContain('none');
     });
 
-    it('(c) the later quick lessons: each says its goal and only the names the sounds it brings need; the height tone in the corridor', () => {
+    it('(c) the later quick lessons: each says its goal only; the sounds they bring are taught by moments (lane tutor-moment)', () => {
         const intro = (id: string): string[] => getLesson(id).intro.map((l) => l.key);
-        expect(intro('corridor')).toEqual(['cue.height.tone.name', 'lesson.corridor.intro.3', 'lesson.corridor.intro.4', 'lesson.corridor.intro.5', 'lesson.corridor.goal.1']);
-        expect(intro('tunnel-gaps')).toEqual(['lesson.tunnel-gaps.intro.3', 'lesson.tunnel-gaps.goal.1']);
-        expect(intro('rings-first')).toEqual(['lesson.rings-first.intro.1', 'cue.height.target.name', 'lesson.rings-first.goal.1']);
+        const moments = (id: string): string[] => (getLesson(id).moments ?? []).map((m) => m.cue);
+        expect(intro('corridor')).toEqual(['lesson.corridor.goal.1']);
+        expect(moments('corridor')).toEqual(['target.hum', 'safety.free']);
+        expect(intro('tunnel-gaps')).toEqual(['lesson.tunnel-gaps.goal.1']);
+        expect(intro('rings-first')).toEqual(['lesson.rings-first.goal.1']);
+        expect(moments('rings-first')).toEqual(['height.target', 'target.note']);
         expect(intro('rings-course')).toEqual(['lesson.rings-course.goal.1']);
+        expect(moments('rings-course')).toEqual(['speed.tick', 'speed.brake']);
         expect(intro('free-garden')).toEqual(['lesson.free-garden.goal.1']);
     });
 });

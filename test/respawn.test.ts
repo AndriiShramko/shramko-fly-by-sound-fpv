@@ -198,7 +198,10 @@ describe('a failed attempt of a course that re-centres: the next one begins wher
 
 describe("a course's first attempt begins at its start (found with the simulator's corridor pilot)", () => {
     it('a pilot who flew on while the task was said goes back to the start at "Go."; the corridor is then passed in that attempt', () => {
-        const p = new ScriptedPilot(getLesson('corridor'));
+        // the corridor's task is one line since lane tutor-moment (its sounds are taught by moments in flight); a task said
+        // with sounds (the lessons that still have them) takes seconds in which a pilot may fly on: the corridor with one
+        const shipped = getLesson('corridor');
+        const p = new ScriptedPilot({ ...shipped, intro: [...shipped.intro, { key: 'cue.target.hum.name', cues: ['target.hum'] }] });
         p.begin();
         // the task is said (lines, then each named sound three times): the pilot flies on meanwhile, slowly, along the
         // corridor's track (125 m), until the runner moves the craft

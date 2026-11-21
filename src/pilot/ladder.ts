@@ -4,6 +4,7 @@
 // A flight passes when the runner says the attempt passed with no touch, within 3 x the course length / the speed.
 import type { LessonDef, SessionEvent, SonicObject, SonicPrefs, ThemeDef, Vec3 } from '../contract';
 import { CuePlanner, type FramePlan } from '../cues/planner';
+import { CUE_IDS } from '../i18n/catalog';
 import { BODY_RADIUS_M, createLessonRunner } from '../lesson';
 import { defaultPrefs } from '../prefs';
 import { getBuiltinTheme } from '../theme';
@@ -70,7 +71,8 @@ export function flyLesson(lesson: LessonDef, speedMps: number, seed: number, o: 
     const theme = o.theme ?? getBuiltinTheme('soft');
     const layers = { ...lesson.layers, ...(o.budget === undefined ? {} : { speedBudget: o.budget }), ...(o.line === undefined ? {} : { racingLine: o.line }), ...(o.gateAim === undefined ? {} : { gateAim: o.gateAim }) };
     const capped: LessonDef = { ...lesson, layers, assists: { ...lesson.assists, maxSpeedMps: speedMps } };
-    const run = createLessonRunner(capped, { seed });
+    // the ear pilot measures flying by ear, not the teaching: it knows every sound (no moment freezes its flight)
+    const run = createLessonRunner(capped, { seed, known: CUE_IDS });
     const planner = new CuePlanner({ theme, prefs, layers });
     const ear = new Ear(theme, prefs, { ...DEFAULT_HEARING, ...o.hearing, seed: (o.hearing?.seed ?? DEFAULT_HEARING.seed) * 7919 + seed });
     const pilot = new EarPilot({ ...o.pilot, speedMps });

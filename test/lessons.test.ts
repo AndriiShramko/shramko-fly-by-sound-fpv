@@ -58,7 +58,9 @@ describe('the shipped lessons', () => {
             const said = l.intro.map((x) => x.key).filter((k) => own.includes(k));
             expect(said, spec.id).toEqual(own.filter((k) => said.includes(k)));
             const goal1 = own.find((k) => k.endsWith('.goal.1'));
-            if (goal1 !== undefined) expect(said, spec.id).toContain(goal1);
+            // lane tutor-moment: a lesson whose intro is empty begins with its moments, whose `do` lines say the tasks
+            if (l.intro.length === 0) expect((l.moments ?? []).length, spec.id).toBeGreaterThan(0);
+            else if (goal1 !== undefined) expect(said, spec.id).toContain(goal1);
             for (const x of l.intro.filter((y) => !own.includes(y.key))) {
                 const cues = (x.cues ?? []).map((c) => (typeof c === 'string' ? { cue: c, from: null } : c));
                 expect(cues.some((c) => x.key === `cue.${c.cue}.name` || x.key === `dir.${c.from}`), `${spec.id}: ${x.key}`).toBe(true);
@@ -224,7 +226,8 @@ describe('lesson format 2 and the files of format 1 (v0.12)', () => {
         // lane sound6: no front or behind in the ears lessons (ears-game, ears-walls, ears-shapes) and the cube's words; the
         // quick path: the headphone check's one line and wall knocks, the walls' one line, the room's height line, the brake cue
         // lane gap-sound: the headphone check's 2 trials, the four wall sounds in the room, the later quick lessons' intros cut
-        const CHANGED_AFTER_V013: Readonly<Record<string, number>> = { corridor: 4, 'rings-first': 3, 'rings-course': 3, 'free-garden': 3, 'tunnel-wide': 2, 'tunnel-narrow': 2, 'tunnel-narrower': 2, 'tunnel-bends': 2, 'tunnel-long': 2, 'tunnel-gaps': 4, 'walls-pillar': 3, 'ears-headphones': 5, 'ears-glossary': 4, 'ears-game': 4, 'shapes-cube': 4, 'ears-walls': 4, 'walls-hall': 4, 'ears-shapes': 3, 'turn-listen': 3 };
+        // lane tutor-moment: the first set's moments (walls-hall, corridor, rings-first, rings-course), their intro sounds gone (tunnel-gaps too)
+        const CHANGED_AFTER_V013: Readonly<Record<string, number>> = { corridor: 5, 'rings-first': 4, 'rings-course': 4, 'free-garden': 3, 'tunnel-wide': 2, 'tunnel-narrow': 2, 'tunnel-narrower': 2, 'tunnel-bends': 2, 'tunnel-long': 2, 'tunnel-gaps': 5, 'walls-pillar': 3, 'ears-headphones': 5, 'ears-glossary': 4, 'ears-game': 4, 'shapes-cube': 4, 'ears-walls': 4, 'walls-hall': 5, 'ears-shapes': 3, 'turn-listen': 3 };
         for (const id of SHIPPED_LESSON_IDS) {
             const l = getLesson(id);
             expect(current(id)['format'], id).toBe('shramko-sonic-lesson/2');

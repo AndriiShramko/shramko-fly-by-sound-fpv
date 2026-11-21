@@ -36,7 +36,7 @@ const MOMENT = {
 
 describe('moments: the contract (S1)', () => {
     it('a lesson without moments has none and gates nothing (as before)', () => {
-        const lesson = getLesson('walls-hall');
+        const lesson = getLesson('hover-height');
         expect(lessonMoments(lesson)).toEqual([]);
         expect(startAudible(lesson, CUE_IDS)).toBeNull();
     });

@@ -248,10 +248,10 @@ describe('what the replay needs from the recording, and what it checks', () => {
         const a = checkSession({ ...first.pkg, manifest: { ...m, lesson } });
         expect(a.setup.exact).toBe(false);
         expect(a.setup.notes.map((n) => n.code)).toEqual(['lesson-version']);
-        expect(formatReplayCheck(a.check)).toMatch(/not the recording's own build: lesson rings-first is version 3 here, the session was flown with 1/);
+        expect(formatReplayCheck(a.check)).toMatch(/not the recording's own build: lesson rings-first is version 4 here, the session was flown with 1/);
         // it re-derives all the same, so it passes; the notes keep both versions
         expect(a.check.verdict).toBe('pass');
-        expect(a.setup.notes[0]).toMatchObject({ recorded: 1, here: 3 });
+        expect(a.setup.notes[0]).toMatchObject({ recorded: 1, here: 4 });
         expect(rebuildSession({ ...m, theme: { id: 'soft', version: 9 } }).notes.map((n) => n.code)).toEqual(['theme-version']);
         expect(rebuildSession({ ...m, theme: { id: 'my-own', version: 1 } }).notes.map((n) => n.code)).toEqual(['unknown-theme']);
         expect(rebuildSession(m).exact).toBe(true);

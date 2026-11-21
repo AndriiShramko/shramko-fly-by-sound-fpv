@@ -76,6 +76,8 @@ export class RecordingHost {
     private lastScene = false;
     /** train 4: a moment holds the craft (RunnerAction 'moment' non-null): flyTo does not move it meanwhile */
     frozen = false;
+    /** a moment froze the flight in this step: the recorder keeps this sample, the one the runner froze on (the replay must see it) */
+    private froze = false;
     /** every action the runner handed, with its time */
     readonly actionLog: { readonly t: number; readonly a: RunnerAction }[] = [];
     private readonly o: Required<Pick<HostOptions, 'hz' | 'recordHz' | 'speechEnds' | 'ttsBaseMs' | 'ttsMsPerChar' | 'keepTouched'>> & HostOptions;
@@ -123,6 +125,7 @@ export class RecordingHost {
             else if (a.kind === 'scene') this.lastScene = a.scene !== null;
             else if (a.kind === 'audible') this.planner.setAudible(a.cues === null ? null : new Set(a.cues));
             else if (a.kind === 'moment') {
+                if (a.moment !== null && !this.frozen) this.froze = true;
                 this.frozen = a.moment !== null;
                 if (this.frozen) this.vel = [0, 0, 0];
             }
@@ -173,7 +176,9 @@ export class RecordingHost {
         // as the simulator's recorder writes a frame: the sample the runner was given (a place the runner asked for shows in
         // the next one), one in recordHz; and every sample with a touch, whose position the replay derives the touch from
         const due = this.tickNo % Math.round(this.o.hz / this.o.recordHz) === 0;
-        if (due || (sample.touched && this.o.keepTouched)) {
+        // and the sample a moment froze the flight on: the frames after it are held, so the replay could not find the trigger
+        if (due || (sample.touched && this.o.keepTouched) || this.froze) {
+            this.froze = false;
             this.frames.push({ t: this.t, tick: Math.round(this.t), p: sample.pos, v: sample.vel, q: sample.quat, s: [0, 0, 0, 0], c: plan.cues.map((c) => c.id) });
         }
     }
