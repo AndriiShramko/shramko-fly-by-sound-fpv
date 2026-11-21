@@ -20,47 +20,7 @@
     }
   ],
   "id": "walls-hall",
-  "intro": [
-    {
-      "cues": [
-        {
-          "cue": "safety.wall",
-          "from": "left"
-        }
-      ],
-      "key": "cue.safety.wall.name"
-    },
-    {
-      "cues": [
-        {
-          "cue": "safety.wall",
-          "from": "right"
-        }
-      ],
-      "key": "dir.right"
-    },
-    {
-      "cues": [
-        {
-          "cue": "safety.ceiling",
-          "from": "up"
-        }
-      ],
-      "key": "cue.safety.ceiling.name"
-    },
-    {
-      "cues": [
-        {
-          "cue": "safety.floor",
-          "from": "down"
-        }
-      ],
-      "key": "cue.safety.floor.name"
-    },
-    {
-      "key": "lesson.walls-hall.goal.1"
-    }
-  ],
+  "intro": [],
   "layers": {
     "hazardVoices": 2,
     "heightBandM": null,
@@ -72,6 +32,68 @@
     ]
   },
   "module": 3,
+  "moments": [
+    {
+      "cue": "height.tone",
+      "do": {
+        "key": "moment.height.do"
+      },
+      "forms": [
+        {
+          "dir": [0, 0, -1],
+          "distanceM": null,
+          "durS": 2.5
+        }
+      ],
+      "hint": {
+        "key": "moment.height.hint"
+      },
+      "hintAfterS": 15,
+      "id": "height",
+      "task": {
+        "bandM": [2, 2.6],
+        "kind": "hold-height",
+        "seconds": 1,
+        "shareMin": 0.8
+      },
+      "when": {
+        "kind": "start"
+      }
+    },
+    {
+      "cue": "safety.wall",
+      "do": {
+        "key": "moment.wall-ahead.do"
+      },
+      "forms": [
+        {
+          "dir": [0, 0, -1],
+          "distanceM": 3,
+          "durS": 1.25
+        },
+        {
+          "dir": [0, 0, -1],
+          "distanceM": 1,
+          "durS": 1.25
+        }
+      ],
+      "hint": {
+        "key": "moment.wall-ahead.hint"
+      },
+      "hintAfterS": 20,
+      "id": "wall-ahead",
+      "task": {
+        "kind": "approach-stop",
+        "objectId": null,
+        "stopWithinM": 1.5
+      },
+      "when": {
+        "dir": "front",
+        "kind": "near",
+        "withinM": 3
+      }
+    }
+  ],
   "order": 10,
   "pass": {
     "attempts": 3,
@@ -99,7 +121,7 @@
   "title": {
     "key": "lesson.walls-hall.title"
   },
-  "version": 4,
+  "version": 5,
   "world": {
     "kind": "analytic",
     "spec": {

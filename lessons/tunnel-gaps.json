@@ -39,19 +39,6 @@
   "id": "tunnel-gaps",
   "intro": [
     {
-      "cues": [
-        {
-          "cue": "safety.free",
-          "from": "up"
-        },
-        {
-          "cue": "safety.free",
-          "from": "down"
-        }
-      ],
-      "key": "lesson.tunnel-gaps.intro.3"
-    },
-    {
       "key": "lesson.tunnel-gaps.goal.1"
     }
   ],
@@ -94,7 +81,7 @@
   "title": {
     "key": "lesson.tunnel-gaps.title"
   },
-  "version": 4,
+  "version": 5,
   "world": {
     "kind": "analytic",
     "spec": {

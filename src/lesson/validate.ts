@@ -448,7 +448,8 @@ export function validateLesson(input: unknown): Validation<LessonDef> {
     const title = r.title === undefined ? undefined : speechLine(c, r.title, 'title');
     let intro: IntroLine[] | undefined;
     if (r.intro !== undefined) {
-        const arr = c.array(r.intro, 'intro', { min: 1, max: 12 });
+        // train 4: a lesson that teaches by moments may say nothing before its flight (the first set: the first movement first)
+        const arr = c.array(r.intro, 'intro', { min: r.moments === undefined ? 1 : 0, max: 12 });
         if (arr !== null) {
             const out: IntroLine[] = [];
             arr.forEach((x, i) => {

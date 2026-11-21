@@ -83,37 +83,6 @@
   "id": "corridor",
   "intro": [
     {
-      "cues": [
-        "height.tone"
-      ],
-      "key": "cue.height.tone.name"
-    },
-    {
-      "cues": [
-        {
-          "cue": "safety.free",
-          "from": "left"
-        }
-      ],
-      "key": "lesson.corridor.intro.3"
-    },
-    {
-      "cues": [
-        "target.stage",
-        "safety.reset"
-      ],
-      "key": "lesson.corridor.intro.4"
-    },
-    {
-      "cues": [
-        {
-          "cue": "target.hum",
-          "from": "left"
-        }
-      ],
-      "key": "lesson.corridor.intro.5"
-    },
-    {
       "key": "lesson.corridor.goal.1"
     }
   ],
@@ -129,6 +98,65 @@
     ]
   },
   "module": 4,
+  "moments": [
+    {
+      "cue": "target.hum",
+      "do": {
+        "key": "moment.target.do"
+      },
+      "forms": [
+        {
+          "dir": [0, 0, -1],
+          "distanceM": 6,
+          "durS": 1.25
+        },
+        {
+          "dir": [0, 0, -1],
+          "distanceM": 2,
+          "durS": 1.25
+        }
+      ],
+      "hint": {
+        "key": "moment.target.hint"
+      },
+      "hintAfterS": 20,
+      "id": "target",
+      "task": {
+        "kind": "fly-distance",
+        "metres": 5
+      },
+      "when": {
+        "kind": "start"
+      }
+    },
+    {
+      "cue": "safety.free",
+      "do": {
+        "key": "moment.way-through.do"
+      },
+      "forms": [
+        {
+          "dir": [-1, 0, 0],
+          "distanceM": 3,
+          "durS": 1.25
+        },
+        {
+          "dir": [-1, 0, 0],
+          "distanceM": 1,
+          "durS": 1.25
+        }
+      ],
+      "hint": {
+        "key": "moment.way-through.hint"
+      },
+      "hintAfterS": 20,
+      "id": "way-through",
+      "task": null,
+      "when": {
+        "kind": "free"
+      }
+    }
+  ],
   "order": 13,
   "pass": {
     "attempts": 3,
@@ -156,7 +184,7 @@
   "title": {
     "key": "lesson.corridor.title"
   },
-  "version": 4,
+  "version": 5,
   "world": {
     "kind": "analytic",
     "spec": {

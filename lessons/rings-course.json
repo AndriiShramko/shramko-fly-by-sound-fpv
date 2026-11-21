@@ -33,10 +33,59 @@
       "height",
       "target",
       "room",
-      "voice"
+      "voice",
+      "speed"
     ]
   },
   "module": 5,
+  "moments": [
+    {
+      "cue": "speed.tick",
+      "do": {
+        "key": "moment.speed.do"
+      },
+      "forms": [
+        {
+          "dir": [0, 0, -1],
+          "distanceM": null,
+          "durS": 2.5
+        }
+      ],
+      "hint": {
+        "key": "moment.speed.hint"
+      },
+      "hintAfterS": 20,
+      "id": "speed",
+      "task": null,
+      "when": {
+        "aboveMps": 2,
+        "kind": "speed"
+      }
+    },
+    {
+      "cue": "speed.brake",
+      "do": {
+        "key": "moment.brake.do"
+      },
+      "forms": [
+        {
+          "dir": [0, 0, -1],
+          "distanceM": null,
+          "durS": 2
+        }
+      ],
+      "hint": {
+        "key": "moment.brake.hint"
+      },
+      "hintAfterS": 20,
+      "id": "brake",
+      "task": null,
+      "when": {
+        "aboveMps": 3,
+        "kind": "speed"
+      }
+    }
+  ],
   "order": 24,
   "pass": {
     "attempts": 3,
@@ -64,7 +113,7 @@
   "title": {
     "key": "lesson.rings-course.title"
   },
-  "version": 3,
+  "version": 4,
   "world": {
     "kind": "analytic",
     "spec": {

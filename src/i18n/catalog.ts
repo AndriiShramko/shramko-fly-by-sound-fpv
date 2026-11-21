@@ -5,6 +5,8 @@
 //
 // Key patterns
 //   cue.<layer>.<name>.name | .glossary     one line to name a cue, one to describe it
+//   cue.<layer>.<name>.what | .do           the definition (train 4): what it is and when it sounds ({sound}: the name), what to do
+//   moment.done | moment.<id>.do | .hint    a moment's lines (src/lesson/moments.ts); the ids are MOMENT_IDS
 //   layer.<id>.name                         the seven layers, for the settings menu
 //   dir.<sector>                            a stand-alone phrase that says where something is
 //   module.<0..7>.name
@@ -51,6 +53,17 @@ export const CUE_IDS = [
     'room.bed'
 ] as const;
 export type KnownCueId = (typeof CUE_IDS)[number];
+
+/**
+ * The moments of the shipped lessons (train 4, the first set): each has its 'moment.<id>.do' and 'moment.<id>.hint'.
+ * A lesson's moment id must be one of these to have its lines (test/named-sounds.test.ts).
+ */
+export const MOMENT_IDS = ['height', 'wall-ahead', 'target', 'way-through', 'gate-height', 'gate-passed', 'speed', 'brake'] as const;
+
+/** The keys of the moments, in file order. */
+export function momentKeys(): string[] {
+    return ['moment.done', ...MOMENT_IDS.flatMap((id) => ['moment.' + id + '.do', 'moment.' + id + '.hint'])];
+}
 
 export const THEME_IDS = ['soft', 'clear', 'race'] as const;
 
@@ -335,13 +348,14 @@ export const FREE_KEYS = [
 /** All keys the locale files hold, in file order. */
 export function requiredKeys(): string[] {
     const keys: string[] = ['app.name'];
-    for (const id of CUE_IDS) keys.push(`cue.${id}.name`, `cue.${id}.glossary`);
+    for (const id of CUE_IDS) keys.push(`cue.${id}.name`, `cue.${id}.glossary`, `cue.${id}.what`, `cue.${id}.do`);
     for (const id of LAYER_IDS) keys.push(`layer.${id}.name`);
     for (const s of SECTORS) keys.push(`dir.${s}`);
     for (const m of MODULES) keys.push(`module.${m}.name`);
     for (const t of THEME_IDS) keys.push(`theme.${t}.name`, `theme.${t}.what`);
     for (const spec of LESSONS) keys.push(...lessonKeys(spec));
     for (const spec of LESSON_TEMPLATES) keys.push(...lessonKeys(spec));
+    keys.push(...momentKeys());
     keys.push(...FREE_KEYS);
     keys.push(...surveyKeys());
     return keys;

@@ -24,15 +24,6 @@
   "id": "rings-first",
   "intro": [
     {
-      "key": "lesson.rings-first.intro.1"
-    },
-    {
-      "cues": [
-        "height.target"
-      ],
-      "key": "cue.height.target.name"
-    },
-    {
       "key": "lesson.rings-first.goal.1"
     }
   ],
@@ -49,6 +40,52 @@
     ]
   },
   "module": 5,
+  "moments": [
+    {
+      "cue": "height.target",
+      "do": {
+        "key": "moment.gate-height.do"
+      },
+      "forms": [
+        {
+          "dir": [0, 0, -1],
+          "distanceM": null,
+          "durS": 2.5
+        }
+      ],
+      "hint": {
+        "key": "moment.gate-height.hint"
+      },
+      "hintAfterS": 20,
+      "id": "gate-height",
+      "task": null,
+      "when": {
+        "kind": "start"
+      }
+    },
+    {
+      "cue": "target.note",
+      "do": {
+        "key": "moment.gate-passed.do"
+      },
+      "forms": [
+        {
+          "dir": [0, 0, -1],
+          "distanceM": null,
+          "durS": 2
+        }
+      ],
+      "hint": {
+        "key": "moment.gate-passed.hint"
+      },
+      "hintAfterS": 20,
+      "id": "gate-passed",
+      "task": null,
+      "when": {
+        "kind": "passed"
+      }
+    }
+  ],
   "order": 20,
   "pass": {
     "attempts": 3,
@@ -76,7 +113,7 @@
   "title": {
     "key": "lesson.rings-first.title"
   },
-  "version": 3,
+  "version": 4,
   "world": {
     "kind": "analytic",
     "spec": {
