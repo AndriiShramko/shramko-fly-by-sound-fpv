@@ -59,7 +59,7 @@ function toWall(host: RecordingHost): void {
 
 /** Begins the lesson and flies to the front wall; `during` runs once the wall's moment has frozen the flight. */
 function flyHall(options: HostOptions = {}, during?: (host: RecordingHost) => void): RecordingHost {
-    const host = new RecordingHost(hall(), options);
+    const host = new RecordingHost(hall(), { known: [], ...options });
     host.begin();
     host.until(() => host.runner.phase === 'flying', 60);
     host.until(() => !host.frozen && host.runner.view().moment == null, 30);
@@ -146,7 +146,7 @@ describe('moments: the machine (S2)', () => {
     });
 
     it('no success in hintAfterS: the hint once, never the whole text again', () => {
-        const host = new RecordingHost(hall());
+        const host = new RecordingHost(hall(), { known: [] });
         host.begin();
         host.until(() => host.runner.phase === 'flying', 60);
         host.until(() => !host.frozen && host.runner.view().moment == null, 30);
@@ -176,7 +176,7 @@ describe('moments: the machine (S2)', () => {
     });
 
     it('"again" in the task: the flight freezes for the forms alone and goes on, no do line again; "on" ends it', () => {
-        const host = new RecordingHost(hall());
+        const host = new RecordingHost(hall(), { known: [] });
         host.begin();
         host.until(() => host.runner.phase === 'flying', 60);
         host.until(() => !host.frozen && host.runner.view().moment == null, 30);
@@ -196,7 +196,7 @@ describe('moments: the machine (S2)', () => {
     });
 
     it("guide 'new': the sound's name and the sound only; no what, no do, no hint, no praise words", () => {
-        const host = new RecordingHost(hall(), { guide: 'new' });
+        const host = new RecordingHost(hall(), { known: [], guide: 'new' });
         host.begin();
         host.until(() => host.runner.phase === 'flying', 60);
         host.until(() => !host.frozen && host.runner.view().moment == null, 30);
@@ -218,6 +218,8 @@ describe('moments: the machine (S2)', () => {
         });
         const { pkg } = await host.toPackage();
         expect(pkg.events.filter((e) => e.kind === 'moment').length).toBeGreaterThanOrEqual(8);
+        // the runner's open event carries what the host taught with, so the replay runs the moments too (no host marker)
+        expect(pkg.events.find((e) => e.kind === 'lesson' && e.what === 'open')).toMatchObject({ known: [] });
         const { check, result } = checkSession(pkg, { lessons: { [host.lesson.id]: host.lesson } });
         expect(result.derivedEvents.filter((e) => e.kind === 'moment').map((e) => (e.kind === 'moment' ? `${e.id}:${e.what}` : ''))).toEqual(
             pkg.events.filter((e) => e.kind === 'moment').map((e) => (e.kind === 'moment' ? `${e.id}:${e.what}` : ''))

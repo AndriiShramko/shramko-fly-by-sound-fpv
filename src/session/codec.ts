@@ -8,7 +8,7 @@
 //
 // Decoding is strict about every field a line must have. Unknown extra keys on an event are refused
 // in strict mode and ignored in lenient mode, so a newer app's package can still be read for a report.
-import type { FlightFrame, MaterialClass, SessionEvent, SurveyAnswers, Vec3 } from '../contract';
+import type { CueId, FlightFrame, MaterialClass, SessionEvent, SurveyAnswers, Vec3 } from '../contract';
 import { FORMATS, MATERIAL_CLASSES, MOMENT_EVENT_WHAT } from '../contract';
 import { canonicalJson, canonicalPretty } from '../util/canonical';
 import { Collector, joinPath, type Validation } from '../util/check';
@@ -127,6 +127,11 @@ const EVENT_KEYS: Readonly<Record<SessionEvent['kind'], readonly string[]>> = {
     moment: ['t', 'kind', 'id', 'what']
 };
 
+/** The keys a kind of event may carry besides EVENT_KEYS: the lesson's open event, what the host taught with (train 4). */
+const EVENT_OPTIONAL_KEYS: Readonly<Partial<Record<SessionEvent['kind'], readonly string[]>>> = { lesson: ['known', 'guide'] };
+const GUIDE_LEVELS = ['full', 'short', 'new'] as const;
+const CUE_ID_RE = /^[a-z]+.[a-z-]+$/;
+
 export interface EventValidationOptions {
     /** false (default): a key the kind does not have is an issue. true: it is ignored. */
     readonly lenient?: boolean;
@@ -142,7 +147,7 @@ export function validateEvent(input: unknown, options: EventValidationOptions = 
         if (r['kind'] === undefined) c.add('kind', 'is missing');
         return c.result(undefined as never);
     }
-    if (options.lenient !== true) c.keys(r, '', EVENT_KEYS[kind], EVENT_KEYS[kind]);
+    if (options.lenient !== true) c.keys(r, '', [...EVENT_KEYS[kind], ...(EVENT_OPTIONAL_KEYS[kind] ?? [])], EVENT_KEYS[kind]);
     const need = (key: string): void => {
         if (options.lenient === true && r[key] === undefined) c.add(key, 'is missing');
     };
@@ -161,7 +166,10 @@ export function validateEvent(input: unknown, options: EventValidationOptions = 
             const version = c.number(r['version'], 'version', { integer: true, min: 1 });
             const what = c.oneOf(r['what'], 'what', LESSON_WHAT);
             const attempt = c.number(r['attempt'], 'attempt', { integer: true, min: 0 });
-            if (lessonId !== undefined && version !== undefined && what !== undefined && attempt !== undefined && t !== undefined) e = { t, kind, lessonId, version, what, attempt };
+            const knownRaw = r['known'] === undefined ? null : c.array(r['known'], 'known', { max: 64 });
+            const known = knownRaw === null ? undefined : (knownRaw.map((x, i) => c.string(x, joinPath('known', String(i)), { min: 3, max: 40, pattern: CUE_ID_RE })).filter((x): x is string => x !== undefined) as CueId[]);
+            const guide = r['guide'] === undefined ? undefined : c.oneOf(r['guide'], 'guide', GUIDE_LEVELS);
+            if (lessonId !== undefined && version !== undefined && what !== undefined && attempt !== undefined && t !== undefined) e = { t, kind, lessonId, version, what, attempt, ...(known === undefined ? {} : { known }), ...(guide === undefined ? {} : { guide }) };
             break;
         }
         case 'goal': {

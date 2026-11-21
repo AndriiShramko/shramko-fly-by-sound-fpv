@@ -110,7 +110,7 @@ import { beaconPointIndex, DEMO_TARGET_ID, lineClear, trackCorners } from '../cu
 import { RacingLine, type SonicLineTarget } from '../cues/line';
 import { gateAim, gateAimLocal } from './gate-aim';
 import { approachM, SPEED_LEAD_FROM_MPS } from '../cues/lead';
-import { MomentMachine } from './moments';
+import { lessonMoments, MomentMachine } from './moments';
 
 /**
  * Lane sonic4 design 5: with the racing line on, the gate aim takes over within this distance in front of the next gate's
@@ -284,7 +284,9 @@ export interface RunnerOptions {
     readonly freeFlight?: boolean;
     /**
      * Train 4: the sounds the pilot has learned already (in earlier lessons or with "I know this"): their moments are
-     * skipped and their cues are audible from the start. Absent: none.
+     * skipped and their cues are audible from the start. [] for a pilot new to them. Absent: the host does not teach by
+     * moments (a host or a recording from before train 4): every sound counts as known, no moment runs and nothing is
+     * kept from the engine, as before.
      */
     readonly known?: readonly CueId[];
     /** Train 4: how much a moment says (GuideLevel). Absent: 'full', so old recordings replay. */
@@ -597,7 +599,7 @@ class Runner implements LessonSession {
         this.counted = sameVersion && !p.passed ? Math.min(p.successes, lesson.pass.required - 1) : 0;
         this.consecutive = sameVersion ? p.blocksPassed : 0;
         this.bestTimeMs = same ? p.bestTimeMs : null;
-        this.moments = new MomentMachine(lesson, options.known ?? [], options.guide ?? 'full', {
+        this.moments = new MomentMachine(lesson, options.known ?? lessonMoments(lesson).map((m) => m.cue), options.guide ?? 'full', {
             say: (lines, t) => this.sayLines(lines, false, t),
             said: (batch, t) => this.spokenUpTo >= batch || t >= this.speechDeadline,
             speaking: (t) => this.speaking(t),
@@ -661,7 +663,9 @@ class Runner implements LessonSession {
     }
 
     private lessonEvent(what: Extract<SessionEvent, { kind: 'lesson' }>['what'], t: number): void {
-        this.emit({ t, kind: 'lesson', lessonId: this.lesson.id, version: this.lesson.version, what, attempt: this.attemptNo });
+        // train 4: the open event carries what the host taught with (RunnerOptions.known, guide), so the replay runs the same
+        const taught = what === 'open' && this.o.known !== undefined ? { known: [...this.o.known], ...(this.o.guide === undefined ? {} : { guide: this.o.guide }) } : {};
+        this.emit({ t, kind: 'lesson', lessonId: this.lesson.id, version: this.lesson.version, what, attempt: this.attemptNo, ...taught });
         this.lastAtT = t;
     }
 

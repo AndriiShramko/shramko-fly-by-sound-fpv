@@ -596,7 +596,7 @@ export interface FlightFrame {
 /** One line of events.jsonl. `t` is the page clock of the session, ms. */
 export type SessionEvent =
     | { readonly t: number; readonly kind: 'session'; readonly what: 'start' | 'pause' | 'resume' | 'end' | 'recovered' }
-    | { readonly t: number; readonly kind: 'lesson'; readonly lessonId: string; readonly version: number; readonly what: 'open' | 'intro' | 'attempt-start' | 'attempt-pass' | 'attempt-fail' | 'block-pass' | 'passed' | 'leave'; readonly attempt: number }
+    | { readonly t: number; readonly kind: 'lesson'; readonly lessonId: string; readonly version: number; readonly what: 'open' | 'intro' | 'attempt-start' | 'attempt-pass' | 'attempt-fail' | 'block-pass' | 'passed' | 'leave'; readonly attempt: number; readonly known?: readonly CueId[]; readonly guide?: GuideLevel }
     | { readonly t: number; readonly kind: 'goal'; readonly index: number; readonly what: 'met' | 'missed' }
     | { readonly t: number; readonly kind: 'touch'; readonly material: MaterialClass; readonly speed: number; readonly pos: Vec3 }
     | { readonly t: number; readonly kind: 'gate'; readonly gateId: string; readonly index: number; readonly missM: number }

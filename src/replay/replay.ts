@@ -172,6 +172,8 @@ export class Replayer {
     /** Starts over from the first frame (a seek backwards, or a second run). */
     reset(parsed = inputsOf(this.input.events ?? [], this.frames[0]?.t ?? 0)): void {
         const s = this.input.setup;
+        const open = (this.input.events ?? []).find((e): e is Extract<SessionEvent, { kind: 'lesson' }> => e.kind === 'lesson' && e.what === 'open');
+        const taught = { known: this.input.known ?? open?.known, guide: this.input.guide ?? open?.guide };
         this.inputs = parsed.inputs;
         this.touches = parsed.touches;
         this.inputPos = 0;
@@ -194,8 +196,9 @@ export class Replayer {
                       ...(s.start === undefined ? {} : { start: s.start }),
                       ...(this.input.progress === undefined ? {} : { progress: this.input.progress }),
                       ...(this.input.seed === undefined ? {} : { seed: this.input.seed }),
-                      ...(this.input.known === undefined ? {} : { known: this.input.known }),
-                      ...(this.input.guide === undefined ? {} : { guide: this.input.guide })
+                      // what the host taught with: given, or as the runner wrote it in the lesson's open event (train 4)
+                      ...(taught.known === undefined ? {} : { known: taught.known }),
+                      ...(taught.guide === undefined ? {} : { guide: taught.guide })
                   });
         this.planner = new CuePlanner({ theme: s.theme, prefs: s.prefs, ...(s.lesson === null ? {} : { layers: s.lesson.layers }) });
     }
