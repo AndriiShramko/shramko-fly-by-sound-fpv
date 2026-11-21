@@ -159,6 +159,11 @@ export class MomentMachine {
         return this.active !== null && this.active.frozenAt !== null;
     }
 
+    /** The next moment freezes the flight on its first frame (a 'start' moment): nothing to say "go" to yet. */
+    get startsFrozen(): boolean {
+        return this.active === null && this.pending[0]?.when.kind === 'start';
+    }
+
     view(): MomentView | null {
         const a = this.active;
         return a === null ? null : { id: a.def.id, cue: a.def.cue, phase: a.phase, form: a.form };

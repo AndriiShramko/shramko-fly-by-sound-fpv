@@ -216,7 +216,8 @@ export function lessonSchedule(lesson: LessonDef, options: ScheduleOptions = {})
                     // the question's lines are the say actions handed just before it in this batch
                     const n = a.question.lines.length;
                     for (let k = Math.max(0, queue.length - n); k < queue.length; k++) queue[k] = { ...(queue[k] as Queued), ask: asks.length };
-                    const open: OpenAsk = { id: a.question.id, options: a.question.options, at: t, linesStart: null, linesEnd: null, answeredAt: null, step: run.view().step, attempt: run.attempt, question: a.question, lines: n, said: 0 };
+                    // a question asked with no words (train 4: the headphone check's second trial) is read out at once
+                    const open: OpenAsk = { id: a.question.id, options: a.question.options, at: t, linesStart: n === 0 ? t : null, linesEnd: n === 0 ? t : null, answeredAt: null, step: run.view().step, attempt: run.attempt, question: a.question, lines: n, said: 0 };
                     asks.push(open);
                     lastAsk = open;
                     break;

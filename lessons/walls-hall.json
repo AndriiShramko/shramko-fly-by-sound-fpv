@@ -20,7 +20,11 @@
     }
   ],
   "id": "walls-hall",
-  "intro": [],
+  "intro": [
+    {
+      "key": "lesson.walls-hall.goal.1"
+    }
+  ],
   "layers": {
     "hazardVoices": 2,
     "heightBandM": null,
@@ -33,33 +37,6 @@
   },
   "module": 3,
   "moments": [
-    {
-      "cue": "height.tone",
-      "do": {
-        "key": "moment.height.do"
-      },
-      "forms": [
-        {
-          "dir": [0, 0, -1],
-          "distanceM": null,
-          "durS": 2.5
-        }
-      ],
-      "hint": {
-        "key": "moment.height.hint"
-      },
-      "hintAfterS": 15,
-      "id": "height",
-      "task": {
-        "bandM": [2, 2.6],
-        "kind": "hold-height",
-        "seconds": 1,
-        "shareMin": 0.8
-      },
-      "when": {
-        "kind": "start"
-      }
-    },
     {
       "cue": "safety.wall",
       "do": {
@@ -91,6 +68,33 @@
         "dir": "front",
         "kind": "near",
         "withinM": 3
+      }
+    },
+    {
+      "cue": "height.tone",
+      "do": {
+        "key": "moment.height.do"
+      },
+      "forms": [
+        {
+          "dir": [0, 0, -1],
+          "distanceM": null,
+          "durS": 2.5
+        }
+      ],
+      "hint": {
+        "key": "moment.height.hint"
+      },
+      "hintAfterS": 15,
+      "id": "height",
+      "task": {
+        "bandM": [2, 2.6],
+        "kind": "hold-height",
+        "seconds": 1,
+        "shareMin": 0.8
+      },
+      "when": {
+        "kind": "start"
       }
     }
   ],

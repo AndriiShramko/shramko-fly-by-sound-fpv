@@ -6,6 +6,7 @@ import type { CueId, FlightFrame, GuideLevel, LessonDef, Locale, SessionEvent, S
 import { CuePlanner } from '../../src/cues';
 import { createTranslator, DICTS, type Translator } from '../../src/i18n';
 import { createLessonRunner, type LessonSession, type Question, type RunnerAction } from '../../src/lesson';
+import type { SpeechModel } from '../../src/lesson/schedule';
 import { defaultPrefs } from '../../src/prefs';
 import { REPLAY_KEY_ACTIONS, SPEECH_END_KEY } from '../../src/replay';
 import { MemorySink, packSession, readPackage, SessionWriter, type SessionPackage } from '../../src/session';
@@ -45,6 +46,8 @@ export interface HostOptions {
     /** train 4 (RunnerOptions): the sounds the pilot knows and the guide level */
     readonly known?: readonly CueId[];
     readonly guide?: GuideLevel;
+    /** train 4 (test/first-set.test.ts): seconds a line takes, a measured voice; absent: ttsBaseMs and ttsMsPerChar */
+    readonly speech?: SpeechModel;
 }
 
 const DEG = 180 / Math.PI;
@@ -113,7 +116,7 @@ export class RecordingHost {
                 const text = this.translator.text(a.line);
                 this.events.push({ t: this.t, kind: 'speech', key: a.line.key, text });
                 const start = a.interrupt && this.o.cutOnInterrupt === true ? this.t : Math.max(this.t, this.ttsEnd);
-                this.ttsEnd = start + this.o.ttsBaseMs + this.o.ttsMsPerChar * text.length;
+                this.ttsEnd = start + (this.o.speech === undefined ? this.o.ttsBaseMs + this.o.ttsMsPerChar * text.length : 1000 * this.o.speech(text, a.line));
                 this.speaking = true;
             } else if (a.kind === 'cue') this.planner.cue(a.event);
             else if (a.kind === 'place') {

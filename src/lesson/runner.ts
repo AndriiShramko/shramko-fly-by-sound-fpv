@@ -417,6 +417,8 @@ const SIDES: readonly { readonly dir: Vec3; readonly sector: 'left' | 'right' }[
 /** The sound of the headphone check (lane sound6): a wall's short knocks tell left from right better than a hum, and the
  * quick path's first sound is the one its next lesson and its first room are made of. */
 export const HEADPHONE_CUE: CueId = 'safety.wall';
+/** Train 4: the plays of each side of the headphone check for a host that teaches by moments (REPEAT_PLAYS otherwise). */
+export const HEADPHONE_PLAYS_TEACHING = 2;
 
 // ------------------------------------------------------------------ the script
 
@@ -659,7 +661,25 @@ class Runner implements LessonSession {
     takeActions(): RunnerAction[] {
         const out = this.actions;
         this.actions = [];
-        return out;
+        return this.namesOnly ? out.filter((a) => a.kind !== 'say' || this.voiced(a.line)) : out;
+    }
+
+    /**
+     * Train 4, guide 'new' (Part C 2): in a flying lesson of a host that teaches by moments (RunnerOptions.known given) a
+     * pilot hears the sounds' names and the sounds only, no other lesson line. The one gate of every line the runner says:
+     * sayLines leaves the others out (so nothing waits on them) and takeActions drops the ones pushed directly.
+     */
+    /** Train 4: the host teaches by moments (RunnerOptions.known given); absent, the runner says and plays as before. */
+    private get teaching(): boolean {
+        return this.o.known !== undefined;
+    }
+
+    private get namesOnly(): boolean {
+        return this.o.guide === 'new' && this.o.known !== undefined && !this.ears;
+    }
+
+    private voiced(line: SpeechLine): boolean {
+        return !this.namesOnly || /^cue\..+\.name$/.test(line.key);
     }
 
     private lessonEvent(what: Extract<SessionEvent, { kind: 'lesson' }>['what'], t: number): void {
@@ -745,7 +765,10 @@ class Runner implements LessonSession {
     }
 
     /** Hands lines to the host's speech queue; the first one interrupts what is being said when the pilot's key asked for it. */
-    private sayLines(lines: readonly SpeechLine[], interrupt: boolean, t: number, own = true): number {
+    private sayLines(all: readonly SpeechLine[], interrupt: boolean, t: number, own = true): number {
+        const lines = all.filter((l) => this.voiced(l));
+        // nothing to say while nothing is being said (a host that teaches): no batch to wait on
+        if (lines.length === 0 && this.teaching && this.spokenUpTo >= this.handed) return this.handed;
         lines.forEach((line, i) => this.actions.push({ kind: 'say', line, interrupt: i === 0 && interrupt }));
         let ms = 0;
         for (const l of lines) ms += this.fallbackMs(l);
@@ -986,7 +1009,8 @@ class Runner implements LessonSession {
             this.startBlock(1, t);
         } else {
             this.script.length = 0;
-            this.push({ kind: 'say', lines: [{ key: 'fly.go' }] });
+            // train 4: a moment that freezes the first frame speaks first; its `do` line is the "go"
+            if (!this.moments.startsFrozen) this.push({ kind: 'say', lines: [{ key: 'fly.go' }] });
             this.startGoal(t);
         }
     }
@@ -1456,6 +1480,9 @@ class Runner implements LessonSession {
         // the free flight over a scan (and a course the host lays over it) is on no path and is no last lesson: the host says
         // what comes next (train 2 review SN-3: "That was the last lesson" after a course by sound was wrong)
         if (this.lesson.id === SCAN_FREE_ID) return null;
+        // train 4 (decision 7, no repeated introductions): a host that teaches by moments opens the next lesson at once, and
+        // the next lesson says its own title
+        if (this.teaching) return null;
         const next = lessonAfter(this.lesson.id, this.o.path ?? 'full');
         return next === null ? { key: 'fly.last-lesson' } : { key: 'fly.lesson-passed', params: { title: this.text(next.title) } };
     }
@@ -1634,11 +1661,14 @@ class Runner implements LessonSession {
             // intro line comes before (lane sound6: the first sound within seconds); what helps after a miss, before the retry
             if (i === 0 && this.attemptNo > 1) steps.push({ kind: 'say', lines: [{ key: 'headphones.wired' }, { key: 'headphones.os-spatial' }], once: true });
             steps.push({ kind: 'say', lines: [{ key: 'headphones.trial', params: { n: i + 1, total: sides.length } }] });
-            steps.push({ kind: 'sound', cue: HEADPHONE_CUE, dir: side.dir, plays: REPEAT_PLAYS });
+            // train 4 (the pilot's feedback: too much at once; the owner: the quick lesson starts at once): a host that teaches by
+            // moments plays the first side twice and the next once (the pilot knows what to listen for), and asks the whole
+            // question once; the next trial asks with no words (the keys come with the waiting sound after ASK_REMIND_S)
+            steps.push({ kind: 'sound', cue: HEADPHONE_CUE, dir: side.dir, plays: this.teaching ? (i === 0 ? HEADPHONE_PLAYS_TEACHING : 1) : REPEAT_PLAYS });
             steps.push({
                 kind: 'ask',
                 early: true,
-                question: { id, lines: [{ key: 'headphones.q-side' }], options: 3, skippable: true },
+                question: { id, lines: this.teaching && i > 0 ? [] : [{ key: 'headphones.q-side' }], options: 3, skippable: true },
                 onAnswer: (value) => {
                     this.earsAnswers.set(id, { kind: 'side', value, right: value === correct, sector });
                 }
@@ -1793,7 +1823,8 @@ class Runner implements LessonSession {
             // the answer is acknowledged at once: its sound, then "Taken: n." (or "Skipped."), cutting what was being said
             if (!this.v012) {
                 this.actions.push({ kind: 'cue', event: { kind: 'answer', what: 'yes' } });
-                this.script.unshift({ kind: 'say', lines: [skip ? { key: 'answer.skipped' } : { key: 'answer.got', params: { n: value } }] });
+                // train 4 (decision 7, the fewest words): a host that teaches by moments lets the sound say "taken"; a skip is said
+                if (skip || !this.teaching) this.script.unshift({ kind: 'say', lines: [skip ? { key: 'answer.skipped' } : { key: 'answer.got', params: { n: value } }] });
             }
             this.advance(t);
             if (!this.ears && this.prev !== null && this.phaseValue === 'flying') this.evaluateGoals(this.prev, this.prev, t);
