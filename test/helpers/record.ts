@@ -2,7 +2,7 @@
 // scripted craft, runs the lesson runner and the cue planner at 60 Hz, speaks every line through a
 // simulated speech queue, and records what the simulator's recorder would write: 30 Hz frames with the
 // cue ids, and the events. The replay and report tests replay and report what this wrote.
-import type { FlightFrame, LessonDef, Locale, SessionEvent, SonicPrefs, SonicWorld, ThemeDef, Vec3 } from '../../src/contract';
+import type { CueId, FlightFrame, GuideLevel, LessonDef, Locale, SessionEvent, SonicPrefs, SonicWorld, ThemeDef, Vec3 } from '../../src/contract';
 import { CuePlanner } from '../../src/cues';
 import { createTranslator, DICTS, type Translator } from '../../src/i18n';
 import { createLessonRunner, type LessonSession, type Question, type RunnerAction } from '../../src/lesson';
@@ -42,6 +42,9 @@ export interface HostOptions {
     readonly cutOnInterrupt?: boolean;
     /** lane sonic-beacon: true: a host from before the beacon, whose frames carry no `beacon` field */
     readonly oldHost?: boolean;
+    /** train 4 (RunnerOptions): the sounds the pilot knows and the guide level */
+    readonly known?: readonly CueId[];
+    readonly guide?: GuideLevel;
 }
 
 const DEG = 180 / Math.PI;
@@ -71,6 +74,10 @@ export class RecordingHost {
     private pending: { readonly at: number; readonly question: Question } | null = null;
     private asked = 0;
     private lastScene = false;
+    /** train 4: a moment holds the craft (RunnerAction 'moment' non-null): flyTo does not move it meanwhile */
+    frozen = false;
+    /** every action the runner handed, with its time */
+    readonly actionLog: { readonly t: number; readonly a: RunnerAction }[] = [];
     private readonly o: Required<Pick<HostOptions, 'hz' | 'recordHz' | 'speechEnds' | 'ttsBaseMs' | 'ttsMsPerChar' | 'keepTouched'>> & HostOptions;
 
     constructor(lesson: LessonDef, options: HostOptions = {}) {
@@ -82,7 +89,7 @@ export class RecordingHost {
         this.oldHost = options.oldHost === true;
         this.translator = createTranslator(this.locale, DICTS);
         this.world = lesson.world.kind === 'analytic' ? createAnalyticWorld(lesson.world.spec) : null;
-        this.runner = createLessonRunner(lesson, { locale: this.locale, sessionStartMs: Date.parse('2026-11-07T10:00:00Z') });
+        this.runner = createLessonRunner(lesson, { locale: this.locale, sessionStartMs: Date.parse('2026-11-07T10:00:00Z'), ...(options.known === undefined ? {} : { known: options.known }), ...(options.guide === undefined ? {} : { guide: options.guide }) });
         this.planner = new CuePlanner({ theme: this.theme, prefs: this.prefs, layers: lesson.layers });
         this.pos = lesson.start.pos;
         this.yaw = lesson.start.yawDeg;
@@ -99,6 +106,7 @@ export class RecordingHost {
 
     private handle(actions: readonly RunnerAction[]): void {
         for (const a of actions) {
+            this.actionLog.push({ t: this.t, a });
             if (a.kind === 'say') {
                 const text = this.translator.text(a.line);
                 this.events.push({ t: this.t, kind: 'speech', key: a.line.key, text });
@@ -113,6 +121,11 @@ export class RecordingHost {
                 this.placed++;
             } else if (a.kind === 'ask') this.pending = { at: Math.max(this.t, this.ttsEnd) + (this.o.answerAfterMs ?? 1200), question: a.question };
             else if (a.kind === 'scene') this.lastScene = a.scene !== null;
+            else if (a.kind === 'audible') this.planner.setAudible(a.cues === null ? null : new Set(a.cues));
+            else if (a.kind === 'moment') {
+                this.frozen = a.moment !== null;
+                if (this.frozen) this.vel = [0, 0, 0];
+            }
         }
     }
 
@@ -200,6 +213,9 @@ export class RecordingHost {
         else if (action === REPLAY_KEY_ACTIONS.repeat) this.record(this.runner.repeat(this.t));
         else if (action === REPLAY_KEY_ACTIONS.nextLesson) this.record(this.runner.nextLesson(this.t));
         else if (action === REPLAY_KEY_ACTIONS.previousLesson) this.record(this.runner.previousLesson(this.t));
+        else if (action === REPLAY_KEY_ACTIONS.momentAgain) this.record(this.runner.momentKey('again', this.t));
+        else if (action === REPLAY_KEY_ACTIONS.momentOn) this.record(this.runner.momentKey('on', this.t));
+        else if (action === REPLAY_KEY_ACTIONS.momentKnow) this.record(this.runner.momentKey('know', this.t));
         else {
             const r = this.runner.reset(action === REPLAY_KEY_ACTIONS.resetStart ? 'start' : 'checkpoint', this.t);
             this.pos = r.pose.pos;
@@ -237,6 +253,12 @@ export class RecordingHost {
         const placed = this.placed;
         const step = (speed * this.stepMs) / 1000;
         for (let guard = 0; guard < 1_000_000 && this.placed === placed; guard++) {
+            if (this.frozen) {
+                // a moment holds the craft: frames go on, the craft stays where it is
+                this.vel = [0, 0, 0];
+                this.tick();
+                continue;
+            }
             const d: Vec3 = [to[0] - this.pos[0], to[1] - this.pos[1], to[2] - this.pos[2]];
             const len = Math.hypot(...d);
             if (Math.hypot(d[0], d[2]) > 0.5) this.yaw = Math.atan2(d[0], -d[2]) * DEG;

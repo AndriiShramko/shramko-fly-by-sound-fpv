@@ -28,7 +28,7 @@ export interface Tolerances {
 export const DEFAULT_TOLERANCES: Tolerances = { timeMs: 100, distanceM: 0.15, speedMps: 0.3, minCueShare: 0.95, cueSlackFrames: 1 };
 
 /** The kinds of event the replay can re-derive; session, key, recording and send events are the host's own. */
-export const COMPARED_KINDS = ['lesson', 'goal', 'gate', 'touch', 'checkpoint', 'reset', 'answer', 'speech'] as const;
+export const COMPARED_KINDS = ['lesson', 'goal', 'gate', 'touch', 'checkpoint', 'reset', 'answer', 'speech', 'moment'] as const;
 export type ComparedKind = (typeof COMPARED_KINDS)[number];
 
 export interface EventDiff {
@@ -137,6 +137,8 @@ function identity(e: SessionEvent): string {
             return `${e.item}:${e.value ?? 'null'}:${e.via}`;
         case 'speech':
             return e.key;
+        case 'moment':
+            return `${e.id}:${e.what}`;
         default:
             return e.kind;
     }

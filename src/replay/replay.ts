@@ -29,7 +29,7 @@
 //
 // `Replayer` steps frame by frame (for a viewer that plays, pauses and seeks, and feeds the engine
 // from `ReplayStep.input` and `.actions`); `replayFlight` runs it to the end.
-import type { FlightFrame, FlightSample, LessonProgress, SessionEvent, SonicFrameInput } from '../contract';
+import type { CueId, FlightFrame, FlightSample, GuideLevel, LessonProgress, SessionEvent, SonicFrameInput } from '../contract';
 import { CuePlanner } from '../cues/planner';
 import { DICTS } from '../i18n/dicts';
 import { createTranslator, type Translator } from '../i18n/translator';
@@ -41,7 +41,7 @@ import type { ReplayNote, ReplaySetup } from './rebuild';
 export const SPEECH_END_KEY = 'speech.end';
 
 /** The `action` of a `key` event the replay acts on. */
-export const REPLAY_KEY_ACTIONS = { resetCheckpoint: 'reset.checkpoint', resetStart: 'reset.start', next: 'next', previous: 'previous', repeat: 'repeat', nextLesson: 'next-lesson', previousLesson: 'previous-lesson' } as const;
+export const REPLAY_KEY_ACTIONS = { resetCheckpoint: 'reset.checkpoint', resetStart: 'reset.start', next: 'next', previous: 'previous', repeat: 'repeat', nextLesson: 'next-lesson', previousLesson: 'previous-lesson', momentAgain: 'moment.again', momentOn: 'moment.on', momentKnow: 'moment.know' } as const;
 
 export interface ReplayInput {
     readonly setup: ReplaySetup;
@@ -52,6 +52,9 @@ export interface ReplayInput {
     readonly progress?: LessonProgress | null;
     /** the dice of the ears game (default: the runner's own) */
     readonly seed?: number;
+    /** train 4: the sounds the pilot knew when the lesson began and the guide level, as the host gave them (RunnerOptions) */
+    readonly known?: readonly CueId[];
+    readonly guide?: GuideLevel;
 }
 
 /** What one replayed frame produced. */
@@ -84,7 +87,8 @@ type Input =
     | { readonly t: number; readonly kind: 'answer'; readonly value: number; readonly via: 'key' | 'voice' }
     | { readonly t: number; readonly kind: 'reset'; readonly to: 'checkpoint' | 'start' }
     | { readonly t: number; readonly kind: 'next' | 'previous' | 'repeat' | 'next-lesson' | 'previous-lesson' }
-    | { readonly t: number; readonly kind: 'pause' | 'resume' };
+    | { readonly t: number; readonly kind: 'pause' | 'resume' }
+    | { readonly t: number; readonly kind: 'moment'; readonly key: 'again' | 'on' | 'know' };
 
 /** The inputs a recording holds, in time order (events with the same time keep their order). */
 function inputsOf(events: readonly SessionEvent[], firstT: number): { readonly inputs: Input[]; readonly touches: number[]; readonly markers: number; readonly hasOpen: boolean } {
@@ -112,6 +116,9 @@ function inputsOf(events: readonly SessionEvent[], firstT: number): { readonly i
         else if (e.kind === 'key' && e.action === REPLAY_KEY_ACTIONS.repeat) inputs.push({ t: e.t, kind: 'repeat' });
         else if (e.kind === 'key' && e.action === REPLAY_KEY_ACTIONS.nextLesson) inputs.push({ t: e.t, kind: 'next-lesson' });
         else if (e.kind === 'key' && e.action === REPLAY_KEY_ACTIONS.previousLesson) inputs.push({ t: e.t, kind: 'previous-lesson' });
+        else if (e.kind === 'key' && e.action === REPLAY_KEY_ACTIONS.momentAgain) inputs.push({ t: e.t, kind: 'moment', key: 'again' });
+        else if (e.kind === 'key' && e.action === REPLAY_KEY_ACTIONS.momentOn) inputs.push({ t: e.t, kind: 'moment', key: 'on' });
+        else if (e.kind === 'key' && e.action === REPLAY_KEY_ACTIONS.momentKnow) inputs.push({ t: e.t, kind: 'moment', key: 'know' });
         else if (e.kind === 'session' && (e.what === 'pause' || e.what === 'resume')) inputs.push({ t: e.t, kind: e.what });
         else if (e.kind === 'touch') touches.push(e.t);
     }
@@ -186,7 +193,9 @@ export class Replayer {
                       ...(s.objects === undefined ? {} : { objects: s.objects }),
                       ...(s.start === undefined ? {} : { start: s.start }),
                       ...(this.input.progress === undefined ? {} : { progress: this.input.progress }),
-                      ...(this.input.seed === undefined ? {} : { seed: this.input.seed })
+                      ...(this.input.seed === undefined ? {} : { seed: this.input.seed }),
+                      ...(this.input.known === undefined ? {} : { known: this.input.known }),
+                      ...(this.input.guide === undefined ? {} : { guide: this.input.guide })
                   });
         this.planner = new CuePlanner({ theme: s.theme, prefs: s.prefs, ...(s.lesson === null ? {} : { layers: s.lesson.layers }) });
     }
@@ -227,6 +236,7 @@ export class Replayer {
                 this.derived.push(e);
                 events.push(e);
             } else if (a.kind === 'cue') this.planner.cue(a.event);
+            else if (a.kind === 'audible') this.planner.setAudible(a.cues === null ? null : new Set(a.cues));
         }
     }
 
@@ -273,6 +283,9 @@ export class Replayer {
                 break;
             case 'resume':
                 this.add(runner.resume(i.t), events);
+                break;
+            case 'moment':
+                this.add(runner.momentKey(i.key, i.t), events);
                 break;
         }
         this.take(i.t, events, actions);

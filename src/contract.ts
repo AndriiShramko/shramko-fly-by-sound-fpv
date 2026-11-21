@@ -729,7 +729,16 @@ export type CueEvent =
      * `durS` has run out; the planner sounds a continuous cue for `durS` (a one-off cue is its own notes, never
      * longer than `durS`). `dir`: listener frame, or null or absent for the cue's own default.
      */
-    | { readonly kind: 'repeat-cue'; readonly cue: CueId; readonly dir?: Vec3 | null; readonly index?: number; readonly of?: number; readonly durS?: number }
+    | {
+          readonly kind: 'repeat-cue';
+          readonly cue: CueId;
+          readonly dir?: Vec3 | null;
+          readonly index?: number;
+          readonly of?: number;
+          readonly durS?: number;
+          /** train 4: a moment's form (MomentForm.distanceM): how far the source is, m; null or absent: the cue's own approach */
+          readonly distanceM?: number | null;
+      }
     /** M41-11: a counted attempt, said with a short praise line */
     | { readonly kind: 'praise' }
     /** M41-11: stage `stage` (1, 2, ...) of a long course passed (a checkpoint that ends a stage), said "Stage k passed" */

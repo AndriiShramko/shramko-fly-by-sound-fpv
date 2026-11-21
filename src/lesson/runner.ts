@@ -110,6 +110,7 @@ import { beaconPointIndex, DEMO_TARGET_ID, lineClear, trackCorners } from '../cu
 import { RacingLine, type SonicLineTarget } from '../cues/line';
 import { gateAim, gateAimLocal } from './gate-aim';
 import { approachM, SPEED_LEAD_FROM_MPS } from '../cues/lead';
+import { MomentMachine } from './moments';
 
 /**
  * Lane sonic4 design 5: with the racing line on, the gate aim takes over within this distance in front of the next gate's
@@ -207,6 +208,8 @@ export interface LessonView {
     readonly paused: boolean;
     /** a sound the step is playing now (a named sound plays three times): its cue, which play and of how many; null otherwise */
     readonly playing: { readonly cue: CueId; readonly index: number; readonly of: number } | null;
+    /** train 4: the moment running (MomentDef), or null; absent from an older runner */
+    readonly moment?: MomentView | null;
 }
 
 export interface LessonSession extends LessonRunner {
@@ -573,6 +576,9 @@ class Runner implements LessonSession {
     // scenes
     private scene: { readonly scene: DemoScene; readonly t0: number } | null = null;
     private readonly sceneWorlds = new Map<string, AnalyticWorldInfo>();
+    // moments (train 4): the sounds this lesson teaches at their actions, and the gates passed so far (a 'passed' moment)
+    private readonly moments: MomentMachine;
+    private gatesPassed = 0;
 
     constructor(lesson: LessonDef, options: RunnerOptions) {
         this.lesson = lesson;
@@ -591,6 +597,20 @@ class Runner implements LessonSession {
         this.counted = sameVersion && !p.passed ? Math.min(p.successes, lesson.pass.required - 1) : 0;
         this.consecutive = sameVersion ? p.blocksPassed : 0;
         this.bestTimeMs = same ? p.bestTimeMs : null;
+        this.moments = new MomentMachine(lesson, options.known ?? [], options.guide ?? 'full', {
+            say: (lines, t) => this.sayLines(lines, false, t),
+            said: (batch, t) => this.spokenUpTo >= batch || t >= this.speechDeadline,
+            speaking: (t) => this.speaking(t),
+            act: (a) => this.actions.push(a),
+            emit: (e) => this.emit(e),
+            name: (cue) => this.cueName(cue),
+            tracker: (goal) => createTracker(goal, { floorY: this.o.floorY ?? 0, objects: () => this.objects(), world: () => this.worldRef, attemptPathM: () => this.pathM, passedGate: () => undefined }),
+            frozeFor: (ms) => {
+                this.pausedMs += ms;
+                this.prev = null;
+                this.backSince = null;
+            }
+        });
     }
 
     private get hooks(): RunnerTestHooks {
@@ -861,6 +881,7 @@ class Runner implements LessonSession {
         this.refusalWord(t);
         if (this.current !== null) this.current.spokenSeen = true;
         this.advance(t);
+        this.moments.tick(t);
         this.afterScript(t);
         if (!this.lessonTalking(t)) this.refusalInRun = false;
         return this.drain();
@@ -874,6 +895,7 @@ class Runner implements LessonSession {
         this.t = t;
         this.lessonEvent('open', t);
         this.lessonEvent('intro', t);
+        this.moments.begin();
         if (!this.ears) this.actions.push({ kind: 'place', pose: this.startPose(1), to: 'start' });
         this.blocks = [this.introBlock()];
         this.phaseValue = 'intro';
@@ -976,6 +998,7 @@ class Runner implements LessonSession {
                 // the leg to the next gate begins here; nothing of it is flown yet
                 this.lastGate = gate;
                 this.legFlown = false;
+                this.gatesPassed++;
                 this.behindSaid = null;
                 this.emit({ t: at, kind: 'gate', gateId: gate.id, index, missM: Math.round(missM * 1000) / 1000 });
                 // lane sonic-beacon: where the target after the next one is (the planner previews the hum from there)
@@ -1042,6 +1065,11 @@ class Runner implements LessonSession {
         this.refusalWord(t);
         this.advance(t);
         if (this.phaseValue === 'flying' && !this.ears && !this.listening) {
+            // a moment: its action happens now (the flight freezes), or it runs on; frozen, nothing is flown
+            const gate = this.tracker?.target() ?? null;
+            this.moments.frame({ sample, world, floorY: this.o.floorY ?? 0, gateM: gate === null ? null : dist3(gate.pos, sample.pos), gatesPassed: this.gatesPassed }, t);
+        }
+        if (this.phaseValue === 'flying' && !this.ears && !this.listening && !this.moments.frozen) {
             // a place (an attempt begun at the start, or where the last one got to) is no flight: in advance() it set prev
             // aside, and a jump crosses no gate, point or checkpoint, in whichever frame a recording shows it (live the frame
             // after the place; in a replay, whose estimated speech can begin the attempt a frame or two before, a later one)
@@ -2021,6 +2049,7 @@ class Runner implements LessonSession {
         if (this.listening) this.listenT0 += d;
         this.lastWrongWay += d;
         this.lastWrongSide += d;
+        this.moments.shift(d);
         this.backSince = null;
         // the first frame after the pause is not measured against the last one before it (no jump, no time in a band)
         this.prev = null;
@@ -2031,8 +2060,12 @@ class Runner implements LessonSession {
 
     // -------------------------------------------------------------- moments (train 4)
 
-    momentKey(_key: MomentKey, _t: number): readonly SessionEvent[] {
-        return [];
+    momentKey(key: MomentKey, t: number): readonly SessionEvent[] {
+        this.t = Math.max(this.t, t);
+        if (this.left || this.pausedAt !== null || !this.moments.key(key, t)) return this.drain();
+        this.advance(t);
+        this.afterScript(t);
+        return this.drain();
     }
 
     // -------------------------------------------------------------- what the host shows and says
@@ -2070,7 +2103,8 @@ class Runner implements LessonSession {
             skipped: this.skippedValue,
             listening: this.listening,
             paused: this.pausedAt !== null,
-            playing: this.playing()
+            playing: this.playing(),
+            moment: this.moments.view()
         };
     }
 
